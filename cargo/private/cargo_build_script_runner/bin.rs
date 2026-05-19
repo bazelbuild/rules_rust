@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use cargo_build_script_runner::cargo_manifest_dir::{remove_symlink, symlink, RunfilesMaker};
-use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags};
+use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags, SUPPRESS_WARNINGS_ENV};
 
 fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
@@ -158,7 +158,12 @@ fn run_buildrs() -> Result<(), String> {
         );
     }
 
-    let (buildrs_outputs, process_output) = BuildScriptOutput::outputs_from_command(&mut command)
+    let emit_warnings = env::var_os(SUPPRESS_WARNINGS_ENV).is_none_or(|v| v != "1");
+
+    let (buildrs_outputs, process_output) = BuildScriptOutput::outputs_from_command(
+        &mut command,
+        emit_warnings,
+    )
         .map_err(|process_output| {
         format!(
             "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
