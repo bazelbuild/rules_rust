@@ -101,7 +101,7 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, exit_code_file = None, forward_clippy_exit_code = True, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
     """Run clippy with the specified parameters.
 
     Args:
@@ -112,6 +112,8 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         config (File): The clippy configuration file. Reference: https://doc.rust-lang.org/clippy/configuration.html#configuring-clippy
         output (File): The output file for clippy stdout/stderr. If None, no output will be captured
         success_marker (File): A file that will be written if clippy succeeds
+        exit_code_file (File): A file that will contain clippy's exit code
+        forward_clippy_exit_code (bool): If set, let the action exit with the same exit code as clippy
         cap_at_warnings (bool): If set, it will cap all reports as warnings, allowing the build to continue even with clippy failures
         extra_clippy_flags (List[str]): A list of extra options to pass to clippy. If not set, every warnings will be turned into errors
         error_format (str): Which error format to use. Must be acceptable by rustc: https://doc.rust-lang.org/beta/rustc/command-line-arguments.html#--error-format-control-how-errors-are-produced
@@ -199,6 +201,13 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     if success_marker != None:
         args.process_wrapper_flags.add("--touch-file", success_marker)
         outputs.append(success_marker)
+
+    if forward_clippy_exit_code == False:
+        args.process_wrapper_flags.add("--swallow-subprocess-exit-code", "true")
+
+    if exit_code_file != None:
+        args.process_wrapper_flags.add("--exit-code-file", exit_code_file)
+        outputs.append(exit_code_file)
 
     if clippy_flags or lint_files:
         args.rustc_flags.add_all(clippy_flags)
