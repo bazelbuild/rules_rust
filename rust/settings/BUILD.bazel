@@ -2,6 +2,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     ":settings.bzl",
     "always_enable_metadata_output_groups",
+    "auditable",
     "capture_clippy_output",
     "clippy_error_format",
     "clippy_flag",
@@ -61,6 +62,14 @@ bzl_library(
 )
 
 always_enable_metadata_output_groups()
+
+auditable()
+
+config_setting(
+    name = "auditable_enabled",
+    flag_values = {":auditable": "True"},
+    visibility = ["//visibility:public"],
+)
 
 capture_clippy_output()
 
