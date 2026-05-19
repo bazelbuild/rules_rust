@@ -12,7 +12,7 @@ local_path_override(
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
-bazel_dep(name = "boringssl", version = "0.20241209.0")
+bazel_dep(name = "openssl", version = "3.5.5.bcr.4")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
@@ -21,30 +21,27 @@ register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
-inject_repo(crate, "boringssl")
+inject_repo(crate, "openssl")
 
 crate.annotation(
     build_script_data = [
-        # buildifier: disable=canonical-repository
-        "@@//:boringssl_gen_dir",
+        "@openssl//:install",
     ],
     build_script_env = {
-        # buildifier: disable=canonical-repository
-        "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//:boringssl_gen_dir)/include",
-        # buildifier: disable=canonical-repository
-        "BORING_BSSL_PATH": "$(execpath @@//:boringssl_gen_dir)",
+        "OPENSSL_DIR": "$(execpath @openssl//:install)",
+        "OPENSSL_NO_VENDOR": "1",
+        "OPENSSL_STATIC": "1",
     },
     compile_data = [
-        # buildifier: disable=canonical-repository
-        "@@//:boringssl_gen_dir",
+        "@openssl//:install",
     ],
-    crate = "boring-sys",
+    crate = "openssl-sys",
     repositories = ["complicated_dependencies"],
 )
 crate.spec(
-    package = "boring",
+    package = "openssl",
     repositories = ["complicated_dependencies"],
-    version = "3.0.4",
+    version = "0.10.80",
 )
 crate.splicing_config(
     repositories = ["complicated_dependencies"],
