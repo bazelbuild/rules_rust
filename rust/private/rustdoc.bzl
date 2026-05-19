@@ -55,7 +55,8 @@ def rustdoc_compile_action(
         lints_info = None,
         output = None,
         rustdoc_flags = [],
-        is_test = False):
+        is_test = False,
+        force_depend_on_objects = None):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
     Args:
@@ -66,22 +67,27 @@ def rustdoc_compile_action(
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
         rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
+        force_depend_on_objects (bool, optional): If set, overrides is_test for controlling whether
+            to depend on .rlib files instead of .rmeta. Defaults to is_test.
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
     """
+    if force_depend_on_objects == None:
+        force_depend_on_objects = is_test
 
     # If an output was provided, ensure it's used in rustdoc arguments
     if output:
-        rustdoc_flags = [
-            "--output",
-            output.path,
-        ] + rustdoc_flags
+        rustdoc_flags.add_all(
+            [output],
+            before_each = "--output",
+            expand_directories = False,
+        )
 
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
-        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
+        rustdoc_flags.add_all(lints_info.rustdoc_lint_flags)
         lint_files = lint_files + lints_info.rustdoc_lint_files
 
     # Collect HTML customization files
@@ -115,8 +121,7 @@ def rustdoc_compile_action(
         dep_info = dep_info,
         build_info = build_info,
         lint_files = lint_files,
-        # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
-        force_depend_on_objects = is_test,
+        force_depend_on_objects = force_depend_on_objects,
         include_link_flags = False,
     )
 
@@ -147,7 +152,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         add_flags_for_binary = True,
         include_link_flags = False,
-        force_depend_on_objects = is_test,
+        force_depend_on_objects = force_depend_on_objects,
         skip_expanding_rustc_env = True,
     )
 
@@ -168,6 +173,7 @@ def rustdoc_compile_action(
         inputs = all_inputs,
         env = env,
         arguments = args.all,
+        supports_path_mapping = args.supports_path_mapping,
         tools = [toolchain.rust_doc],
     )
 
@@ -214,27 +220,28 @@ def _rust_doc_impl(ctx):
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
-    # Add the current crate as an extern for the compile action
-    rustdoc_flags = [
-        "--extern",
-        "{}={}".format(crate_info.name, crate_info.output.path),
-    ]
+    rustdoc_flags = ctx.actions.args()
+    rustdoc_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+        expand_directories = False,
+    )
 
     # Add HTML customization flags if attributes are provided
     if ctx.attr.html_in_header:
-        rustdoc_flags.extend(["--html-in-header", ctx.file.html_in_header.path])
+        rustdoc_flags.add("--html-in-header", ctx.file.html_in_header)
 
     if ctx.attr.html_before_content:
-        rustdoc_flags.extend(["--html-before-content", ctx.file.html_before_content.path])
+        rustdoc_flags.add("--html-before-content", ctx.file.html_before_content)
 
     if ctx.attr.html_after_content:
-        rustdoc_flags.extend(["--html-after-content", ctx.file.html_after_content.path])
+        rustdoc_flags.add("--html-after-content", ctx.file.html_after_content)
 
     # Add markdown CSS files if provided
     for css_file in ctx.files.markdown_css:
-        rustdoc_flags.extend(["--markdown-css", css_file.path])
+        rustdoc_flags.add(["--markdown-css", css_file])
 
-    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+    rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,
