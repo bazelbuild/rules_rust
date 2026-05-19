@@ -1106,6 +1106,29 @@ def construct_arguments(
             expand_directories = False,
         )
 
+    # Build-script flag files (link search paths, link flags) embed the
+    # build script's `out_dir` as a `${<path>}` substitution token, using
+    # the full analysis-time path as the key so each build script gets a
+    # unique token. Add a `--subst` entry for every direct and transitive
+    # build script `out_dir` so `process_wrapper` can resolve each token.
+    # Routing through `File`-typed `Args` entries lets Bazel path mapping
+    # rewrite the value at execution time.
+    for dep_build_info in dep_info.transitive_build_infos.to_list():
+        if dep_build_info.out_dir:
+            process_wrapper_flags.add_all(
+                [dep_build_info.out_dir],
+                before_each = "--subst",
+                format_each = dep_build_info.out_dir.path + "=%s",
+                expand_directories = False,
+            )
+    if out_dir != None:
+        process_wrapper_flags.add_all(
+            [out_dir],
+            before_each = "--subst",
+            format_each = out_dir.path + "=%s",
+            expand_directories = False,
+        )
+
     # Arguments for launching rustc from the process wrapper. When a `File` is
     # provided via `tool_file`, add it directly so Bazel's path mapping can
     # rewrite the location; otherwise fall back to the bare string `tool_path`.
