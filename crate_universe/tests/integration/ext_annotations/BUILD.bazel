@@ -9,7 +9,7 @@ rust_binary(
     deps = [
         ":blobstore-sys",
         ":bridge",
-        "@using_cxx//:cxx",
+        "@ext_annotations//:cxx",
     ],
 )
 
@@ -34,7 +34,7 @@ cc_library(
     name = "blobstore-include",
     hdrs = ["include/blobstore.h"],
     copts = ["-std=c++17"],
-    deps = ["@using_cxx//:cxx_cc"],
+    deps = ["@ext_annotations//:cxx_cc"],
 )
 
 rust_test(
