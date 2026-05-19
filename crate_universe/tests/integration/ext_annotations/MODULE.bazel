@@ -1,5 +1,5 @@
 module(
-    name = "cu_test_using_cxx",
+    name = "cu_test_external_annotations",
     version = "0.0.0",
 )
 
@@ -19,24 +19,24 @@ register_toolchains("@rust_toolchains//:all")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-using_cxx = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
-using_cxx.spec(
+ext_annotations = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+ext_annotations.spec(
     package = "cxx",
-    repositories = ["using_cxx"],
+    repositories = ["ext_annotations"],
     version = "1.0.194",
 )
-using_cxx.splicing_config(
-    repositories = ["using_cxx"],
+ext_annotations.splicing_config(
+    repositories = ["ext_annotations"],
     resolver_version = "2",
 )
-using_cxx.from_specs(
-    name = "using_cxx",
+ext_annotations.from_specs(
+    name = "ext_annotations",
     cargo_lockfile = "//:Cargo.Bazel.lock",
     lockfile = "//:cargo-bazel-lock.json",
 )
 use_repo(
-    using_cxx,
-    "using_cxx",
+    ext_annotations,
+    "ext_annotations",
 )
 
 http_archive(
