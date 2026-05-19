@@ -1,0 +1,33 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
+
+# This build script puts a linker script into its output directory,
+# and adds the output directory to the linker search path.
+#
+# That mimics how some crates for embedded development work, for example:
+# https://github.com/knurling-rs/defmt/blob/main/defmt/build.rs.
+cargo_build_script(
+    name = "lib_build_script",
+    srcs = ["lib_build.rs"],
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    deps = [":lib_build_script"],
+)
+
+# This build script tries to reference the linker script from above.
+cargo_build_script(
+    name = "bin_build_script",
+    srcs = ["bin_build.rs"],
+)
+
+rust_binary(
+    name = "bin",
+    srcs = ["bin.rs"],
+    deps = [
+        ":bin_build_script",
+        ":lib",
+    ],
+)
