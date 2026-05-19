@@ -222,8 +222,8 @@ impl BuildScriptOutput {
 
         CompileAndLinkFlags {
             compile_flags: compile_flags.join("\n"),
-            link_flags: Self::redact_paths(&link_flags.join("\n"), exec_root, out_dir),
-            link_search_paths: Self::redact_paths(
+            link_flags: Self::redact_flags(&link_flags.join("\n"), exec_root, out_dir),
+            link_search_paths: Self::redact_flags(
                 &link_search_paths.join("\n"),
                 exec_root,
                 out_dir,
@@ -231,28 +231,34 @@ impl BuildScriptOutput {
         }
     }
 
-    /// Replace the absolute exec-root with `${pwd}` and the relative
-    /// configuration-dependent `out_dir` path (e.g.
-    /// `bazel-out/<config>/bin/.../_bs.out_dir`) with `${out_dir}`.
-    ///
-    /// Both tokens are substituted by `process_wrapper` at action
-    /// execution time. Routing the `out_dir` portion through
-    /// `${out_dir}` lets Bazel's path mapping
-    /// (`--experimental_output_paths=strip`) rewrite it: the consumer
-    /// `Rustc` action passes the directory to `process_wrapper` via
-    /// `--out-dir <File>` from a `File`-typed `Args` entry, so the value
-    /// is the mapped `bazel-out/cfg/bin/...` path under path mapping and
-    /// the un-mapped path otherwise. Without this redaction,
-    /// build-script-emitted env vars (e.g. `cargo::rustc-env=FOO=$OUT_DIR/bar`)
-    /// would carry the un-mapped path through the `_bs.env` file and
-    /// cause the path-mapped Rustc action to look in the wrong location
-    /// at runtime.
+    fn redact_exec_root(value: &str, exec_root: &str) -> String {
+        value.replace(exec_root, "${pwd}")
+    }
+
+    /// Redact for env vars: uses the generic `${out_dir}` token, resolved
+    /// by `process_wrapper`'s `--out-dir` flag. Safe because env files are
+    /// only consumed by the target that directly owns the build script.
     fn redact_paths(value: &str, exec_root: &str, out_dir: &str) -> String {
-        let with_pwd = value.replace(exec_root, "${pwd}");
+        let with_pwd = Self::redact_exec_root(value, exec_root);
         if out_dir.is_empty() {
             with_pwd
         } else {
             with_pwd.replace(out_dir, "${out_dir}")
+        }
+    }
+
+    /// Redact for flags (link flags, link search paths): uses the full
+    /// `out_dir` relative path as the substitution key so each build
+    /// script gets a unique token. This avoids collisions when flag files
+    /// are consumed transitively by a target whose `--out-dir` points to
+    /// a different build script. The corresponding `--subst` entries are
+    /// added on the Starlark side for every transitive build info.
+    fn redact_flags(value: &str, exec_root: &str, out_dir: &str) -> String {
+        let with_pwd = Self::redact_exec_root(value, exec_root);
+        if out_dir.is_empty() {
+            with_pwd
+        } else {
+            with_pwd.replace(out_dir, &format!("${{{out_dir}}}"))
         }
     }
 
@@ -455,6 +461,35 @@ cargo::rustc-env=BAR=/abs/exec_root/elsewhere/file.rs
                 "bazel-out/cfg/bin/_bs.out_dir",
             ),
             "FOO=${pwd}/${out_dir}/op.rs\nBAR=${pwd}/elsewhere/file.rs"
+        );
+    }
+
+    /// Link search paths use the full `out_dir` path as the substitution
+    /// key so each build script gets a unique token. This avoids
+    /// collisions when the flag file is consumed transitively by a target
+    /// whose `--out-dir` points to a different build script.
+    #[test]
+    fn out_dir_in_flags_uses_full_path_as_substitution_key() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir
+cargo::rustc-link-search=/abs/exec_root/other/path
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_flags(
+                &result,
+                "/abs/exec_root",
+                "bazel-out/cfg/bin/pkg/_bs.out_dir",
+            ),
+            CompileAndLinkFlags {
+                compile_flags: "".to_owned(),
+                link_flags: "".to_owned(),
+                link_search_paths:
+                    "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+            }
         );
     }
 }
