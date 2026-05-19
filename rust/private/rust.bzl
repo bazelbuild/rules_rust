@@ -664,6 +664,21 @@ _COMMON_ATTRS = {
         """),
         default = False,
     ),
+    "clippy_config": attr.label(
+        doc = dedent("""\
+            A `clippy.toml` configuration file used when running clippy on this target.
+
+            When set, `rust_clippy_aspect` points `CLIPPY_CONF_DIR` at the directory
+            containing this file instead of the global file resolved through the
+            `@rules_rust//rust/settings:clippy.toml` build setting. The file must be
+            named `clippy.toml` or `.clippy.toml`.
+
+            Note that `rust_test` targets using the `crate` attribute do not inherit
+            this setting from the crate under test. Set `clippy_config` on the test
+            target explicitly if it should use the same configuration.
+        """),
+        allow_single_file = True,
+    ),
     "compile_data": attr.label_list(
         doc = dedent("""\
             List of files used by this rule at compile time.
