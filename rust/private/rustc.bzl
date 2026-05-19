@@ -1185,14 +1185,45 @@ def construct_arguments(
     rustc_flags.add(compilation_mode.strip_level, format = "--codegen=strip=%s")
 
     # For determinism to help with build distribution and such
+    #
+    # --remap-path-prefix tells rustc to replace a path prefix in all
+    # embedded paths (debug info, dep-info, panic locations, backtraces)
+    # so that absolute sandbox paths never leak into binaries or logs.
+    #
+    # When all sources are plain workspace files, remapping ${pwd} (the exec
+    # root) to remap_path_prefix (default ".") is enough.
+    #
+    # However, when a target mixes generated and non-generated sources (e.g.
+    # proto compile_data), transform_sources() symlinks every source file into
+    # bazel-out/<config>/bin/... so they sit next to the generated files.  In
+    # that case the crate root is no longer a source file and its path starts
+    # with ctx.bin_dir.path (e.g. "bazel-out/k8-fastbuild/bin").  We detect
+    # this via crate_info.root.is_source and use a more specific remap that
+    # also strips the bin-dir component, giving clean workspace-relative paths
+    # in panic messages and backtraces.
     if remap_path_prefix != None:
         # `--remap-path-prefix` flags are applied in reverse order. We need to
         # specify the outermost directory (output_base) first, so that it's
         # remapped last. Otherwise we can end up with a partial rewrite where
         # "/path/to/output_base/execroot" becomes "./execroot" rather than ".".
         rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
-        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
-        rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        if crate_info.root.is_source:
+            rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+            rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        else:
+            # Use add_all with the crate root File and a map_each callback
+            # so Bazel's path mapping (--experimental_output_paths=strip)
+            # can rewrite the config portion of the bin-dir prefix.
+            rustc_flags.add_all(
+                [crate_info.root],
+                map_each = _get_bin_dir_prefix,
+                format_each = "--remap-path-prefix=${pwd}/%s=" + remap_path_prefix,
+            )
+            rustc_flags.add_all(
+                [crate_info.root],
+                map_each = _get_bin_dir_prefix,
+                format_each = "--remap-path-prefix=${exec_root}/%s=" + remap_path_prefix,
+            )
 
     emit_without_paths = []
     for kind in emit:
@@ -1288,11 +1319,12 @@ def construct_arguments(
             if remap_path_prefix != None and _should_add_oso_prefix(
                 toolchain,
             ):
+                oso_prefix = "${pwd}/" if crate_info.root.is_source else "${pwd}/" + ctx.bin_dir.path + "/"
                 if ld_is_direct_driver:
                     rustc_flags.add("--codegen=link-arg=-oso_prefix")
-                    rustc_flags.add("${pwd}/", format = "--codegen=link-arg=%s")
+                    rustc_flags.add(oso_prefix, format = "--codegen=link-arg=%s")
                 else:
-                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
+                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix," + oso_prefix)
 
         _add_native_link_flags(
             rustc_flags,
@@ -2705,6 +2737,22 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_bin_dir_prefix(file):
+    """Returns the bin-dir prefix (without trailing slash) from a generated file.
+
+    For a generated file, file.path is "bazel-out/<config>/bin/<pkg>/<name>"
+    and file.short_path is "<pkg>/<name>".  The difference is the bin-dir
+    prefix.  Using the File object with add_all/map_each lets Bazel apply
+    path mapping (--experimental_output_paths=strip) to the config portion.
+
+    Args:
+        file (File): A generated file (e.g. the crate root).
+
+    Returns:
+        str: The bin-dir prefix, e.g. "bazel-out/k8-fastbuild/bin".
+    """
+    return file.path[:len(file.path) - len(file.short_path)].rstrip("/")
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.
