@@ -52,6 +52,7 @@ load(
     "get_edition",
     "get_import_macro_deps",
     "transform_deps",
+    "transform_link_deps",
     "transform_sources",
 )
 
@@ -66,20 +67,49 @@ def _assert_no_deprecated_attributes(_ctx):
     pass
 
 def _assert_correct_dep_mapping(ctx):
-    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
+    """Ensures dependencies are correctly mapped between 'deps', 'proc_macro_deps', and 'link_deps'.
+
+    This function validates that procedural macros and native libraries are listed in
+    their appropriate attributes to maintain the rules_rust dependency model.
 
     Args:
         ctx (ctx): The current rule's context object
     """
     for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
+        # Identify if this is a Rust-related target using any known Rust provider.
+        is_rust_target = (
+            rust_common.crate_info in dep or
+            rust_common.crate_group_info in dep or
+            rust_common.test_crate_info in dep or
+            rust_common.dep_info in dep or
+            BuildInfo in dep
+        )
+
+        if is_rust_target:
+            if rust_common.crate_info in dep and dep[rust_common.crate_info].type == "proc-macro":
                 fail(
                     "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
                         ctx.label,
                         dep.label,
                     ),
                 )
+
+            continue
+
+        # If it's not a known Rust target but provides CcInfo, it's a native library
+        # that should ideally be in 'link_deps'.
+        if CcInfo in dep:
+            # buildifier: disable=print
+            print(
+                ("\nWARNING: Target {dep} in 'deps' of {target} is a C++ library. " +
+                 "Only Rust targets are allowed in 'deps'. " +
+                 "Please use 'link_deps' for manual FFI linkage or 'cc_deps' for binding generation. " +
+                 "Support for C++ libraries in 'deps' is deprecated and will be removed in a future release.").format(
+                    dep = dep.label,
+                    target = ctx.label,
+                ),
+            )
+
     for dep in ctx.attr.proc_macro_deps:
         if CrateInfo in dep:
             types = [dep[CrateInfo].type]
@@ -217,6 +247,8 @@ def _rust_library_common(ctx, crate_type):
         )
 
     deps = transform_deps(ctx.attr.deps)
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
@@ -269,6 +301,8 @@ def _rust_binary_impl(ctx):
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     crate_root = getattr(ctx.file, "crate_root", None)
@@ -356,6 +390,8 @@ def _rust_test_impl(ctx):
 
     crate_type = "bin"
     deps = transform_deps(ctx.attr.deps)
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     if ctx.attr.crate and ctx.attr.srcs:
@@ -713,14 +749,21 @@ _COMMON_ATTRS = {
     ),
     "deps": attr.label_list(
         doc = dedent("""\
-            List of other libraries to be linked to this library target.
+            List of other Rust libraries to be linked to this library target.
 
-            These can be either other `rust_library` targets or `cc_library` targets if
-            linking a native library.
+            These must be targets that provide `CrateInfo`, such as `rust_library`.
         """),
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
+    ),
+    "link_deps": attr.label_list(
+        doc = dedent("""\
+            List of other native libraries to be linked to this library target.
+
+            These are typically `cc_library` targets.
+        """),
+        providers = [[CcInfo], [rust_common.crate_info]],
     ),
     "lint_config": attr.label(
         doc = "Set of lints to apply when building this crate.",
@@ -1128,7 +1171,7 @@ rust_proc_macro = rule(
     # need to declare `_allowlist_function_transition`, see
     # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
     attrs = dict(
-        _COMMON_ATTRS.items(),
+        {name: value for name, value in _COMMON_ATTRS.items() if name != "link_deps"}.items(),
         _allowlist_function_transition = attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
