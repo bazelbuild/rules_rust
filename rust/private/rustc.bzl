@@ -1592,6 +1592,18 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
+    use_split_debuginfo = cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and ctx.fragments.cpp.fission_active_for_current_compilation_mode()
+    if use_split_debuginfo:
+        rust_flags = rust_flags + [
+            "--codegen=split-debuginfo=unpacked",
+            "--codegen=debuginfo=full",
+        ]
+        fission_directory = crate_info.name + "_fission"
+        if output_hash:
+            fission_directory = fission_directory + "-" + output_hash
+        dwo_outputs = ctx.actions.declare_directory(fission_directory, sibling = crate_info.output)
+        rust_flags.append("-Zsplit-dwarf-out-dir=%s" % dwo_outputs.path)
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1700,6 +1712,9 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
+    if use_split_debuginfo:
+        action_outputs.append(dwo_outputs)
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -1763,15 +1778,19 @@ def rustc_compile_action(
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
 
+    cco_args = {}
     if experimental_use_cc_common_link:
         # Wrap the main `.o` file into a compilation output suitable for
         # cc_common.link. The main `.o` file is useful in both PIC and non-PIC
         # modes.
-        compilation_outputs = cc_common.create_compilation_outputs(
-            objects = depset([output_o]),
-            pic_objects = depset([output_o]),
-        )
-
+        cco_args["objects"] = depset([output_o])
+        cco_args["pic_objects"] = depset([output_o])
+    if use_split_debuginfo:
+        cco_args["dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
+        cco_args["pic_dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
+    compilation_outputs = cc_common.create_compilation_outputs(**cco_args)
+    debug_context = cc_common.create_debug_context(compilation_outputs)
+    if experimental_use_cc_common_link:
         malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
 
         # Collect the linking contexts of the standard library and dependencies.
@@ -1944,7 +1963,7 @@ def rustc_compile_action(
     else:
         providers.extend([crate_info, dep_info])
 
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context)
 
     output_group_info = {}
 
@@ -2077,7 +2096,7 @@ def _add_codegen_units_flags(toolchain, emit, args):
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
-def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
+def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context = None):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
@@ -2156,7 +2175,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     )
 
     cc_infos = [
-        CcInfo(linking_context = linking_context),
+        CcInfo(
+            linking_context = linking_context,
+            debug_context = debug_context,
+        ),
         toolchain.stdlib_linkflags,
     ]
 
