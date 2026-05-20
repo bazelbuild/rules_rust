@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
-load("//:extensions.bzl", "WASM_BINDGEN_VERSION")
+load("//:repositories.bzl", "WASM_BINDGEN_VERSION")
 
 exports_files([
     "BUILD.wasm-bindgen-cli.bazel",
@@ -22,7 +22,7 @@ crates_vendor(
             version = WASM_BINDGEN_VERSION,
         ),
         "wasm-bindgen-test": crate.spec(
-            version = "0.3.55",
+            version = "0.3.71",
         ),
     },
     # Shorten the repository name to avoid MAX_PATH issues on Windows

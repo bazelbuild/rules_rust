@@ -99,9 +99,9 @@ rust_proc_macro(
     }),
     version = "0.1.6",
     deps = [
-        "@rrwbd__proc-macro2-1.0.103//:proc_macro2",
-        "@rrwbd__quote-1.0.41//:quote",
-        "@rrwbd__syn-2.0.108//:syn",
+        "@rrwbd__proc-macro2-1.0.106//:proc_macro2",
+        "@rrwbd__quote-1.0.45//:quote",
+        "@rrwbd__syn-2.0.117//:syn",
         "@rrwbd__synstructure-0.13.2//:synstructure",
     ],
 )
