@@ -626,12 +626,6 @@ RUSTC_ATTRS = {
     "_extra_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_rustc_flags"),
     ),
-    "_is_proc_macro_dep": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep"),
-    ),
-    "_is_proc_macro_dep_enabled": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep_enabled"),
-    ),
     "_per_crate_rustc_flag": attr.label(
         default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
     ),
@@ -1108,40 +1102,10 @@ rust_shared_library = rule(
         """),
 )
 
-def _proc_macro_dep_transition_impl(settings, _attr):
-    if settings["//rust/private:is_proc_macro_dep_enabled"]:
-        return {"//rust/private:is_proc_macro_dep": True}
-    else:
-        return []
-
-_proc_macro_dep_transition = transition(
-    inputs = ["//rust/private:is_proc_macro_dep_enabled"],
-    outputs = ["//rust/private:is_proc_macro_dep"],
-    implementation = _proc_macro_dep_transition_impl,
-)
-
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = COMMON_PROVIDERS,
-    # Start by copying the common attributes, then override the `deps` attribute
-    # to apply `_proc_macro_dep_transition`. To add this transition we additionally
-    # need to declare `_allowlist_function_transition`, see
-    # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
-    attrs = dict(
-        _COMMON_ATTRS.items(),
-        _allowlist_function_transition = attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
-        deps = attr.label_list(
-            doc = dedent("""\
-                List of other libraries to be linked to this library target.
-
-                These can be either other `rust_library` targets or `cc_library` targets if
-                linking a native library.
-            """),
-            cfg = _proc_macro_dep_transition,
-        ),
-    ),
+    attrs = _COMMON_ATTRS,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),

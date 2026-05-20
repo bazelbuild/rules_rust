@@ -101,34 +101,6 @@ PerCrateRustcFlagsInfo = provider(
     fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
 )
 
-IsProcMacroDepInfo = provider(
-    doc = "Records if this is a transitive dependency of a proc-macro.",
-    fields = {"is_proc_macro_dep": "Boolean"},
-)
-
-def _is_proc_macro_dep_impl(ctx):
-    return IsProcMacroDepInfo(is_proc_macro_dep = ctx.build_setting_value)
-
-is_proc_macro_dep = rule(
-    doc = "Records if this is a transitive dependency of a proc-macro.",
-    implementation = _is_proc_macro_dep_impl,
-    build_setting = config.bool(flag = True),
-)
-
-IsProcMacroDepEnabledInfo = provider(
-    doc = "Enables the feature to record if a library is a transitive dependency of a proc-macro.",
-    fields = {"enabled": "Boolean"},
-)
-
-def _is_proc_macro_dep_enabled_impl(ctx):
-    return IsProcMacroDepEnabledInfo(enabled = ctx.build_setting_value)
-
-is_proc_macro_dep_enabled = rule(
-    doc = "Enables the feature to record if a library is a transitive dependency of a proc-macro.",
-    implementation = _is_proc_macro_dep_enabled_impl,
-    build_setting = config.bool(flag = True),
-)
-
 def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
@@ -161,11 +133,6 @@ def _get_rustc_env(attr, toolchain, crate_name):
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
     }
-    if hasattr(attr, "_is_proc_macro_dep_enabled") and attr._is_proc_macro_dep_enabled[IsProcMacroDepEnabledInfo].enabled:
-        is_proc_macro_dep = "0"
-        if hasattr(attr, "_is_proc_macro_dep") and attr._is_proc_macro_dep[IsProcMacroDepInfo].is_proc_macro_dep:
-            is_proc_macro_dep = "1"
-        result["BAZEL_RULES_RUST_IS_PROC_MACRO_DEP"] = is_proc_macro_dep
     return result
 
 def get_compilation_mode_opts(ctx, toolchain):
