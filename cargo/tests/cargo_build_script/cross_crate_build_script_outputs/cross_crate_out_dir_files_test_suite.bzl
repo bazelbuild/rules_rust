@@ -38,11 +38,11 @@ def _transitive_out_dir_subst_test_impl(ctx):
 _transitive_out_dir_subst_test = analysistest.make(
     _transitive_out_dir_subst_test_impl,
     doc = """\
-Test that `--subst` values were used passed which is used to dereference command line
-files that point to the OUT_DIR of a transitive dependency. `--subst` is an implementation
-detail but as build script flags are written to a file, a starlark unit test cannot test this.
-Instead the combination of a successfully built target and the tests here provide sufficient
-regression testing.
+Test that `--subst` values were passed as they are used to dereference command line
+files that point to the OUT_DIR of a transitive cargo_build_script dependencies. `--subst`
+is an implementation detail but as build script flags are written to a file, a starlark
+unit test cannot test this. Instead the combination of a successfully built target and the
+tests here provide sufficient regression testing.
 """,
 )
 
