@@ -1,0 +1,5 @@
+filegroup(
+    name = "css_files",
+    srcs = glob(["theme/css/*.css"]),
+    visibility = ["//visibility:public"],
+)

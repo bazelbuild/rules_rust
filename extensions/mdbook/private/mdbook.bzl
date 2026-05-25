@@ -9,15 +9,32 @@ MdBookInfo = provider(
     },
 )
 
-def _map_inputs(file):
-    dest = file.short_path
-    if dest.startswith("../"):
-        # External repositories have short_paths starting with '../'.
-        # We need them to be staged at 'external/' within our shadow
-        # directory to match how 'file.path' (and thus 'file.dirname')
-        # refers to them.
-        dest = "external/" + dest.removeprefix("../")
+def _flatten_path(file):
+    """Flattens a file's path for staging.
 
+    We want to flatten the directory structure so that files from
+    different packages sit together. We do this by stripping the
+    file's repository and package prefixes.
+
+    Example:
+    file:    test/flattening/content/src/SUMMARY.md
+    package: test/flattening/content
+    result:  src/SUMMARY.md
+    """
+    path = file.short_path
+    if path.startswith("../"):
+        # External repositories: strip '../repo_name/'
+        parts = path.split("/")
+        path = "/".join(parts[2:])
+
+    package = file.owner.package
+    if package and path.startswith(package + "/"):
+        path = path[len(package) + 1:]
+
+    return path
+
+def _map_inputs(file):
+    dest = _flatten_path(file)
     return "{}={}".format(file.path, dest)
 
 def _mdbook_impl(ctx):
@@ -45,7 +62,13 @@ def _mdbook_impl(ctx):
     args.add(output.path)
     args.add(toolchain.mdbook)
     args.add("build")
-    args.add("${{pwd}}/{}".format(ctx.file.book.dirname))
+
+    book_dest = _flatten_path(ctx.file.book)
+    book_dirname = ""
+    if "/" in book_dest:
+        parts = book_dest.split("/")
+        book_dirname = "/" + "/".join(parts[:-1])
+    args.add("${{pwd}}{}".format(book_dirname))
 
     ctx.actions.run(
         mnemonic = "MdBookBuild",
@@ -71,7 +94,19 @@ def _mdbook_impl(ctx):
 
 mdbook = rule(
     implementation = _mdbook_impl,
-    doc = "Rules to create book from markdown files using `mdBook`.",
+    doc = """Rules to create book from markdown files using `mdbook`.
+
+This rule flattens all input files into a single directory structure
+before running `mdbook`. This is necessary because `mdbook` expects
+all source files, themes, and configuration to sit in a standard
+relative layout on disk.
+
+By flattening inputs, this rule allows you to pull the `book.toml`
+from one Bazel package (or external repository) and the sources from
+another, and have them sit as siblings during execution. This means
+your `book.toml` can use standard relative paths (like `src = "src"`)
+regardless of Bazel's internal directory structure.
+""",
     attrs = {
         "book": attr.label(
             doc = "The `book.toml` file.",
@@ -87,7 +122,11 @@ mdbook = rule(
             cfg = "exec",
         ),
         "srcs": attr.label_list(
-            doc = "All inputs to the book.",
+            doc = """All inputs to the book.
+
+These files will be flattened into a single directory structure alongside the
+`book.toml` file. Package and external repository prefixes are stripped.
+""",
             allow_files = True,
         ),
         "_process_wrapper": attr.label(
@@ -117,6 +156,21 @@ def _mdbook_server_impl(ctx):
     args.add("--port={}".format(ctx.attr.port))
 
     workspace_name = ctx.workspace_name
+
+    # Detect if we need to flatten files. We need flattening if any
+    # input comes from a different repository than the book.toml.
+    is_split = False
+    config_repo = book_info.config.owner.workspace_name
+    for f in book_info.srcs.to_list():
+        if f.owner.workspace_name != config_repo:
+            is_split = True
+            break
+
+    if is_split:
+        def _src_map(file):
+            return "--src={}={}".format(_rlocationpath(file, workspace_name), _flatten_path(file))
+
+        args.add_all(book_info.srcs, map_each = _src_map, allow_closure = True)
 
     def _runfile_map(file):
         return "--plugin={}".format(_rlocationpath(file, workspace_name))

@@ -1,5 +1,6 @@
 [book]
 authors = ["Test Author"]
 language = "en"
-src = "../content/src"
+# This path is relative to the workdir root because of path flattening.
+src = "src"
 title = "Local Book Mixed"

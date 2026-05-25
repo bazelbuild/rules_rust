@@ -1,0 +1,35 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "mdbook", "mdbook_server")
+
+package(default_visibility = ["//visibility:public"])
+
+mdbook(
+    name = "flattening",
+    srcs = [
+        "//test/flattening/content:srcs",
+        "//test/flattening/theme:css_files",
+    ],
+    book = "//test/flattening/book:book.toml",
+)
+
+rust_test(
+    name = "flattening_test",
+    srcs = ["flattening_test.rs"],
+    data = [":flattening"],
+    edition = "2021",
+    rustc_env = {
+        "MDBOOK_FLATTENING_OUTPUT": "$(rlocationpath :flattening)",
+    },
+    deps = ["@rules_rust//rust/runfiles"],
+)
+
+mdbook_server(
+    name = "flattening_server",
+    book = ":flattening",
+)
+
+build_test(
+    name = "flattening_build_test",
+    targets = [":flattening"],
+)

@@ -1,5 +1,6 @@
 [book]
 authors = ["Test Author"]
 language = "en"
+# Normal src path, works because srcs and book are in the same package here.
 src = "src"
 title = "External Book"

@@ -1,6 +1,7 @@
 //! A process wrapper for `mdbook serve`.
 
-use std::path::PathBuf;
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
@@ -23,6 +24,8 @@ struct Args {
 
     pub plugins: Vec<PathBuf>,
 
+    pub srcs: Vec<(PathBuf, PathBuf)>,
+
     pub mdbook_args: Vec<String>,
 }
 
@@ -39,6 +42,7 @@ impl Args {
         let mut hostname: Option<String> = None;
         let mut port: Option<String> = None;
         let mut plugins: Vec<PathBuf> = Vec::new();
+        let mut srcs: Vec<(PathBuf, PathBuf)> = Vec::new();
 
         for arg in raw_args {
             if arg.starts_with("--mdbook=") {
@@ -54,6 +58,10 @@ impl Args {
                 hostname = Some(arg.split_once("=").unwrap().1.to_string());
             } else if arg.starts_with("--port=") {
                 port = Some(arg.split_once("=").unwrap().1.to_string());
+            } else if arg.starts_with("--src=") {
+                let val = arg.split_once("=").unwrap().1;
+                let (rloc, dest) = val.split_once("=").unwrap();
+                srcs.push((rlocation!(runfiles, rloc).unwrap(), PathBuf::from(dest)));
             }
         }
 
@@ -63,6 +71,7 @@ impl Args {
             hostname: hostname.unwrap(),
             port: port.unwrap(),
             plugins,
+            srcs,
             mdbook_args: env::args().skip(1).collect(),
         }
     }
@@ -105,10 +114,61 @@ fn make_temp_dir() -> PathBuf {
     panic!("Could not determine how to create temp dir.")
 }
 
+#[cfg(target_family = "unix")]
+fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) {
+    std::os::unix::fs::symlink(src.as_ref(), dst.as_ref()).unwrap_or_else(|e| {
+        panic!(
+            "Failed to create symlink: {} -> {}: {}",
+            src.as_ref().display(),
+            dst.as_ref().display(),
+            e
+        )
+    });
+}
+
+#[cfg(target_family = "windows")]
+fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) {
+    fs::copy(src.as_ref(), dst.as_ref()).unwrap_or_else(|e| {
+        panic!(
+            "Failed to copy file: {} -> {}: {}",
+            src.as_ref().display(),
+            dst.as_ref().display(),
+            e
+        )
+    });
+}
+
+fn stage_files_internal(workdir: &Path, config: &Path, srcs: &BTreeMap<PathBuf, PathBuf>) {
+    symlink(config, workdir.join("book.toml"));
+    for (src, dest) in srcs {
+        let abs_dest = workdir.join(dest);
+        if let Some(parent) = abs_dest.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        symlink(src, abs_dest);
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
     let mut command = Command::new(&args.mdbook);
+
+    let temp_dir = make_temp_dir();
+    let _ = fs::remove_dir_all(&temp_dir);
+    fs::create_dir_all(&temp_dir).unwrap();
+
+    // If we have source mappings, we need to stage the files in a flat directory
+    // so that mdbook can resolve them relative to book.toml.
+    if !args.srcs.is_empty() {
+        let workdir = temp_dir.join("stage");
+        fs::create_dir_all(&workdir).unwrap();
+        stage_files_internal(&workdir, &args.config, &args.srcs.iter().cloned().collect());
+        command.arg("serve").arg(&workdir);
+    } else {
+        // No flattening required, run in-place against the runfiles
+        command.arg("serve").arg(args.config.parent().unwrap());
+    };
 
     // Inject plugin paths into PATH
     let pwd = env::current_dir().expect("Unable to determine current working directory");
@@ -132,10 +192,7 @@ fn main() {
         command.env("PATH", format!("{}{}{}", plugin_path, PATH_SEP, path));
     }
 
-    command
-        .arg("serve")
-        .arg(args.config.parent().unwrap())
-        .args(&args.mdbook_args);
+    command.args(&args.mdbook_args);
 
     // Add default hostname value if commandline was not specified.
     if !args.mdbook_args.iter().any(|arg| {
@@ -155,29 +212,71 @@ fn main() {
         command.args(["--port", &args.port]);
     }
 
-    // Check if `-d` or `--dest-dir` was passed. If not, make a temp dir
-    let temp_dir: Option<PathBuf> = if !args.mdbook_args.iter().any(|a| {
+    // Check if `-d` or `--dest-dir` was passed. If not, make a temp dir for the output
+    if !args.mdbook_args.iter().any(|a| {
         ["-d", "--dest-dir"].contains(&a.as_str())
             || a.starts_with("-d=")
             || a.starts_with("--dest-dir=")
     }) {
-        let temp_dir = make_temp_dir();
-        command.arg("--dest-dir").arg(&temp_dir);
-        Some(temp_dir)
-    } else {
-        None
+        let output_dir = temp_dir.join("output");
+        command.arg("--dest-dir").arg(&output_dir);
     };
 
-    // Run mdbook and save output
+    // Run mdbook
     let status = command
         .status()
         .unwrap_or_else(|e| panic!("Failed to spawn mdbook command\n{:?}\n{:#?}", e, command));
 
-    if let Some(path) = temp_dir {
-        fs::remove_dir_all(&path).unwrap();
-    }
+    // Cleanup
+    fs::remove_dir_all(&temp_dir).unwrap();
 
     if !status.success() {
         std::process::exit(status.code().unwrap_or(1));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_stage_files() {
+        let base = env::temp_dir().join(format!("mdbook_test_{}", std::process::id()));
+        let src_dir = base.join("src_dir");
+        let workdir = base.join("workdir");
+        fs::create_dir_all(&src_dir).unwrap();
+        fs::create_dir_all(&workdir).unwrap();
+
+        let config = src_dir.join("book.toml");
+        fs::write(&config, "title = 'test'").unwrap();
+
+        let file1 = src_dir.join("file1.md");
+        fs::write(&file1, "content1").unwrap();
+
+        let sub_dir = src_dir.join("sub");
+        fs::create_dir_all(&sub_dir).unwrap();
+        let file2 = sub_dir.join("file2.md");
+        fs::write(&file2, "content2").unwrap();
+
+        let mut srcs = BTreeMap::new();
+        srcs.insert(file1.clone(), PathBuf::from("file1.md"));
+        srcs.insert(file2.clone(), PathBuf::from("sub/file2.md"));
+
+        stage_files_internal(&workdir, &config, &srcs);
+
+        assert!(workdir.join("book.toml").exists());
+        assert!(workdir.join("file1.md").exists());
+        assert!(workdir.join("sub/file2.md").exists());
+
+        #[cfg(target_family = "unix")]
+        {
+            assert!(fs::symlink_metadata(workdir.join("file1.md"))
+                .unwrap()
+                .file_type()
+                .is_symlink());
+        }
+
+        fs::remove_dir_all(&base).unwrap();
     }
 }

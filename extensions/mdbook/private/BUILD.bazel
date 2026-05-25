@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
 rust_binary(
     name = "process_wrapper",
@@ -18,6 +18,12 @@ rust_binary(
         "@rules_rust//rust/runfiles",
         "@rules_rust//util/action_args",
     ],
+)
+
+rust_test(
+    name = "server_unit_test",
+    crate = ":server",
+    edition = "2021",
 )
 
 bzl_library(

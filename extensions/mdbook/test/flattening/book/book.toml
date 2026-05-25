@@ -1,0 +1,10 @@
+[book]
+authors = ["Test Author"]
+language = "en"
+# This directory is in a different Bazel package, but sits here after flattening.
+src = "src"
+title = "Flattening Test"
+
+[output.html]
+# This file is also from a different Bazel package.
+additional-css = ["theme/css/custom.css"]

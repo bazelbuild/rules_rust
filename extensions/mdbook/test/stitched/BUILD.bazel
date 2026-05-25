@@ -9,17 +9,35 @@ load("//:defs.bzl", "mdbook")
 # ensures that the relative directory structure of these "stitched"
 # files is preserved in the temporary build directory.
 
+# Rebase a file from a different directory into the book's source
+# directory. This is necessary because mdBook only processes files
+# located under the 'src' directory (as configured in book.toml).
+genrule(
+    name = "rebased",
+    srcs = ["//test/stitched/other_srcs:chapter_2.md"],
+    outs = ["src/chapter_2.md"],
+    cmd = "cp $< $@",
+)
+
+genrule(
+    name = "generated",
+    outs = ["src/chapter_3.md"],
+    cmd = "echo '# Chapter 3\nGenerated source.' > $@",
+)
+
 mdbook(
     name = "stitched",
     srcs = [
         # The main navigation file for the book.
-        "//test/stitched/src:SUMMARY.md",
+        "src/SUMMARY.md",
+        # A source file from the local package.
+        "src/chapter_1.md",
         # A file rebased from a sibling directory into the book's src/
         # directory.
-        "//test/stitched/src:rebased",
-        # A file generated within a subpackage and placed in the
+        ":rebased",
+        # A file generated within the package and placed in the
         # book's src/ directory.
-        "//test/stitched/src:generated",
+        ":generated",
     ],
     book = "book.toml",
 )
