@@ -616,6 +616,62 @@ def _linkopts_test():
         target_under_test = ":linkopts_rust_bin",
     )
 
+def _cc_linkopts_trail_all_native_archives_test_impl(ctx):
+    """cc_library linkopts must trail every native archive -l flag.
+
+    rules_rust re-lists native archives after rlibs (section C). linkopts from
+    the first cc dep must not be emitted beside that dep only; they belong after
+    all archive -l flags.
+    """
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    argv = tut.actions[0].argv
+
+    marker = "--codegen=link-arg=-Llinkopt_trailing_marker"
+    asserts.true(env, marker in argv)
+
+    last_archive_clink = -1
+    for i, arg in enumerate(argv):
+        if arg.startswith("-Clink-arg=-l") and "linkopt_trailing_marker" not in arg:
+            last_archive_clink = i
+
+    marker_idx = argv.index(marker)
+    asserts.true(
+        env,
+        marker_idx > last_archive_clink,
+        msg = "expected -Llinkopt_trailing_marker after the last native -Clink-arg=-l",
+    )
+    return analysistest.end(env)
+
+cc_linkopts_trail_all_native_archives_test = analysistest.make(
+    _cc_linkopts_trail_all_native_archives_test_impl,
+)
+
+def _cc_linkopts_trailing_test():
+    cc_library(
+        name = "trailing_native_dep_a",
+        srcs = ["native_dep.cc"],
+    )
+
+    cc_library(
+        name = "trailing_native_dep_b",
+        srcs = ["native_dep.cc"],
+        linkopts = ["-Llinkopt_trailing_marker"],
+        deps = [":trailing_native_dep_a"],
+    )
+
+    rust_binary(
+        name = "trailing_linkopts_bin",
+        srcs = ["bin_using_native_dep.rs"],
+        edition = "2018",
+        deps = [":trailing_native_dep_b"],
+    )
+
+    cc_linkopts_trail_all_native_archives_test(
+        name = "cc_linkopts_trail_all_native_archives_test",
+        target_under_test = ":trailing_linkopts_bin",
+    )
+
 def _check_additional_deps_test_impl(ctx, expect_additional_deps):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -685,6 +741,7 @@ def native_deps_test_suite(name):
     """
     _native_dep_test()
     _linkopts_test()
+    _cc_linkopts_trailing_test()
     _additional_deps_test()
 
     native.test_suite(
@@ -694,6 +751,7 @@ def native_deps_test_suite(name):
             ":bin_has_native_dep_and_alwayslink_rust_linker_test",
             ":bin_has_native_dep_and_alwayslink_cc_linker_test",
             ":bin_has_native_libs_test",
+            ":cc_linkopts_trail_all_native_archives_test",
             ":cdylib_has_additional_deps_test",
             ":cdylib_has_native_dep_and_alwayslink_rust_linker_test",
             ":cdylib_has_native_dep_and_alwayslink_cc_linker_test",

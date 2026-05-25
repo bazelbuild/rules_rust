@@ -2472,8 +2472,19 @@ def portable_link_flags(
 
     return []
 
-def _add_user_link_flags(ret, linker_input):
-    ret.extend(["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags])
+def _add_user_link_flags(make_link_flags_args):
+    linker_input = make_link_flags_args[0]
+    return ["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags]
+
+def _add_user_link_flags_windows(make_link_flags_args):
+    # Windows toolchains can inherit POSIX defaults like -pthread from C deps,
+    # which fails to link with the MinGW/LLD toolchain. Drop them here.
+    linker_input = make_link_flags_args[0]
+    return [
+        "--codegen=link-arg={}".format(flag)
+        for flag in linker_input.user_link_flags
+        if flag not in ("-pthread", "-lpthread")
+    ]
 
 def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
@@ -2493,12 +2504,6 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
             get_lib_name = get_lib_name_for_windows if flavor_msvc else get_lib_name_default
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, flavor_msvc = flavor_msvc))
 
-    # Windows toolchains can inherit POSIX defaults like -pthread from C deps,
-    # which fails to link with the MinGW/LLD toolchain. Drop them here.
-    for flag in linker_input.user_link_flags:
-        if flag in ("-pthread", "-lpthread"):
-            continue
-        ret.append("--codegen=link-arg={}".format(flag))
     return ret
 
 def _make_link_flags_windows_msvc(make_link_flags_args, use_direct_driver):
@@ -2519,7 +2524,6 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
             ])
         elif include_link_flags:
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
-    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_default(make_link_flags_args, use_direct_driver):
@@ -2535,7 +2539,6 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
             ])
         elif include_link_flags:
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
-    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_default_indirect(make_link_flags_args):
@@ -2576,8 +2579,10 @@ def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
         tuple:
             - callable: The function for producing link args.
             - callable: The function for formatting link library names.
+            - callable: The function for emitting cc_library user_link_flags.
     """
     get_lib_name = get_lib_name_default
+    add_user_link_flags = _add_user_link_flags
 
     if target_os == "windows":
         if target_abi == "msvc":
@@ -2585,12 +2590,13 @@ def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
             get_lib_name = get_lib_name_for_windows
         else:
             make_link_flags = _make_link_flags_windows_gnu_direct if use_direct_link_driver else _make_link_flags_windows_gnu_indirect
+        add_user_link_flags = _add_user_link_flags_windows
     elif target_os.startswith(("mac", "darwin", "ios")):
         make_link_flags = _make_link_flags_darwin_direct if use_direct_link_driver else _make_link_flags_darwin_indirect
     else:
         make_link_flags = _make_link_flags_default_direct if use_direct_link_driver else _make_link_flags_default_indirect
 
-    return (make_link_flags, get_lib_name)
+    return (make_link_flags, get_lib_name, add_user_link_flags)
 
 def _libraries_dirnames(make_link_flags_args):
     link_input, use_pic, _, _ = make_link_flags_args
@@ -2636,7 +2642,7 @@ def _add_native_link_flags(
         toolchain = toolchain,
     )
 
-    make_link_flags, get_lib_name = _get_make_link_flag_funcs(
+    make_link_flags, get_lib_name, add_user_link_flags = _get_make_link_flag_funcs(
         target_os = toolchain.target_os,
         target_abi = toolchain.target_abi,
         use_direct_link_driver = use_direct_link_driver,
@@ -2660,6 +2666,7 @@ def _add_native_link_flags(
         )
 
     args.add_all(make_link_flags_args, map_each = make_link_flags)
+    args.add_all(make_link_flags_args, map_each = add_user_link_flags)
 
     args.add_all(linkstamp_outs, format_each = "-Clink-args=%s")
 

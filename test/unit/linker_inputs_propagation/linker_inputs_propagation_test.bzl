@@ -26,17 +26,23 @@ def _dependency_linkopts_are_propagated_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     link_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
+    argv = link_action.argv
 
     pic_suffix = _get_pic_suffix(ctx)
 
     # Expect a library's own linkopts to come after the flags we create to link them.
     # This is required, because linkopts are ordered and the linker will only apply later ones when resolving symbols required for earlier ones.
     # This means that if one of our transitive deps has a linkopt like `-lfoo`, the dep will see the symbols of foo at link time.
-    _assert_contains_in_order(env, link_action.argv, [
+    lfoo = "-Clink-arg=-lfoo_with_linkopts{}".format(pic_suffix)
+    _assert_contains_in_order(env, argv, [
         "-lstatic=foo_with_linkopts{}".format(pic_suffix),
-        "-Clink-arg=-lfoo_with_linkopts{}".format(pic_suffix),
-        "--codegen=link-arg=-L/doesnotexist",
+        lfoo,
     ])
+
+    # cc_library linkopts trail every native archive -l flag (not inline beside the first dep).
+    linkopt = "--codegen=link-arg=-L/doesnotexist"
+    asserts.true(env, linkopt in argv)
+    asserts.true(env, argv.index(linkopt) > argv.index(lfoo))
     return analysistest.end(env)
 
 def _get_pic_suffix(ctx):
