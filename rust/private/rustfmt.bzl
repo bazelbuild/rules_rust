@@ -86,6 +86,7 @@ def _perform_check(edition, srcs, ctx):
     args.add(rustfmt_toolchain.rustfmt)
     args.add("--config-path", config)
     args.add("--edition", edition)
+    args.add("--config", "skip_children=true")
     args.add("--check")
     args.add_all(srcs)
 
