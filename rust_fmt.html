@@ -178,11 +178,6 @@ impact user's ability to rapidly iterate on changes.</p>
 file is used whenever <code>rustfmt</code> is run:</p>
 <pre><code class="language-text">build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 </code></pre>
-<h3 id="tips"><a class="header" href="#tips">Tips</a></h3>
-<p>Any target which uses Bazel generated sources will cause the <code>@rules_rust//tools/rustfmt</code> tool to fail with
-<code>failed to resolve mod `MOD` </code>. To avoid failures, <a href="https://rust-lang.github.io/rustfmt/?version=v1.6.0&amp;search=skip_chil#skip_children"><code>skip_children = true</code></a>
-is recommended to be set in the workspace's <code>rustfmt.toml</code> file which allows rustfmt to run on these targets
-without failing.</p>
 <h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
 <ul>
 <li><a href="#rustfmt_test">rustfmt_test</a></li>
