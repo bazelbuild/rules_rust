@@ -50,7 +50,6 @@ load(
     "find_toolchain",
     "generate_output_diagnostics",
     "get_edition",
-    "get_import_macro_deps",
     "transform_deps",
     "transform_sources",
 )
@@ -217,7 +216,7 @@ def _rust_library_common(ctx, crate_type):
         )
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -269,7 +268,7 @@ def _rust_binary_impl(ctx):
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
@@ -356,7 +355,7 @@ def _rust_test_impl(ctx):
 
     crate_type = "bin"
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
