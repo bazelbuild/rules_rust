@@ -197,7 +197,7 @@ def _prefix_pwd_to_flag(args, flag_variations):
 
             # Check for concatenated form (flag with path)
             if arg.startswith(flag):
-                path = arg[len(flag):]
+                path = arg[len(flag):].strip()
 
                 # Don't prefix absolute paths
                 if paths.is_absolute(path):
@@ -208,8 +208,8 @@ def _prefix_pwd_to_flag(args, flag_variations):
                 break
 
             # Check for space-separated form (only for flags without '=' or ':')
-            if not flag.endswith("=") and not flag.endswith(":") and prefix_next_arg and not paths.is_absolute(arg):
-                res.append("${{pwd}}/{}".format(arg))
+            if not flag.endswith("=") and not flag.endswith(":") and prefix_next_arg and not paths.is_absolute(arg.strip()):
+                res.append("${{pwd}}/{}".format(arg.strip()))
                 handled = True
                 break
 
@@ -233,6 +233,7 @@ def _prefix_pwd_to_paths(args):
     """
     res = []
     for path in args:
+        path = path.strip()
         if not paths.is_absolute(path):
             res.append("${{pwd}}/{}".format(path))
         else:
