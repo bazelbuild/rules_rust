@@ -360,10 +360,13 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, materializing retained entries as real files.
     ///
-    /// Handles both symlinks and real files (merged metadata files are real files).
-    /// Skips entries whose destination was already processed (from runfiles collisions).
+    /// Removes every entry created by [`Self::create_runfiles_dir`] (symlinks, plus the
+    /// real files produced by merged metadata). For entries whose destination matches a
+    /// user-defined suffix, the source is then copied into place so the file survives
+    /// after the runfiles tree is gone. Skips entries whose destination was already
+    /// processed (from runfiles collisions).
     fn drain_runfiles_dir_unix(&self) -> Result<(), String> {
         let mut processed: HashSet<String> = HashSet::new();
 
@@ -437,10 +440,11 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, leaving retained entries in place.
     ///
-    /// The Windows implementation assumes symlinks are not supported and real files will have
-    /// been copied into the runfiles directory.
+    /// The Windows implementation assumes symlinks are not supported and real files will
+    /// have been copied into the runfiles directory by [`Self::create_runfiles_dir`], so
+    /// retained entries need no further work — only the non-retained entries are deleted.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
         let mut processed: HashSet<String> = HashSet::new();
 
@@ -467,7 +471,8 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, keeping only entries whose destination matches
+    /// a user-defined suffix. Retained entries are left as real files in `out_dir`.
     pub fn drain_runfiles_dir(&self, out_dir: &Path) -> Result<(), String> {
         if cfg!(target_family = "windows") {
             // If symlinks are supported then symlinks will have been used.
