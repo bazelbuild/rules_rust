@@ -33,7 +33,6 @@ UNPRETTY_MODES = [
     "hir,identified",
     "hir,typed",
     "hir",
-    "identified",
     "mir-cfg",
     "mir",
     "normal",
