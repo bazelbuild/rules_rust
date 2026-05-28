@@ -1,5 +1,5 @@
 {
-  "checksum": "ded8c1f98bcf2356f8a61256a0ba8b8754ad710f1c27e19effa245fad6542b12",
+  "checksum": "cf9adbec301e9771fb30e0941ba002aaaa775eb53c00a16e5f4d7614d6a1757a",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -129,8 +129,21 @@
       "version": "0.1.0",
       "package_url": null,
       "repository": null,
-      "targets": [],
-      "library_target_name": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "conditional_deps",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "conditional_deps",
       "common_attrs": {
         "compile_data_glob": [
           "**"

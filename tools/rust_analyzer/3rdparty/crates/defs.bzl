@@ -9,6 +9,7 @@
 # `crates_repository` API
 
 - [aliases](#aliases)
+- [crate_edition](#crate_edition)
 - [crate_deps](#crate_deps)
 - [all_crate_deps](#all_crate_deps)
 - [crate_repositories](#crate_repositories)
@@ -135,6 +136,24 @@ def crate_deps(deps, package_name = None):
         ))
 
     return crate_targets
+
+def crate_edition(package_name = None):
+    """Finds the Rust edition for the package where this macro is called.
+
+    Args:
+        package_name (str, optional): The package name whose edition should be
+            looked up. Defaults to `native.package_name()` when unset.
+
+    Returns:
+        str: The Rust edition declared by the package's Cargo.toml file.
+    """
+    if package_name == None:
+        package_name = native.package_name()
+
+    if package_name not in _CRATE_EDITIONS:
+        fail("Tried to get crate_edition for package " + package_name + " but that package had no Cargo.toml file")
+
+    return _CRATE_EDITIONS[package_name]
 
 def all_crate_deps(
         normal = False,
@@ -289,8 +308,12 @@ def aliases(
     return select(crate_aliases)
 
 ###############################################################################
-# WORKSPACE MEMBER DEPS AND ALIASES
+# WORKSPACE MEMBER DEPS, ALIASES, AND EDITIONS
 ###############################################################################
+
+_CRATE_EDITIONS = {
+    "tools/rust_analyzer/3rdparty": "2024",
+}
 
 _NORMAL_DEPENDENCIES = {
     "tools/rust_analyzer/3rdparty": {
@@ -374,6 +397,7 @@ _CONDITIONS = {
     "aarch64-unknown-fuchsia": ["@rules_rust//rust/platform:aarch64-unknown-fuchsia"],
     "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu"],
     "aarch64-unknown-nixos-gnu": ["@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
+    "aarch64-unknown-none": ["@rules_rust//rust/platform:aarch64-unknown-none"],
     "aarch64-unknown-nto-qnx710": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
     "aarch64-unknown-uefi": ["@rules_rust//rust/platform:aarch64-unknown-uefi"],
     "arm-unknown-linux-gnueabi": ["@rules_rust//rust/platform:arm-unknown-linux-gnueabi"],
@@ -388,15 +412,23 @@ _CONDITIONS = {
     "i686-pc-windows-msvc": ["@rules_rust//rust/platform:i686-pc-windows-msvc"],
     "i686-unknown-freebsd": ["@rules_rust//rust/platform:i686-unknown-freebsd"],
     "i686-unknown-linux-gnu": ["@rules_rust//rust/platform:i686-unknown-linux-gnu"],
+    "loongarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:loongarch64-unknown-linux-gnu"],
+    "mips-unknown-linux-gnu": ["@rules_rust//rust/platform:mips-unknown-linux-gnu"],
     "powerpc-unknown-linux-gnu": ["@rules_rust//rust/platform:powerpc-unknown-linux-gnu"],
+    "riscv32imac-unknown-none-elf": ["@rules_rust//rust/platform:riscv32imac-unknown-none-elf"],
     "riscv32imc-unknown-none-elf": ["@rules_rust//rust/platform:riscv32imc-unknown-none-elf"],
     "riscv64gc-unknown-linux-gnu": ["@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu"],
     "riscv64gc-unknown-none-elf": ["@rules_rust//rust/platform:riscv64gc-unknown-none-elf"],
     "s390x-unknown-linux-gnu": ["@rules_rust//rust/platform:s390x-unknown-linux-gnu"],
+    "sparc64-unknown-linux-gnu": ["@rules_rust//rust/platform:sparc64-unknown-linux-gnu"],
+    "sparc64-unknown-netbsd": ["@rules_rust//rust/platform:sparc64-unknown-netbsd"],
+    "sparc64-unknown-openbsd": ["@rules_rust//rust/platform:sparc64-unknown-openbsd"],
     "thumbv6m-none-eabi": ["@rules_rust//rust/platform:thumbv6m-none-eabi"],
     "thumbv7em-none-eabi": ["@rules_rust//rust/platform:thumbv7em-none-eabi"],
     "thumbv7em-none-eabihf": ["@rules_rust//rust/platform:thumbv7em-none-eabihf"],
+    "thumbv7m-none-eabi": ["@rules_rust//rust/platform:thumbv7m-none-eabi"],
     "thumbv8m.main-none-eabi": ["@rules_rust//rust/platform:thumbv8m.main-none-eabi"],
+    "thumbv8m.main-none-eabihf": ["@rules_rust//rust/platform:thumbv8m.main-none-eabihf"],
     "wasm32-unknown-emscripten": ["@rules_rust//rust/platform:wasm32-unknown-emscripten"],
     "wasm32-unknown-unknown": ["@rules_rust//rust/platform:wasm32-unknown-unknown"],
     "wasm32-wasip1": ["@rules_rust//rust/platform:wasm32-wasip1"],
