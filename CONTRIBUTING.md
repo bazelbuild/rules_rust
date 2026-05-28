@@ -1,4 +1,4 @@
-Want to contribute? Great! First, read this page (including the small print at the end).
+Want to contribute? Great! First, read this page.
 
 ## Before you contribute
 **Before we can use your code, you must sign the
@@ -16,6 +16,10 @@ approved it, but you must do it before we can put your code into our codebase.
 Before you start working on a larger contribution, you should get in touch
 with us first. Use the issue tracker to explain your idea so we can help and
 possibly guide you.
+
+**Contributions made by corporations are covered by a different agreement than
+the one above, the
+[Software Grant and Corporate Contributor License Agreement](https://cla.developers.google.com/about/google-corporate).**
 
 ## Code Reviews and Contributing PRs
 **All submissions, including submissions by project members, require review.**
@@ -63,7 +67,3 @@ A PR should contain tests for the change where feasible.
 ### Stale PRs and Issues
 PRs and issues that are in awaiting-response state for more than 90 days will be closed as inactive.
 
-## The small print
-Contributions made by corporations are covered by a different agreement than
-the one above, the
-[Software Grant and Corporate Contributor License Agreement](https://cla.developers.google.com/about/google-corporate).
