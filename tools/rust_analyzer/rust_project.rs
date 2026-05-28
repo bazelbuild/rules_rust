@@ -301,7 +301,7 @@ pub fn assemble_rust_project(
             {
                 log::trace!(
                     "Skipped crate {} because missing deps: {:?}",
-                    &c.crate_id,
+                    c.crate_id,
                     c.deps
                         .iter()
                         .filter(|dep| !merged_crates_index.contains_key(*dep))
@@ -310,7 +310,7 @@ pub fn assemble_rust_project(
                 );
                 skipped_crates.push(c);
             } else {
-                log::trace!("Merging crate {}", &c.crate_id);
+                log::trace!("Merging crate {}", c.crate_id);
                 merged_crates_index.insert(c.crate_id.clone(), project.crates.len());
 
                 let target_kind = match c.crate_type {

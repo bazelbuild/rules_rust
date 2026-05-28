@@ -31,7 +31,7 @@ impl Greeter {
     /// let greeting = greeter.greeting("World");
     /// ```
     pub fn greeting(&self, thing: &str) -> String {
-        format!("{} {}", &self.greeting, thing)
+        format!("{} {}", self.greeting, thing)
     }
 
     /// Prints the greeting.
@@ -45,7 +45,7 @@ impl Greeter {
     /// greeter.greet("World");
     /// ```
     pub fn greet(&self, thing: &str) {
-        println!("{} {}", &self.greeting, thing);
+        println!("{} {}", self.greeting, thing);
     }
 }
 

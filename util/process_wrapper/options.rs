@@ -310,7 +310,7 @@ fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
         let mut lines = read_file_to_array(path).map_err(|err| {
             OptionError::Generic(format!(
                 "{} while processing args from file paths: {:?}",
-                err, &paths
+                err, paths
             ))
         })?;
         args.append(&mut lines);
