@@ -197,16 +197,11 @@ def cargo_build_script(
         **script_kwargs
     )
 
-    # Because the build script is expected to be run on the exec host, the
-    # script above needs to be in the exec configuration but the script may
-    # need data files that are in the target configuration. This rule wraps
-    # the script above so the `cfg=exec` target can be run without issue in
-    # a `cfg=target` environment. More details can be found on the rule.
+    # This rule creates a runfiles tree from data files. The script binary
+    # is passed directly to _build_script_run via its script attribute.
     cargo_build_script_runfiles(
         name = name + "-",
-        script = ":{}_".format(name),
         data = data,
-        tools = tools,
         tags = binary_tags,
         **wrapper_kwargs
     )
@@ -221,7 +216,10 @@ def cargo_build_script(
     # This target executes the build script.
     _build_script_run(
         name = name,
-        script = ":{}-".format(name),
+        script = ":{}_".format(name),
+        data_runfiles = ":{}-".format(name),
+        data = data,
+        tools = tools,
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,

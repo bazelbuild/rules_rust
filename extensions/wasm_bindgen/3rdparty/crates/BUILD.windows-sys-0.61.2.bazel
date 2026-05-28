@@ -37,8 +37,11 @@ rust_library(
     crate_features = [
         "Win32",
         "Win32_Foundation",
+        "Win32_Security",
         "Win32_Storage",
         "Win32_Storage_FileSystem",
+        "Win32_System",
+        "Win32_System_Console",
         "default",
     ],
     crate_root = "src/lib.rs",
