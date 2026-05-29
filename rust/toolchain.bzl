@@ -23,6 +23,7 @@ load(
     _current_rustfmt_toolchain = "current_rustfmt_toolchain",
     _rustfmt_toolchain = "rustfmt_toolchain",
 )
+load("//rust/private:semver.bzl", "semver")
 load(
     "//rust/private:utils.bzl",
     "deduplicate",
@@ -370,6 +371,18 @@ def _experimental_use_cc_common_link(ctx):
 def _require_explicit_unstable_features(ctx):
     return ctx.attr.require_explicit_unstable_features[BuildSettingInfo].value
 
+_DIGITS = "0123456789"
+
+def _is_semver_string(version):
+    """Whether `version` looks like a `MAJOR.MINOR.PATCH[-pre][+build]` semver string.
+
+    The `rust_toolchain.version` attribute also accepts channel labels like
+    `"nightly"` or `"beta"` (and is sometimes the empty string), neither of
+    which are valid input for `semver()`. This filter exists so we can populate
+    `version_semver` opportunistically.
+    """
+    return version != "" and version[0] in _DIGITS
+
 def _expand_flags(ctx, attr_name, targets, make_variables):
     targets = deduplicate(targets)
     expanded_flags = []
@@ -584,6 +597,11 @@ def _rust_toolchain_impl(ctx):
     if cc_toolchain and cc_toolchain.all_files:
         all_files_depsets.append(cc_toolchain.all_files)
 
+    # Parse the version string once so downstream rules can branch on the
+    # semver components without re-parsing. `None` for empty or non-semver
+    # values (e.g. unset, or channel labels like "nightly" without a version).
+    version_semver = semver(ctx.attr.version) if _is_semver_string(ctx.attr.version) else None
+
     toolchain = platform_common.ToolchainInfo(
         all_files = depset(transitive = all_files_depsets),
         binary_ext = ctx.attr.binary_ext,
@@ -633,6 +651,7 @@ def _rust_toolchain_impl(ctx):
         target_abi = target_abi,
         target_triple = target_triple,
         version = ctx.attr.version,
+        version_semver = version_semver,
         require_explicit_unstable_features = _require_explicit_unstable_features(ctx),
 
         # Experimental and incompatible flags
