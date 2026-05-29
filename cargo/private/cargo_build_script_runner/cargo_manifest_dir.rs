@@ -1,6 +1,6 @@
 //! Bazel interactions with `CARGO_MANIFEST_DIR`.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 pub type RlocationPath = String;
@@ -164,6 +164,93 @@ impl RunfilesMaker {
         }
     }
 
+    fn is_mergeable_metadata(rlocation_path: &str) -> bool {
+        rlocation_path.ends_with("/_repo_mapping")
+            || rlocation_path == "_repo_mapping"
+            || rlocation_path.ends_with("/MANIFEST")
+            || rlocation_path == "MANIFEST"
+    }
+
+    fn merge_metadata_file(existing: &Path, new_source: &Path) -> Result<(), String> {
+        let existing_content = if existing.is_symlink() {
+            let target = std::fs::read_link(existing).map_err(|e| {
+                format!(
+                    "Failed to read symlink '{}' with {:?}",
+                    existing.display(),
+                    e
+                )
+            })?;
+            std::fs::read(&target).map_err(|e| {
+                format!(
+                    "Failed to read symlink target '{}' with {:?}",
+                    target.display(),
+                    e
+                )
+            })?
+        } else {
+            std::fs::read(existing)
+                .map_err(|e| format!("Failed to read file '{}' with {:?}", existing.display(), e))?
+        };
+
+        let new_content = std::fs::read(new_source).map_err(|e| {
+            format!(
+                "Failed to read file '{}' with {:?}",
+                new_source.display(),
+                e
+            )
+        })?;
+
+        if existing_content == new_content {
+            return Ok(());
+        }
+
+        let existing_str = String::from_utf8(existing_content)
+            .map_err(|e| format!("Failed to parse '{}' as UTF-8: {:?}", existing.display(), e))?;
+        let new_str = String::from_utf8(new_content).map_err(|e| {
+            format!(
+                "Failed to parse '{}' as UTF-8: {:?}",
+                new_source.display(),
+                e
+            )
+        })?;
+
+        let mut merged_lines: Vec<String> = Vec::new();
+        let mut seen: HashSet<String> = HashSet::new();
+        for line in existing_str.lines().chain(new_str.lines()) {
+            if seen.insert(line.to_string()) {
+                merged_lines.push(line.to_string());
+            }
+        }
+
+        if existing.is_symlink() {
+            remove_symlink(existing).map_err(|e| {
+                format!(
+                    "Failed to remove symlink '{}' with {:?}",
+                    existing.display(),
+                    e
+                )
+            })?;
+        } else {
+            std::fs::remove_file(existing).map_err(|e| {
+                format!(
+                    "Failed to remove file '{}' with {:?}",
+                    existing.display(),
+                    e
+                )
+            })?;
+        }
+
+        std::fs::write(existing, merged_lines.join("\n")).map_err(|e| {
+            format!(
+                "Failed to write merged metadata to '{}' with {:?}",
+                existing.display(),
+                e
+            )
+        })?;
+
+        Ok(())
+    }
+
     /// Create a runfiles directory.
     #[cfg(target_family = "unix")]
     pub fn create_runfiles_dir(&self) -> Result<(), String> {
@@ -185,14 +272,22 @@ impl RunfilesMaker {
 
             let abs_src = std::env::current_dir().unwrap().join(src);
 
-            symlink(&abs_src, &abs_dest).map_err(|e| {
-                format!(
-                    "Failed to link `{} -> {}` with {:?}",
-                    abs_src.display(),
-                    abs_dest.display(),
-                    e
-                )
-            })?;
+            match symlink(&abs_src, &abs_dest) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                    if Self::is_mergeable_metadata(dest) {
+                        Self::merge_metadata_file(&abs_dest, &abs_src)?;
+                    }
+                }
+                Err(e) => {
+                    return Err(format!(
+                        "Failed to link `{} -> {}` with {:?}",
+                        abs_src.display(),
+                        abs_dest.display(),
+                        e
+                    ));
+                }
+            }
         }
 
         Ok(())
@@ -231,14 +326,26 @@ impl RunfilesMaker {
             if supports_symlinks {
                 let abs_src = std::env::current_dir().unwrap().join(src);
 
-                symlink(&abs_src, &abs_dest).map_err(|e| {
-                    format!(
-                        "Failed to link `{} -> {}` with {:?}",
-                        abs_src.display(),
-                        abs_dest.display(),
-                        e
-                    )
-                })?;
+                match symlink(&abs_src, &abs_dest) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                        if Self::is_mergeable_metadata(dest) {
+                            Self::merge_metadata_file(&abs_dest, &abs_src)?;
+                        }
+                    }
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to link `{} -> {}` with {:?}",
+                            abs_src.display(),
+                            abs_dest.display(),
+                            e
+                        ));
+                    }
+                }
+            } else if abs_dest.exists() {
+                if Self::is_mergeable_metadata(dest) {
+                    Self::merge_metadata_file(&abs_dest, src)?;
+                }
             } else {
                 std::fs::copy(src, &abs_dest).map_err(|e| {
                     format!(
@@ -253,21 +360,44 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, materializing retained entries as real files.
     ///
-    /// The Unix implementation assumes symlinks are supported and that the runfiles directory
-    /// was created using symlinks.
+    /// Removes every entry created by [`Self::create_runfiles_dir`] (symlinks, plus the
+    /// real files produced by merged metadata). For entries whose destination matches a
+    /// user-defined suffix, the source is then copied into place so the file survives
+    /// after the runfiles tree is gone. Skips entries whose destination was already
+    /// processed (from runfiles collisions).
     fn drain_runfiles_dir_unix(&self) -> Result<(), String> {
+        let mut processed: HashSet<String> = HashSet::new();
+
         for (src, dest) in &self.runfiles {
+            if !processed.insert(dest.clone()) {
+                continue;
+            }
+
             let abs_dest = self.output_dir.join(dest);
 
-            remove_symlink(&abs_dest).map_err(|e| {
-                format!(
-                    "Failed to delete symlink '{}' with {:?}",
-                    abs_dest.display(),
-                    e
-                )
-            })?;
+            if !abs_dest.exists() && !abs_dest.is_symlink() {
+                continue;
+            }
+
+            if abs_dest.is_symlink() {
+                remove_symlink(&abs_dest).map_err(|e| {
+                    format!(
+                        "Failed to delete symlink '{}' with {:?}",
+                        abs_dest.display(),
+                        e
+                    )
+                })?;
+            } else {
+                std::fs::remove_file(&abs_dest).map_err(|e| {
+                    format!(
+                        "Failed to delete file '{}' with {:?}",
+                        abs_dest.display(),
+                        e
+                    )
+                })?;
+            }
 
             if !self
                 .filename_suffixes_to_retain
@@ -310,12 +440,19 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, leaving retained entries in place.
     ///
-    /// The Windows implementation assumes symlinks are not supported and real files will have
-    /// been copied into the runfiles directory.
+    /// The Windows implementation assumes symlinks are not supported and real files will
+    /// have been copied into the runfiles directory by [`Self::create_runfiles_dir`], so
+    /// retained entries need no further work — only the non-retained entries are deleted.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
+        let mut processed: HashSet<String> = HashSet::new();
+
         for dest in self.runfiles.values() {
+            if !processed.insert(dest.clone()) {
+                continue;
+            }
+
             if !self
                 .filename_suffixes_to_retain
                 .iter()
@@ -325,14 +462,17 @@ impl RunfilesMaker {
             }
 
             let abs_dest = self.output_dir.join(dest);
-            std::fs::remove_file(&abs_dest).map_err(|e| {
-                format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
-            })?;
+            if abs_dest.exists() {
+                std::fs::remove_file(&abs_dest).map_err(|e| {
+                    format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
+                })?;
+            }
         }
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Tear down the runfiles directory, keeping only entries whose destination matches
+    /// a user-defined suffix. Retained entries are left as real files in `out_dir`.
     pub fn drain_runfiles_dir(&self, out_dir: &Path) -> Result<(), String> {
         if cfg!(target_family = "windows") {
             // If symlinks are supported then symlinks will have been used.

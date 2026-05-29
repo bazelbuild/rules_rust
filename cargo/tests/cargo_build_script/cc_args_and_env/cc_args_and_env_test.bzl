@@ -519,8 +519,8 @@ def include_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
         extra_include_paths = select({
-            "@platforms//os:windows": "test/relative/include;another/relative/path",
-            "//conditions:default": "test/relative/include:another/relative/path",
+            "@platforms//os:windows": "test/relative/include; another/relative/path",
+            "//conditions:default": "test/relative/include: another/relative/path",
         }),
     )
     cc_args_and_env_analysis_test(

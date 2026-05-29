@@ -38,6 +38,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "libm",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -103,6 +106,7 @@ rust_library(
     }),
     version = "0.2.19",
     deps = [
+        "@rrwbd__libm-0.2.16//:libm",
         "@rrwbd__num-traits-0.2.19//:build_script_build",
     ],
 )
@@ -126,6 +130,9 @@ cargo_build_script(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "libm",
+    ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(

@@ -102,15 +102,6 @@ def third_party_dir():
         build_setting_default = str(Label("//third_party/rust")),
     )
 
-def use_real_import_macro():
-    """A flag to control whether rust_library and rust_binary targets should \
-    implicitly depend on the *real* import macro, or on a no-op target.
-    """
-    bool_flag(
-        name = "use_real_import_macro",
-        build_setting_default = False,
-    )
-
 def pipelined_compilation():
     """When set, this flag causes rustc to emit `*.rmeta` files and use them for `rlib -> rlib` dependencies.
 

@@ -40,7 +40,6 @@ load(
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
     "unpretty",
-    "use_real_import_macro",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -138,5 +137,3 @@ toolchain_generated_sysroot()
 toolchain_linker_preference()
 
 unpretty()
-
-use_real_import_macro()

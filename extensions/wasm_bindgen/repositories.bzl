@@ -17,7 +17,7 @@
 load("//3rdparty/crates:crates.bzl", "crate_repositories")
 load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
 
-WASM_BINDGEN_VERSION = "0.2.105"
+WASM_BINDGEN_VERSION = "0.2.121"
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_dependencies():

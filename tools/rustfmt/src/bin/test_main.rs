@@ -29,6 +29,8 @@ fn run_rustfmt(options: &Config) {
             .arg(&manifest.edition)
             .arg("--config-path")
             .arg(&options.rustfmt_config.config)
+            .arg("--config")
+            .arg("skip_children=true")
             .args(&manifest.sources)
             .status()
             .expect("Failed to run rustfmt");
