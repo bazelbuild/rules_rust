@@ -305,9 +305,8 @@ impl LockfileAnnotation {
                                             new_path.push(relative_lockfile_path);
                                         } else {
                                             // If path in lockfile is not under Bazel root, we are
-                                            // likely in a temporary directory, so rebase to Bazel
-                                            // root.
-                                            new_path.push(nonhermetic_root_bazel_workspace_dir);
+                                            // likely in a temporary directory, so use
+                                            // workspace_prefix to get the workspace-relative path.
                                             if let Some(prefix) =
                                                 workspace_metadata.workspace_prefix.as_ref()
                                             {
@@ -318,7 +317,31 @@ impl LockfileAnnotation {
                                     new_path.push(suffix);
                                     new_path
                                 }
-                                Err(_) => Utf8PathBuf::from(path_in_lockfile),
+                                Err(_) => {
+                                    // The path dep is outside the Cargo workspace root
+                                    // (e.g. an external path dep). When we nest the
+                                    // workspace at its repo-relative depth inside the
+                                    // temp dir, external deps are also at their correct
+                                    // repo-relative positions. Compute the temp dir root
+                                    // by stripping workspace_prefix from workspace_root,
+                                    // then rebase the path to the real Bazel workspace.
+                                    let temp_dir_root = workspace_metadata
+                                        .workspace_prefix
+                                        .as_ref()
+                                        .and_then(|prefix| {
+                                            metadata
+                                                .workspace_root
+                                                .as_str()
+                                                .strip_suffix(prefix.as_str())
+                                        });
+                                    if let Some(repo_relative) = temp_dir_root.and_then(|root| {
+                                        Utf8Path::new(path_in_lockfile).strip_prefix(root).ok()
+                                    }) {
+                                        Utf8PathBuf::from(repo_relative)
+                                    } else {
+                                        Utf8PathBuf::from(path_in_lockfile)
+                                    }
+                                }
                             };
                             return Ok(SourceAnnotation::Path { path });
                         }

@@ -91,7 +91,11 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         Some(dir) => dir.clone(),
         None => {
             temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
-            Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
+            let canonical = temp_dir
+                .path()
+                .canonicalize()
+                .unwrap_or_else(|_| temp_dir.path().to_path_buf());
+            Utf8PathBuf::from_path_buf(canonical)
                 .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path))
         }
     };

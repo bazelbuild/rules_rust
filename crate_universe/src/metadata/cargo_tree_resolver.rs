@@ -16,6 +16,7 @@ use url::Url;
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
 use crate::select::{Select, SelectableScalar};
+use crate::splicing::splicer::symlink_external_path_deps;
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
 
@@ -548,6 +549,34 @@ impl TreeResolver {
             )
         })?;
 
+        // Symlink any path dependencies that live outside the workspace root
+        symlink_external_path_deps(
+            pristine_manifest_path.as_std_path(),
+            pristine_root.as_std_path(),
+            output_dir,
+        )?;
+
+        // Also handle workspace members' external path deps
+        let manifest = cargo_toml::Manifest::from_path(pristine_manifest_path.as_std_path())
+            .with_context(|| format!("Failed to parse manifest at {}", pristine_manifest_path))?;
+        if let Some(ref workspace) = manifest.workspace {
+            for member_pattern in &workspace.members {
+                let glob_pattern = pristine_root.join(member_pattern).to_string();
+                if let Ok(entries) = glob::glob(&glob_pattern) {
+                    for entry in entries.flatten() {
+                        let member_manifest = entry.join("Cargo.toml");
+                        if member_manifest.exists() {
+                            symlink_external_path_deps(
+                                &member_manifest,
+                                pristine_root.as_std_path(),
+                                output_dir,
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
+
         let cargo_metadata = self
             .cargo_bin
             .metadata_command_with_options(
@@ -630,9 +659,63 @@ impl TreeResolver {
             );
             *count += 1;
         }
+
+        // The manifest is about to be written to a flat temp directory
+        // (output_dir) whose depth differs from the original workspace.
+        // Relative path dependencies (e.g. `../../../third_party/...`) would
+        // resolve incorrectly from the new location. Convert them to absolute
+        // paths so Cargo can find them regardless of where the manifest sits.
+        resolve_manifest_path_deps_to_absolute(&mut manifest, pristine_root.as_std_path());
+
         let manifest_path_with_transitive_proc_macros = output_dir.join("Cargo.toml");
         crate::splicing::write_manifest(&manifest_path_with_transitive_proc_macros, &manifest)?;
         Ok(manifest_path_with_transitive_proc_macros)
+    }
+}
+
+/// Resolve all relative path dependencies in a manifest to absolute paths.
+///
+/// When a manifest is copied to a temporary directory at a different depth than
+/// the original, relative path deps (e.g. `../../../third_party/foo`) will
+/// resolve incorrectly. This function canonicalizes them relative to
+/// `manifest_dir` (the original manifest's parent directory) so they work from
+/// any location.
+fn resolve_manifest_path_deps_to_absolute(
+    manifest: &mut cargo_toml::Manifest,
+    manifest_dir: &Path,
+) {
+    resolve_deps_paths_to_absolute(&mut manifest.dependencies, manifest_dir);
+    resolve_deps_paths_to_absolute(&mut manifest.dev_dependencies, manifest_dir);
+    resolve_deps_paths_to_absolute(&mut manifest.build_dependencies, manifest_dir);
+
+    for target in manifest.target.values_mut() {
+        resolve_deps_paths_to_absolute(&mut target.dependencies, manifest_dir);
+        resolve_deps_paths_to_absolute(&mut target.dev_dependencies, manifest_dir);
+        resolve_deps_paths_to_absolute(&mut target.build_dependencies, manifest_dir);
+    }
+
+    for registry_deps in manifest.patch.values_mut() {
+        resolve_deps_paths_to_absolute(registry_deps, manifest_dir);
+    }
+
+    if let Some(ref mut workspace) = manifest.workspace {
+        resolve_deps_paths_to_absolute(&mut workspace.dependencies, manifest_dir);
+    }
+}
+
+/// Convert relative `path` fields in a dependency set to absolute paths.
+fn resolve_deps_paths_to_absolute(deps: &mut cargo_toml::DepsSet, manifest_dir: &Path) {
+    for dep in deps.values_mut() {
+        if let cargo_toml::Dependency::Detailed(ref mut detail) = dep {
+            if let Some(ref path_str) = detail.path {
+                let dep_path = Path::new(path_str);
+                if !dep_path.is_absolute() {
+                    if let Ok(abs) = manifest_dir.join(dep_path).canonicalize() {
+                        detail.path = Some(abs.to_string_lossy().into_owned());
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1826,5 +1909,116 @@ mod test {
             target_output,
             "Failed checking target dependencies."
         );
+    }
+
+    #[test]
+    fn resolve_manifest_path_deps_converts_relative_to_absolute() {
+        // Simulate a workspace at /tmp/splice/some/deep/path with a path dep
+        // pointing outside via ../../../third_party/foo.
+        let tempdir = tempfile::tempdir().unwrap();
+        let manifest_dir = tempdir.path().join("some").join("deep").join("path");
+        std::fs::create_dir_all(&manifest_dir).unwrap();
+
+        // Create the external dep directory so canonicalize can resolve it.
+        let third_party_dir = tempdir.path().join("third_party").join("foo");
+        std::fs::create_dir_all(&third_party_dir).unwrap();
+
+        let mut manifest = cargo_toml::Manifest::from_str(&dedent(
+            r#"
+                [workspace]
+                members = ["member"]
+                resolver = "2"
+
+                [workspace.dependencies]
+                foo = { path = "../../../third_party/foo" }
+                "#,
+        ))
+        .unwrap();
+
+        // Before resolving: path is relative.
+        let ws_deps = &manifest.workspace.as_ref().unwrap().dependencies;
+        assert_eq!(
+            ws_deps["foo"].detail().unwrap().path.as_deref(),
+            Some("../../../third_party/foo"),
+        );
+
+        resolve_manifest_path_deps_to_absolute(&mut manifest, &manifest_dir);
+
+        // After resolving: path should be absolute and point to the actual dir.
+        let ws_deps = &manifest.workspace.as_ref().unwrap().dependencies;
+        let resolved_path = ws_deps["foo"].detail().unwrap().path.as_deref().unwrap();
+        assert!(
+            Path::new(resolved_path).is_absolute(),
+            "Expected absolute path, got: {resolved_path}",
+        );
+        // The resolved path should end with the third_party/foo component.
+        assert!(
+            resolved_path.ends_with("third_party/foo"),
+            "Expected path ending with third_party/foo, got: {resolved_path}",
+        );
+    }
+
+    #[test]
+    fn resolve_manifest_path_deps_leaves_absolute_paths_unchanged() {
+        let tempdir = tempfile::tempdir().unwrap();
+
+        let mut manifest = cargo_toml::Manifest::from_str(&dedent(
+            r#"
+                [workspace]
+                members = []
+                resolver = "2"
+
+                [workspace.dependencies]
+                foo = { path = "/already/absolute/foo" }
+                "#,
+        ))
+        .unwrap();
+
+        resolve_manifest_path_deps_to_absolute(&mut manifest, tempdir.path());
+
+        let ws_deps = &manifest.workspace.as_ref().unwrap().dependencies;
+        assert_eq!(
+            ws_deps["foo"].detail().unwrap().path.as_deref(),
+            Some("/already/absolute/foo"),
+        );
+    }
+
+    #[test]
+    fn resolve_manifest_path_deps_handles_all_dep_sections() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let dep_dir = tempdir.path().join("ext");
+        std::fs::create_dir_all(&dep_dir).unwrap();
+
+        let mut manifest = cargo_toml::Manifest::from_str(&dedent(
+            r#"
+                [package]
+                name = "test"
+                version = "0.1.0"
+
+                [dependencies]
+                dep_a = { path = "ext", version = "0.1.0" }
+
+                [dev-dependencies]
+                dep_b = { path = "ext", version = "0.1.0" }
+
+                [build-dependencies]
+                dep_c = { path = "ext", version = "0.1.0" }
+                "#,
+        ))
+        .unwrap();
+
+        resolve_manifest_path_deps_to_absolute(&mut manifest, tempdir.path());
+
+        let check_absolute = |dep: &cargo_toml::Dependency, name: &str| {
+            let path = dep.detail().unwrap().path.as_deref().unwrap();
+            assert!(
+                Path::new(path).is_absolute(),
+                "{name}: expected absolute path, got: {path}",
+            );
+        };
+
+        check_absolute(&manifest.dependencies["dep_a"], "dependencies");
+        check_absolute(&manifest.dev_dependencies["dep_b"], "dev-dependencies");
+        check_absolute(&manifest.build_dependencies["dep_c"], "build-dependencies");
     }
 }
