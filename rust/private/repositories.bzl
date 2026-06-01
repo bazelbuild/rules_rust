@@ -98,7 +98,8 @@ def rust_register_toolchains(
         rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
-        extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
+        extra_target_triples (list or map, optional): Additional rust-style targets that this set of
+            toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.
