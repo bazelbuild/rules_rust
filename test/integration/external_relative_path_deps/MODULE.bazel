@@ -1,0 +1,38 @@
+"""Test for external relative path dependencies (issue #3089)"""
+
+module(
+    name = "external_relative_path_deps_test",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# Test: crate_universe with Cargo workspace where a member has a path dependency
+# that goes OUTSIDE the Cargo workspace root (but still inside the Bazel workspace).
+#
+# Structure:
+#   external_crate/           <- Outside Cargo workspace
+#   cargo_workspace/          <- Cargo workspace root
+#     Cargo.toml              <- [workspace] members = ["member"]
+#     member/
+#       Cargo.toml            <- external_crate = { path = "../../external_crate" }
+#
+# This should work but currently fails because crate_universe doesn't copy
+# the external path dependency into the temp splicing directory.
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//cargo_workspace:Cargo.lock",
+    manifests = ["//cargo_workspace:Cargo.toml"],
+)
+use_repo(crate, "crates")

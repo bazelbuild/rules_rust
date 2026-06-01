@@ -831,6 +831,12 @@ tasks:
     build_targets:
       - "@rust_toolchains//:all"
       - "//..."
+  external_relative_path_deps:
+    name: External relative path deps (issue 3089)
+    platform: ubuntu2204
+    working_directory: test/integration/external_relative_path_deps
+    build_targets:
+      - "//..."
   ios_examples:
     name: iOS Examples
     platform: macos_arm64
