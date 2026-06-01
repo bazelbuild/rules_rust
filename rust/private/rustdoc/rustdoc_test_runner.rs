@@ -31,7 +31,10 @@ fn collect_rust_out(dir: &Path, bins: &mut Vec<PathBuf>) {
         let path = entry.path();
         if path.is_dir() {
             collect_rust_out(&path, bins);
-        } else if path.file_name().is_some_and(|n| n == "rust_out") {
+        } else if path
+            .file_name()
+            .is_some_and(|n| n == "rust_out" || n == "rust_out.exe")
+        {
             bins.push(path);
         }
     }

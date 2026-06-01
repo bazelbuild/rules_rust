@@ -131,7 +131,7 @@ def _create_crate_info(ctx):
 
 def _rlocationpath(file, workspace_name):
     if file.short_path.startswith("../"):
-        return file.short_path[len("../"):]
+        return file.short_path.removeprefix("../")
     return "{}/{}".format(workspace_name, file.short_path)
 
 def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
@@ -236,7 +236,15 @@ def _legacy_rust_doc_test_impl(ctx, toolchain, crate_info):
     # this case, we declare our own params file, that the test_writer will populate, if necessary
     opt_test_params = ctx.actions.declare_file(ctx.label.name + ".rustdoc_opt_params", sibling = test_runner)
 
-    # Add the current crate as an extern for the compile action
+    # Add the current crate as an extern for the compile action.
+    #
+    # NOTE: This legacy impl deliberately passes a plain list rather than an
+    # `Args` object. Args would trigger Bazel's auto-spill into a
+    # `*-0.params` file at relatively small sizes, but that spilled file is
+    # not present in the test runfiles. The `rustdoc_test_writer` step below
+    # has its own `opt_test_params` handoff for relocating params to a
+    # runfiles-visible location, so we keep the list form here to avoid
+    # stepping on that mechanism.
     rustdoc_flags = [
         "--extern",
         "{}={}".format(crate_info.name, crate_info.output.short_path),

@@ -65,7 +65,7 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
-        rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+        rustdoc_flags (Args, optional): An `Args` object of `rustdoc` specific flags.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
         force_depend_on_objects (bool, optional): If set, overrides is_test for controlling whether
             to depend on .rlib files instead of .rmeta. Defaults to is_test.
