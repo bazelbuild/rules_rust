@@ -4,9 +4,12 @@ rust_library(
     name = "member",
     srcs = ["src/lib.rs"],
     deps = [
-        # The external_crate dependency should be resolved by crate_universe
-        # even though it's located outside the Cargo workspace via path = "../../external_crate"
+        # Workspace dep: declared in [workspace.dependencies] with a path outside the workspace.
         "@crates//:external_crate",
+        # Direct dep: declared inline with a path outside the workspace.
+        "@crates//:external_crate_b",
+        # Workspace dep from a different Cargo workspace.
+        "@crates//:ext_ws_crate",
     ],
 )
 

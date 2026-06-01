@@ -3,12 +3,22 @@
 version = 4
 
 [[package]]
+name = "ext_ws_crate"
+version = "0.1.0"
+
+[[package]]
 name = "external_crate"
+version = "0.1.0"
+
+[[package]]
+name = "external_crate_b"
 version = "0.1.0"
 
 [[package]]
 name = "member"
 version = "0.1.0"
 dependencies = [
+ "ext_ws_crate",
  "external_crate",
+ "external_crate_b",
 ]

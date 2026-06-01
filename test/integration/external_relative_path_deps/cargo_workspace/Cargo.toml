@@ -1,3 +1,7 @@
 [workspace]
 members = ["member"]
 resolver = "2"
+
+[workspace.dependencies]
+external_crate = { path = "../external_crate" }
+ext_ws_crate = { path = "../external_workspace/ext_ws_crate" }
