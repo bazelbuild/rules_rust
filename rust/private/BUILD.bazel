@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
 
 # Exported for docs
@@ -29,6 +30,15 @@ bzl_library(
         "@bazel_skylib//lib:structs",
         "@bazel_skylib//rules:common_settings",
     ],
+)
+
+# This build setting is flipped by the Miri transition so the normal Rust
+# compilation pipeline can rebuild target-side crates against the Miri sysroot
+# without affecting unrelated Rust builds.
+bool_flag(
+    name = "miri_enabled",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
 )
 
 rust_analyzer_detect_sysroot(

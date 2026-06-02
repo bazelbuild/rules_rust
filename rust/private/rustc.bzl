@@ -101,6 +101,21 @@ PerCrateRustcFlagsInfo = provider(
     fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
 )
 
+def _miri_enabled(attr):
+    return hasattr(attr, "_miri_enabled") and attr._miri_enabled[BuildSettingInfo].value
+
+def _find_miri_toolchain(ctx, attr):
+    # Host-side tools such as build scripts and proc-macros must keep using the
+    # normal toolchain; only target-side crates are rebuilt against the Miri
+    # sysroot.
+    if is_exec_configuration(ctx) or not _miri_enabled(attr):
+        return None
+
+    toolchain = ctx.toolchains[str(Label("//rust:miri_toolchain_type"))]
+    if not toolchain:
+        fail("Rust target {} was configured for Miri, but no `@rules_rust//rust:miri_toolchain_type` is registered.".format(ctx.label))
+    return toolchain
+
 def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
@@ -181,6 +196,11 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
     elif compilation_mode in ("fastbuild", "dbg"):
         return True
     return False
+
+def miri_should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode):
+    # Keep the direct Miri launcher consistent with the normal Rust link path
+    # when choosing between PIC and non-PIC native libraries.
+    return _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
 
 def _is_proc_macro(crate_info):
     return "proc-macro" in (crate_info.type, crate_info.wrapped_crate_type)
@@ -358,6 +378,11 @@ def _collect_libs_from_linker_inputs(linker_inputs, use_pic):
         for li in linker_inputs
         for lib in li.libraries
     ]
+
+def miri_collect_libs_from_linker_inputs(linker_inputs, use_pic):
+    # The direct Miri launcher needs the same native library artifacts staged in
+    # runfiles as normal Rust linking would stage in the sandbox.
+    return _collect_libs_from_linker_inputs(linker_inputs, use_pic)
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags
@@ -773,6 +798,15 @@ def collect_inputs(
     else:
         runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
 
+    miri_toolchain = _find_miri_toolchain(ctx, ctx.attr)
+
+    # When a crate is rebuilt for Miri, Bazel must also stage the Miri sysroot
+    # and runtime files into the sandbox or the action will analyze correctly
+    # but fail once it executes.
+    toolchain_inputs = [toolchain.all_files]
+    if miri_toolchain:
+        toolchain_inputs.append(miri_toolchain.all_files)
+
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
         ([] if experimental_use_cc_common_link else libs_from_linker_inputs),
@@ -781,8 +815,7 @@ def collect_inputs(
             transitive_crate_outputs,
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
-            toolchain.all_files,
-        ] + ([] if experimental_use_cc_common_link else [
+        ] + toolchain_inputs + ([] if experimental_use_cc_common_link else [
             runtime_libs,
             linker_depset,
         ]),
@@ -1202,15 +1235,21 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
+    miri_toolchain = _find_miri_toolchain(ctx, attr)
+
     # Tell Rustc where to find the standard library (or libcore). Use the
     # underlying `File`s with a `map_each` so Bazel's path mapping
     # (`--experimental_output_paths=strip`) can rewrite the dirnames.
-    rustc_flags.add_all(
-        toolchain.rust_std,
-        before_each = "-L",
-        map_each = _get_dirname,
-        uniquify = True,
-    )
+    # Normal Rust builds search the standard library via -L paths. In Miri
+    # mode that would be wrong, because target-side crates must be rebuilt
+    # against the dedicated Miri sysroot instead.
+    if not miri_toolchain:
+        rustc_flags.add_all(
+            toolchain.rust_std,
+            before_each = "-L",
+            map_each = _get_dirname,
+            uniquify = True,
+        )
 
     # `rust_flags` is either a plain `list[str]` or a `ctx.actions.args()`
     # `Args` object. Lists are folded into the main `rustc_flags` `Args`
@@ -1339,9 +1378,17 @@ def construct_arguments(
         ))
 
     # Ensure the sysroot is set for the target platform. Compute the dirname
-    # from the underlying `sysroot_anchor` `File` via `map_each` so Bazel's
-    # path mapping can rewrite it.
-    if toolchain._toolchain_generated_sysroot:
+    # from the underlying anchor `File` via `map_each` so Bazel's path mapping
+    # can rewrite it.
+    # Point target-side crates at the Miri sysroot so their metadata and std
+    # linkage match what the direct miri driver will interpret later on.
+    if miri_toolchain:
+        rustc_flags.add_all(
+            [miri_toolchain.sysroot_anchor],
+            map_each = _get_dirname,
+            format_each = "--sysroot=%s",
+        )
+    elif toolchain._toolchain_generated_sysroot:
         rustc_flags.add_all(
             [toolchain.sysroot_anchor],
             map_each = _get_dirname,
@@ -1452,6 +1499,11 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec:
         flags.extend(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
+    if not is_exec and _miri_enabled(ctx.attr):
+        # Miri may need MIR bodies from transitive dependencies at runtime, so
+        # target-side crates must always encode MIR in this mode.
+        flags.append("-Zalways-encode-mir")
 
     return flags
 

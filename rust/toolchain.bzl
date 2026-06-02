@@ -992,3 +992,52 @@ The `select()` is evaluated against the target platform before the exec transiti
 allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.
 """,
 )
+
+def _rust_miri_toolchain_impl(ctx):
+    # The Miri launcher needs both the driver and a prebuilt sysroot available
+    # in runfiles; the anchor file gives it a stable way to locate that sysroot
+    # directory at runtime.
+    sysroot_anchor = ctx.file.sysroot_anchor
+    sysroot_path = sysroot_anchor.dirname
+    sysroot_short_path, _, _ = sysroot_anchor.short_path.rpartition("/")
+
+    transitive_inputs = [ctx.attr.sysroot_files[DefaultInfo].files]
+    if ctx.attr.runtime_files:
+        transitive_inputs.append(ctx.attr.runtime_files[DefaultInfo].files)
+
+    return [platform_common.ToolchainInfo(
+        all_files = depset([ctx.executable.miri, sysroot_anchor], transitive = transitive_inputs),
+        env = ctx.attr.env,
+        miri = ctx.executable.miri,
+        sysroot = sysroot_path,
+        sysroot_anchor = sysroot_anchor,
+        sysroot_anchor_rlocationpath = sysroot_short_path + "/" + sysroot_anchor.basename if sysroot_short_path else sysroot_anchor.basename,
+        sysroot_short_path = sysroot_short_path,
+    )]
+
+rust_miri_toolchain = rule(
+    implementation = _rust_miri_toolchain_impl,
+    attrs = {
+        "env": attr.string_dict(default = {}),
+        "miri": attr.label(
+            mandatory = True,
+            executable = True,
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        # Miri is executed at test/run time, so shared libraries and other
+        # runtime-only files must ride along in the toolchain runfiles as well.
+        "runtime_files": attr.label(
+            allow_files = True,
+        ),
+        "sysroot_anchor": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+        ),
+        "sysroot_files": attr.label(
+            mandatory = True,
+            allow_files = True,
+        ),
+    },
+    doc = "Declares a Miri toolchain containing the `miri` driver and a prebuilt Miri sysroot.",
+)
