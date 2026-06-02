@@ -235,6 +235,14 @@ perform it's default behavior.</p>
 --@rules_rust//rust/settings:error_format
 </pre>
 <p>This setting may be changed from the command line to generate machine readable errors.</p>
+<p><a id="experimental_compile_rustdoc_tests"></a></p>
+<h2 id="experimental_compile_rustdoc_tests"><a class="header" href="#experimental_compile_rustdoc_tests">experimental_compile_rustdoc_tests</a></h2>
+<pre>
+--@rules_rust//rust/settings:experimental_compile_rustdoc_tests
+</pre>
+<p>A flag to control whether <code>rust_doc_test</code> compiles doc tests during the build phase.</p>
+<p>When enabled and the toolchain channel is "nightly", <code>rust_doc_test</code> will compile     doc test binaries using <code>rustdoc --test --no-run</code> during <code>bazel build</code> and only     execute them during <code>bazel test</code>. This requires a nightly Rust toolchain because     <code>--no-run</code> depends on <code>-Zunstable-options</code>.</p>
+<p>When enabled with a non-nightly toolchain, the existing behavior is silently used.</p>
 <p><a id="experimental_link_std_dylib"></a></p>
 <h2 id="experimental_link_std_dylib"><a class="header" href="#experimental_link_std_dylib">experimental_link_std_dylib</a></h2>
 <pre>
