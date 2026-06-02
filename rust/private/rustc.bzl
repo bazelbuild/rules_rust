@@ -834,7 +834,10 @@ def collect_inputs(
 
 def _will_emit_object_file(emit):
     for e in emit:
-        if e == "obj" or e.startswith("obj="):
+        if type(e) in ["tuple", "list"] and len(e) == 2:
+            if e[0] == "obj":
+                return True
+        elif type(e) == "string" and (e == "obj" or e.startswith("obj=")):
             return True
     return False
 
@@ -1173,6 +1176,10 @@ def construct_arguments(
     for kind in emit:
         if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
+        elif type(kind) in ["tuple", "list"] and len(kind) == 2:
+            # 'kind' is a (string, File) tuple/list. Passing the File object directly to
+            # Args.add allows Bazel to perform path mapping on the path.
+            rustc_flags.add(kind[1], format = "--emit=" + kind[0] + "=%s")
         else:
             emit_without_paths.append(kind)
 
@@ -1563,6 +1570,23 @@ def rustc_compile_action(
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
+    # Declares the outputs of the rustc compile action.
+    # By default this is the binary output; if cc_common.link is used, this is
+    # the main `.o` file (`output_o` below).
+    outputs = [crate_info.output]
+
+    # The `.o` output file, only used for linking via cc_common.link.
+    # When output_hash is set (e.g. for rust_test targets), include it in the
+    # filename to avoid collisions with other targets sharing the same crate name.
+    output_o = None
+    if "obj" in emit:
+        obj_ext = ".o"
+        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
+        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
+        outputs = [output_o]
+        emit.remove("obj")
+        emit.append(("obj", output_o))
+
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
     require_explicit_unstable_features = False
     if hasattr(ctx.attr, "require_explicit_unstable_features"):
@@ -1636,21 +1660,6 @@ def rustc_compile_action(
         formatted_version = " v{}".format(attr.version)
     else:
         formatted_version = ""
-
-    # Declares the outputs of the rustc compile action.
-    # By default this is the binary output; if cc_common.link is used, this is
-    # the main `.o` file (`output_o` below).
-    outputs = [crate_info.output]
-
-    # The `.o` output file, only used for linking via cc_common.link.
-    # When output_hash is set (e.g. for rust_test targets), include it in the
-    # filename to avoid collisions with other targets sharing the same crate name.
-    output_o = None
-    if experimental_use_cc_common_link:
-        obj_ext = ".o"
-        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
-        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
-        outputs = [output_o]
 
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
