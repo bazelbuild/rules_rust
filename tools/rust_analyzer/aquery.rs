@@ -121,7 +121,7 @@ pub fn get_crate_specs(
     let aquery_results = String::from_utf8(aquery_output.stdout)
         .context("Failed to decode aquery results as utf-8.")?;
 
-    log::trace!("Aquery results: {}", &aquery_results);
+    log::trace!("Aquery results: {}", aquery_results);
 
     let crate_spec_files = parse_aquery_output_files(execution_root, &aquery_results)?;
 

@@ -2879,6 +2879,7 @@ extra_exec_rustc_flags = rule(
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
     implementation = _extra_exec_rustc_flags_impl,
+    attrs = {"scope": attr.string(default = "universal")},
     build_setting = config.string_list(flag = True),
 )
 
@@ -2904,6 +2905,7 @@ extra_exec_rustc_flag = rule(
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
+    attrs = {"scope": attr.string(default = "universal")},
     build_setting = config.string_list(flag = True, repeatable = True),
 )
 

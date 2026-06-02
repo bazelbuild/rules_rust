@@ -63,6 +63,7 @@ def rust_register_toolchains(
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        opt_level = None,
         strip_level = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         versions = _RUST_TOOLCHAIN_VERSIONS,
@@ -97,9 +98,11 @@ def rust_register_toolchains(
         rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
-        extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
+        extra_target_triples (list or map, optional): Additional rust-style targets that this set of
+            toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
+        opt_level (dict, optional): Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
@@ -168,6 +171,9 @@ def rust_register_toolchains(
 
     # Rust toolchains per exec triple
     for exec_triple, name in toolchain_triples.items():
+        extra = extra_target_triples.keys() if type(extra_target_triples) == "dict" else extra_target_triples
+        opt_level_by_triple = {t: opt_level for t in depset([exec_triple] + list(extra)).to_list()} if opt_level else None
+
         maybe(
             rust_repository_set,
             name = name,
@@ -180,6 +186,7 @@ def rust_register_toolchains(
             rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
+            opt_level = opt_level_by_triple,
             strip_level = strip_level,
             sha256s = sha256s,
             urls = urls,

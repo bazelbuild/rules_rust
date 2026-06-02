@@ -1,4 +1,4 @@
 mod src;
 fn main() {
-    println!("{}", &src::forty_two());
+    println!("{}", src::forty_two());
 }

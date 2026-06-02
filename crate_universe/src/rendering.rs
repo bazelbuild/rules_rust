@@ -880,7 +880,7 @@ impl Renderer {
                 match (dep.local_path, self.config.vendor_mode) {
                     // In local vendor mode, we use paths within the the repo.
                     (Some(path), Some(VendorMode::Local)) => {
-                        Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap()
+                        Label::from_str(&format!("//{}:{}", path, dep.target)).unwrap()
                     }
                     // If we're not vendoring source, or don't have a path for the dep, construct the label we expect.
                     _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),

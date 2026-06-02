@@ -139,6 +139,7 @@ def _rust_impl(module_ctx):
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
+                opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
@@ -269,6 +270,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "extra_target_triples": attr.string_list(
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        "opt_level": attr.string_dict(
+            doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",

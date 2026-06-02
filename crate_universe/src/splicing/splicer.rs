@@ -259,7 +259,7 @@ impl<'a> SplicerKind<'a> {
             Self::inject_workspace_members(&mut manifest, manifests, workspace_dir.as_std_path())?;
 
         // Collect all patches from the manifests provided
-        for (_, sub_manifest) in manifests.iter() {
+        for sub_manifest in manifests.values() {
             Self::inject_patches(&mut manifest, &sub_manifest.patch).with_context(|| {
                 format!(
                     "Duplicate `[patch]` entries detected in {:#?}",
@@ -1145,7 +1145,7 @@ mod test {
         assert!(workspace_manifest.is_err());
 
         // Ensure both the external workspace member
-        let err_str = format!("{:?}", &workspace_manifest);
+        let err_str = format!("{:?}", workspace_manifest);
         assert!(
             err_str
                 .contains("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces:")
