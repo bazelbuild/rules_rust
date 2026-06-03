@@ -207,12 +207,39 @@ def _pwd_flags_resource_dir(args):
     """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-resource-dir=", "-resource-dir"])
 
+_DIRECT_LIB_EXTENSIONS = (".a", ".o", ".so", ".dylib")
+
+def _pwd_flags_direct_libs(args):
+    """Prefix execroot-relative object/library file arguments with ${pwd}.
+
+    Handles bare object and library file paths passed directly to the linker
+    without any associated flag (e.g. a positional path to
+    libclang_rt.builtins.a, or a positional .o/.so/.dylib). These are emitted
+    by some cc toolchains (e.g. hermetic LLVM passing the compiler-rt builtins
+    archive as a positional input) and would otherwise stay execroot-relative
+    and fail to resolve from the build script's working directory.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list with relative object/library file
+            paths prefixed with ${pwd}.
+    """
+    res = []
+    for arg in args:
+        if not arg.startswith("-") and not paths.is_absolute(arg) and arg.endswith(_DIRECT_LIB_EXTENSIONS):
+            res.append("${{pwd}}/{}".format(arg))
+        else:
+            res.append(arg)
+    return res
+
 def _pwd_paths(args):
     """Prefix execroot-relative paths with ${pwd}."""
     return _prefix_pwd_to_paths(args)
 
 def _pwd_flags(args):
-    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
+    return _pwd_flags_direct_libs(_pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args)))))))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.

@@ -2,6 +2,8 @@ load(
     "cc_args_and_env_test.bzl",
     "bindir_absolute_test",
     "bindir_relative_test",
+    "direct_libs_absolute_test",
+    "direct_libs_relative_test",
     "fsanitize_ignorelist_absolute_test",
     "fsanitize_ignorelist_relative_test",
     "include_absolute_test",
@@ -58,3 +60,7 @@ include_relative_test(name = "include_relative_test")
 include_absolute_test(name = "include_absolute_test")
 
 include_mixed_test(name = "include_mixed_test")
+
+direct_libs_relative_test(name = "direct_libs_relative_test")
+
+direct_libs_absolute_test(name = "direct_libs_absolute_test")
