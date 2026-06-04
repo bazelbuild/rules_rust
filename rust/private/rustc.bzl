@@ -27,6 +27,10 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":lto.bzl", "construct_lto_arguments")
 load(
+    ":pic_utils.bzl",
+    "should_use_pic",
+)
+load(
     ":providers.bzl",
     "AllocatorLibrariesImplInfo",
     "AllocatorLibrariesInfo",
@@ -156,31 +160,6 @@ def _are_linkstamps_supported(feature_configuration):
     return (cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
             # Is Bazel recent enough to support Starlark linkstamps?
             hasattr(cc_common, "register_linkstamp_compile_action"))
-
-def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode):
-    """Whether or not [PIC][pic] should be enabled
-
-    [pic]: https://en.wikipedia.org/wiki/Position-independent_code
-
-    Args:
-        cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
-        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
-        crate_type (str): A Rust target's crate type.
-        compilation_mode: The compilation mode.
-
-    Returns:
-        bool: Whether or not [PIC][pic] should be enabled.
-    """
-
-    # We use the same logic to select between `pic` and `nopic` outputs as the C++ rules:
-    # - For shared libraries - we use `pic`. This covers `dylib`, `cdylib` and `proc-macro` crate types.
-    # - In `fastbuild` and `dbg` mode we use `pic` by default.
-    # - In `opt` mode we use `nopic` outputs to build binaries.
-    if cc_toolchain and crate_type in ("cdylib", "dylib", "proc-macro"):
-        return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
-    elif compilation_mode in ("fastbuild", "dbg"):
-        return True
-    return False
 
 def _is_proc_macro(crate_info):
     return "proc-macro" in (crate_info.type, crate_info.wrapped_crate_type)
@@ -721,7 +700,13 @@ def collect_inputs(
         linker_depset = cc_toolchain.linker_files()
     compilation_mode = ctx.var["COMPILATION_MODE"]
 
-    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
+    use_pic = should_use_pic(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_type = crate_info.type,
+        compilation_mode = compilation_mode,
+        toolchain = toolchain,
+    )
 
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
@@ -1253,7 +1238,13 @@ def construct_arguments(
         compilation_mode = ctx.var["COMPILATION_MODE"]
         if toolchain.target_arch not in ("wasm32", "wasm64"):
             if output_dir:
-                use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
+                use_pic = should_use_pic(
+                    cc_toolchain = cc_toolchain,
+                    feature_configuration = feature_configuration,
+                    crate_type = crate_info.type,
+                    compilation_mode = compilation_mode,
+                    toolchain = toolchain,
+                )
                 rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
             else:
                 rpaths = depset()
@@ -2637,7 +2628,13 @@ def _add_native_link_flags(
     if crate_type in ["lib", "rlib"]:
         return
 
-    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
+    use_pic = should_use_pic(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_type = crate_type,
+        compilation_mode = compilation_mode,
+        toolchain = toolchain,
+    )
 
     make_link_flags, get_lib_name = _get_make_link_flag_funcs(
         target_os = toolchain.target_os,

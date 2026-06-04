@@ -97,23 +97,20 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
 
     return (writer_args, action.env)
 
-def _rust_doc_test_impl(ctx):
-    """The implementation for the `rust_doc_test` rule
+def _create_crate_info(ctx):
+    """Create a CrateInfo for doc test compilation.
 
     Args:
         ctx (ctx): The rule's context object
 
     Returns:
-        list: A list containing a DefaultInfo provider
+        CrateInfo: A provider configured for doc test compilation
     """
-
-    toolchain = find_toolchain(ctx)
-
     crate = ctx.attr.crate[rust_common.crate_info]
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
-    crate_info = rust_common.create_crate_info(
+    return rust_common.create_crate_info(
         name = crate.name,
         type = crate.type,
         root = crate.root,
@@ -132,6 +129,102 @@ def _rust_doc_test_impl(ctx):
         owner = ctx.label,
     )
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path.removeprefix("../")
+    return "{}/{}".format(workspace_name, file.short_path)
+
+def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
+    """Implementation for rust_doc_test using pre-compiled doc test binaries.
+
+    Compiles doc tests during the build phase using `rustdoc --test --no-run`
+    and runs them via `rustdoc_test_runner` at test time.
+
+    Args:
+        ctx (ctx): The rule's context object
+        toolchain: The rust toolchain
+        crate_info (CrateInfo): The crate info for doc test compilation
+
+    Returns:
+        list: A list of providers
+    """
+    doctest_dir = ctx.actions.declare_directory(ctx.label.name + ".doctests")
+    test_metadata = ctx.actions.declare_file(ctx.label.name + ".doctest_metadata")
+
+    rustdoc_flags = ctx.actions.args()
+    rustdoc_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+    )
+    rustdoc_flags.add("--test")
+    rustdoc_flags.add("--no-run")
+    rustdoc_flags.add("-Zunstable-options")
+    rustdoc_flags.add("--persist-doctests")
+    rustdoc_flags.add_all([doctest_dir], expand_directories = False)
+    rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
+
+    action = rustdoc_compile_action(
+        ctx = ctx,
+        toolchain = toolchain,
+        crate_info = crate_info,
+        rustdoc_flags = rustdoc_flags,
+        is_test = False,
+        force_depend_on_objects = True,
+    )
+
+    wrapper_args = ctx.actions.args()
+    wrapper_args.add("--test-metadata", test_metadata)
+    wrapper_args.add("--")
+    wrapper_args.add(action.executable)
+
+    ctx.actions.run(
+        mnemonic = "RustdocTestCompile",
+        progress_message = "RustdocTestCompile {}".format(ctx.attr.crate.label),
+        outputs = [doctest_dir, test_metadata],
+        executable = ctx.executable._rustdoc_compile_wrapper,
+        inputs = action.inputs,
+        env = action.env,
+        arguments = [wrapper_args] + action.arguments,
+        tools = action.tools + [action.executable],
+        toolchain = Label("//rust:toolchain_type"),
+        execution_requirements = {"supports-path-mapping": ""} if action.supports_path_mapping else None,
+    )
+
+    test_runner = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.symlink(
+        output = test_runner,
+        target_file = ctx.executable._test_runner_bin,
+        is_executable = True,
+    )
+
+    return [
+        DefaultInfo(
+            files = depset([test_runner]),
+            runfiles = ctx.runfiles(
+                files = [doctest_dir, test_metadata, ctx.executable._test_runner_bin],
+                transitive_files = action.inputs,
+            ),
+            executable = test_runner,
+        ),
+        RunEnvironmentInfo(
+            environment = {
+                "RUSTDOC_TEST_METADATA": _rlocationpath(test_metadata, ctx.workspace_name),
+                "RUSTDOC_TEST_RUNNER_ARGS": _rlocationpath(doctest_dir, ctx.workspace_name),
+            },
+        ),
+    ]
+
+def _legacy_rust_doc_test_impl(ctx, toolchain, crate_info):
+    """Existing implementation for rust_doc_test using a generated test runner script.
+
+    Args:
+        ctx (ctx): The rule's context object
+        toolchain: The rust toolchain
+        crate_info (CrateInfo): The crate info for doc test compilation
+
+    Returns:
+        list: A list containing a DefaultInfo provider
+    """
     if toolchain.target_os == "windows":
         test_runner = ctx.actions.declare_file(ctx.label.name + ".rustdoc_test.bat")
     else:
@@ -143,7 +236,15 @@ def _rust_doc_test_impl(ctx):
     # this case, we declare our own params file, that the test_writer will populate, if necessary
     opt_test_params = ctx.actions.declare_file(ctx.label.name + ".rustdoc_opt_params", sibling = test_runner)
 
-    # Add the current crate as an extern for the compile action
+    # Add the current crate as an extern for the compile action.
+    #
+    # NOTE: This legacy impl deliberately passes a plain list rather than an
+    # `Args` object. Args would trigger Bazel's auto-spill into a
+    # `*-0.params` file at relatively small sizes, but that spilled file is
+    # not present in the test runfiles. The `rustdoc_test_writer` step below
+    # has its own `opt_test_params` handoff for relocating params to a
+    # runfiles-visible location, so we keep the list form here to avoid
+    # stepping on that mechanism.
     rustdoc_flags = [
         "--extern",
         "{}={}".format(crate_info.name, crate_info.output.short_path),
@@ -189,6 +290,28 @@ def _rust_doc_test_impl(ctx):
         runfiles = ctx.runfiles(files = tools + [opt_test_params], transitive_files = action.inputs),
         executable = test_runner,
     )]
+
+def _rust_doc_test_impl(ctx):
+    """The implementation for the `rust_doc_test` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing a DefaultInfo provider
+    """
+    toolchain = find_toolchain(ctx)
+    crate_info = _create_crate_info(ctx)
+
+    use_compiled_doctest = (
+        toolchain._experimental_compile_rustdoc_tests and
+        toolchain.channel == "nightly"
+    )
+
+    if use_compiled_doctest:
+        return _compiled_rust_doc_test_impl(ctx, toolchain, crate_info)
+    else:
+        return _legacy_rust_doc_test_impl(ctx, toolchain, crate_info)
 
 rust_doc_test = rule(
     implementation = _rust_doc_test_impl,
@@ -237,6 +360,18 @@ rust_doc_test = rule(
             doc = "A process wrapper for running rustdoc on all platforms",
             cfg = "exec",
             default = Label("//util/process_wrapper"),
+            executable = True,
+        ),
+        "_rustdoc_compile_wrapper": attr.label(
+            doc = "A wrapper that suppresses stdout on success for compiled doc test actions.",
+            cfg = "exec",
+            default = Label("//rust/private/rustdoc:rustdoc_compile_wrapper"),
+            executable = True,
+        ),
+        "_test_runner_bin": attr.label(
+            doc = "A binary used for running compiled doc test binaries.",
+            cfg = "exec",
+            default = Label("//rust/private/rustdoc:rustdoc_test_runner"),
             executable = True,
         ),
         "_test_writer": attr.label(

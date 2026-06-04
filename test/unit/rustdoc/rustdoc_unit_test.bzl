@@ -294,9 +294,14 @@ def _define_targets():
         hdrs = ["rustdoc.h"],
         srcs = ["rustdoc.cc"],
         deps = [":cc_lib"],
-        # This is not needed for :cc_lib, but it is needed in other
-        # circumstances to link in system libraries.
-        linkopts = ["-lcc_lib"],
+        # Exercises propagation of system-library `-l` linkopts. Picks a
+        # library guaranteed to exist on each platform so the `-l` flag
+        # resolves without depending on any cc_library artifact name (which
+        # would gain a `.pic` suffix when consumers request PIC).
+        linkopts = select({
+            "@platforms//os:windows": ["-luser32"],
+            "//conditions:default": ["-lm"],
+        }),
         linkstatic = True,
     )
 

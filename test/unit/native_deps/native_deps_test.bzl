@@ -132,16 +132,18 @@ def _staticlib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
     if toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             native_link_arg = "-Clink-arg=native_dep.lib"
         else:
             native_link_arg = "-Clink-arg=-lnative_dep.lib"
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -172,15 +174,17 @@ def _bin_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
     if toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             native_link_arg = "-Clink-arg=native_dep.lib"
         else:
             native_link_arg = "-Clink-arg=-lnative_dep.lib"
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -214,22 +218,25 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
 
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
+
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
             # When using CC linker, args are passed with -Wl, prefix as separate arguments
             want = [
-                "-lstatic=native_dep",
-                "-lnative_dep",
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
                 "-Wl,-force_load",
-                "-Wl,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "-Wl,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             ]
         else:
             # When using rust-lld directly, args are passed without prefix as separate arguments
             want = [
-                "-lstatic=native_dep",
-                "-lnative_dep",
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
                 "-force_load",
-                "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
@@ -257,25 +264,25 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
             ]
     elif toolchain.target_arch == "s390x":
         want = [
-            "-lstatic=native_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
             "link-arg=-Wl,--whole-archive",
-            "link-arg={}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "link-arg={}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     elif use_cc_linker:
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
             "-Wl,--whole-archive",
-            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "-Wl,--no-whole-archive",
         ]
     else:
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
             "--whole-archive",
-            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, link_args, want)
