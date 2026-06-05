@@ -418,14 +418,18 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         )
         ld_is_direct_driver = False
 
-    if not ld or toolchain.linker_preference == "rust":
+    use_bpf_linker = toolchain.target_arch in ("bpfeb", "bpfel") and toolchain.linker
+    if not ld or toolchain.linker_preference == "rust" or use_bpf_linker:
         ld = toolchain.linker.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
 
         # When using rust-lld directly, we still need library search paths from cc_toolchain
         # to find system libraries that rustc's stdlib depends on (like -lgcc_s, -lutil, etc.)
         # Filter link_args to only include flags that help locate libraries.
-        if cc_toolchain and link_args:
+        if toolchain.target_arch in ("bpfeb", "bpfel"):
+            # BPF linkers consume Rust bitcode and do not accept C toolchain arguments.
+            link_args = []
+        elif cc_toolchain and link_args:
             filtered_args = []
             skip_next = False
             for i, arg in enumerate(link_args):
