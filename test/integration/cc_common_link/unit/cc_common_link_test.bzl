@@ -103,6 +103,35 @@ def _use_cc_common_link_test(ctx):
 
 use_cc_common_link_test = analysistest.make(_use_cc_common_link_test, attrs = {"expect_pdb": attr.bool()})
 
+def _bpf_linker_ignores_cc_args_test(ctx):
+    env = analysistest.begin(ctx)
+    registered_actions = analysistest.target_under_test(env)[DepActionsInfo].actions
+    rustc_actions = [action for action in registered_actions if action.mnemonic == "Rustc"]
+
+    asserts.equals(env, 1, len(rustc_actions))
+    argv = rustc_actions[0].argv
+    asserts.true(
+        env,
+        any(["mock_bpf_linker" in arg for arg in argv]),
+        "expected the BPF linker in the rustc invocation: {}".format(argv),
+    )
+    asserts.false(
+        env,
+        any(["cc-toolchain-marker" in arg for arg in argv]),
+        "C toolchain arguments must not be forwarded to a BPF linker",
+    )
+
+    return analysistest.end(env)
+
+bpf_linker_ignores_cc_args_test = analysistest.make(
+    _bpf_linker_ignores_cc_args_test,
+    config_settings = {
+        str(Label("@rules_rust//rust/settings:experimental_use_cc_common_link")): False,
+        "//command_line_option:extra_toolchains": ["//unit:bpf_toolchain"],
+        "//command_line_option:linkopt": ["-Lcc-toolchain-marker"],
+    },
+)
+
 def _custom_malloc_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -131,6 +160,10 @@ def _cc_common_link_test_targets():
         name = "bin",
         srcs = ["bin.rs"],
         edition = "2018",
+    )
+    with_collect_dep_actions(
+        name = "bin_with_collect_dep_actions",
+        target = ":bin",
     )
 
     use_cc_common_link_on_target(
@@ -219,6 +252,11 @@ def _cc_common_link_test_targets():
         target_under_test = ":bin_with_cc_common_link",
     )
 
+    bpf_linker_ignores_cc_args_test(
+        name = "bpf_linker_ignores_cc_args_test",
+        target_under_test = ":bin_with_collect_dep_actions",
+    )
+
     return [
         "use_cc_common_link_on_binary",
         "use_cc_common_link_on_binary_with_pdb",
@@ -226,6 +264,7 @@ def _cc_common_link_test_targets():
         "use_cc_common_link_on_crate_test",
         "use_cc_common_link_on_cdylib",
         "custom_malloc_on_binary_test",
+        "bpf_linker_ignores_cc_args_test",
     ]
 
 _RUSTC_FLAGS_CODEGEN_UNITS = 2
@@ -319,6 +358,10 @@ def _codegen_units_test_targets():
         name = "mock_rust-lld",
         out = "mock_rust-lld.exe",
     )
+    write_file(
+        name = "mock_bpf_linker",
+        out = "mock_bpf_linker.exe",
+    )
     rust_toolchain(
         name = "codegen_units_toolchain_impl",
         binary_ext = "",
@@ -341,6 +384,27 @@ def _codegen_units_test_targets():
     native.toolchain(
         name = "codegen_units_toolchain",
         toolchain = ":codegen_units_toolchain_impl",
+        toolchain_type = "@rules_rust//rust:toolchain",
+    )
+    rust_toolchain(
+        name = "bpf_toolchain_impl",
+        binary_ext = "",
+        dylib_ext = ".so",
+        exec_triple = "x86_64-unknown-linux-gnu",
+        linker = ":mock_bpf_linker",
+        linker_type = "direct",
+        process_wrapper = "@rules_rust//util/process_wrapper:bootstrap_process_wrapper",
+        rust_doc = ":mock_rustdoc",
+        rust_std = ":std_libs",
+        rustc = ":mock_rustc",
+        staticlib_ext = ".a",
+        stdlib_linkflags = [],
+        target_triple = "bpfel-unknown-linux-gnu",
+        visibility = ["//visibility:public"],
+    )
+    native.toolchain(
+        name = "bpf_toolchain",
+        toolchain = ":bpf_toolchain_impl",
         toolchain_type = "@rules_rust//rust:toolchain",
     )
 
