@@ -10,7 +10,6 @@ min_rust_version_shell_commands: &min_rust_version_shell_commands
   - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.85.0"],\n|' MODULE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
-  - "--//rust/settings:experimental_compile_rustdoc_tests=True"
 nightly_aspects_flags: &nightly_aspects_flags
   - "--//rust/toolchain/channel=nightly"
   - "--config=rustfmt"
