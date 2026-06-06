@@ -2,6 +2,7 @@
 
 load(
     "//cargo/private:cargo_build_script.bzl",
+    "cargo_build_script_exec",
     "cargo_build_script_runfiles",
     "name_to_crate_name",
     "name_to_pkg_name",
@@ -149,6 +150,7 @@ def cargo_build_script(
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(name_to_pkg_name(name))
 
     exec_compatible_with = kwargs.pop("exec_compatible_with", None)
+    toolchains = kwargs.pop("toolchains", None)
 
     script_kwargs = {}
     for arg in ("testonly",):
@@ -190,6 +192,23 @@ def cargo_build_script(
         **script_kwargs
     )
 
+    exec_adapter_kwargs = dict(wrapper_kwargs)
+    if exec_compatible_with != None:
+        exec_adapter_kwargs["exec_compatible_with"] = exec_compatible_with
+    if toolchains != None:
+        exec_adapter_kwargs["toolchains"] = toolchains
+
+    cargo_build_script_exec(
+        name = name + "--",
+        script = ":{}_".format(name),
+        data = data,
+        compile_data = compile_data,
+        tools = tools,
+        build_script_env = build_script_env,
+        tags = binary_tags,
+        **exec_adapter_kwargs
+    )
+
     # This rule creates a runfiles tree from data files. The script binary
     # is passed directly to _build_script_run via its script attribute.
     cargo_build_script_runfiles(
@@ -209,18 +228,15 @@ def cargo_build_script(
     # This target executes the build script.
     _build_script_run(
         name = name,
-        script = ":{}_".format(name),
+        script = ":{}--".format(name),
         data_runfiles = ":{}-".format(name),
         data = data,
-        tools = tools,
         crate_features = crate_features,
         version = version,
         allow_build_script_to_detect_nonhermetic_paths = allow_build_script_to_detect_nonhermetic_paths,
-        build_script_env = build_script_env,
         build_script_env_files = build_script_env_files,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
-        deps = deps,
         link_deps = link_deps,
         rustc_flags = rustc_flags,
         visibility = visibility,

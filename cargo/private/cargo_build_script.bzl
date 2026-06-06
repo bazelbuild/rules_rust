@@ -5,7 +5,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -30,6 +30,18 @@ name_to_crate_name = _name_to_crate_name
 
 # Keep this short: it is part of CARGO_MANIFEST_DIR on Windows.
 _CARGO_MANIFEST_DIR = "m"
+_USE_LIBTOOL_ON_MACOS = "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos"
+_SAVED_USE_LIBTOOL_ON_MACOS = "//cargo/settings:cargo_build_script_use_libtool_on_macos"
+
+CargoBuildScriptExecInfo = provider(
+    doc = "Execution-configured inputs for a cargo build script.",
+    fields = {
+        "build_script_env": "Expanded environment variables for the build script.",
+        "runner": "The cargo build script runner executable.",
+        "script": "The compiled build script executable.",
+        "toolchain_tools": "Files supplied by targets in the toolchains attribute.",
+    },
+)
 
 def _cargo_build_script_runfiles_impl(ctx):
     exe = ctx.actions.declare_file(ctx.label.name)
@@ -64,6 +76,83 @@ rather than going through this rule.
         ),
     },
     executable = True,
+)
+
+def _cargo_build_script_exec_impl(ctx):
+    script = ctx.attr.script
+    toolchain_tools = []
+    known_variables = {}
+
+    for target in ctx.attr.toolchains:
+        if DefaultInfo in target:
+            toolchain_tools.extend([
+                target[DefaultInfo].files,
+                target[DefaultInfo].default_runfiles.files,
+            ])
+        if platform_common.ToolchainInfo in target:
+            all_files = getattr(target[platform_common.ToolchainInfo], "all_files", depset([]))
+            if type(all_files) == "list":
+                all_files = depset(all_files)
+            toolchain_tools.append(all_files)
+        if platform_common.TemplateVariableInfo in target:
+            variables = getattr(target[platform_common.TemplateVariableInfo], "variables", {})
+            known_variables.update(variables)
+
+    data_labels = {str(t.label): True for t in ctx.attr.data}
+    for tool in ctx.attr.tools:
+        if str(tool.label) in data_labels:
+            fail("Tool {} also appears in data. tools and data must not overlap.".format(tool.label))
+
+    if ctx.attr.build_script_env:
+        _fail_on_rlocationpath_env(ctx.attr.build_script_env)
+        build_script_env = expand_dict_value_locations(
+            ctx,
+            ctx.attr.build_script_env,
+            deduplicate(ctx.attr.data + ctx.attr.compile_data + ctx.attr.tools),
+            known_variables,
+        )
+    else:
+        build_script_env = {}
+
+    return [
+        DefaultInfo(
+            files = script[DefaultInfo].files,
+            runfiles = script[DefaultInfo].default_runfiles,
+        ),
+        script[rust_common.crate_info],
+        script[DepInfo],
+        CargoBuildScriptExecInfo(
+            build_script_env = build_script_env,
+            runner = ctx.executable._cargo_build_script_runner,
+            script = ctx.executable.script,
+            toolchain_tools = depset(transitive = toolchain_tools),
+        ),
+    ]
+
+cargo_build_script_exec = rule(
+    doc = "Restores the caller's configuration before compiling cargo build script inputs in the exec configuration.",
+    implementation = _cargo_build_script_exec_impl,
+    attrs = {
+        "build_script_env": attr.string_dict(),
+        "compile_data": attr.label_list(allow_files = True),
+        "data": attr.label_list(allow_files = True),
+        "script": attr.label(
+            executable = True,
+            mandatory = True,
+            cfg = "exec",
+            providers = [rust_common.crate_info, DepInfo],
+        ),
+        "tools": attr.label_list(
+            allow_files = True,
+            cfg = "exec",
+        ),
+        "_cargo_build_script_runner": attr.label(
+            executable = True,
+            allow_files = True,
+            default = Label("//cargo/private/cargo_build_script_runner:runner"),
+            cfg = "exec",
+        ),
+    },
 )
 
 def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
@@ -265,6 +354,7 @@ def _create_runfiles_dir(
         ctx,
         script,
         data_runfiles,
+        data_runfiles_executable,
         retain_list,
         workspace_name,
         manifest_rlocation_prefix):
@@ -285,6 +375,7 @@ def _create_runfiles_dir(
         ctx (ctx): The rule's context object
         script (Target): The build script binary target.
         data_runfiles (Target): The `cargo_build_script_runfiles` target providing data files.
+        data_runfiles_executable (File): The fake executable produced by `data_runfiles`.
         retain_list (list): A list of strings to keep in generated runfiles directories.
         workspace_name (str): The runfiles workspace name for the current repository.
         manifest_rlocation_prefix (str): The current package's runfiles path prefix.
@@ -297,7 +388,7 @@ def _create_runfiles_dir(
     """
     runfiles_dir = ctx.actions.declare_directory(ctx.label.name + ".crf")
 
-    fake_exe = ctx.executable.data_runfiles
+    fake_exe = data_runfiles_executable
 
     def _runfiles_map(file):
         if file == fake_exe:
@@ -331,7 +422,10 @@ def _cargo_build_script_impl(ctx):
     Returns:
         list: A list containing a BuildInfo provider
     """
-    script = ctx.executable.script
+    script_target = ctx.attr.script[0]
+    script_exec_info = script_target[CargoBuildScriptExecInfo]
+    data_runfiles_target = ctx.attr.data_runfiles[0]
+    script = script_exec_info.script
     toolchain = find_toolchain(ctx)
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
@@ -358,8 +452,9 @@ def _cargo_build_script_impl(ctx):
     # https://github.com/bazelbuild/bazel/issues/15486
     runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
         ctx = ctx,
-        script = ctx.attr.script,
-        data_runfiles = ctx.attr.data_runfiles,
+        script = script_target,
+        data_runfiles = data_runfiles_target,
+        data_runfiles_executable = data_runfiles_target[DefaultInfo].files_to_run.executable,
         retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
         workspace_name = workspace_name,
         manifest_rlocation_prefix = _manifest_rlocation_prefix(workspace_name, ctx.label.package),
@@ -476,48 +571,15 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
-    known_variables = {}
-
-    # Gather data from the `toolchains` attribute.
-    for target in ctx.attr.toolchains:
-        if DefaultInfo in target:
-            toolchain_tools.extend([
-                target[DefaultInfo].files,
-                target[DefaultInfo].default_runfiles.files,
-            ])
-        if platform_common.ToolchainInfo in target:
-            all_files = getattr(target[platform_common.ToolchainInfo], "all_files", depset([]))
-            if type(all_files) == "list":
-                all_files = depset(all_files)
-            toolchain_tools.append(all_files)
-        if platform_common.TemplateVariableInfo in target:
-            variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
-            known_variables.update(variables)
-
-    data_labels = {str(t.label): True for t in ctx.attr.data}
-    for t in ctx.attr.tools:
-        if str(t.label) in data_labels:
-            fail("Tool {} also appears in data. tools and data must not overlap.".format(t.label))
-
-    if ctx.attr.build_script_env:
-        _fail_on_rlocationpath_env(ctx.attr.build_script_env)
-        _merge_env_dict(env, expand_dict_value_locations(
-            ctx,
-            ctx.attr.build_script_env,
-            deduplicate(
-                ctx.attr.data +
-                getattr(ctx.attr, "compile_data", []) +
-                ctx.attr.tools,
-            ),
-            known_variables,
-        ))
+    if script_exec_info.build_script_env:
+        _merge_env_dict(env, script_exec_info.build_script_env)
 
     tools = depset(
         direct = [
             script,
-            ctx.executable._cargo_build_script_runner,
+            script_exec_info.runner,
         ] + ([toolchain.target_json] if toolchain.target_json else []),
-        transitive = script_data + toolchain_tools,
+        transitive = script_data + toolchain_tools + [script_exec_info.toolchain_tools],
     )
 
     # dep_env_file contains additional environment variables coming from
@@ -563,20 +625,8 @@ def _cargo_build_script_impl(ctx):
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
 
-    for dep in ctx.attr.deps:
-        dep_infos = []
-        if DepInfo in dep:
-            dep_infos = [dep[DepInfo]]
-        else:
-            dep_infos = [
-                dep_variant_info.dep_info
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
-                if dep_variant_info.dep_info
-            ]
-
-        for dep_info in dep_infos:
-            for dep_build_info in dep_info.transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+    for dep_build_info in script_target[DepInfo].transitive_build_infos.to_list():
+        build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -589,7 +639,7 @@ def _cargo_build_script_impl(ctx):
         env["RULES_RUST_OUT_DIR_VOLATILE_BASENAMES"] = ":".join(out_dir_volatile_basenames)
 
     ctx.actions.run(
-        executable = ctx.executable._cargo_build_script_runner,
+        executable = script_exec_info.runner,
         arguments = [args, runfiles_args],
         outputs = [
             out_dir,
@@ -629,6 +679,37 @@ def _cargo_build_script_impl(ctx):
         ),
     ]
 
+def _cargo_build_script_transition_impl(settings, _attr):
+    return {
+        "//command_line_option:host_compilation_mode": settings["//command_line_option:compilation_mode"],
+        _SAVED_USE_LIBTOOL_ON_MACOS: settings[_USE_LIBTOOL_ON_MACOS],
+        _USE_LIBTOOL_ON_MACOS: False,
+    }
+
+_cargo_build_script_transition = transition(
+    implementation = _cargo_build_script_transition_impl,
+    inputs = [
+        "//command_line_option:compilation_mode",
+        _USE_LIBTOOL_ON_MACOS,
+    ],
+    outputs = [
+        "//command_line_option:host_compilation_mode",
+        _SAVED_USE_LIBTOOL_ON_MACOS,
+        _USE_LIBTOOL_ON_MACOS,
+    ],
+)
+
+def _restore_use_libtool_on_macos_transition_impl(settings, _attr):
+    return {
+        _USE_LIBTOOL_ON_MACOS: settings[_SAVED_USE_LIBTOOL_ON_MACOS],
+    }
+
+_restore_use_libtool_on_macos_transition = transition(
+    implementation = _restore_use_libtool_on_macos_transition_impl,
+    inputs = [_SAVED_USE_LIBTOOL_ON_MACOS],
+    outputs = [_USE_LIBTOOL_ON_MACOS],
+)
+
 cargo_build_script = rule(
     doc = (
         "A rule for running a crate's `build.rs` files to generate build information " +
@@ -639,9 +720,6 @@ cargo_build_script = rule(
         "allow_build_script_to_detect_nonhermetic_paths": attr.bool(
             default = False,
             doc = "Allow build scripts to emit absolute host-system paths in rustc-link-search, rustc-env, or metadata directives.",
-        ),
-        "build_script_env": attr.string_dict(
-            doc = "Environment variables for build scripts.",
         ),
         "build_script_env_files": attr.label_list(
             doc = dedent("""\
@@ -661,6 +739,7 @@ cargo_build_script = rule(
                 `NAME={WORKSPACE_STATUS_VARIABLE}`.
             """),
             allow_files = True,
+            cfg = _restore_use_libtool_on_macos_transition,
         ),
         "crate_features": attr.string_list(
             doc = "The list of rust features that the build script should consider activated.",
@@ -668,17 +747,13 @@ cargo_build_script = rule(
         "data": attr.label_list(
             doc = "Data required by the build script.",
             allow_files = True,
+            cfg = _restore_use_libtool_on_macos_transition,
         ),
         "data_runfiles": attr.label(
             doc = "The runfiles target providing data file runfiles for the build script.",
             mandatory = True,
-            cfg = "target",
+            cfg = _restore_use_libtool_on_macos_transition,
             executable = True,
-        ),
-        "deps": attr.label_list(
-            doc = "The Rust build-dependencies of the crate",
-            providers = [[DepInfo], [CrateGroupInfo]],
-            cfg = "exec",
         ),
         "link_deps": attr.label_list(
             doc = dedent("""\
@@ -686,6 +761,7 @@ cargo_build_script = rule(
                 have the links attribute and therefore provide environment
                 variables to this build script.
             """),
+            cfg = _restore_use_libtool_on_macos_transition,
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
@@ -705,15 +781,9 @@ cargo_build_script = rule(
         ),
         "script": attr.label(
             doc = "The binary script to run, generally a `rust_binary` target.",
-            executable = True,
             mandatory = True,
-            cfg = "exec",
-            providers = [rust_common.crate_info],
-        ),
-        "tools": attr.label_list(
-            doc = "Tools required by the build script.",
-            allow_files = True,
-            cfg = "exec",
+            cfg = _restore_use_libtool_on_macos_transition,
+            providers = [rust_common.crate_info, DepInfo, CargoBuildScriptExecInfo],
         ),
         "use_default_shell_env": attr.int(
             doc = dedent("""\
@@ -726,12 +796,6 @@ cargo_build_script = rule(
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
-        ),
-        "_cargo_build_script_runner": attr.label(
-            executable = True,
-            allow_files = True,
-            default = Label("//cargo/private/cargo_build_script_runner:runner"),
-            cfg = "exec",
         ),
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
             default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
@@ -748,7 +812,11 @@ cargo_build_script = rule(
         "_out_dir_volatile_file_basenames": attr.label(
             default = Label("//cargo/settings:out_dir_volatile_file_basenames"),
         ),
+        "_allowlist_function_transition": attr.label(
+            default = Label("//tools/allowlists/function_transition_allowlist"),
+        ),
     },
+    cfg = _cargo_build_script_transition,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),

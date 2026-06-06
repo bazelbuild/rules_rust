@@ -1,5 +1,5 @@
 ---
-minimum_bazel_version: &minimum_bazel_version "7.4.1"
+minimum_bazel_version: &minimum_bazel_version "8.7.0"
 minimum_bazel_shell_commands: &minimum_bazel_shell_commands
   - echo "build --build_runfile_links" >> user.bazelrc
 aspects_flags: &aspects_flags

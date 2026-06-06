@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     ":settings.bzl",
     "cargo_manifest_dir_filename_suffixes_to_retain",
@@ -11,6 +12,12 @@ load(
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["settings.bzl"])
+
+bool_flag(
+    name = "cargo_build_script_use_libtool_on_macos",
+    build_setting_default = False,
+    visibility = ["//cargo/private:__pkg__"],
+)
 
 bzl_library(
     name = "bzl_lib",

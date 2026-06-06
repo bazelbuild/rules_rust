@@ -1,5 +1,12 @@
 load(":build_script_deps.bzl", "build_script_test_suite")
 
+config_setting(
+    name = "use_libtool_on_macos",
+    flag_values = {
+        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos": "true",
+    },
+)
+
 build_script_test_suite(
     name = "build_script_test_suite",
 )
