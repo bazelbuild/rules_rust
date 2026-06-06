@@ -117,6 +117,24 @@ std::vector<char*> build_exec_argv(const std::vector<std::string>& args) {
   return exec_argv;
 }
 
+bool replace_environment_placeholders(const char* name,
+                                      const std::string& pwd,
+                                      const std::string& output_base,
+                                      const std::string& exec_root) {
+  const char* raw_value = std::getenv(name);
+  if (raw_value == nullptr) {
+    return true;
+  }
+
+  const std::string value =
+      replace_placeholders(raw_value, pwd, output_base, exec_root);
+#if defined(_WIN32)
+  return _putenv_s(name, value.c_str()) == 0;
+#else
+  return setenv(name, value.c_str(), 1) == 0;
+#endif
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -140,6 +158,15 @@ int main(int argc, char** argv) {
   const std::string output_base = get_output_base(pwd);
   const std::string exec_root =
       join_path(join_path(output_base, "execroot"), basename(pwd));
+
+  // SDKROOT may contain ${pwd}, just like rustc arguments. The full process
+  // wrapper expands environment values, so its bootstrap replacement must do
+  // the same before linking the process wrapper itself.
+  if (!replace_environment_placeholders("SDKROOT", pwd, output_base,
+                                        exec_root)) {
+    std::perror("bootstrap_process_wrapper: set SDKROOT");
+    return 1;
+  }
 
   std::vector<std::string> command_args;
   command_args.reserve(static_cast<size_t>(argc - first_arg_index));
