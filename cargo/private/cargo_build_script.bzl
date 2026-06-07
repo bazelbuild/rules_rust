@@ -558,6 +558,8 @@ def _cargo_build_script_impl(ctx):
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
+    if ctx.attr.allow_build_script_to_detect_nonhermetic_paths:
+        args.add("--allow_build_script_to_detect_nonhermetic_paths")
     output_groups = {
         "out_dir": depset([out_dir]),
     }
@@ -658,6 +660,10 @@ cargo_build_script = rule(
     ),
     implementation = _cargo_build_script_impl,
     attrs = {
+        "allow_build_script_to_detect_nonhermetic_paths": attr.bool(
+            default = False,
+            doc = "Allow build scripts to emit absolute host-system paths in rustc-link-search, rustc-env, or metadata directives.",
+        ),
         "build_script_env": attr.string_dict(
             doc = "Environment variables for build scripts.",
         ),

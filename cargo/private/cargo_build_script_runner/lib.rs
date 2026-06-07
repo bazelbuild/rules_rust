@@ -15,6 +15,7 @@
 //! Parse the output of a cargo build.rs script and generate a list of flags and
 //! environment variable for the build.
 use std::io::{BufRead, BufReader, Read};
+use std::path::Path;
 use std::process::{Command, Output};
 
 pub mod cargo_manifest_dir;
@@ -46,6 +47,80 @@ pub enum BuildScriptOutput {
 }
 
 impl BuildScriptOutput {
+    pub fn nonhermetic_absolute_paths(
+        outputs: &[BuildScriptOutput],
+        exec_root: &str,
+        out_dir: &str,
+    ) -> Vec<String> {
+        outputs
+            .iter()
+            .filter_map(|output| {
+                let (directive, original_value, redacted_value) = match output {
+                    BuildScriptOutput::LinkSearch(value) => (
+                        "rustc-link-search",
+                        value,
+                        Self::redact_flags(value, exec_root, out_dir),
+                    ),
+                    BuildScriptOutput::Env(value) => (
+                        "rustc-env",
+                        value,
+                        Self::redact_paths(value, exec_root, out_dir),
+                    ),
+                    BuildScriptOutput::DepEnv(value) => (
+                        "metadata",
+                        value,
+                        Self::redact_paths(value, exec_root, out_dir),
+                    ),
+                    _ => return None,
+                };
+                let value = match output {
+                    BuildScriptOutput::LinkSearch(_) => redacted_value
+                        .split_once('=')
+                        .map_or(redacted_value.as_str(), |(_, path)| path),
+                    BuildScriptOutput::Env(_) | BuildScriptOutput::DepEnv(_) => redacted_value
+                        .split_once('=')
+                        .map_or("", |(_, value)| value),
+                    _ => unreachable!(),
+                };
+                if Self::contains_absolute_path(value) {
+                    Some(format!("cargo::{directive}={original_value}"))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn contains_absolute_path(value: &str) -> bool {
+        let path_is_absolute = |candidate: &str| {
+            let candidate = candidate.trim_matches(|character: char| {
+                character.is_ascii_whitespace()
+                    || matches!(character, '\'' | '"' | ',' | '(' | ')' | '[' | ']')
+            });
+            Path::new(candidate).is_absolute()
+        };
+
+        if path_is_absolute(value) {
+            return true;
+        }
+
+        value
+            .split(|character: char| character.is_ascii_whitespace() || character == ';')
+            .any(|token| {
+                if path_is_absolute(token) {
+                    return true;
+                }
+                if token.contains("://") {
+                    return false;
+                }
+                token.find(std::path::MAIN_SEPARATOR).is_some_and(|index| {
+                    let prefix = &token[..index];
+                    (prefix.starts_with('-') || prefix.ends_with('='))
+                        && path_is_absolute(&token[index..])
+                })
+            })
+    }
+
     /// Converts a line into a [BuildScriptOutput] enum.
     ///
     /// Examples
@@ -232,7 +307,16 @@ impl BuildScriptOutput {
     }
 
     fn redact_exec_root(value: &str, exec_root: &str) -> String {
-        value.replace(exec_root, "${pwd}")
+        if exec_root.is_empty() {
+            return value.to_owned();
+        }
+        if value == exec_root {
+            return "${pwd}".to_owned();
+        }
+
+        value
+            .replace(&format!("{exec_root}/"), "${pwd}/")
+            .replace(&format!("{exec_root}\\"), "${pwd}\\")
     }
 
     /// Redact for env vars: uses the generic `${out_dir}` token, resolved
@@ -490,6 +574,35 @@ cargo::rustc-link-search=/abs/exec_root/other/path
                 link_search_paths:
                     "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
             }
+        );
+    }
+
+    #[test]
+    fn nonhermetic_absolute_paths_are_detected() {
+        let outputs = vec![
+            BuildScriptOutput::LinkSearch("relative/path".to_owned()),
+            BuildScriptOutput::LinkSearch("native=/execroot/workspace/lib".to_owned()),
+            BuildScriptOutput::LinkSearch("/execroot/bazel-out/out/lib".to_owned()),
+            BuildScriptOutput::LinkSearch("/execrootish/not-redacted/lib".to_owned()),
+            BuildScriptOutput::LinkSearch("framework=/usr/local/lib".to_owned()),
+            BuildScriptOutput::LinkSearch("/opt/system/lib".to_owned()),
+            BuildScriptOutput::Env("HERMETIC=/execroot/workspace/include".to_owned()),
+            BuildScriptOutput::Env("SYSTEM_HEADER=/usr/include/zlib.h".to_owned()),
+            BuildScriptOutput::Env("CFLAGS=-I/opt/system/include -DOK=1".to_owned()),
+            BuildScriptOutput::DepEnv("ROOT=/usr/local/share/zlib".to_owned()),
+            BuildScriptOutput::Env("DOCS=https://example.com/a/path".to_owned()),
+        ];
+
+        assert_eq!(
+            BuildScriptOutput::nonhermetic_absolute_paths(&outputs, "/execroot", "bazel-out/out",),
+            vec![
+                "cargo::rustc-link-search=/execrootish/not-redacted/lib",
+                "cargo::rustc-link-search=framework=/usr/local/lib",
+                "cargo::rustc-link-search=/opt/system/lib",
+                "cargo::rustc-env=SYSTEM_HEADER=/usr/include/zlib.h",
+                "cargo::rustc-env=CFLAGS=-I/opt/system/include -DOK=1",
+                "cargo::metadata=ROOT=/usr/local/share/zlib",
+            ]
         );
     }
 }

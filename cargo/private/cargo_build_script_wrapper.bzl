@@ -21,6 +21,7 @@ def cargo_build_script(
         deps = [],
         link_deps = [],
         proc_macro_deps = [],
+        allow_build_script_to_detect_nonhermetic_paths = False,
         build_script_env = {},
         build_script_env_files = [],
         use_default_shell_env = None,
@@ -108,6 +109,7 @@ def cargo_build_script(
         link_deps (list, optional): The subset of the (normal) dependencies of the crate that have the
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
+        allow_build_script_to_detect_nonhermetic_paths (bool, optional): Allow the build script to emit absolute host-system paths in rustc-link-search, rustc-env, or metadata directives.
         build_script_env (dict, optional): Environment variables for build scripts.
         build_script_env_files (list of label, optional): Files containing additional environment variables to set
             when running the build script.
@@ -215,6 +217,7 @@ def cargo_build_script(
         tools = tools,
         crate_features = crate_features,
         version = version,
+        allow_build_script_to_detect_nonhermetic_paths = allow_build_script_to_detect_nonhermetic_paths,
         build_script_env = build_script_env,
         build_script_env_files = build_script_env_files,
         use_default_shell_env = sanitized_use_default_shell_env,
