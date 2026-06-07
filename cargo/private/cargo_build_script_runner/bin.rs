@@ -124,19 +124,8 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(ar_path) = env::var_os("AR") {
-        // The default OSX toolchain uses libtool as ar_executable not ar.
-        // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
-        // /usr/bin/ar which is probably good enough.
-        let file_name = Path::new(&ar_path)
-            .file_name()
-            .ok_or_else(|| "Failed while getting file name".to_string())?
-            .to_string_lossy();
-        if file_name.contains("libtool") {
-            command.env_remove("AR");
-            command.env_remove("ARFLAGS");
-        } else {
-            command.env("AR", exec_root.join(ar_path));
-        }
+        validate_archiver(&ar_path)?;
+        command.env("AR", exec_root.join(ar_path));
     }
 
     // replace env vars with a ${pwd} prefix with the exec_root
@@ -481,6 +470,21 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
+fn validate_archiver(ar_path: &std::ffi::OsStr) -> Result<(), String> {
+    let file_name = Path::new(ar_path)
+        .file_name()
+        .ok_or_else(|| "Failed while getting file name".to_string())?
+        .to_string_lossy();
+    if file_name.contains("libtool") {
+        return Err(
+            "error: libtool cannot be used as AR. You must set \
+             --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
 fn main() {
     std::process::exit(match run_buildrs() {
         Ok(_) => 0,
@@ -667,5 +671,20 @@ windows
         let tree = parse_rustc_cfg_output(windows_output);
         assert_eq!(tree["CARGO_CFG_WINDOWS"], "");
         assert_eq!(tree["CARGO_CFG_TARGET_FAMILY"], "windows");
+    }
+
+    #[test]
+    fn rejects_libtool_archiver() {
+        let expected = "error: libtool cannot be used as AR. You must set \
+                        --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False";
+        assert_eq!(
+            validate_archiver(std::ffi::OsStr::new("path/to/libtool")).unwrap_err(),
+            expected
+        );
+        assert_eq!(
+            validate_archiver(std::ffi::OsStr::new("path/to/libtool-wrapper")).unwrap_err(),
+            expected
+        );
+        assert!(validate_archiver(std::ffi::OsStr::new("path/to/ar")).is_ok());
     }
 }
