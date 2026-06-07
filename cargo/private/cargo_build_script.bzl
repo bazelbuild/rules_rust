@@ -429,20 +429,6 @@ def _cargo_build_script_impl(ctx):
     env["ARFLAGS"] = ""
     env["CFLAGS"] = ""
     env["CXXFLAGS"] = ""
-    fallback_tools = []
-    if not cc_toolchain:
-        fallbacks = {
-            "AR": "_fallback_ar",
-            "CC": "_fallback_cc",
-            "CXX": "_fallback_cxx",
-        }
-        for key, attr in fallbacks.items():
-            tool = getattr(ctx.executable, attr)
-            if not tool:
-                fail("cargo_build_script without a cc toolchain requires %s" % attr)
-            fallback_tools.append(tool)
-            env[key] = "${{pwd}}/{}".format(tool.path)
-
     if cc_toolchain:
         # MSVC requires INCLUDE to be set
         cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
@@ -540,7 +526,7 @@ def _cargo_build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-        ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
+        ] + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + toolchain_tools,
     )
 
@@ -768,24 +754,6 @@ cargo_build_script = rule(
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
-        ),
-        "_fallback_ar": attr.label(
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-            default = Label("//cargo/private:no_ar"),
-        ),
-        "_fallback_cc": attr.label(
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-            default = Label("//cargo/private:no_cc"),
-        ),
-        "_fallback_cxx": attr.label(
-            cfg = "exec",
-            executable = True,
-            allow_files = True,
-            default = Label("//cargo/private:no_cxx"),
         ),
         "_out_dir_volatile_file_basenames": attr.label(
             default = Label("//cargo/settings:out_dir_volatile_file_basenames"),
