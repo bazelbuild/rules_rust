@@ -1,0 +1,20 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+
+package(default_visibility = ["//visibility:public"])
+
+cargo_build_script(
+    name = "denied",
+    srcs = ["build.rs"],
+    crate_root = "build.rs",
+    links = "z",
+    tags = ["manual"],
+)
+
+cargo_build_script(
+    name = "allowed",
+    srcs = ["build.rs"],
+    allow_build_script_to_detect_nonhermetic_paths = True,
+    crate_root = "build.rs",
+    links = "z",
+    tags = ["manual"],
+)

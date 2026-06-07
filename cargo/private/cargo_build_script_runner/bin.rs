@@ -48,6 +48,7 @@ fn run_buildrs() -> Result<(), String> {
         stderr_path,
         input_dep_env_paths,
         cargo_manifest_maker,
+        allow_build_script_to_detect_nonhermetic_paths,
     } = Args::parse();
 
     cargo_manifest_maker.create_runfiles_dir().unwrap();
@@ -184,6 +185,23 @@ fn run_buildrs() -> Result<(), String> {
                 )
             },
         )?;
+
+    if !allow_build_script_to_detect_nonhermetic_paths {
+        let nonhermetic_paths = BuildScriptOutput::nonhermetic_absolute_paths(
+            &buildrs_outputs,
+            &exec_root.to_string_lossy(),
+            &out_dir,
+        );
+        if !nonhermetic_paths.is_empty() {
+            return Err(format!(
+                "Build script emitted non-hermetic absolute path(s):\n  {}\n\
+                 Absolute paths are only allowed when the build-script runner can redact them into portable placeholders. \
+                 If these host-system paths are intentional, set \
+                 allow_build_script_to_detect_nonhermetic_paths = True on the cargo_build_script target.",
+                nonhermetic_paths.join("\n  ")
+            ));
+        }
+    }
 
     write(
         &env_file,
@@ -385,6 +403,7 @@ struct Args {
     stderr_path: Option<String>,
     input_dep_env_paths: Vec<String>,
     cargo_manifest_maker: RunfilesMaker,
+    allow_build_script_to_detect_nonhermetic_paths: bool,
 }
 
 impl Args {
@@ -409,6 +428,7 @@ impl Args {
         let mut input_dep_env_paths = Vec::new();
         let mut cargo_manifest_maker: Result<RunfilesMaker, String> =
             Err("Argument `cargo_manifest_args` not provided".to_owned());
+        let mut allow_build_script_to_detect_nonhermetic_paths = false;
 
         for mut arg in env::args().skip(1) {
             if arg.starts_with("--script=") {
@@ -437,6 +457,8 @@ impl Args {
                 cargo_manifest_maker = Ok(RunfilesMaker::from_param_file(
                     &arg.split_off("--cargo_manifest_args=".len()),
                 ));
+            } else if arg == "--allow_build_script_to_detect_nonhermetic_paths" {
+                allow_build_script_to_detect_nonhermetic_paths = true;
             }
         }
 
@@ -453,6 +475,7 @@ impl Args {
             stderr_path,
             input_dep_env_paths,
             cargo_manifest_maker: cargo_manifest_maker.unwrap(),
+            allow_build_script_to_detect_nonhermetic_paths,
         }
     }
 }
