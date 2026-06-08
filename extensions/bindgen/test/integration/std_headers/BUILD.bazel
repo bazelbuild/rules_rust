@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+exports_files(
+    [
+        "std_headers.h",
+    ],
+    visibility = ["//test/integration:__pkg__"],
+)
+
+cc_library(
+    name = "std_headers",
+    srcs = ["std_headers.cc"],
+    hdrs = ["std_headers.h"],
+    visibility = ["//test/integration:__pkg__"],
+)

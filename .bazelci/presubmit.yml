@@ -1145,7 +1145,7 @@ tasks:
     name: Extensions Bindgen iOS
     working_directory: extensions/bindgen
     build_flags:
-      - "--cpu=ios_sim_arm64"
+      - "--cpu=ios_arm64"
       - "--apple_platform_type=ios"
     build_targets:
       - "//..."
