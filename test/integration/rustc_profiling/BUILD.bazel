@@ -1,0 +1,25 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load(":self_profile_provider.bzl", "unstable_self_profiling_flags")
+
+unstable_self_profiling_flags(name = "unstable_self_profiling_flags")
+
+rust_binary(
+    name = "sample_binary",
+    srcs = ["main.rs"],
+    zself_profile_events = ":unstable_self_profiling_flags",
+)
+
+filegroup(
+    name = "self_profile_data",
+    srcs = [":sample_binary"],
+    output_group = "self_profile",
+)
+
+rust_test(
+    name = "test",
+    srcs = ["validate.rs"],
+    data = [":self_profile_data"],
+    edition = "2021",
+    env = {"PROFILE_PATH": "$(rootpath :sample_binary)"},
+    deps = [":sample_binary"],
+)
