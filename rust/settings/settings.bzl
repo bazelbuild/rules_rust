@@ -30,6 +30,7 @@ load(
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
+    _zself_profile_events = "zself_profile_events",
 )
 load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
@@ -574,4 +575,12 @@ def collect_cfgs():
         name = "collect_cfgs",
         scope = "universal",
         build_setting_default = False,
+    )
+
+def zself_profile_events(name = "zself_profile_events"):
+    """Passes -Zself-profile and -Zself-profile-events flags to rustc, requires a nightly toolchain.
+    """
+    _zself_profile_events(
+        name = name,
+        build_setting_default = [],
     )
