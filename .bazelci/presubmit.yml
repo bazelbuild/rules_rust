@@ -1140,6 +1140,15 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  extensions_bindgen_ios:
+    platform: macos_arm64
+    name: Extensions Bindgen iOS
+    working_directory: extensions/bindgen
+    build_flags:
+      - "--cpu=ios_sim_arm64"
+      - "--apple_platform_type=ios"
+    build_targets:
+      - "//..."
   # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
   # # The bindgen rules are currently broken on windows
   # extensions_bindgen_windows:
