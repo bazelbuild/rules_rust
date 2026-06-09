@@ -313,6 +313,7 @@ rustfmt_test = rule(
 def _rustfmt_toolchain_impl(ctx):
     make_variables = {
         "RUSTFMT": ctx.file.rustfmt.path,
+        "RUSTFMT_RLOCATIONPATH": _rlocationpath(ctx.file.rustfmt, ctx.workspace_name),
     }
 
     if ctx.attr.rustc:
