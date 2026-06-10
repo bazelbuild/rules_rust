@@ -322,6 +322,13 @@ def _define_targets():
         deps = [":cc_lib"],
     )
 
+    _target_maker(
+        rust_library,
+        name = "lib_depends_on_native",
+        srcs = ["rustdoc_depends_on_native.rs"],
+        deps = [":lib_nodep_with_cc"],
+    )
+
     cargo_build_script(
         name = "lib_build_script",
         srcs = ["rustdoc_build.rs"],
