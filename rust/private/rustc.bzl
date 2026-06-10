@@ -651,6 +651,7 @@ def collect_inputs(
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
+        include_linker_inputs = False,
         include_link_flags = True):
     """Gather's the inputs and required input information for a rustc action
 
@@ -673,6 +674,7 @@ def collect_inputs(
             metadata, even for libraries. This is used in rustdoc tests.
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
             rust binaries.
+        include_linker_inputs (bool, optional): Whether to include linker inputs in transitive dependencies.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
 
     Returns:
@@ -713,7 +715,7 @@ def collect_inputs(
     # flattened on each transitive rust_library dependency.
     libs_from_linker_inputs = []
     ambiguous_libs = {}
-    if crate_info.type not in ("lib", "rlib"):
+    if crate_info.type not in ("lib", "rlib") or include_linker_inputs:
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
@@ -2625,8 +2627,6 @@ def _add_native_link_flags(
         use_direct_link_driver (bool): Whether the linker is a direct driver (e.g. `ld`, `wasm-ld`) vs a wrapper (e.g. `clang`, `gcc`).
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
     """
-    if crate_type in ["lib", "rlib"]:
-        return
 
     use_pic = should_use_pic(
         cc_toolchain = cc_toolchain,

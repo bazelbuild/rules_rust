@@ -3,7 +3,15 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_proc_macro", "rust_test")
+load(
+    "//rust:defs.bzl",
+    "rust_binary",
+    "rust_doc",
+    "rust_doc_test",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -154,6 +162,24 @@ def _rustdoc_with_json_error_format_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_test_uses_cc_library_native_lib_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+
+    asserts.true(
+        env,
+        action.mnemonic in ["RustdocTestWriter", "RustdocTestCompile"],
+        "Expected RustdocTestWriter or RustdocTestCompile, got {}".format(action.mnemonic),
+    )
+    asserts.true(
+        env,
+        "-Clink-arg=-lrustdoc_cc_library" in action.argv or "-Clink-arg=-lrustdoc_cc_library.pic" in action.argv,
+        "Expected {} to contain a rustdoc_cc_library native link arg".format(action.argv),
+    )
+
+    return analysistest.end(env)
+
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
 rustdoc_for_bin_with_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_cc_lib_test_impl)
@@ -168,6 +194,7 @@ rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
     str(Label("//rust/settings:error_format")): "json",
 })
+rustdoc_test_uses_cc_library_native_lib_test = analysistest.make(_rustdoc_test_uses_cc_library_native_lib_test_impl)
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
     rule_fn(
@@ -329,6 +356,20 @@ def _define_targets():
         deps = [":lib_nodep_with_cc"],
     )
 
+    cc_library(
+        name = "rustdoc_cc_library",
+        hdrs = ["rustdoc.h"],
+        srcs = ["rustdoc.cc"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_cc_library",
+        srcs = ["rustdoc_nodep_lib.rs"],
+        crate_features = ["with_cc"],
+        deps = [":rustdoc_cc_library"],
+    )
+
     cargo_build_script(
         name = "lib_build_script",
         srcs = ["rustdoc_build.rs"],
@@ -446,6 +487,11 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_doc",
     )
 
+    rustdoc_test_uses_cc_library_native_lib_test(
+        name = "rustdoc_test_uses_cc_library_native_lib_test",
+        target_under_test = ":lib_with_cc_library_doctest",
+    )
+
     native.filegroup(
         name = "lib_doc_zip",
         srcs = [":lib_doc.zip"],
@@ -469,6 +515,7 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_lib_with_cc_lib_test",
             ":rustdoc_with_args_test",
             ":rustdoc_with_json_error_format_test",
+            ":rustdoc_test_uses_cc_library_native_lib_test",
             ":rustdoc_zip_output_test",
         ],
     )

@@ -20,6 +20,15 @@ load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
 
+def _collect_library_roots(roots, deps):
+    for dep in deps.to_list():
+        for lib in dep.libraries:
+            for artifact in [lib.static_library, lib.pic_static_library]:
+                if artifact:
+                    roots.append(artifact.root.path)
+        for input in dep.additional_inputs:
+            roots.append(input.root.path)
+
 def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
 
@@ -64,29 +73,23 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
 
     # Collect and dedupe all of the file roots in a list before appending
     # them to args to prevent generating a large amount of identical args
-    roots = []
-    root = crate_info.output.root.path
-    if not root in roots:
-        roots.append(root)
+    roots = [crate_info.output.root.path]
     for dep in crate_info.deps.to_list() + crate_info.proc_macro_deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
+        dep_cc_info = getattr(dep, "cc_info", None)
         if dep_crate_info:
-            root = dep_crate_info.output.root.path
-            if not root in roots:
-                roots.append(root)
+            roots.append(dep_crate_info.output.root.path)
         if dep_dep_info:
             for direct_dep in dep_dep_info.direct_crates.to_list():
-                root = direct_dep.dep.output.root.path
-                if not root in roots:
-                    roots.append(root)
+                roots.append(direct_dep.dep.output.root.path)
             for transitive_dep in dep_dep_info.transitive_crates.to_list():
-                root = transitive_dep.output.root.path
-                if not root in roots:
-                    roots.append(root)
+                roots.append(transitive_dep.output.root.path)
+            _collect_library_roots(roots, dep_dep_info.transitive_noncrates)
+        if dep_cc_info:
+            _collect_library_roots(roots, dep_cc_info.linking_context.linker_inputs)
 
-    for root in roots:
-        writer_args.add("--strip_substring={}/".format(root))
+    writer_args.add_all(roots, format_each = "--strip_substring=%s/", uniquify = True)
 
     # Indicate that the rustdoc_test args are over.
     writer_args.add("--")
