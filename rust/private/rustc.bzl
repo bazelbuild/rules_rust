@@ -668,17 +668,26 @@ def _depend_on_metadata(crate_info, force_depend_on_objects):
 
     return crate_info.type in ("rlib", "lib")
 
-def get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_type):
+def resolve_cc_runtime_linkage(ctx):
+    """Resolve the effective C++ runtime linkage for a target.
+
+    Driven by the per-target `cc_runtime_linkage` attribute, which only exists on
+    shared-library rules; other rules default to "dynamic" via the getattr default.
+    """
+    return getattr(ctx.attr, "cc_runtime_linkage", "dynamic")
+
+def get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_type, linkage = "dynamic"):
     if not cc_toolchain:
         return depset()
 
-    if crate_type in ["dylib", "cdylib"]:
+    if crate_type in ["dylib", "cdylib"] and linkage != "static":
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
         return cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
 
-    # For all other crate types we want to link C++ runtime library statically
-    # (for example libstdc++.a or libc++.a).
+    # For all other crate types -- and for shared libraries when static linkage
+    # is requested -- we link the C++ runtime library statically (for example
+    # libstdc++.a or libc++.a) so the output carries no external C++ runtime dep.
     return cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
 
 def collect_inputs(
@@ -804,7 +813,7 @@ def collect_inputs(
         nolinkstamp_compile_direct_inputs += files.macos_sdkroot
 
     if runtime_libs == None:
-        runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type)
+        runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type, resolve_cc_runtime_linkage(ctx))
 
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
@@ -1805,7 +1814,7 @@ def rustc_compile(
     if not cc_toolchain or not _are_linkstamps_supported(feature_configuration = feature_configuration):
         linkstamps = depset([])
 
-    runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type)
+    runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type, resolve_cc_runtime_linkage(ctx))
 
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)

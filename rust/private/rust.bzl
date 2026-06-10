@@ -1235,9 +1235,25 @@ _rust_shared_library_transition = transition(
     ],
 )
 
+_CC_RUNTIME_LINKAGE_ATTRS = {
+    "cc_runtime_linkage": attr.string(
+        doc = dedent("""\
+            Controls how the C++ runtime (libstdc++/libc++ and the unwinder) is
+            linked into this shared library:
+
+            - `dynamic` (default): link the C++ runtime dynamically (historical
+              behavior).
+            - `static`: embed the C++ runtime so the library has no external
+              libstdc++/libc++/libunwind dependency (a self-contained `.so`).
+            """),
+        values = ["dynamic", "static"],
+        default = "dynamic",
+    ),
+}
+
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
+    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS | _CC_RUNTIME_LINKAGE_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
