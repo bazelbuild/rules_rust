@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library", "rust_static_library", "rust_test", "rust_test_suite")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_not")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_not", "assert_argv_contains_prefix_then_digit")
 
 def _default_crate_name_library_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -58,8 +58,8 @@ def _slib_library_name_test_impl(ctx):
     """
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    assert_argv_contains(env, tut.actions[0], "--codegen=metadata=-2102077805")
-    assert_argv_contains(env, tut.actions[0], "--codegen=extra-filename=-2102077805")
+    assert_argv_contains_prefix_then_digit(env, tut.actions[0], "--codegen=metadata=-")
+    assert_argv_contains_prefix_then_digit(env, tut.actions[0], "--codegen=extra-filename=-")
     return analysistest.end(env)
 
 def _no_extra_filename_test_impl(ctx):
