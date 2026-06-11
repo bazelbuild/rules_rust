@@ -1,55 +1,118 @@
-//! Apply per-annotation `label_injections` to the raw config JSON before it is
-//! deserialized into typed structures.
+//! Per-annotation `label_injections` handling, deferred to render time so the
+//! lockfile stays apparent-only.
 //!
 //! Each annotation may carry a `label_injections` object that maps a canonical
-//! repository prefix (e.g. `@@xz~v1.2.3`) to the apparent repository prefix
-//! the user wrote in the annotation (e.g. `@xz`). Keys and values are bare
-//! repo prefixes — no `//pkg:target` suffix — because the rewrite below is a
-//! plain substring `replace`, and appending a target would cause double-`//`
-//! mangling on user references like `@xz//:lzma`. The map is produced by
-//! `sanitize_label_injections` in `crate_universe/private/common_utils.bzl`,
-//! which is the only place the apparent → canonical resolution is available.
+//! repository prefix (e.g. `@@openssl+v3.5.5`) to the apparent repository
+//! prefix the user wrote in the annotation (e.g. `@openssl`). Keys and values
+//! are bare repo prefixes — no `//pkg:target` suffix — because the rewrite is
+//! a plain substring `replace`, and appending a target would cause double-`//`
+//! mangling on user references like `@openssl//:install`. The map is produced
+//! by `sanitize_label_injections` in `crate_universe/private/common_utils.bzl`,
+//! which is the only place the apparent -> canonical resolution is available.
 //!
-//! Here we apply that map by walking every string under each annotation and
-//! replacing apparent occurrences with their canonical form. Any `//pkg:target`
-//! the user wrote after the apparent repo prefix is preserved verbatim. The
-//! `label_injections` field is consumed and removed before typed
-//! deserialization sees the annotation.
+//! Resolution timing matters: the apparent -> canonical mapping is computed
+//! fresh in Starlark on every extension evaluation, so it reflects whatever
+//! `bazel_dep` / `single_version_override` / `multiple_version_override` the
+//! ROOT module is currently asking for — not whatever was in effect when the
+//! producing module last repinned. If we baked the canonical form into the
+//! lockfile (or hashed it into the digest), root-level overrides would force
+//! every consumer to repin the producer's lockfile to recover. That's
+//! impossible for proper bzlmod consumers — the producer's lockfile lives in
+//! a read-only registry cache.
+//!
+//! The flow this module enables:
+//!
+//!   1. [`extract_global_mapping`] removes each annotation's
+//!      `label_injections` field at config-load time and merges them into a
+//!      single global apparent -> canonical map. The Config keeps the user's
+//!      apparent labels intact.
+//!   2. The Context built from that Config — and then serialized into the
+//!      lockfile — therefore contains apparent labels and is stable across
+//!      consumer-side overrides.
+//!   3. Just before rendering BUILD files, [`apply_mapping_to_value`] walks
+//!      the (per-session, freshly-loaded) Context and rewrites every string
+//!      using the current session's mapping.
+//!
+//! Conflicts (same apparent prefix mapping to two different canonicals across
+//! annotations) are rejected — they only arise under
+//! `multiple_version_override` with crossing `label_injections`, which has no
+//! coherent single-substitution form.
 
 use std::collections::BTreeMap;
 
+use anyhow::{bail, Result};
 use serde_json::{Map, Value};
 
-/// Locates `annotations` in the parsed config JSON and applies each
-/// annotation's `label_injections` to itself, removing the field in the
-/// process. No-op if `annotations` is absent or empty.
-pub(super) fn apply(config: &mut Value) {
+/// Walk `config.annotations` and:
+///
+///   * strip each annotation's `label_injections` field (so typed
+///     deserialization downstream doesn't see it);
+///   * merge every mapping into one global apparent -> canonical map.
+///
+/// Returns the merged map (canonical-repo-prefix -> apparent-repo-prefix, the
+/// same orientation [`apply_mapping_to_value`] expects). Empty if `annotations`
+/// is absent or no annotation declared injections.
+///
+/// Fails if two annotations declare different canonicals for the same apparent
+/// — that only happens when a root module is in `multiple_version_override`
+/// territory AND has two crate annotations injecting different versions of the
+/// same apparent name. There's no sound way to substitute one string into
+/// both forms; the user must split the offending crates into separate hubs.
+pub(super) fn extract_global_mapping(config: &mut Value) -> Result<BTreeMap<String, String>> {
     let Some(annotations) = config.get_mut("annotations").and_then(Value::as_object_mut) else {
-        return;
+        return Ok(BTreeMap::new());
     };
+
+    // Inverse map (apparent -> canonical) used for conflict detection; the
+    // returned map is canonical -> apparent, matching `apply_mapping_to_value`'s
+    // iteration shape.
+    let mut by_apparent: BTreeMap<String, String> = BTreeMap::new();
+    let mut by_canonical: BTreeMap<String, String> = BTreeMap::new();
 
     for annotation in annotations.values_mut() {
-        apply_to_annotation(annotation);
+        let Some(obj) = annotation.as_object_mut() else {
+            continue;
+        };
+        let Some(injections) = obj.remove("label_injections") else {
+            continue;
+        };
+        for (canonical, apparent) in into_mapping(injections) {
+            if let Some(existing) = by_apparent.get(&apparent) {
+                if existing != &canonical {
+                    bail!(
+                        "conflicting `label_injections` across annotations for \
+                         apparent label `{apparent}`: `{existing}` vs `{canonical}`. \
+                         This occurs when the root module pulls two versions of the \
+                         same bazel_dep (e.g. via `multiple_version_override`) and \
+                         crate_universe annotations from different modules each inject \
+                         their own version. Move the conflicting crate into its own \
+                         `crate.from_specs`/`crate.from_cargo` hub so each hub only \
+                         sees one canonical."
+                    );
+                }
+            }
+            by_apparent.insert(apparent.clone(), canonical.clone());
+            by_canonical.insert(canonical, apparent);
+        }
     }
+
+    Ok(by_canonical)
 }
 
-fn apply_to_annotation(annotation: &mut Value) {
-    let Some(obj) = annotation.as_object_mut() else {
-        return;
-    };
-
-    let Some(injections) = obj.remove("label_injections") else {
-        return;
-    };
-
-    let mapping = into_mapping(injections);
+/// Substitute every apparent-label prefix in `value` with its canonical form,
+/// using `mapping` (canonical -> apparent — the same shape returned by
+/// [`extract_global_mapping`]). Recurses into objects and arrays; rewrites
+/// both keys and values of objects (annotation fields like `extra_aliased_targets`
+/// use labels as keys).
+///
+/// Idempotent if the mapping is stable — applying it a second time with the
+/// same canonical strings on the LHS finds nothing to replace because the
+/// apparent prefix no longer appears.
+pub(crate) fn apply_mapping_to_value(value: &mut Value, mapping: &BTreeMap<String, String>) {
     if mapping.is_empty() {
         return;
     }
-
-    for value in obj.values_mut() {
-        rewrite(value, &mapping);
-    }
+    rewrite(value, mapping);
 }
 
 fn into_mapping(value: Value) -> BTreeMap<String, String> {
@@ -106,40 +169,44 @@ fn replace_all(input: &str, mapping: &BTreeMap<String, String>) -> String {
 
 #[cfg(test)]
 mod tests {
-    // The mapping keys in these tests come from `sanitize_label_injections`
-    // in `crate_universe/private/common_utils.bzl`. That helper takes
-    // `{Label(canonical): apparent_string}` and produces
-    // `{canonical_repo_prefix: apparent_string}`. The shape of the keys is
-    // therefore "canonical repo with optional package/target", and the values
-    // are the apparent labels the user wrote in their annotations. The Rust
-    // pass below substitutes apparent → canonical.
+    // Mapping keys come from `sanitize_label_injections` in
+    // `crate_universe/private/common_utils.bzl`. That helper takes
+    // `{Label(apparent): apparent_string}` and produces
+    // `{canonical_repo_prefix: apparent_repo_prefix}` (the Label coercion is
+    // where Starlark resolves apparent -> canonical for the current session).
+    // Substitution here rewrites apparent -> canonical.
     use super::*;
     use serde_json::json;
 
-    fn run(mut config: Value) -> Value {
-        apply(&mut config);
-        config
+    // ---- extract_global_mapping ----
+
+    #[test]
+    fn returns_empty_when_no_annotations() {
+        let mut input = json!({"other": 1});
+        let mapping = extract_global_mapping(&mut input).unwrap();
+        assert!(mapping.is_empty());
+        assert_eq!(input, json!({"other": 1}));
     }
 
     #[test]
-    fn no_annotations_is_noop() {
-        let input = json!({"other": 1});
-        assert_eq!(run(input.clone()), input);
-    }
-
-    #[test]
-    fn missing_label_injections_is_noop() {
-        let input = json!({
+    fn returns_empty_when_no_annotation_declares_injections() {
+        let mut input = json!({
             "annotations": {
                 "tokio 1.0.0": {"deps": ["@crate_index//:foo"]}
             }
         });
-        assert_eq!(run(input.clone()), input);
+        let mapping = extract_global_mapping(&mut input).unwrap();
+        assert!(mapping.is_empty());
+        // Input untouched — nothing to strip.
+        assert_eq!(
+            input,
+            json!({"annotations": {"tokio 1.0.0": {"deps": ["@crate_index//:foo"]}}}),
+        );
     }
 
     #[test]
-    fn empty_label_injections_is_stripped() {
-        let input = json!({
+    fn strips_empty_label_injections_field() {
+        let mut input = json!({
             "annotations": {
                 "tokio 1.0.0": {
                     "label_injections": {},
@@ -147,222 +214,206 @@ mod tests {
                 }
             }
         });
-        let expected = json!({
+        let mapping = extract_global_mapping(&mut input).unwrap();
+        assert!(mapping.is_empty());
+        // The (empty) label_injections field is stripped so typed deserialization
+        // doesn't trip over it; remaining strings are NOT substituted (deferred).
+        assert_eq!(
+            input,
+            json!({"annotations": {"tokio 1.0.0": {"deps": ["@crate_index//:foo"]}}}),
+        );
+    }
+
+    #[test]
+    fn merges_compatible_per_annotation_maps_into_one_global_map() {
+        let mut input = json!({
             "annotations": {
-                "tokio 1.0.0": {"deps": ["@crate_index//:foo"]}
+                "tokio 1.0.0": {
+                    "label_injections": {"@@xz~v1.2.3": "@xz"},
+                    "deps": ["@xz//:lzma"],
+                },
+                "rustls 0.21.0": {
+                    "label_injections": {"@@xz~v1.2.3": "@xz"},
+                    "deps": ["@xz//:liblzma"],
+                }
             }
         });
-        assert_eq!(run(input), expected);
+        let mapping = extract_global_mapping(&mut input).unwrap();
+        assert_eq!(
+            mapping,
+            BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]),
+        );
+        // label_injections stripped from both annotations; per-annotation strings
+        // are NOT rewritten here — that's apply_mapping_to_value's job at render
+        // time so the lockfile stays apparent-only.
+        assert_eq!(
+            input,
+            json!({
+                "annotations": {
+                    "tokio 1.0.0": {"deps": ["@xz//:lzma"]},
+                    "rustls 0.21.0": {"deps": ["@xz//:liblzma"]},
+                }
+            }),
+        );
+    }
+
+    #[test]
+    fn rejects_two_annotations_pointing_one_apparent_at_different_canonicals() {
+        // The only scenario this triggers is a root module in
+        // `multiple_version_override` territory where two crate annotations
+        // (from different bzlmod modules) each inject their own version of
+        // the same apparent label. There's no coherent single substitution.
+        let mut input = json!({
+            "annotations": {
+                "tokio 1.0.0": {
+                    "label_injections": {"@@openssl+v3.5.5": "@openssl"},
+                    "deps": ["@openssl//:install"],
+                },
+                "rustls 0.21.0": {
+                    "label_injections": {"@@openssl+v3.3.1": "@openssl"},
+                    "deps": ["@openssl//:install"],
+                }
+            }
+        });
+        let err = extract_global_mapping(&mut input).unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("conflicting `label_injections`"), "{msg}");
+        assert!(msg.contains("@openssl"), "{msg}");
+    }
+
+    // ---- apply_mapping_to_value ----
+
+    #[test]
+    fn noop_when_mapping_empty() {
+        let mut v = json!({"deps": ["@openssl//:install"]});
+        apply_mapping_to_value(&mut v, &BTreeMap::new());
+        assert_eq!(v, json!({"deps": ["@openssl//:install"]}));
     }
 
     #[test]
     fn substitutes_in_list_strings() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "build_script_data": ["@xz//:lzma"],
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "build_script_data": ["@@xz~v1.2.3//:lzma"],
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
+        let mut v = json!(["@xz//:lzma"]);
+        let mapping = BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(v, json!(["@@xz~v1.2.3//:lzma"]));
     }
 
     #[test]
     fn substitutes_in_dict_values() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "build_script_env": {"LZMA_BIN": "$(execpath @xz//:lzma)"},
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "build_script_env": {"LZMA_BIN": "$(execpath @@xz~v1.2.3//:lzma)"},
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
+        let mut v = json!({"LZMA_BIN": "$(execpath @xz//:lzma)"});
+        let mapping = BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(v, json!({"LZMA_BIN": "$(execpath @@xz~v1.2.3//:lzma)"}));
     }
 
     #[test]
     fn substitutes_in_dict_keys() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "extra_aliased_targets": {"@xz//:lzma": "lzma_alias"},
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "extra_aliased_targets": {"@@xz~v1.2.3//:lzma": "lzma_alias"},
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
+        // `extra_aliased_targets` keys, build_script_env keys, etc. are labels
+        // — the rewrite walks both keys and values.
+        let mut v = json!({"@xz//:lzma": "lzma_alias"});
+        let mapping = BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(v, json!({"@@xz~v1.2.3//:lzma": "lzma_alias"}));
     }
 
     #[test]
-    fn substitutes_in_additive_build_file_content() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "additive_build_file_content": "rust_library(deps = [\"@xz//:lzma\"])",
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "additive_build_file_content":
-                        "rust_library(deps = [\"@@xz~v1.2.3//:lzma\"])",
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
+    fn substitutes_in_long_string_payloads() {
+        // additive_build_file_content is a raw Starlark blob; substring
+        // substitution still applies (and must not double-mangle the `//`).
+        let mut v = json!("rust_library(deps = [\"@xz//:lzma\"])");
+        let mapping = BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(v, json!("rust_library(deps = [\"@@xz~v1.2.3//:lzma\"])"));
     }
 
     #[test]
-    fn substitutes_in_nested_select() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "deps": {
-                        "common": ["@xz//:lzma"],
-                        "selects": {
-                            "@platforms//os:linux": ["@xz//:linux_only"]
-                        }
+    fn substitutes_under_deep_nesting_with_selects() {
+        // The headline shape: build_script_env carrying `$(execpath ...)` /
+        // `$(rlocationpath ...)` expansions of apparent labels, both at the
+        // `common` level and inside platform `selects`. Every nested string
+        // (including those nested via Select dict keys) must be rewritten.
+        let mut v = json!({
+            "build_script_data": {
+                "common": ["@xz//:lzma"],
+                "selects": {
+                    "@platforms//os:linux": ["@xz//:liblzma"]
+                }
+            },
+            "build_script_env": {
+                "common": {"LZMA_BIN": "$(execpath @xz//:lzma)"},
+                "selects": {
+                    "@platforms//os:linux": {
+                        "LZMA_LIB": "$(rlocationpath @xz//:liblzma)"
                     }
                 }
             }
         });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "deps": {
-                        "common": ["@@xz~v1.2.3//:lzma"],
-                        "selects": {
-                            "@platforms//os:linux": ["@@xz~v1.2.3//:linux_only"]
-                        }
+        let mapping = BTreeMap::from([("@@xz~v1.2.3".to_owned(), "@xz".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(
+            v,
+            json!({
+                "build_script_data": {
+                    "common": ["@@xz~v1.2.3//:lzma"],
+                    "selects": {
+                        "@platforms//os:linux": ["@@xz~v1.2.3//:liblzma"]
                     }
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
-    }
-
-    #[test]
-    fn applies_multiple_mappings() {
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {
-                        "@@xz~v1.2.3": "@xz",
-                        "@@bzip2~v0.5": "@bzip2",
-                    },
-                    "build_script_data": ["@xz//:lzma", "@bzip2//:bz2"],
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "build_script_data": ["@@xz~v1.2.3//:lzma", "@@bzip2~v0.5//:bz2"],
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
-    }
-
-    #[test]
-    fn substitutes_in_build_script_env_with_select_and_location_expansion() {
-        // The headline use case: a `build_script_env` that carries a
-        // `$(execpath ...)` expansion of an apparent label, both at the
-        // `common` level and under a platform `select`. Every nested string
-        // must be rewritten.
-        let input = json!({
-            "annotations": {
-                "lzma-sys 0.1.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "build_script_data": {
-                        "common": ["@xz//:lzma"],
-                        "selects": {
-                            "@platforms//os:linux": ["@xz//:liblzma"]
-                        }
-                    },
-                    "build_script_env": {
-                        "common": {"LZMA_BIN": "$(execpath @xz//:lzma)"},
-                        "selects": {
-                            "@platforms//os:linux": {
-                                "LZMA_LIB": "$(rlocationpath @xz//:liblzma)"
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        let expected = json!({
-            "annotations": {
-                "lzma-sys 0.1.0": {
-                    "build_script_data": {
-                        "common": ["@@xz~v1.2.3//:lzma"],
-                        "selects": {
-                            "@platforms//os:linux": ["@@xz~v1.2.3//:liblzma"]
-                        }
-                    },
-                    "build_script_env": {
-                        "common": {"LZMA_BIN": "$(execpath @@xz~v1.2.3//:lzma)"},
-                        "selects": {
-                            "@platforms//os:linux": {
-                                "LZMA_LIB": "$(rlocationpath @@xz~v1.2.3//:liblzma)"
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        assert_eq!(run(input), expected);
-    }
-
-    #[test]
-    fn per_annotation_isolation() {
-        // Mapping under one annotation must not leak into another.
-        let input = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "label_injections": {"@@xz~v1.2.3": "@xz"},
-                    "deps": ["@xz//:lzma"],
                 },
-                "serde 1.0.0": {
-                    "deps": ["@xz//:lzma"],
+                "build_script_env": {
+                    "common": {"LZMA_BIN": "$(execpath @@xz~v1.2.3//:lzma)"},
+                    "selects": {
+                        "@platforms//os:linux": {
+                            "LZMA_LIB": "$(rlocationpath @@xz~v1.2.3//:liblzma)"
+                        }
+                    }
+                }
+            }),
+        );
+    }
+
+    #[test]
+    fn applies_multiple_mapping_entries_in_one_pass() {
+        let mut v = json!(["@xz//:lzma", "@bzip2//:bz2"]);
+        let mapping = BTreeMap::from([
+            ("@@xz~v1.2.3".to_owned(), "@xz".to_owned()),
+            ("@@bzip2~v0.5".to_owned(), "@bzip2".to_owned()),
+        ]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(v, json!(["@@xz~v1.2.3//:lzma", "@@bzip2~v0.5//:bz2"]));
+    }
+
+    #[test]
+    fn rewrites_context_like_payload() {
+        // Approximates how generate.rs uses the helper: substitution applied
+        // to a Context JSON's per-crate fields just before rendering.
+        let mut context = json!({
+            "crates": {
+                "openssl-sys 0.9.116": {
+                    "common_attrs": {
+                        "build_script_data": ["@openssl//:install"],
+                        "build_script_env": {
+                            "common": {"OPENSSL_DIR": "$(execpath @openssl//:install)"}
+                        },
+                    }
                 }
             }
         });
-        let expected = json!({
-            "annotations": {
-                "tokio 1.0.0": {
-                    "deps": ["@@xz~v1.2.3//:lzma"],
-                },
-                "serde 1.0.0": {
-                    "deps": ["@xz//:lzma"],
+        let mapping = BTreeMap::from([("@@openssl+v3.5.5".to_owned(), "@openssl".to_owned())]);
+        apply_mapping_to_value(&mut context, &mapping);
+        assert_eq!(
+            context,
+            json!({
+                "crates": {
+                    "openssl-sys 0.9.116": {
+                        "common_attrs": {
+                            "build_script_data": ["@@openssl+v3.5.5//:install"],
+                            "build_script_env": {
+                                "common": {"OPENSSL_DIR": "$(execpath @@openssl+v3.5.5//:install)"}
+                            },
+                        }
+                    }
                 }
-            }
-        });
-        assert_eq!(run(input), expected);
+            }),
+        );
     }
 }

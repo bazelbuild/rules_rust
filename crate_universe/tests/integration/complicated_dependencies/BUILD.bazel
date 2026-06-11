@@ -1,8 +1,21 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+# Binary that links the `openssl` crate fetched by this module's
+# `crate.from_specs` extension. Exposed publicly so dependent modules can
+# spawn it and prove the transitively-resolved hub repo produced a runnable
+# artifact (not just a buildable one).
+rust_binary(
+    name = "openssl_version",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = ["@complicated_dependencies//:openssl"],
+)
 
 build_test(
     name = "build_test",
     targets = [
-        "@complicated_dependencies//:openssl",
+        ":openssl_version",
     ],
 )

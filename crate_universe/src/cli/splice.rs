@@ -127,6 +127,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .context("Failed to generate lockfile")?
     };
 
+    // Splice doesn't render BUILD files; `config.label_injection_mapping` is
+    // populated but unused here. The substitution happens in `generate`.
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
     let resolver_data = TreeResolver::new(cargo.clone())
