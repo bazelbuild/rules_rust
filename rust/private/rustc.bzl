@@ -1303,6 +1303,15 @@ def construct_arguments(
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
+        # Crates with generated sources are compiled from the output tree (see
+        # `transform_sources`), so the coverage mapping records their files
+        # with a bazel-out/... prefix. Bazel's lcov merger silently drops all
+        # coverage for such crates, so we remap the prefix away. Skipped when
+        # `remap_path_prefix` is None (rustdoc), since rustdoc only supports
+        # `--remap-path-prefix` behind `-Zunstable-options`.
+        if remap_path_prefix != None:
+            rustc_flags.add("--remap-path-prefix={}/=".format(ctx.bin_dir.path))
+
     if toolchain._experimental_link_std_dylib:
         rustc_flags.add("--codegen=prefer-dynamic")
 
