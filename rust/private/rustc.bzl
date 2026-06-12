@@ -651,6 +651,7 @@ def collect_inputs(
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
+        include_linker_inputs = False,
         include_link_flags = True):
     """Gather's the inputs and required input information for a rustc action
 
@@ -673,6 +674,7 @@ def collect_inputs(
             metadata, even for libraries. This is used in rustdoc tests.
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
             rust binaries.
+        include_linker_inputs (bool, optional): Whether to include linker inputs in transitive dependencies.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
 
     Returns:
@@ -713,7 +715,7 @@ def collect_inputs(
     # flattened on each transitive rust_library dependency.
     libs_from_linker_inputs = []
     ambiguous_libs = {}
-    if crate_info.type not in ("lib", "rlib"):
+    if crate_info.type not in ("lib", "rlib") or include_linker_inputs:
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
@@ -834,7 +836,10 @@ def collect_inputs(
 
 def _will_emit_object_file(emit):
     for e in emit:
-        if e == "obj" or e.startswith("obj="):
+        if type(e) in ["tuple", "list"] and len(e) == 2:
+            if e[0] == "obj":
+                return True
+        elif type(e) == "string" and (e == "obj" or e.startswith("obj=")):
             return True
     return False
 
@@ -1173,6 +1178,10 @@ def construct_arguments(
     for kind in emit:
         if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
+        elif type(kind) in ["tuple", "list"] and len(kind) == 2:
+            # 'kind' is a (string, File) tuple/list. Passing the File object directly to
+            # Args.add allows Bazel to perform path mapping on the path.
+            rustc_flags.add(kind[1], format = "--emit=" + kind[0] + "=%s")
         else:
             emit_without_paths.append(kind)
 
@@ -1563,6 +1572,23 @@ def rustc_compile_action(
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
+    # Declares the outputs of the rustc compile action.
+    # By default this is the binary output; if cc_common.link is used, this is
+    # the main `.o` file (`output_o` below).
+    outputs = [crate_info.output]
+
+    # The `.o` output file, only used for linking via cc_common.link.
+    # When output_hash is set (e.g. for rust_test targets), include it in the
+    # filename to avoid collisions with other targets sharing the same crate name.
+    output_o = None
+    if "obj" in emit:
+        obj_ext = ".o"
+        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
+        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
+        outputs = [output_o]
+        emit.remove("obj")
+        emit.append(("obj", output_o))
+
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
     require_explicit_unstable_features = False
     if hasattr(ctx.attr, "require_explicit_unstable_features"):
@@ -1636,21 +1662,6 @@ def rustc_compile_action(
         formatted_version = " v{}".format(attr.version)
     else:
         formatted_version = ""
-
-    # Declares the outputs of the rustc compile action.
-    # By default this is the binary output; if cc_common.link is used, this is
-    # the main `.o` file (`output_o` below).
-    outputs = [crate_info.output]
-
-    # The `.o` output file, only used for linking via cc_common.link.
-    # When output_hash is set (e.g. for rust_test targets), include it in the
-    # filename to avoid collisions with other targets sharing the same crate name.
-    output_o = None
-    if experimental_use_cc_common_link:
-        obj_ext = ".o"
-        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
-        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
-        outputs = [output_o]
 
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
@@ -2625,8 +2636,6 @@ def _add_native_link_flags(
         use_direct_link_driver (bool): Whether the linker is a direct driver (e.g. `ld`, `wasm-ld`) vs a wrapper (e.g. `clang`, `gcc`).
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
     """
-    if crate_type in ["lib", "rlib"]:
-        return
 
     use_pic = should_use_pic(
         cc_toolchain = cc_toolchain,
