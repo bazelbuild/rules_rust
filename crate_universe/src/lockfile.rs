@@ -69,6 +69,19 @@ impl Digest {
         let rustc_version = Self::bin_version(rustc_bin)?;
         let cargo_bazel_version = env!("CARGO_PKG_VERSION");
 
+        // Mirror the Context.checksum sanitization below for Config's
+        // `label_injection_mapping`: that field is a per-session derived
+        // artifact (apparent -> canonical labels resolved through the consumer
+        // module's repo_mapping). If it entered the hash, a consumer-side
+        // `single_version_override` would shift the canonical names, change
+        // the digest, and force a producer-side repin to recover — which is
+        // impossible for registry-distributed producers whose lockfile lives
+        // in a read-only bzlmod cache.
+        let config_for_hash = Config {
+            label_injection_mapping: Default::default(),
+            ..config.clone()
+        };
+
         // Ensure the checksum of a digest is not present before computing one
         Ok(match context.checksum {
             Some(_) => Self::compute(
@@ -76,7 +89,7 @@ impl Digest {
                     checksum: None,
                     ..context.clone()
                 },
-                config,
+                &config_for_hash,
                 &splicing_metadata,
                 cargo_bazel_version,
                 &cargo_version,
@@ -84,7 +97,7 @@ impl Digest {
             ),
             None => Self::compute(
                 context,
-                config,
+                &config_for_hash,
                 &splicing_metadata,
                 cargo_bazel_version,
                 &cargo_version,
