@@ -219,7 +219,8 @@ fn main() {
         .arg("-format=lcov")
         .arg("-instr-profile")
         .arg(&profdata_file)
-        .arg("-ignore-filename-regex=.*external/.+")
+        .arg(r"-ignore-filename-regex=.*external[/\\].+")
+        .arg(r"-ignore-filename-regex=.*rustc[/\\].+")
         .arg("-ignore-filename-regex=/tmp/.+")
         .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
@@ -254,7 +255,8 @@ fn main() {
         coverage_output_file,
         report_str
             .replace("#/proc/self/cwd/", "")
-            .replace(&execroot.display().to_string(), ""),
+            .replace(&execroot.display().to_string(), "")
+            .replace('\\', "/"),
     )
     .unwrap();
 
