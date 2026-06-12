@@ -273,16 +273,13 @@ def _rlocationpath(file, workspace_name):
 def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
     """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
 
+    Merges runfiles from both the script binary and the data runfiles target,
+    filtering out the fake executable from the data runfiles.
+
     Due to the inability to forcibly generate runfiles directories for use as inputs
     to actions, this function creates a custom runfiles directory that can more
     consistently be relied upon as an input. For more details see:
     https://github.com/bazelbuild/bazel/issues/15486
-
-    Merges runfiles from both the script binary and the data runfiles target,
-    filtering out the fake executable from the data runfiles.
-
-    If runfiles directories can ever be more directly treated as an input this function
-    can be retired.
 
     Args:
         ctx (ctx): The rule's context object
@@ -534,7 +531,6 @@ def _cargo_build_script_impl(ctx):
 
     tools = depset(
         direct = [
-            script,
             ctx.executable._cargo_build_script_runner,
         ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + toolchain_tools,
@@ -620,7 +616,10 @@ def _cargo_build_script_impl(ctx):
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
-        tools = tools,
+        tools = [
+            ctx.attr.script[DefaultInfo].files_to_run,
+            tools,
+        ],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
