@@ -32,6 +32,7 @@ load(
 )
 load(
     ":rustc.bzl",
+    "UnstableSelfProfileInfo",
     "collect_extra_rustc_flags",
     "is_no_std",
     "rustc_compile_action",
@@ -852,6 +853,11 @@ _COMMON_ATTRS = {
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
+    ),
+    "zself_profile_events": attr.label(
+        doc = "Passes -Zself-profile and -Zself-profile-events flag to rustc, requires a nightly toolchain.",
+        providers = [UnstableSelfProfileInfo],
+        default = None,
     ),
     "_collect_cfgs": attr.label(
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",

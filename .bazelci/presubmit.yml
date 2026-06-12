@@ -827,6 +827,12 @@ tasks:
     working_directory: test/integration/unstable_rust_features
     build_targets:
       - "//..."
+  rustc_profiling_feature:
+    name: Build with rustc_profiling_feature
+    platform: ubuntu2204
+    working_directory: test/integration/rustc_profiling
+    build_targets:
+      - "//..."
   repo_mapping_runfiles:
     name: repo mapping test
     platform: ubuntu2204

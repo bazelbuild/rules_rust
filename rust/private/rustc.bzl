@@ -53,6 +53,7 @@ load(
     "is_exec_configuration",
     "is_std_dylib",
     "make_static_lib_symlink",
+    "matches_prefix_filter",
     "parse_env_strings",
     "relativize",
 )
@@ -103,6 +104,19 @@ ExtraExecRustcFlagsInfo = provider(
 PerCrateRustcFlagsInfo = provider(
     doc = "Pass each value as an additional flag to non-exec rustc invocations for crates matching the provided filter",
     fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
+)
+
+UnstableSelfProfileInfo = provider(
+    doc = "Passes -Zself-profile and -Zself-profile-events flags to matching rust crates.",
+    fields = {
+        "events": (
+            "List[tuple[str, str]]: A list of `(pattern, event_types)` pairs. The `pattern` " +
+            "matches against a target's label (with leading `@//` stripped) or " +
+            "its execution path (an empty `pattern` matches all targets). The `event_types` " +
+            "specifies comma-separated categories of self-profile events to pass to " +
+            "`-Zself-profile-events` (e.g., `all`)."
+        ),
+    },
 )
 
 def _get_rustc_env(attr, toolchain, crate_name):
@@ -1455,6 +1469,45 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     return flags
 
+def setup_zself_profile(ctx, crate_info):
+    """Sets up rustc self-profiling if enabled by zself_profile_events.
+
+    Args:
+        ctx (ctx): The current rule's context object.
+        crate_info (CrateInfo): The CrateInfo provider of the target crate.
+
+    Returns:
+        tuple: A tuple containing:
+            - File: The declared self-profile directory, or None if disabled.
+            - list[str]: The self-profile flags to pass to rustc.
+    """
+    if not getattr(ctx.attr, "zself_profile_events", None) or UnstableSelfProfileInfo not in ctx.attr.zself_profile_events:
+        return None, []
+
+    events_info = ctx.attr.zself_profile_events[UnstableSelfProfileInfo].events
+
+    is_self_profile_enabled = False
+    event_types_to_use = None
+
+    # Check if the current crate matches any of the specified prefix filters.
+    # Matching works by comparing against the target's label or its execution path.
+    for pattern, event_types in events_info:
+        if matches_prefix_filter(ctx.label, crate_info.root.path, pattern):
+            is_self_profile_enabled = True
+            event_types_to_use = event_types
+            break
+
+    if not is_self_profile_enabled:
+        return None, []
+
+    profiling_dir = ctx.actions.declare_directory(crate_info.output.basename + "_self-profile", sibling = crate_info.output)
+
+    profiling_flags = ["-Zself-profile=%s" % profiling_dir.path]
+    if event_types_to_use:
+        profiling_flags.append("-Zself-profile-events=%s" % event_types_to_use)
+
+    return profiling_dir, profiling_flags
+
 def rustc_compile_action(
         *,
         ctx,
@@ -1541,6 +1594,9 @@ def rustc_compile_action(
     if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
         rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
         lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
+
+    profiling_dir, profiling_flags = setup_zself_profile(ctx, crate_info)
+    rust_flags = rust_flags + profiling_flags
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
@@ -1676,6 +1732,8 @@ def rustc_compile_action(
     action_outputs = list(outputs)
     if rustc_output:
         action_outputs.append(rustc_output)
+    if profiling_dir:
+        action_outputs.append(profiling_dir)
 
     # Get the compilation mode for the current target.
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
@@ -1950,7 +2008,8 @@ def rustc_compile_action(
             output_group_info["rustc_rmeta_output"] = depset([rustc_rmeta_output])
     if rustc_output:
         output_group_info["rustc_output"] = depset([rustc_output])
-
+    if profiling_dir:
+        output_group_info["self_profile"] = depset([profiling_dir])
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
 
@@ -2737,19 +2796,7 @@ def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
         if not flag:
             fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
 
-        label_string = str(ctx.label)
-        if label_string.startswith("@//"):
-            label = label_string[1:]
-        elif label_string.startswith(
-            # buildifier: disable=canonical-repository
-            "@@//",
-        ):
-            label = label_string[2:]
-        else:
-            label = label_string
-        execution_path = crate_root.path
-
-        if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
+        if matches_prefix_filter(ctx.label, crate_root.path, prefix_filter):
             flags.append(flag)
 
     return flags
@@ -2945,4 +2992,39 @@ no_std = rule(
         "_no_std": attr.label(default = "//rust/settings:no_std"),
     },
     implementation = _no_std_impl,
+)
+
+def _zself_profile_events_impl(ctx):
+    events = []
+    for val in ctx.build_setting_value:
+        if not val:
+            continue
+        if "@" in val:
+            pattern, event_types = val.split("@", 1)
+            events.append((pattern, event_types))
+        else:
+            fail("zself_profile_events '{}' does not follow the expected format: prefix_filter@comma_separated_flag".format(val))
+    return [UnstableSelfProfileInfo(events = events)]
+
+zself_profile_events = rule(
+    doc = (
+        "Passes -Zself-profile and -Zself-profile-events flags to matching Rust crates." +
+        "This feature allows end-users to profile rustc compiler performance on specific crates " +
+        "using rustc's self-profiler. Because these flags are unstable, using them requires a " +
+        "nightly compiler toolchain. The setting is configured from the command line via " +
+        "`--@rules_rust//rust/settings:zself_profile_events`." +
+        "The expected value format is `<prefix_filter>@<events_specification>`. Multiple uses of " +
+        "this flag are accumulated, however only first <events_specification> will be applied for same" +
+        "<prefix_filter>." +
+        "If the target prefix matches with <prefix_filter>, `-Zself-profile` and `-Zself-profile-events` " +
+        "with values as `<crate_name>.self-profile/` and <events_specification> respectively " +
+        "is passed to rustc compiler. The generated profile files (e.g., `.mm_profdata`) are placed" +
+        "under `bazel-out/bin/path/to/package/crate_name_self-profile/` which can be seen by passing" +
+        " `--output_groups=self_profile` flag." +
+        "blaze build //my/project:my_lib \\" +
+        "--@rules_rust//rust/settings:zself_profile_events=//my/project@all \\" +
+        "--output_groups=self_profile"
+    ),
+    implementation = _zself_profile_events_impl,
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
