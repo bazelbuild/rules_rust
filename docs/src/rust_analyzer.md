@@ -1,146 +1,380 @@
 # Rust Analyzer
 
+[rust-analyzer](https://rust-analyzer.github.io/) needs a project model to do its job.
 For [non-Cargo projects](https://rust-analyzer.github.io/manual.html#non-cargo-based-projects),
-[rust-analyzer](https://rust-analyzer.github.io/) depends on either a `rust-project.json` file
-at the root of the project that describes its structure or on build system specific
-[project auto-discovery](https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig).
-The `rust_analyzer` rules facilitate both approaches.
+that comes from [project auto-discovery](https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig):
+rust-analyzer invokes a build-system-specific command and reads the project description
+from its stdout. `rules_rust` provides that command (`discover_bazel_rust_project`) and
+a one-shot installer (`setup`) that wires it up for you.
 
-## rust-project.json approach
+Performance is good enough on large monorepos: the discover binary reads the per-crate
+spec files Bazel's already producing via the [Build Event Protocol][bep] (no separate
+`bazel aquery` round-trip), and the assembled project JSON is memoized in a local
+content-addressed cache.
 
-### Setup
+[bep]: https://bazel.build/remote/bep
 
-First, ensure `rules_rust` is setup in your `MODULE.bazel`:
+## Quick start (VSCode)
 
-```python
-# MODULE.bazel
+Two steps from a clean checkout to a working IDE:
 
-# See releases page for available versions:
-# https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "{SEE_RELEASES}")
+1. Install the [rust-analyzer extension](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
+2. Write the `.vscode/settings.json` keys that wire everything together:
+   ```
+   bazel run @rules_rust//tools/rust_analyzer:setup -- vscode
+   ```
+
+Reload the VSCode window. rust-analyzer will run the Bazel-bundled LSP server, discover
+the project on the fly via `discover_bazel_rust_project`, run on-save flycheck via
+`flycheck`, and auto-reload when any of the watched BUILD files change.
+
+`setup` is the one entry point for every editor — `vscode`, `neovim`, `helix`, `print`
+are subcommands; see [Editors other than VSCode](#editors-other-than-vscode) below for
+the other three. The shared flags (`--workspace`, `--output-user-root`,
+`--skip-proc-macro-server`, `--skip-rustfmt`) accept on any subcommand.
+
+`setup vscode` writes two artifacts:
+
+- Managed keys in `.vscode/settings.json`:
+  `rust-analyzer.workspace.discoverConfig`, `rust-analyzer.server.path`,
+  `rust-analyzer.procMacro.server`, `rust-analyzer.rustfmt.overrideCommand`,
+  `rust-analyzer.files.excludeDirs` (auto-populated with every immediate
+  subdirectory that contains a `Cargo.toml`, so rust-analyzer doesn't load
+  those as parallel cargo workspaces in addition to the discoverConfig
+  project), and matching `files.exclude` / `files.watcherExclude` /
+  `search.exclude` entries for the Bazel convenience symlinks. User keys are
+  preserved on re-runs.
+- Five small launcher scripts under `.vscode/.rules_rust_analyzer/`
+  (`rust_analyzer`, `rust_analyzer_proc_macro_srv`, `rustfmt`, `flycheck`,
+  `discover_bazel_rust_project`; `.sh` on POSIX, `.bat` on Windows). The
+  launchers — not `bazel-bin/` — are what the LSP / proc-macro /
+  rustfmt / discover / flycheck settings point at, so `bazel clean` doesn't
+  break the IDE: if the underlying wrapper binary is missing, the next launch
+  rebuilds it on demand; otherwise the launcher exec's it directly without
+  touching Bazel at all. That fast path matters because **Bazel serializes
+  commands per output_base** — wrapping every LSP / discover / format call
+  in `bazel run` would deadlock the IDE behind any concurrent
+  `bazel build` / CI run.
+
+With all keys wired up, **users do not need a host rust install**: rust-analyzer,
+proc-macro-srv, and rustfmt all come from the Bazel toolchain. `editor.formatOnSave`
+calls rust-analyzer's LSP formatting request, which spawns the rustfmt launcher,
+which exec's the Bazel-built rustfmt wrapper.
+
+Re-run `setup vscode` any time. Flags:
+
+- `--dry-run` previews the settings JSON. (vscode subcommand only)
+- `--replace` starts from scratch. (vscode subcommand only)
+- `--skip-proc-macro-server` leaves the proc-macro key alone.
+- `--skip-rustfmt` leaves the formatter key alone (use the host rustfmt instead).
+- `--output-user-root <abs-path>` overrides where the flycheck wrapper's
+  dedicated Bazel server lives (its `--output_user_root`). Default:
+  `${HOME}/.vscode-server/.rules_rust_analyzer/output_user_root` when that
+  directory exists (remote-SSH / Codespaces), else
+  `${HOME}/.vscode/.rules_rust_analyzer/output_user_root`. Required on
+  Windows for any non-trivial workspace: Bazel's path-length budget plus
+  the deepest `external/+...//bin/...` paths it generates can blow MAX_PATH;
+  point this at something short like `C:\ra-ob` or `D:\bzl\ra`.
+
+### What you get in the editor
+
+- **`▶ Run Tests`** codelens on every `#[cfg(test)] mod ...` (runs all
+  tests in the module via `bazel test`).
+- **`▶ Run Test`** codelens on every individual `#[test]` function (runs
+  exactly that test via `bazel test --test_arg=--exact --test_arg=<id>`).
+- **On-save squiggles** from rustc diagnostics, via the flycheck wrapper.
+- **Format-on-save** via the Bazel-toolchain rustfmt.
+- **Workspace reload** when any watched BUILD / MODULE.bazel file changes.
+
+### Debugging
+
+The `▶ Debug` codelens that VSCode displays next to `#[test]` functions
+**does not work** with this setup, and we can't fix it from the
+rules_rust side. The VSCode rust-analyzer extension's debug handler
+([`editors/code/src/debug.ts`][ra-debug] in upstream) hard-bails on
+shell runnables — it only knows how to debug crates whose runnable is
+shaped as a cargo invocation, because it shells out to cargo with
+`--message-format=json --no-run` to discover the test binary path.
+Bazel projects emit shell runnables (`bazel test ...`), so the extension
+silently returns `undefined` and no debug session starts. Lifting this
+would need a PR upstream to teach the extension how to extract a binary
+path from a shell runnable.
+
+**The supported debug path is `.vscode/launch.json` + F5**, via the
+[`gen_launch_json` tool][gen-launch-json] this repository ships:
+
+```
+bazel run @rules_rust//tools/vscode:gen_launch_json
 ```
 
-Bazel will create the target `@rules_rust//tools/rust_analyzer:gen_rust_project`, which you can build
-with
+It queries Bazel for every `rust_binary` / `rust_test` target in the
+workspace and writes a `.vscode/launch.json` where each entry uses
+CodeLLDB's `targetCreateCommands` with a Python script that runs
+`bazel run --compilation_mode=dbg --strip=never --run_under=...
+<target>` to build + extract the binary path, then attaches LLDB. Pure
+Bazel invocation under the hood; works for any target without
+custom config. Re-run when targets change. Install
+[CodeLLDB][codelldb] (or `lldb-dap` / `vscode-lldb`) first.
+
+Caveat: per-target only, not per-`#[test]`-fn. Once a debug session is
+attached, set a breakpoint in the test you care about and re-run the
+target — libtest's test selection happens inside the binary, so a single
+launch config covers every test in the target.
+
+[ra-debug]: https://github.com/rust-lang/rust-analyzer/blob/master/editors/code/src/debug.ts
+[gen-launch-json]: https://github.com/bazelbuild/rules_rust/blob/main/tools/vscode/src/bin/gen_launch_json.rs
+[codelldb]: https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb
+
+## On-save diagnostics (flycheck)
+
+The assembled `rust-project.json` wires a `flycheck` runnable that
+rust-analyzer invokes whenever a file is saved. The runnable points at the
+flycheck launcher script (`.vscode/.rules_rust_analyzer/flycheck.sh` on
+POSIX, `.bat` on Windows), which exec's the `flycheck` wrapper binary —
+`setup` writes both.
+
+The wrapper runs `bazel build` on the saved file's owning crate with
+`error_format=json` and `--keep_going`, harvests every action's
+stderr from the build's Build Event Protocol stream, filters for rustc
+JSON messages, and streams them to stdout for rust-analyzer to render
+as inline diagnostics.
+
+The wrapper uses a **dedicated `--output_user_root`** (the path baked into
+the flycheck launcher at `setup` time; see `--output-user-root`
+above) so its `error_format=json` / `rustc_output_diagnostics=true` flags
+don't thrash the user's primary `bazel build` analysis cache. The two
+Bazel servers — yours and the flycheck one — are fully isolated.
+
+Failed actions are deliberately supported: rustc still emits its
+diagnostics to stderr before exiting non-zero, and BEP captures that
+stderr regardless of action outcome. The wrapper forwards Bazel's exit
+code so rust-analyzer can distinguish "build succeeded with no errors"
+from "build tool itself broke" (e.g. a BUILD-file syntax error).
+
+No `rust-analyzer.check.overrideCommand` configuration is needed —
+flycheck is on by default.
+
+## Bazel-provided rust-analyzer
+
+The registered `rust_analyzer_toolchain` ships the rust-analyzer binary and
+proc-macro server matched to the toolchain's rustc/sysroot. Pointing your
+editor at those binaries — instead of the rust-analyzer extension's bundled
+copy — guarantees the LSP behavior agrees with `bazel build` and avoids
+proc-macro ABI mismatches.
+
+Two stable wrapper targets are provided:
 
 ```
-bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
+bazel build @rules_rust//tools/rust_analyzer:rust_analyzer
+bazel build @rules_rust//tools/rust_analyzer:rust_analyzer_proc_macro_srv
 ```
 
-whenever dependencies change to regenerate the `rust-project.json` file. It
-should be added to `.gitignore` because it is effectively a build artifact.
-Once the `rust-project.json` has been generated in the project root,
-rust-analyzer can pick it up upon restart.
+VSCode users should NOT point `server.path` directly at `bazel-bin/...` —
+`bazel clean` would silently break the LSP until the next manual rebuild.
+**Use `setup` (see Quick Start above) instead.** It writes a launcher
+script at `.vscode/.rules_rust_analyzer/rust_analyzer.sh` that exec's the
+wrapper if it's already built and rebuilds it on demand if not, so the IDE
+keeps working across `bazel clean`s.
 
-#### VSCode
+For editors `setup` doesn't target, the same launcher pattern is the
+right shape. A minimal `rust_analyzer.sh`:
 
-To set this up using [VSCode](https://code.visualstudio.com/), users should first install the
-[rust_analyzer plugin](https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer).
-With that in place, the following task can be added to the `.vscode/tasks.json` file of the workspace
-to ensure a `rust-project.json` file is created and up to date when the editor is opened.
+```sh
+#!/bin/sh
+set -e
+WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
+WRAPPER="$WORKSPACE/bazel-bin/tools/rust_analyzer/rust_analyzer"
+if [ ! -x "$WRAPPER" ]; then
+    cd "$WORKSPACE" && bazel build @rules_rust//tools/rust_analyzer:rust_analyzer >&2
+fi
+# rust-analyzer is itself a rules_rust binary when it spawns us — strip its
+# RUNFILES_* env so our wrapper resolves its OWN runfiles via argv[0].
+unset RUNFILES_DIR RUNFILES_MANIFEST_FILE
+exec "$WRAPPER" "$@"
+```
+
+Point your editor's `server.path` at that script. Setting `server.path` alone is
+usually sufficient because rust-analyzer uses itself as the proc-macro server
+when no explicit one is configured — the separate `rust_analyzer_proc_macro_srv`
+wrapper is only needed when an editor pins a different rust-analyzer version and
+you want the proc-macro ABI to track the Bazel rustc.
+
+## Editors other than VSCode
+
+Each non-VSCode IDE has its own subcommand. The subcommand:
+
+1. Installs the launcher scripts at an IDE-appropriate location (no
+   `.vscode/` references for non-VSCode editors).
+2. Prints a ready-to-paste config snippet to stdout with the launcher
+   paths baked in.
+
+You paste the snippet into the editor's config file. The launchers are
+self-contained — re-running setup updates them with current workspace /
+output-user-root paths but doesn't change the snippet shape, so the
+config in your editor file keeps working unless paths actually move.
+
+### Neovim
+
+```
+bazel run @rules_rust//tools/rust_analyzer:setup -- neovim
+```
+
+Installs launchers under `<workspace>/.rules_rust_analyzer/` and prints
+an `nvim-lspconfig` Lua snippet to stdout. Pipe it into your config or
+copy-paste:
+
+```
+bazel run @rules_rust//tools/rust_analyzer:setup -- neovim > /tmp/ra.lua
+```
+
+The snippet looks like:
+
+```lua
+require("lspconfig").rust_analyzer.setup({
+  cmd = { "/abs/workspace/.rules_rust_analyzer/rust_analyzer.sh" },
+  settings = {
+    ["rust-analyzer"] = {
+      workspace = {
+        discoverConfig = {
+          command = { "/abs/workspace/.rules_rust_analyzer/discover_bazel_rust_project.sh", "{arg}" },
+          progressLabel = "rules_rust",
+          filesToWatch = { "BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel" },
+        },
+      },
+      procMacro = { server = "/abs/workspace/.rules_rust_analyzer/rust_analyzer_proc_macro_srv.sh" },
+      rustfmt = { overrideCommand = { "/abs/workspace/.rules_rust_analyzer/rustfmt.sh" } },
+      files = { excludeDirs = { "cargo", "crate_universe" } },
+      lens = { enable = true },
+    },
+  },
+})
+```
+
+Drop into your `init.lua` (or a plugin module). Absolute paths are
+baked at install time — re-run `setup neovim` if the workspace moves.
+
+For users on [`rustaceanvim`](https://github.com/mrcjkb/rustaceanvim)
+instead: pass the same `cmd` and `settings` table via its `server`
+option (`vim.g.rustaceanvim = { server = { cmd = ..., settings = ... } }`).
+
+### Helix
+
+```
+bazel run @rules_rust//tools/rust_analyzer:setup -- helix
+```
+
+Installs launchers under `<workspace>/.helix/.rules_rust_analyzer/`
+(Helix already conventionally uses `.helix/` for per-project config) and
+prints a `languages.toml` snippet for you to paste into
+`<workspace>/.helix/languages.toml`:
+
+```toml
+[language-server.rust-analyzer]
+command = "/abs/workspace/.helix/.rules_rust_analyzer/rust_analyzer.sh"
+
+[language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]
+command = ["/abs/workspace/.helix/.rules_rust_analyzer/discover_bazel_rust_project.sh", "{arg}"]
+progressLabel = "rules_rust"
+filesToWatch = ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
+# ...etc
+```
+
+### Vim (classic) and other JSON-config LSP clients
+
+```
+bazel run @rules_rust//tools/rust_analyzer:setup -- print
+```
+
+Installs launchers under `<workspace>/.rules_rust_analyzer/` and prints
+a generic JSON snippet using the `rust-analyzer.*` keys VSCode uses —
+[`coc.nvim`](https://github.com/neoclide/coc.nvim) reads the same
+namespace via `coc-settings.json` (open with `:CocConfig`); `vim-lsp` /
+`ALE` / `LanguageClient-neovim` settings are configured in plugin-
+specific ways but accept the same keys. Paste the snippet into the
+relevant settings file:
 
 ```json
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Generate rust-project.json",
-            "command": "bazel",
-            "args": [
-                "run",
-                "@rules_rust//tools/rust_analyzer:gen_rust_project"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "never",
-                "panel": "dedicated"
-            },
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
-        }
-    ]
+  "rust-analyzer.server.path": "/abs/workspace/.rules_rust_analyzer/rust_analyzer.sh",
+  "rust-analyzer.workspace.discoverConfig": {
+    "command": ["/abs/workspace/.rules_rust_analyzer/discover_bazel_rust_project.sh", "{arg}"],
+    "progressLabel": "rules_rust",
+    "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
+  },
+  "rust-analyzer.procMacro.server": "/abs/workspace/.rules_rust_analyzer/rust_analyzer_proc_macro_srv.sh",
+  "rust-analyzer.rustfmt.overrideCommand": ["/abs/workspace/.rules_rust_analyzer/rustfmt.sh"],
+  "rust-analyzer.files.excludeDirs": ["cargo", "crate_universe"],
+  "rust-analyzer.lens.enable": true
 }
 ```
 
-#### Alternative vscode option (prototype)
+## How it works
 
-Add the following to your bazelrc:
+### Project model
 
-```
-build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
-```
+The discover binary reads each Bazel rust target's per-crate spec file
+(produced by `rust_analyzer_aspect` as a side effect of `bazel build`),
+consolidates duplicates, absolutizes the `__WORKSPACE__` / `__EXEC_ROOT__`
+/ `__OUTPUT_BASE__` templates, and streams a JSON document with the shape
+rust-analyzer expects to stdout. The document is the in-memory equivalent
+of the `rust-project.json` file rust-analyzer would read from disk in the
+manual-config flow.
 
-Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer) that automatically collects the outputs whenever you recompile.
+### Crate model (cycles, lib/test pairs)
 
-## Project auto-discovery
+Each Bazel rust target produces exactly one rust-analyzer crate, keyed by
+the target's label. A `rust_library(name = "lib")` and its
+`rust_test(name = "lib_test", crate = ":lib")` show up as **two** distinct
+crates that share a `root_module` — exactly how cargo models a lib and its
+integrated tests. They are not merged into one crate with a union of deps.
 
-### Setup
+This eliminates the only way Bazel-built projects could exhibit "cycles"
+in the rust-analyzer graph: the previous heuristic keyed crates by
+`root_module` path, so the lib and test specs would merge, and the test's
+test-only deps would end up on the merged "lib" crate. When two packages'
+test-only deps reached back into each other's libs, the merged graph
+contained a cycle that Bazel's own build graph never had. Project loading
+would then fail with `"Failed to make progress on building crate
+dependency graph"` and rust-analyzer would show nothing.
 
-Auto-discovery makes `rust-analyzer` behave in a Bazel project in a similar fashion to how it does
-in a Cargo project. This is achieved by generating a structure similar to what `rust-project.json`
-contains but, instead of writing that to a file, the data gets piped to `rust-analyzer` directly
-through `stdout`. To use auto-discovery the `rust-analyzer` IDE settings must be configured similar to:
+Under the label-keyed scheme this can't happen — the test crate carries
+its own deps directly, no merge is performed, and the assembly step
+tolerates forward references, missing deps, and even genuine cycles by
+silently dropping unresolvable edges instead of bailing out.
 
-```json
-"rust-analyzer": {
-    "workspace": {
-        "discoverConfig": {
-            "command": ["discover_bazel_rust_project.sh"],
-            "progressLabel": "rust_analyzer",
-            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
-        }
-    }
-}
-```
+### Performance
 
-The shell script passed to `discoverConfig.command` is typically meant to wrap the bazel rule invocation,
-primarily for muting `stderr` (because `rust-analyzer` will consider that an error has occurred if anything
-is passed through `stderr`) and, additionally, for specifying rule arguments. E.g:
+Auto-discovery uses Bazel's [Build Event Protocol][bep] to learn the paths of the per-crate spec
+files produced by `rust_analyzer_aspect` — a side-effect of the `bazel build` that's already
+running, so there's no separate `bazel aquery` round-trip. Discovery only includes spec files
+that the **current** build's action graph actually produced; stale `*.rust_analyzer_crate_spec.json`
+files left behind in `bazel-out/` by deleted targets or no-longer-reachable configurations are
+correctly ignored.
 
-```shell
-#!/usr/bin/bash
+The assembled `rust-project.json` is then memoized in a content-addressed local cache under
+`<workspace>/.vscode/.rules_rust_analyzer/cache/`. The key includes the contents of every
+input spec, a version constant that's bumped whenever the assembled JSON shape changes, the
+toolchain info, and the bazel/workspace/execution-root paths, so the cache is only served
+when every input matches byte-for-byte. Living under `.vscode/` (not the Bazel output base)
+means it survives `bazel clean` — but clearing it is a single `rm -rf
+.vscode/.rules_rust_analyzer/cache/` if a hand-edit ever leaves it inconsistent.
 
-bazel \
-    run \
-    @rules_rust//tools/rust_analyzer:discover_bazel_rust_project -- \
-    --bazel_startup_option=--output_base=~/ide_bazel \
-    --bazel_arg=--watchfs \
-    ${1:+"$1"} 2>/dev/null
-```
-
-The script above also handles an optional CLI argument which gets passed when workspace splitting is
-enabled. The script path should be either absolute or relative to the project root.
+In practice, a warm-cache discovery on a large workspace runs in the time it takes Bazel to
+report its action-cache hits — typically a few seconds.
 
 ### Workspace splitting
 
-The above configuration treats the entire project as a single workspace. However, large codebases might be
-too much to handle for `rust-analyzer` all at once. This can be addressed by splitting the codebase in
-multiple workspaces by extending the `discoverConfig.command` setting:
+By default — and with `setup`'s generated config — the discover
+command is invoked with `{arg}` set to the file rust-analyzer just opened.
+The workspace root becomes the package containing that file, so only that
+package and its dependencies get built and indexed. rust-analyzer switches
+workspaces whenever an out-of-tree file gets opened, essentially indexing
+that crate and its dependencies separately. Keeps the LSP footprint small
+on monorepos.
 
-```json
-"rust-analyzer": {
-    "workspace": {
-        "discoverConfig": {
-            "command": ["discover_bazel_rust_project.sh", "{arg}"],
-            "progressLabel": "rust_analyzer",
-            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
-        }
-    }
-}
-```
+Caveat: _dependents_ of the crate currently being worked on are not
+indexed and won't be tracked by `rust-analyzer`.
 
-`{arg}` acts as a placeholder that `rust-analyzer` replaces with the path of the source / build file
-that gets opened.
-
-The root of the workspace will, in this configuration, be the package the crate currently being worked on
-belongs to. This means that only that package and its dependencies get built and indexed by `rust-analyzer`,
-thus allowing for a smaller footprint.
-
-`rust-analyzer` will switch workspaces whenever an out-of-tree file gets opened, essentially indexing that
-crate and its dependencies separately. A caveat of this is that _dependents_ of the crate currently being
-worked on are not indexed and won't be tracked by `rust-analyzer`.
+To force whole-workspace mode instead, drop the `{arg}` from the
+`discoverConfig.command` array. The discover binary falls back to reading
+the root buildfile and treating its package as the root.
