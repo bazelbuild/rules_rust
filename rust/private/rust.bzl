@@ -569,6 +569,32 @@ def _rust_test_impl(ctx):
         env["CC_CODE_COVERAGE_SCRIPT"] = ctx.executable._collect_cc_coverage.path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+
+    if ctx.attr.junit:
+        test_bin_short = output.short_path
+        if test_bin_short.startswith("../"):
+            rust_test_bin_rloc = test_bin_short[len("../"):]
+        else:
+            rust_test_bin_rloc = ctx.workspace_name + "/" + test_bin_short
+        env["RUST_TEST_BIN"] = rust_test_bin_rloc
+
+        junit_runner = ctx.actions.declare_file(ctx.label.name + "_junit_runner" + toolchain.binary_ext)
+        ctx.actions.symlink(
+            output = junit_runner,
+            target_file = ctx.executable._junit_runner,
+            is_executable = True,
+        )
+
+        original_default_info = providers[0]
+        runner_runfiles = ctx.attr._junit_runner[DefaultInfo].default_runfiles
+        test_bin_runfiles = ctx.runfiles(files = [output])
+        merged_runfiles = original_default_info.default_runfiles.merge(runner_runfiles).merge(test_bin_runfiles)
+        providers[0] = DefaultInfo(
+            files = original_default_info.files,
+            runfiles = merged_runfiles,
+            executable = junit_runner,
+        )
+
     providers.append(RunEnvironmentInfo(
         environment = env,
         inherited_environment = ctx.attr.env_inherit,
@@ -955,6 +981,22 @@ _RUST_TEST_ATTRS = {
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
+    ),
+    "junit": attr.bool(
+        default = True,
+        doc = dedent("""\
+            If True (default), wrap the test binary with a JUnit XML runner that
+            parses libtest output and writes JUnit XML to `$XML_OUTPUT_FILE` when
+            run under `bazel test`. When `$XML_OUTPUT_FILE` is not set (e.g.
+            `bazel run`), the runner execs the test binary directly with zero
+            overhead. Set to False to bypass the wrapper entirely (useful for
+            debugging or attaching a debugger).
+        """),
+    ),
+    "_junit_runner": attr.label(
+        default = Label("//util/junit_runner"),
+        executable = True,
+        cfg = "target",
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
