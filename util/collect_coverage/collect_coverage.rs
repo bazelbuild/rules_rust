@@ -129,7 +129,9 @@ fn main() {
         None => debug_log!("RUNFILES_DIR: not set (split coverage postprocessing)"),
     }
 
-    let coverage_output_file = coverage_dir.join("coverage.dat");
+    let coverage_output_file = env::var("COVERAGE_OUTPUT_FILE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| coverage_dir.join("coverage.dat"));
     let profdata_file = coverage_dir.join("coverage.profdata");
     let llvm_cov_path = env::var("RUST_LLVM_COV").unwrap();
     let llvm_profdata_path = env::var("RUST_LLVM_PROFDATA").unwrap();
@@ -141,15 +143,43 @@ fn main() {
         Some(ref rd) => find_metadata_file(&execroot, rd, &llvm_profdata_path),
         None => execroot.join(&llvm_profdata_path),
     };
-    let test_binary = match runfiles_dir {
-        Some(ref rd) => find_test_binary(&execroot, rd),
-        None => {
-            let bin_dir = config_bin_dir(&execroot, &coverage_dir);
-            let test_binary = execroot
-                .join(bin_dir)
-                .join(env::var("TEST_BINARY").unwrap());
-            debug_log!("Resolved TEST_BINARY to: {}", test_binary.display());
-            test_binary
+    // When the JUnit runner wraps the test, TEST_BINARY points to the runner
+    // and RUST_TEST_BIN holds the actual instrumented binary that llvm-cov needs.
+    let test_binary = if let Ok(rust_test_bin) = env::var("RUST_TEST_BIN") {
+        debug_log!("Using RUST_TEST_BIN: {}", rust_test_bin);
+        match runfiles_dir {
+            Some(ref rd) => {
+                let candidate = rd
+                    .join(env::var("TEST_WORKSPACE").unwrap_or_default())
+                    .join(&rust_test_bin);
+                if candidate.exists() {
+                    candidate
+                } else {
+                    let candidate = rd.join(&rust_test_bin);
+                    if candidate.exists() {
+                        candidate
+                    } else {
+                        let bin_dir = config_bin_dir(&execroot, &coverage_dir);
+                        execroot.join(bin_dir).join(&rust_test_bin)
+                    }
+                }
+            }
+            None => {
+                let bin_dir = config_bin_dir(&execroot, &coverage_dir);
+                execroot.join(bin_dir).join(&rust_test_bin)
+            }
+        }
+    } else {
+        match runfiles_dir {
+            Some(ref rd) => find_test_binary(&execroot, rd),
+            None => {
+                let bin_dir = config_bin_dir(&execroot, &coverage_dir);
+                let test_binary = execroot
+                    .join(bin_dir)
+                    .join(env::var("TEST_BINARY").unwrap());
+                debug_log!("Resolved TEST_BINARY to: {}", test_binary.display());
+                test_binary
+            }
         }
     };
     let profraw_files: Vec<PathBuf> = fs::read_dir(coverage_dir)
@@ -189,7 +219,8 @@ fn main() {
         .arg("-format=lcov")
         .arg("-instr-profile")
         .arg(&profdata_file)
-        .arg("-ignore-filename-regex=.*external/.+")
+        .arg(r"-ignore-filename-regex=.*external[/\\].+")
+        .arg(r"-ignore-filename-regex=.*rustc[/\\].+")
         .arg("-ignore-filename-regex=/tmp/.+")
         .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
@@ -224,7 +255,8 @@ fn main() {
         coverage_output_file,
         report_str
             .replace("#/proc/self/cwd/", "")
-            .replace(&execroot.display().to_string(), ""),
+            .replace(&execroot.display().to_string(), "")
+            .replace('\\', "/"),
     )
     .unwrap();
 
