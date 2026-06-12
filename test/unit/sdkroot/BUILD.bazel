@@ -1,0 +1,5 @@
+load(":sdkroot_test.bzl", "sdkroot_test_suite")
+
+filegroup(name = "empty")
+
+sdkroot_test_suite(name = "sdkroot_test_suite")

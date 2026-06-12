@@ -23,6 +23,7 @@ load(
     "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
@@ -1373,9 +1374,21 @@ def construct_arguments(
             )
 
             env.update(link_env)
-            macos_sdkroot = _apple_sdkroot(ctx, attr)
-            if macos_sdkroot != None:
-                env["SDKROOT"] = macos_sdkroot
+            cc_sdkroot = None
+            if cc_toolchain:
+                compile_variables = cc_common.create_compile_variables(
+                    feature_configuration = feature_configuration,
+                    cc_toolchain = cc_toolchain,
+                )
+                compile_env = cc_common.get_environment_variables(
+                    feature_configuration = feature_configuration,
+                    action_name = ACTION_NAMES.c_compile,
+                    variables = compile_variables,
+                )
+                cc_sdkroot = compile_env.get("SDKROOT")
+            sdkroot = cc_sdkroot or _apple_sdkroot(ctx, attr)
+            if sdkroot != None:
+                env["SDKROOT"] = sdkroot
 
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 
