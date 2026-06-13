@@ -516,17 +516,22 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
+const LIBTOOL_ARCHIVER_ERROR: &str = concat!(
+    "error: libtool cannot be used as AR.\n",
+    "For a hermetic C++ toolchain such as @llvm, set:\n",
+    "  --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False\n",
+    "For an Xcode-backed C++ toolchain, update @apple_support to its latest release and disable ",
+    "@rules_cc C++ toolchain autodetection:\n",
+    "  --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1",
+);
+
 fn validate_archiver(ar_path: &std::ffi::OsStr) -> Result<(), String> {
     let file_name = Path::new(ar_path)
         .file_name()
         .ok_or_else(|| "Failed while getting file name".to_string())?
         .to_string_lossy();
     if file_name.contains("libtool") {
-        return Err(
-            "error: libtool cannot be used as AR. You must set \
-             --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False"
-                .to_owned(),
-        );
+        return Err(LIBTOOL_ARCHIVER_ERROR.to_owned());
     }
     Ok(())
 }
@@ -721,15 +726,13 @@ windows
 
     #[test]
     fn rejects_libtool_archiver() {
-        let expected = "error: libtool cannot be used as AR. You must set \
-                        --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False";
         assert_eq!(
             validate_archiver(std::ffi::OsStr::new("path/to/libtool")).unwrap_err(),
-            expected
+            LIBTOOL_ARCHIVER_ERROR
         );
         assert_eq!(
             validate_archiver(std::ffi::OsStr::new("path/to/libtool-wrapper")).unwrap_err(),
-            expected
+            LIBTOOL_ARCHIVER_ERROR
         );
         assert!(validate_archiver(std::ffi::OsStr::new("path/to/ar")).is_ok());
     }
