@@ -14,9 +14,9 @@ rust_ext = use_extension("//private:internal_extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
     "rpyo3c",
-    "rpyo3c__pyo3-0.28.2",
-    "rpyo3c__pyo3-ffi-0.28.2",
-    "rpyo3c__pyo3-introspection-0.28.2",
+    "rpyo3c__pyo3-0.29.0",
+    "rpyo3c__pyo3-ffi-0.29.0",
+    "rpyo3c__pyo3-introspection-0.29.0",
 )
 
 register_toolchains(
