@@ -30,7 +30,6 @@ load(
 )
 
 UNSUPPORTED_FEATURES = [
-    "thin_lto",
     "module_maps",
     "use_header_modules",
     "fdo_instrument",
@@ -72,7 +71,7 @@ def find_toolchain(ctx):
 # A global kill switch to test without a cc toolchain present.
 _FORCE_DISABLE_CC_TOOLCHAIN = False
 
-def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
+def find_cc_toolchain(ctx, extra_unsupported_features = []):
     """Extracts a CcToolchain from the current target's context
 
     Args:
@@ -94,7 +93,7 @@ def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features +
-                               list(extra_unsupported_features),
+                               extra_unsupported_features,
     )
     return cc_toolchain, feature_configuration
 

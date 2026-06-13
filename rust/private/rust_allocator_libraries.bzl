@@ -110,10 +110,9 @@ def make_libstd_and_allocator_ccinfo(
         allocator_library_inputs = []
 
         if hasattr(allocator_library, "allocator_libraries_impl_info") and allocator_library.allocator_libraries_impl_info:
-            static_archive = allocator_library.allocator_libraries_impl_info.static_archive
-            allocator_library_inputs = [depset(
-                [_ltl(static_archive, actions, cc_toolchain, feature_configuration)],
-            )]
+            library_to_link = allocator_library.allocator_libraries_impl_info.library_to_link
+            if library_to_link:
+                allocator_library_inputs = [depset([library_to_link])]
 
         alloc_inputs = depset(
             [_ltl(f, actions, cc_toolchain, feature_configuration) for f in rust_stdlib_info.alloc_files],
@@ -291,7 +290,7 @@ rust_allocator_libraries = rule(
             providers = [AllocatorLibrariesImplInfo],
         ),
         "global_allocator_library": attr.label(
-            doc = "An optional library to provide when a default rust allocator is used.",
+            doc = "An optional library to provide when a global Rust allocator is used.",
             providers = [AllocatorLibrariesImplInfo],
         ),
     },

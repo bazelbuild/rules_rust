@@ -899,6 +899,15 @@ def _will_emit_object_file(emit):
             return True
     return False
 
+def _supports_distributed_thin_lto(ctx, toolchain, crate_info):
+    """Whether `crate_info` can participate in distributed ThinLTO."""
+    return (
+        crate_info.type in ("bin", "lib", "rlib") and
+        toolchain.target_arch not in ("wasm32", "wasm64") and
+        not toolchain._bootstrapping and
+        not is_no_std(ctx, toolchain, crate_info.is_test)
+    )
+
 def _remove_codegen_units(flag):
     return None if flag.startswith("-Ccodegen-units") else flag
 
@@ -994,7 +1003,8 @@ def construct_arguments(
         inject_allow_features_guardrail = False,
         error_format = None,
         allowed_unstable_rust_features = None,
-        runtime_libs = None):
+        runtime_libs = None,
+        linker_plugin_lto = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1066,6 +1076,8 @@ def construct_arguments(
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
         runtime_libs (depset[File], optional): Runtime libraries from the C++ toolchain
             selected for `crate_info.type`.
+        linker_plugin_lto (bool): Whether to pass `-Clinker-plugin-lto` instead
+            of the `//rust/settings:lto` flags.
 
     Returns:
         tuple: A tuple of the following items
@@ -1337,7 +1349,11 @@ def construct_arguments(
     data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     add_edition_flags(rustc_flags, crate_info)
-    _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
+
+    if linker_plugin_lto:
+        rustc_flags.add("-Clinker-plugin-lto")
+    else:
+        rustc_flags.add_all(construct_lto_arguments(ctx, toolchain, crate_info))
     _add_codegen_units_flags(toolchain, emit, rustc_flags)
 
     # Use linker_type to determine whether to use direct or indirect linker invocation
@@ -1822,13 +1838,42 @@ def rustc_compile(
         proc_macro_deps = proc_macro_deps,
         aliases = crate_info.aliases,
     )
-    extra_disabled_features = [RUST_LINK_CC_FEATURE]
+    extra_unsupported_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
         # One or more of the transitive deps is a cc_library / cc_import
-        extra_disabled_features = []
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
+        extra_unsupported_features = []
+    cc_toolchain, feature_configuration = find_cc_toolchain(
+        ctx,
+        extra_unsupported_features,
+    )
     if not cc_toolchain or not _are_linkstamps_supported(feature_configuration = feature_configuration):
         linkstamps = depset([])
+
+    distributed_thin_lto = (
+        _supports_distributed_thin_lto(ctx, rust_toolchain, crate_info) and
+        feature_configuration != None and
+        cc_common.is_enabled(
+            feature_configuration = feature_configuration,
+            feature_name = "thin_lto",
+        )
+    )
+    if distributed_thin_lto and not rust_toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting:
+        fail(
+            (
+                "{}: distributed ThinLTO requires " +
+                "--@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"
+            ).format(ctx.label),
+        )
+    use_cc_common_link = experimental_use_cc_common_link or (
+        distributed_thin_lto and crate_info.type == "bin"
+    )
+
+    # output_o is consumed by cc_common.link or exported for distributed
+    # ThinLTO. crate_info.output.basename keeps output_o distinct for targets
+    # that share crate_info.name, including rust_test targets for the same crate.
+    output_o = None
+    if use_cc_common_link or distributed_thin_lto:
+        output_o = ctx.actions.declare_file(crate_info.output.basename + ".o", sibling = crate_info.output)
 
     runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type, resolve_cc_runtime_linkage(ctx))
 
@@ -1857,35 +1902,25 @@ def rustc_compile(
         build_info = build_info,
         lint_files = lint_files,
         stamp = stamp,
-        experimental_use_cc_common_link = experimental_use_cc_common_link,
+        experimental_use_cc_common_link = use_cc_common_link,
         runtime_libs = runtime_libs,
     )
 
     compile_inputs_metadata = compile_inputs
 
-    # Metadata is emitted by a separate -Zno-codegen action; the full action
-    # only produces the linked rlib.
-    emit = ["link"]
-    if experimental_use_cc_common_link:
-        # Pass a `.o` to the cc_common.link action.
-        emit = ["obj"]
+    # Metadata is emitted by a separate -Zno-codegen action. The full action
+    # emits the linked crate unless cc_common.link does, and emits output_o
+    # when output_o is declared.
+    emit = []
+    if not use_cc_common_link:
+        emit.append("link")
+    if output_o:
+        emit.append(("obj", output_o))
 
     # Declares the outputs of the rustc compile action.
-    # By default this is the binary output; if cc_common.link is used, this is
-    # the main `.o` file (`output_o` below).
-    outputs = [crate_info.output]
-
-    # The `.o` output file, only used for linking via cc_common.link.
-    # When output_hash is set (e.g. for rust_test targets), include it in the
-    # filename to avoid collisions with other targets sharing the same crate name.
-    output_o = None
-    if "obj" in emit:
-        obj_ext = ".o"
-        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
-        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
-        outputs = [output_o]
-        emit.remove("obj")
-        emit.append(("obj", output_o))
+    # By default this is crate_info.output. If cc_common.link is used, this is
+    # output_o because cc_common.link produces crate_info.output.
+    outputs = [output_o] if use_cc_common_link else [crate_info.output]
 
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
     require_explicit_unstable_features = False
@@ -1968,6 +2003,7 @@ def rustc_compile(
         inject_allow_features_guardrail = inject_allow_features_guardrail,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
         runtime_libs = runtime_libs,
+        linker_plugin_lto = distributed_thin_lto,
     )
 
     args_metadata = None
@@ -1999,6 +2035,7 @@ def rustc_compile(
             inject_allow_features_guardrail = inject_allow_features_guardrail,
             allowed_unstable_rust_features = allowed_unstable_rust_features,
             runtime_libs = runtime_libs,
+            linker_plugin_lto = distributed_thin_lto,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -2032,6 +2069,8 @@ def rustc_compile(
 
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
+    if output_o and output_o not in action_outputs:
+        action_outputs.append(output_o)
     if rustc_output:
         action_outputs.append(rustc_output)
     if profiling_dir:
@@ -2044,7 +2083,7 @@ def rustc_compile(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
-    if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
+    if crate_info.type in ("cdylib", "bin") and not use_cc_common_link:
         if rust_toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
@@ -2118,30 +2157,40 @@ def rustc_compile(
         )
 
     cco_args = {}
-    if experimental_use_cc_common_link:
+    if use_cc_common_link:
         # Wrap the main `.o` file into a compilation output suitable for
         # cc_common.link. The main `.o` file is useful in both PIC and non-PIC
         # modes.
         cco_args["objects"] = depset([output_o])
         cco_args["pic_objects"] = depset([output_o])
+        if distributed_thin_lto:
+            cco_args["lto_compilation_context"] = cc_common.create_lto_compilation_context(
+                objects = {
+                    output_o: (None, []),
+                },
+            )
     if use_split_debuginfo:
         cco_args["dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
         cco_args["pic_dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
     compilation_outputs = cc_common.create_compilation_outputs(**cco_args)
     debug_context = cc_common.create_debug_context(compilation_outputs)
-    if experimental_use_cc_common_link:
+    if use_cc_common_link:
         malloc_library = attr._custom_malloc or attr.malloc
 
         # Collect the linking contexts of the standard library and dependencies.
         linking_contexts = [
             malloc_library[CcInfo].linking_context,
-            _get_std_and_alloc_info(ctx, rust_toolchain, crate_info).linking_context,
+            _get_std_and_alloc_info(
+                ctx,
+                rust_toolchain,
+                crate_info,
+            ).linking_context,
             rust_toolchain.stdlib_linkflags.linking_context,
         ]
 
         for dep in crate_info.deps.to_list():
-            if dep.cc_info:
-                linking_contexts.append(dep.cc_info.linking_context)
+            for dep_cc_info in _collect_dep_cc_infos(dep):
+                linking_contexts.append(dep_cc_info.linking_context)
 
         # In the cc_common.link action we need to pass the name of the final
         # binary (output) relative to the package of this target.
@@ -2306,7 +2355,17 @@ def rustc_compile(
     else:
         providers.extend([crate_info, dep_info])
 
-    providers += establish_cc_info(ctx, attr, crate_info, rust_toolchain, cc_toolchain, feature_configuration, interface_library, debug_context)
+    providers += establish_cc_info(
+        ctx,
+        attr,
+        crate_info,
+        rust_toolchain,
+        cc_toolchain,
+        feature_configuration,
+        interface_library,
+        debug_context = debug_context,
+        lto_object = output_o if distributed_thin_lto else None,
+    )
 
     output_group_info = {}
 
@@ -2455,18 +2514,6 @@ def _collect_dep_cc_infos(dep):
 
     return cc_infos
 
-def _add_lto_flags(ctx, toolchain, args, crate):
-    """Adds flags to an Args object to configure LTO for 'rustc'.
-
-    Args:
-        ctx (ctx): The calling rule's context object.
-        toolchain (rust_toolchain): The current target's `rust_toolchain`.
-        args (Args): A reference to an Args object
-        crate (CrateInfo): A CrateInfo provider
-    """
-    lto_args = construct_lto_arguments(ctx, toolchain, crate)
-    args.add_all(lto_args)
-
 def _add_codegen_units_flags(toolchain, emit, args):
     """Adds flags to an Args object to configure codegen_units for 'rustc'.
 
@@ -2489,7 +2536,16 @@ def _add_codegen_units_flags(toolchain, emit, args):
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
-def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context = None):
+def establish_cc_info(
+        ctx,
+        attr,
+        crate_info,
+        toolchain,
+        cc_toolchain,
+        feature_configuration,
+        interface_library,
+        debug_context = None,
+        lto_object = None):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
@@ -2501,6 +2557,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         interface_library (File): Optional interface library for cdylib crates on Windows.
         debug_context (CcDebugContextInfo): The current debug context.
+        lto_object (File): Optional full LLVM bitcode object for distributed ThinLTO.
 
     Returns:
         list: A list containing the `CcInfo` provider and optionally `AllocatorLibrariesImplInfo`
@@ -2515,7 +2572,6 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
         return []
 
-    dot_a = None
     library_to_link = None
 
     if crate_info.type == "staticlib":
@@ -2536,6 +2592,14 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         dot_a = make_static_lib_symlink(ctx.label.package, ctx.actions, crate_info.output)
 
         if cc_toolchain:
+            lto_compilation_context = None
+            if lto_object:
+                lto_compilation_context = cc_common.create_lto_compilation_context(
+                    objects = {
+                        lto_object: (None, []),
+                    },
+                )
+
             # TODO(hlopko): handle PIC/NOPIC correctly
             library_to_link = cc_common.create_library_to_link(
                 actions = ctx.actions,
@@ -2544,6 +2608,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
                 static_library = dot_a,
                 # TODO(hlopko): handle PIC/NOPIC correctly
                 pic_static_library = dot_a,
+                objects = [lto_object] if lto_object else None,
+                pic_objects = [lto_object] if lto_object else None,
+                lto_compilation_context = lto_compilation_context,
+                pic_lto_compilation_context = lto_compilation_context,
                 alwayslink = getattr(attr, "alwayslink", False),
             )
     elif crate_info.type == "cdylib":
@@ -2598,11 +2666,8 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             cc_infos.append(libstd_and_allocator_cc_info)
 
     providers = [cc_common.merge_cc_infos(cc_infos = cc_infos)]
-    if crate_info.type == "staticlib":
-        # The static archive is the output.
-        dot_a = crate_info.output
-    if dot_a:
-        providers.append(AllocatorLibrariesImplInfo(static_archive = dot_a))
+    if crate_info.type in ("staticlib", "rlib", "lib"):
+        providers.append(AllocatorLibrariesImplInfo(library_to_link = library_to_link))
     return providers
 
 def add_edition_flags(args, crate):

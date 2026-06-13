@@ -217,8 +217,8 @@ LintsInfo = provider(
 AllocatorLibrariesInfo = provider(
     doc = "AllocatorLibrariesInfo provides allocator libraries for linking rust code with a non-rust linker.",
     fields = {
-        "allocator_library": "Optional[CcInfo]: used when the default rust allocator is used",
-        "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
+        "allocator_library": "Optional[AllocatorLibrariesImplInfo]: used when the default Rust allocator is used",
+        "global_allocator_library": "Optional[AllocatorLibrariesImplInfo]: used when a global Rust allocator is used",
         "libstd_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used",
         "libstd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used",
         "nostd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when nostd with a global rust allocator is used",
@@ -226,9 +226,9 @@ AllocatorLibrariesInfo = provider(
 )
 
 AllocatorLibrariesImplInfo = provider(
-    doc = "AllocatorLibrariesImplInfo provides the rust-generated linker input for linking rust code with a non-rust linker.",
+    doc = "AllocatorLibrariesImplInfo provides the Rust-generated allocator LibraryToLink.",
     fields = {
-        "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
+        "library_to_link": "Optional[LibraryToLink]: the allocator library and its LTO metadata.",
     },
 )
 
