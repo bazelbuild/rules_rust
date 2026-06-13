@@ -1,4 +1,4 @@
-//! PyO3 Examples from https://pyo3.rs/v0.26.0/#using-rust-from-python
+//! PyO3 Examples from https://pyo3.rs/v0.29.0/#using-rust-from-python
 
 use pyo3::prelude::*;
 
