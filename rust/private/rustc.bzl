@@ -1173,6 +1173,18 @@ def construct_arguments(
         rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        if not crate_info.root.is_source:
+            # Also remap the relative bazel-out/<config>/bin/ prefix.
+            # file!(), Location::caller(), and tracing/log macros embed
+            # the literal relative path that rustc received on the command
+            # line.  The ${pwd} remap above only matches absolute paths in
+            # debug info, so a second remap without ${pwd} is needed to
+            # strip the bin-dir prefix from these compile-time paths.
+            #
+            # Use add_all with the crate root File and a map_each callback
+            # so Bazel's path mapping (--experimental_output_paths=strip)
+            # can rewrite the config portion of the bin-dir prefix.
+            rustc_flags.add_all([crate_info.root], map_each = _get_bin_dir_remap_prefix)
 
     emit_without_paths = []
     for kind in emit:
@@ -2701,6 +2713,25 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_bin_dir_remap_prefix(file):
+    """Derives a --remap-path-prefix flag that strips the bin-dir prefix.
+
+    For a generated file, file.path is "bazel-out/<config>/bin/<pkg>/<name>"
+    and file.short_path is "<pkg>/<name>".  The difference is the bin-dir
+    prefix that needs to be stripped from file!() and similar macros.
+
+    Using the File object with add_all/map_each lets Bazel apply path mapping
+    (--experimental_output_paths=strip) to the config portion of the path.
+
+    Args:
+        file (File): The crate root file (must be a generated file).
+
+    Returns:
+        str: A --remap-path-prefix flag that maps the bin-dir prefix to empty.
+    """
+    prefix = file.path[:len(file.path) - len(file.short_path)]
+    return "--remap-path-prefix={}=".format(prefix)
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.
