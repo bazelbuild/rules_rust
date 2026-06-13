@@ -229,7 +229,11 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         .resolve(&opt.workspace_dir, &bazel_info.output_base);
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
-    let temp_dir_path = Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
+    let canonical = temp_dir
+        .path()
+        .canonicalize()
+        .unwrap_or_else(|_| temp_dir.path().to_path_buf());
+    let temp_dir_path = Utf8PathBuf::from_path_buf(canonical)
         .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path));
 
     // Generate a splicer for creating a Cargo workspace manifest

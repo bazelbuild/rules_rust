@@ -559,7 +559,8 @@ def _generate_hub_and_spokes(
         strip_internal_dependencies_from_cargo_lockfile,
         cargo_lockfile = None,
         manifests = {},
-        packages = {}):
+        packages = {},
+        main_manifest = None):
     """Generates repositories for the transitive closure of crates defined by manifests and packages.
 
     Args:
@@ -615,6 +616,7 @@ def _generate_hub_and_spokes(
             cargo_config = cfg.cargo_config,
             manifests = manifests,
             manifest_to_path = module_ctx.path,
+            main_manifest = main_manifest,
         ),
     )
 
@@ -1158,10 +1160,13 @@ def _crate_impl(module_ctx):
 
             manifests = {}
             packages = {}
+            main_manifest = None
 
             # Only `from_cargo` instances will have `manifests`.
             if hasattr(cfg, "manifests"):
                 manifests = {str(module_ctx.path(m)): str(m) for m in cfg.manifests}
+                if cfg.manifests:
+                    main_manifest = str(module_ctx.path(cfg.manifests[0]))
 
             packages = {
                 p.package_alias or p.package: _package_to_json(p)
@@ -1181,6 +1186,7 @@ def _crate_impl(module_ctx):
                 packages = packages,
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
+                main_manifest = main_manifest,
             )
 
             # Watch cfg.lockfile AFTER generation. The generator may modify it during
