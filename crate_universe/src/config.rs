@@ -220,7 +220,7 @@ impl AliasRule {
         match self {
             AliasRule::Alias => None,
             AliasRule::Dbg | AliasRule::Fastbuild | AliasRule::Opt => {
-                Some("//:alias_rules.bzl".to_owned())
+                Some(":alias_rules.bzl".to_owned())
             }
             AliasRule::Custom { bzl, .. } => Some(bzl.clone()),
         }
