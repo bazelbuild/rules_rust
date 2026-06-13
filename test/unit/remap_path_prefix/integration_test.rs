@@ -19,8 +19,12 @@ fn test_backtrace() {
     let mut check_next = false;
     for line in stderr.split('\n') {
         if check_next {
-            if !line.contains("test/unit/remap_path_prefix/panic_bin.rs:6:5") {
-                panic!("Expected line to contain test/unit/remap_path_prefix/panic_bin.rs:6:5 but was {}", line);
+            let normalized_line = line.replace('\\', "/");
+            if !normalized_line.contains("test/unit/remap_path_prefix/panic_bin.rs:6") {
+                panic!(
+                    "Expected line to contain test/unit/remap_path_prefix/panic_bin.rs:6 but was {}",
+                    line
+                );
             }
             return;
         }

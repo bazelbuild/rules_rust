@@ -55,7 +55,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          'startup --output_user_root=C:/tmp/bazel' | Out-File -FilePath user.bazelrc -Encoding utf8
+          'startup --output_base=C:/b' | Out-File -FilePath user.bazelrc -Encoding utf8
           'startup --windows_enable_symlinks' | Out-File -FilePath user.bazelrc -Append -Encoding utf8
 
       - name: bazel test //...
@@ -71,9 +71,22 @@ jobs:
             echo "BUILDBUDDY_API_KEY is not set; using BuildBuddy remote cache without an auth header."
           fi
 
+          PLATFORM_ARGS=()
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            case "${RUNNER_ARCH}" in
+              ARM64) MACOS_PLATFORM="@llvm//platforms:macos_aarch64" ;;
+              X64) MACOS_PLATFORM="@llvm//platforms:macos_x86_64" ;;
+              *) echo "Unsupported macOS runner architecture: ${RUNNER_ARCH}"; exit 1 ;;
+            esac
+            PLATFORM_ARGS+=("--extra_toolchains=@llvm//toolchain:all")
+            PLATFORM_ARGS+=("--platforms=${MACOS_PLATFORM}")
+            PLATFORM_ARGS+=("--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False")
+          fi
+
           bazel \
             --bazelrc="$GITHUB_WORKSPACE/.github/github.bazelrc" \
             test \
             --config=remote \
             "${REMOTE_ARGS[@]}" \
+            "${PLATFORM_ARGS[@]}" \
             //...

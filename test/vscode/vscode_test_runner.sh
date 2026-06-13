@@ -62,9 +62,10 @@ register_toolchains("@rust_toolchains//:all")
 
 rules_rs_toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains", dev_dependency = True)
 rules_rs_toolchains.toolchain(name = "default_rust_toolchains")
-use_repo(rules_rs_toolchains, "default_rust_toolchains")
+rules_rs_toolchains.toolchain(name = "r")
+use_repo(rules_rs_toolchains, "default_rust_toolchains", "r")
 register_toolchains(
-    "@default_rust_toolchains//:all",
+    "@r//:all",
     dev_dependency = True,
 )
 

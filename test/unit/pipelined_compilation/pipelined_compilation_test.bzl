@@ -178,6 +178,7 @@ def _pipelined_compilation_test():
         edition = "2021",
         srcs = ["bin.rs"],
         deps = [":second"],
+        tags = ["manual"],
     )
 
     second_lib_test(

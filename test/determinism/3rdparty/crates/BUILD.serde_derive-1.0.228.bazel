@@ -33,6 +33,9 @@ rust_proc_macro(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env = {
+        "CARGO_PKG_VERSION_PATCH": "228",
+    },
     rustc_flags = [
         "--cap-lints=allow",
     ],

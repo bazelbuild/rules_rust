@@ -42,8 +42,26 @@ def _dbg_rust_binary_impl(ctx):
         is_executable = True,
     )
 
+    pdb_files = []
+    dsym_folders = []
+    if OutputGroupInfo in binary:
+        for pdb_file in getattr(binary[OutputGroupInfo], "pdb_file", depset()).to_list():
+            new_pdb = ctx.actions.declare_file(paths.join(ctx.label.name, pdb_file.basename))
+            ctx.actions.symlink(
+                output = new_pdb,
+                target_file = pdb_file,
+            )
+            pdb_files.append(new_pdb)
+        for dsym_folder in getattr(binary[OutputGroupInfo], "dsym_folder", depset()).to_list():
+            new_dsym_folder = ctx.actions.declare_directory(paths.join(ctx.label.name, dsym_folder.basename))
+            ctx.actions.symlink(
+                output = new_dsym_folder,
+                target_file = dsym_folder,
+            )
+            dsym_folders.append(new_dsym_folder)
+
     files = depset(direct = [new_executable])
-    runfiles = ctx.runfiles([new_executable])
+    runfiles = ctx.runfiles([new_executable] + pdb_files + dsym_folders)
 
     result.append(
         DefaultInfo(

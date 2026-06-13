@@ -373,18 +373,21 @@ def lto_test_suite(name):
         name = "lib",
         srcs = [":lib.rs"],
         edition = "2021",
+        tags = ["manual"],
     )
 
     rust_proc_macro(
         name = "proc_macro",
         srcs = [":lib.rs"],
         edition = "2021",
+        tags = ["manual"],
     )
 
     rust_library(
         name = "distributed_lib",
         srcs = [":lib.rs"],
         edition = "2021",
+        tags = ["manual"],
     )
 
     rust_library(
@@ -393,6 +396,7 @@ def lto_test_suite(name):
         crate_name = "distributed_lib",
         edition = "2021",
         features = ["thin_lto"],
+        tags = ["manual"],
     )
 
     rust_library(
@@ -401,11 +405,13 @@ def lto_test_suite(name):
         crate_name = "distributed_lib",
         edition = "2021",
         features = ["-thin_lto"],
+        tags = ["manual"],
     )
 
     rust_library_group(
         name = "distributed_lib_group",
         deps = [":distributed_lib"],
+        tags = ["manual"],
     )
 
     rust_binary(
@@ -413,6 +419,7 @@ def lto_test_suite(name):
         srcs = [":main.rs"],
         deps = [":distributed_lib_group"],
         edition = "2021",
+        tags = ["manual"],
     )
 
     rust_binary(
@@ -420,6 +427,7 @@ def lto_test_suite(name):
         srcs = [":global_allocator_bin"],
         deps = [":distributed_lib_group"],
         edition = "2021",
+        tags = ["manual"],
     )
 
     rust_binary(
@@ -428,6 +436,7 @@ def lto_test_suite(name):
         deps = [":distributed_lib_disabled_feature"],
         edition = "2021",
         features = ["-thin_lto"],
+        tags = ["manual"],
     )
 
     cc_binary(
@@ -435,11 +444,13 @@ def lto_test_suite(name):
         srcs = [":main.cc"],
         deps = [":distributed_lib_rule_feature"],
         features = ["thin_lto"],
+        tags = ["manual"],
     )
 
     _with_exec_cfg(
         name = "distributed_bin_exec",
         target = ":distributed_bin",
+        tags = ["manual"],
     )
 
     _lto_level_default_test(

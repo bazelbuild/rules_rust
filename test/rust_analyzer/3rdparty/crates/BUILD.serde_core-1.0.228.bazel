@@ -117,6 +117,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env = {
+        "CARGO_PKG_VERSION_PATCH": "228",
+    },
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

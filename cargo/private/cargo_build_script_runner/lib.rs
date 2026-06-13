@@ -94,32 +94,34 @@ impl BuildScriptOutput {
     }
 
     fn contains_absolute_path(value: &str) -> bool {
-        let path_is_absolute = |candidate: &str| {
+        let path_is_rooted = |candidate: &str| {
             let candidate = candidate.trim_matches(|character: char| {
                 character.is_ascii_whitespace()
                     || matches!(character, '\'' | '"' | ',' | '(' | ')' | '[' | ']')
             });
-            Path::new(candidate).is_absolute()
+            Path::new(candidate).has_root()
         };
 
-        if path_is_absolute(value) {
+        if path_is_rooted(value) {
             return true;
         }
 
         value
             .split(|character: char| character.is_ascii_whitespace() || character == ';')
             .any(|token| {
-                if path_is_absolute(token) {
+                if path_is_rooted(token) {
                     return true;
                 }
                 if token.contains("://") {
                     return false;
                 }
-                token.find(std::path::MAIN_SEPARATOR).is_some_and(|index| {
-                    let prefix = &token[..index];
-                    (prefix.starts_with('-') || prefix.ends_with('='))
-                        && path_is_absolute(&token[index..])
-                })
+                token
+                    .find(|character| matches!(character, '/' | '\\'))
+                    .is_some_and(|index| {
+                        let prefix = &token[..index];
+                        (prefix.starts_with('-') || prefix.ends_with('='))
+                            && path_is_rooted(&token[index..])
+                    })
             })
     }
 
