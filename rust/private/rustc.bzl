@@ -1374,21 +1374,24 @@ def construct_arguments(
             )
 
             env.update(link_env)
-            cc_sdkroot = None
-            if cc_toolchain:
-                compile_variables = cc_common.create_compile_variables(
-                    feature_configuration = feature_configuration,
-                    cc_toolchain = cc_toolchain,
-                )
-                compile_env = cc_common.get_environment_variables(
-                    feature_configuration = feature_configuration,
-                    action_name = ACTION_NAMES.c_compile,
-                    variables = compile_variables,
-                )
-                cc_sdkroot = compile_env.get("SDKROOT")
-            sdkroot = cc_sdkroot or _apple_sdkroot(ctx, attr)
-            if sdkroot != None:
-                env["SDKROOT"] = sdkroot
+
+            # XcodeLocalEnvProvider adds SDKROOT when APPLE_SDK_PLATFORM is set.
+            if "APPLE_SDK_PLATFORM" not in link_env:
+                cc_sdkroot = link_env.get("SDKROOT")
+                if cc_sdkroot == None and cc_toolchain:
+                    compile_variables = cc_common.create_compile_variables(
+                        feature_configuration = feature_configuration,
+                        cc_toolchain = cc_toolchain,
+                    )
+                    compile_env = cc_common.get_environment_variables(
+                        feature_configuration = feature_configuration,
+                        action_name = ACTION_NAMES.c_compile,
+                        variables = compile_variables,
+                    )
+                    cc_sdkroot = compile_env.get("SDKROOT")
+                sdkroot = cc_sdkroot or _apple_sdkroot(ctx, attr)
+                if sdkroot != None:
+                    env["SDKROOT"] = sdkroot
 
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 

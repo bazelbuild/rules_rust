@@ -1,6 +1,6 @@
 """Tests for selecting SDKROOT for Rust compile actions."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "env_entry", "env_set", "feature", "tool")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
@@ -14,6 +14,22 @@ _FALLBACK_SDKROOT = "${pwd}/test/unit/sdkroot/fallback.sdkroot"
 
 def _cc_toolchain_config_impl(ctx):
     features = []
+    if ctx.attr.apple_sdk_platform:
+        features.append(feature(
+            name = "apple_sdk_platform",
+            enabled = True,
+            env_sets = [
+                env_set(
+                    actions = [ACTION_NAMES.cpp_link_executable],
+                    env_entries = [
+                        env_entry(
+                            key = "APPLE_SDK_PLATFORM",
+                            value = ctx.attr.apple_sdk_platform,
+                        ),
+                    ],
+                ),
+            ],
+        ))
     if ctx.attr.sdkroot:
         features.append(feature(
             name = "sdkroot",
@@ -57,6 +73,7 @@ def _cc_toolchain_config_impl(ctx):
 _cc_toolchain_config = rule(
     implementation = _cc_toolchain_config_impl,
     attrs = {
+        "apple_sdk_platform": attr.string(),
         "sdkroot": attr.string(),
     },
     provides = [CcToolchainConfigInfo],
@@ -88,7 +105,10 @@ def _sdkroot_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
     rustc_action = [action for action in target[_RustcActionsInfo].actions if action.mnemonic == "Rustc"][0]
-    assert_env_value(env, rustc_action, "SDKROOT", ctx.attr.expected_sdkroot)
+    if ctx.attr.expected_sdkroot:
+        assert_env_value(env, rustc_action, "SDKROOT", ctx.attr.expected_sdkroot)
+    else:
+        asserts.false(env, "SDKROOT" in rustc_action.env, "Expected env to not contain SDKROOT")
     return analysistest.end(env)
 
 _sdkroot_test = analysistest.make(
@@ -98,9 +118,10 @@ _sdkroot_test = analysistest.make(
     },
 )
 
-def _sdkroot_subject(name, cc_sdkroot):
+def _sdkroot_subject(name, cc_sdkroot = "", apple_sdk_platform = ""):
     _cc_toolchain_config(
         name = name + "_cc_toolchain_config",
+        apple_sdk_platform = apple_sdk_platform,
         sdkroot = cc_sdkroot,
     )
     cc_toolchain(
@@ -154,9 +175,20 @@ def sdkroot_test_suite(name):
         target_under_test = ":fallback_sdkroot_subject",
     )
 
+    _sdkroot_subject(
+        name = "apple_sdk_platform",
+        apple_sdk_platform = "MacOSX",
+    )
+    _sdkroot_test(
+        name = "apple_sdk_platform_test",
+        expected_sdkroot = "",
+        target_under_test = ":apple_sdk_platform_subject",
+    )
+
     native.test_suite(
         name = name,
         tests = [
+            ":apple_sdk_platform_test",
             ":cc_sdkroot_test",
             ":fallback_sdkroot_test",
         ],
