@@ -604,6 +604,16 @@ def _cargo_build_script_impl(ctx):
     if out_dir_volatile_basenames:
         env["RULES_RUST_OUT_DIR_VOLATILE_BASENAMES"] = ":".join(out_dir_volatile_basenames)
 
+    emit_warnings_setting = ctx.attr._emit_build_script_warnings[BuildSettingInfo].value
+    if emit_warnings_setting == "on":
+        emit_warnings = True
+    elif emit_warnings_setting == "off":
+        emit_warnings = False
+    else:
+        emit_warnings = ctx.attr.emit_warnings
+    if not emit_warnings:
+        env["RULES_RUST_SUPPRESS_BUILD_SCRIPT_WARNINGS"] = "1"
+
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args, runfiles_args],
@@ -694,6 +704,16 @@ cargo_build_script = rule(
             providers = [[DepInfo], [CrateGroupInfo]],
             cfg = "exec",
         ),
+        "emit_warnings": attr.bool(
+            doc = dedent("""\
+                Whether to forward `cargo::warning=` lines from the build script to stderr.
+
+                Honored only when `--@rules_rust//cargo/settings:emit_build_script_warnings`
+                is `auto` (the default). Setting the flag to `on` or `off` overrides
+                this attribute for every target.
+            """),
+            default = True,
+        ),
         "link_deps": attr.label_list(
             doc = dedent("""\
                 The subset of the Rust (normal) dependencies of the crate that
@@ -768,6 +788,9 @@ cargo_build_script = rule(
         ),
         "_default_use_default_shell_env": attr.label(
             default = Label("//cargo/settings:use_default_shell_env"),
+        ),
+        "_emit_build_script_warnings": attr.label(
+            default = Label("//cargo/settings:emit_build_script_warnings"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
