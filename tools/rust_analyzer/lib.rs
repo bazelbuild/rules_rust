@@ -112,6 +112,7 @@ fn generate_crate_info(
             "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
         ))
         .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src")
+        .arg("--")
         .args(targets)
         .output()?;
 
