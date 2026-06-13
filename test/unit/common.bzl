@@ -52,6 +52,18 @@ def assert_argv_contains_prefix_not(env, action, prefix):
                 ),
             )
 
+def assert_argv_contains_prefix_then_digit(env, action, prefix):
+    for found_flag in action.argv:
+        if found_flag.startswith(prefix) and len(found_flag) > len(prefix) and found_flag[len(prefix)].isdigit():
+            return
+    unittest.fail(
+        env,
+        "Expected an arg with prefix '{prefix}' followed by a digit in {args}".format(
+            prefix = prefix,
+            args = action.argv,
+        ),
+    )
+
 def assert_action_mnemonic(env, action, mnemonic):
     if not action.mnemonic == mnemonic:
         unittest.fail(
