@@ -289,6 +289,14 @@ def compile_config(
     if unexpected:
         fail("The following annotations use `additive_build_file` which is not supported for {}: {}".format(repository_name, unexpected))
 
+    # Watch patch files so changes trigger repository re-generation.
+    if repository_ctx:
+        for _name, data in annotations.items():
+            patches = data.get("patches", None)
+            if patches:
+                for patch in patches:
+                    repository_ctx.watch(repository_ctx.path(Label(patch)))
+
     # Deprecated: Apply `generate_target_compatible_with` to `render_config`.
     if not generate_target_compatible_with:
         # buildifier: disable=print
