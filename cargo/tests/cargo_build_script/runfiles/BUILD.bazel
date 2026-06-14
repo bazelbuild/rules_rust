@@ -23,12 +23,11 @@ write_file(
 cargo_build_script(
     name = "build_rs",
     srcs = ["build.rs"],
-    build_script_env = {
-        "DATA_RLOCATION": "$(rlocationpath :data.txt)",
-        "TOOL_RLOCATION": "$(rlocationpath :tool.txt)",
-    },
     data = [":data.txt"],
     edition = "2021",
+    rustc_env = {
+        "TOOL_RLOCATION": "$(rlocationpath :tool.txt)",
+    },
     tools = [":tool.txt"],
     deps = ["//rust/runfiles"],
 )

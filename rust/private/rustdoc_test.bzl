@@ -68,21 +68,14 @@ def _rust_doc_test_impl(ctx):
     exit_code_file = ctx.actions.declare_file(test_runner.basename + ".exit_code", sibling = test_runner)
 
     # Add the current crate as an extern for the compile action.
-    #
-    # NOTE: This deliberately passes a plain list rather than an `Args`
-    # object. Args would trigger Bazel's auto-spill into a `*-0.params`
-    # file at relatively small sizes, but that spilled file is not present
-    # in the test runfiles. The `rustdoc_test_writer` step below has its
-    # own `opt_test_params` handoff for relocating params to a
-    # runfiles-visible location, so we keep the list form here to avoid
-    # stepping on that mechanism.
-    rustdoc_flags = [
-        "--extern",
-        "{}={}".format(crate_info.name, crate_info.output.path),
-        "--test",
-    ]
-
-    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+    rustdoc_flags = ctx.actions.args()
+    rustdoc_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+        expand_directories = False,
+    )
+    rustdoc_flags.add("--test")
+    rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,

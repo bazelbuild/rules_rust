@@ -70,7 +70,7 @@ def rustdoc_compile_action(
         crate_info,
         lints_info = None,
         output = None,
-        rustdoc_flags = [],
+        rustdoc_flags = None,
         is_test = False):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
@@ -80,17 +80,20 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
-        rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+        rustdoc_flags (Args, optional): An `Args` object of `rustdoc` specific flags.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
     """
 
+    if rustdoc_flags == None:
+        rustdoc_flags = ctx.actions.args()
+
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
-        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
+        rustdoc_flags.add_all(lints_info.rustdoc_lint_flags)
         lint_files = lint_files + lints_info.rustdoc_lint_files
 
     # Collect HTML customization files
@@ -164,15 +167,6 @@ def rustdoc_compile_action(
         runtime_libs = runtime_libs,
     )
 
-    # Because rustdoc tests compile tests outside of the sandbox, the sysroot
-    # must be updated to the `short_path` equivalent as it will now be
-    # a part of runfiles.
-    if is_test:
-        if "SYSROOT" in env:
-            env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
-        if "OUT_DIR" in env:
-            env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.path)})
-
     # Create the combined inputs including HTML customization files
     all_inputs = depset([crate_info.output], transitive = [compile_inputs, depset(html_input_files)])
 
@@ -229,27 +223,29 @@ def _rust_doc_impl(ctx):
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
-    # Add the current crate as an extern for the compile action
-    rustdoc_flags = [
-        "--extern",
-        "{}={}".format(crate_info.name, crate_info.output.path),
-    ]
+    # Add the current crate as an extern for the compile action.
+    rustdoc_flags = ctx.actions.args()
+    rustdoc_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+        expand_directories = False,
+    )
 
     # Add HTML customization flags if attributes are provided
     if ctx.attr.html_in_header:
-        rustdoc_flags.extend(["--html-in-header", ctx.file.html_in_header.path])
+        rustdoc_flags.add("--html-in-header", ctx.file.html_in_header)
 
     if ctx.attr.html_before_content:
-        rustdoc_flags.extend(["--html-before-content", ctx.file.html_before_content.path])
+        rustdoc_flags.add("--html-before-content", ctx.file.html_before_content)
 
     if ctx.attr.html_after_content:
-        rustdoc_flags.extend(["--html-after-content", ctx.file.html_after_content.path])
+        rustdoc_flags.add("--html-after-content", ctx.file.html_after_content)
 
     # Add markdown CSS files if provided
     for css_file in ctx.files.markdown_css:
-        rustdoc_flags.extend(["--markdown-css", css_file.path])
+        rustdoc_flags.add("--markdown-css", css_file)
 
-    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+    rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,
@@ -270,6 +266,7 @@ def _rust_doc_impl(ctx):
         arguments = action.arguments,
         tools = action.tools,
         toolchain = Label("//rust:toolchain_type"),
+        execution_requirements = {"supports-path-mapping": ""} if action.supports_path_mapping else None,
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.

@@ -15,9 +15,8 @@ fn main() {
          RUNFILES_DIR or RUNFILES_MANIFEST_FILE must be exposed by the build script runner",
     );
 
-    let tool_rlocation =
-        std::env::var("TOOL_RLOCATION").expect("TOOL_RLOCATION env var should be set");
-    let tool_path = r.rlocation(&tool_rlocation).unwrap_or_else(|| {
+    let tool_rlocation = env!("TOOL_RLOCATION");
+    let tool_path = r.rlocation(tool_rlocation).unwrap_or_else(|| {
         panic!(
             "Tool must be locatable via the runfiles library (rlocation: {})",
             tool_rlocation,
@@ -29,9 +28,11 @@ fn main() {
         tool_path.display(),
     );
 
-    let data_rlocation =
-        std::env::var("DATA_RLOCATION").expect("DATA_RLOCATION env var should be set");
-    let data_via_runfiles = r.rlocation(&data_rlocation);
+    let data_rlocation = std::path::Path::new(tool_rlocation).with_file_name("data.txt");
+    let data_rlocation = data_rlocation
+        .to_str()
+        .expect("Data rlocation path must be UTF-8");
+    let data_via_runfiles = r.rlocation(data_rlocation);
     if let Some(path) = data_via_runfiles {
         assert!(
             !path.exists(),
