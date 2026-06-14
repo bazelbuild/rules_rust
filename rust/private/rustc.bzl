@@ -2600,20 +2600,25 @@ def establish_cc_info(
                     },
                 )
 
-            # TODO(hlopko): handle PIC/NOPIC correctly
-            library_to_link = cc_common.create_library_to_link(
+            library_to_link_kwargs = dict(
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 cc_toolchain = cc_toolchain,
                 static_library = dot_a,
                 # TODO(hlopko): handle PIC/NOPIC correctly
                 pic_static_library = dot_a,
-                objects = [lto_object] if lto_object else None,
-                pic_objects = [lto_object] if lto_object else None,
-                lto_compilation_context = lto_compilation_context,
-                pic_lto_compilation_context = lto_compilation_context,
                 alwayslink = getattr(attr, "alwayslink", False),
             )
+            if lto_object:
+                library_to_link_kwargs.update({
+                    "objects": [lto_object],
+                    "pic_objects": [lto_object],
+                    "lto_compilation_context": lto_compilation_context,
+                    "pic_lto_compilation_context": lto_compilation_context,
+                })
+
+            # TODO(hlopko): handle PIC/NOPIC correctly
+            library_to_link = cc_common.create_library_to_link(**library_to_link_kwargs)
     elif crate_info.type == "cdylib":
         if cc_toolchain:
             library_to_link = cc_common.create_library_to_link(
