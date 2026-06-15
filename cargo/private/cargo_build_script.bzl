@@ -506,6 +506,14 @@ def _cargo_build_script_impl(ctx):
         if not env["AR"]:
             env["AR"] = cc_toolchain.ar_executable
 
+        if paths.basename(env["AR"]).find("libtool") != -1:
+            # cc-rs passes cq and s, and llvm-ar enables deterministic archives by default.
+            # Empty ARFLAGS provides the rcsD behavior used by @llvm's C++ toolchain
+            # without passing a second archive operation to llvm-ar.
+            env["AR"] = ctx.file._llvm_ar.path
+            env["ARFLAGS"] = ""
+            toolchain_tools.append(ctx.attr._llvm_ar[DefaultInfo].files)
+
         # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
         # to determine the deployment target when building for apple platforms (`macosx-version-min`
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
@@ -825,6 +833,11 @@ cargo_build_script = rule(
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
+        ),
+        "_llvm_ar": attr.label(
+            allow_single_file = True,
+            default = Label("@llvm//tools:llvm-ar"),
+            cfg = "exec",
         ),
         "_out_dir_volatile_file_basenames": attr.label(
             default = Label("//cargo/settings:out_dir_volatile_file_basenames"),

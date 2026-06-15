@@ -140,7 +140,7 @@ def _test_cc_config_impl(ctx):
             action_config(
                 action_name = ACTION_NAMES.cpp_link_static_library,
                 tools = [
-                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"]),
+                    tool(path = ctx.attr.ar_path),
                 ],
             ),
         )
@@ -164,6 +164,7 @@ def _test_cc_config_impl(ctx):
 test_cc_config = rule(
     implementation = _test_cc_config_impl,
     attrs = {
+        "ar_path": attr.string(default = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"]),
         "extra_ar_flags": attr.string_list(),
         "extra_cc_compile_flags": attr.string_list(),
         "extra_cxx_compile_flags": attr.string_list(),
@@ -206,6 +207,8 @@ def _cc_args_and_env_analysis_test_impl(ctx):
     cargo_action = tut[DepActionsInfo].actions[0]
 
     for env_var, expected_path in _EXPECTED_CC_TOOLCHAIN_TOOLS.items():
+        if env_var == "AR" and ctx.attr.expect_llvm_ar:
+            expected_path = ctx.file._llvm_ar.path
         if ctx.attr.legacy_cc_toolchain and env_var == "CXX":
             # When using the legacy tool_path toolchain configuration approach,
             # the CXX tool is forced to be the same as the the CC tool.
@@ -271,13 +274,20 @@ cc_args_and_env_analysis_test = analysistest.make(
         "expected_cflags": attr.string_list(default = ["-Wall"]),
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
         "expected_include": attr.string(default = ""),
+        "expect_llvm_ar": attr.bool(default = False),
         "legacy_cc_toolchain": attr.bool(default = False),
+        "_llvm_ar": attr.label(
+            allow_single_file = True,
+            default = Label("@llvm//tools:llvm-ar"),
+            cfg = "exec",
+        ),
     },
 )
 
 def cargo_build_script_with_extra_cc_compile_flags(
         *,
         name,
+        ar_path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"],
         extra_cc_compile_flags = ["-Wall"],
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
@@ -293,6 +303,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
 
     Args:
       name: The name of the test target.
+      ar_path: The archiver path for the cc_toolchain.
       extra_cc_compile_flags: Extra C/C++ args for the cc_toolchain.
       extra_cxx_compile_flags: Extra C++-specific args for the cc_toolchain.
       extra_ar_flags: Extra archiver args for the cc_toolchain.
@@ -303,6 +314,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
 
     test_cc_config(
         name = "%s/cc_toolchain_config" % name,
+        ar_path = ar_path,
         extra_cc_compile_flags = extra_cc_compile_flags,
         extra_cxx_compile_flags = extra_cxx_compile_flags,
         extra_ar_flags = extra_ar_flags,
@@ -337,6 +349,17 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_toolchains = ["//%s:%s/test_cc_toolchain" % (native.package_name(), name)],
         target = "%s/cargo_build_script_impl" % name,
         tags = ["manual"],
+    )
+
+def libtool_fallback_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        ar_path = "/usr/fake/libtool",
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expect_llvm_ar = True,
     )
 
 def sysroot_relative_test(name):
