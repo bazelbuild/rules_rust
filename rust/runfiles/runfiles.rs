@@ -200,17 +200,48 @@ impl Runfiles {
     /// environment variable is present, with an non-empty value, or a directory
     /// based Runfiles object otherwise.
     pub fn create() -> Result<Self> {
-        let mode = match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-            Some(manifest_file) if !manifest_file.is_empty() => {
-                Self::create_manifest_based(Path::new(&manifest_file))?
-            }
-            _ => {
-                let dir = find_runfiles_dir()?;
-                let manifest_path = dir.join("MANIFEST");
-                match manifest_path.exists() {
-                    true => Self::create_manifest_based(&manifest_path)?,
-                    false => Mode::DirectoryBased(dir),
+        let mode = if let Some(manifest_file) =
+            std::env::var_os(MANIFEST_FILE_ENV_VAR).filter(|v| !v.is_empty())
+        {
+            Self::create_manifest_based(Path::new(&manifest_file))?
+        } else {
+            // Bazel itself does not publish a normative spec for how a
+            // runfiles library resolves runfiles when none of the
+            // documented env vars (`RUNFILES_MANIFEST_FILE`,
+            // `RUNFILES_DIR`, `TEST_SRCDIR`) are set — see
+            // <https://bazel.build/concepts/runfiles> and
+            // <https://bazel.build/reference/test-encyclopedia>, which
+            // describe the env vars and the runfiles tree but leave
+            // discovery to each language's library. What Bazel *does*
+            // guarantee on the producer side is that every binary
+            // action writes a `<binary>.runfiles_manifest` text file
+            // next to the output, and that `bazel run` / `bazel test`
+            // additionally materialize a `<binary>.runfiles/` directory.
+            //
+            // This block consolidates that producer behavior into a
+            // resolution order:
+            //   1. Whatever `find_runfiles_dir()` returns (env vars,
+            //      `<argv0>.runfiles/` sibling walk, or the `.runfiles`
+            //      ancestor walk). If it returns a directory containing
+            //      a `MANIFEST`, prefer that; otherwise use the dir.
+            //   2. Fall back to `<argv0>.runfiles_manifest` — the file
+            //      Bazel writes on every build action, even when no
+            //      `bazel run` invocation materialized the directory.
+            //      This is what lets editor-exec'd wrappers find their
+            //      runfiles without an out-of-band bootstrap step.
+            match find_runfiles_dir() {
+                Ok(dir) => {
+                    let manifest_path = dir.join("MANIFEST");
+                    if manifest_path.exists() {
+                        Self::create_manifest_based(&manifest_path)?
+                    } else {
+                        Mode::DirectoryBased(dir)
+                    }
                 }
+                Err(_) => match find_runfiles_manifest_from_argv0() {
+                    Some(manifest_path) => Self::create_manifest_based(&manifest_path)?,
+                    None => return Err(RunfilesError::RunfilesDirNotFound),
+                },
             }
         };
 
@@ -345,6 +376,51 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
     }
 
     Ok(RepoMapping { exact, prefixes })
+}
+
+/// Locate a `<binary>.runfiles_manifest` file sitting next to `argv[0]`.
+///
+/// Bazel writes this manifest on every binary build action but only
+/// materializes the `<binary>.runfiles/` directory on `bazel run` /
+/// `bazel test`. When a binary is exec'd by path outside a `bazel run`
+/// invocation — e.g. an editor launching a wrapper directly — the
+/// manifest file is the only runfiles source of truth.
+///
+/// `argv[0]` is preferred over [`std::env::current_exe`] because Bazel
+/// materializes the runfiles next to the launcher symlink the user
+/// invoked, not next to the resolved executable target. The fallback to
+/// [`std::env::current_exe`] only applies when `argv[0]` is a bare
+/// basename (i.e. the binary was found via `$PATH` and has no directory
+/// component to use as the manifest's parent).
+///
+/// Returns `None` when no manifest file exists (in which case callers
+/// fall through to `find_runfiles_dir`).
+fn find_runfiles_manifest_from_argv0() -> Option<PathBuf> {
+    let argv0 = std::env::args_os().next()?;
+    let argv0_path = PathBuf::from(&argv0);
+    if argv0_path
+        .parent()
+        .is_some_and(|p| !p.as_os_str().is_empty())
+    {
+        if let Some(manifest) = find_runfiles_manifest_for(&argv0_path) {
+            return Some(manifest);
+        }
+    }
+    // `argv[0]` was a bare basename (PATH lookup) or its sibling check
+    // came up empty; try the resolved executable path next.
+    let exe = std::env::current_exe().ok()?;
+    find_runfiles_manifest_for(&exe)
+}
+
+/// Inner helper for [`find_runfiles_manifest_from_argv0`] that takes an
+/// explicit binary path so it's testable without controlling argv[0].
+fn find_runfiles_manifest_for(exe_path: &Path) -> Option<PathBuf> {
+    let dir = exe_path.parent()?;
+    let file_name = exe_path.file_name()?;
+    let mut manifest_name = file_name.to_owned();
+    manifest_name.push(".runfiles_manifest");
+    let manifest_path = dir.join(&manifest_name);
+    manifest_path.is_file().then_some(manifest_path)
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
@@ -697,6 +773,41 @@ mod test {
         };
 
         assert_eq!(r.rlocation("a/b"), Some(PathBuf::from("c/d")));
+    }
+
+    /// Direct unit test for the `<binary>.runfiles_manifest` discovery
+    /// step that backs the build-action-friendly path in
+    /// `Runfiles::create()`. Built as a pure helper so it doesn't depend
+    /// on controlling argv[0] (which Bazel's test runner sets in
+    /// environment-specific ways that vary across platforms and
+    /// invocations).
+    #[test]
+    fn find_runfiles_manifest_for_returns_sibling_when_present() {
+        let tmp =
+            PathBuf::from(std::env::var("TEST_TMPDIR").unwrap()).join("manifest_sibling_test");
+        std::fs::create_dir_all(&tmp).unwrap();
+        let bin = tmp.join("my_wrapper");
+        let manifest = tmp.join("my_wrapper.runfiles_manifest");
+        std::fs::write(&bin, "").unwrap();
+        std::fs::write(&manifest, "_repo_mapping /irrelevant\n").unwrap();
+        assert_eq!(find_runfiles_manifest_for(&bin), Some(manifest));
+
+        // Without the manifest file, returns None — caller falls through
+        // to the runfiles-directory walk.
+        let bin_no_manifest = tmp.join("other_wrapper");
+        std::fs::write(&bin_no_manifest, "").unwrap();
+        assert_eq!(find_runfiles_manifest_for(&bin_no_manifest), None);
+    }
+
+    /// Bare-basename argv[0] (i.e. binary found via `$PATH`) has no
+    /// directory component, so the sibling-manifest lookup has nothing
+    /// to look next to. `find_runfiles_manifest_from_argv0` falls back
+    /// to `std::env::current_exe` in that case; this test pins the
+    /// inner helper's behavior on bare paths.
+    #[test]
+    fn find_runfiles_manifest_for_returns_none_for_bare_basename() {
+        let bare = PathBuf::from("my_wrapper");
+        assert_eq!(find_runfiles_manifest_for(&bare), None);
     }
 
     #[test]
