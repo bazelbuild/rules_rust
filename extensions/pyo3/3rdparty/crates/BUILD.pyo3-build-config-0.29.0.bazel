@@ -6,11 +6,7 @@
 #     bazel run @@//3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//cargo:defs.bzl",
-    "cargo_build_script",
-    "cargo_toml_env_vars",
-)
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -21,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "pyo3_macros_backend",
+    name = "pyo3_build_config",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -39,7 +35,8 @@ rust_library(
         ],
     ),
     crate_features = [
-        "experimental-inspect",
+        "default",
+        "extension-module",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -51,7 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=pyo3-macros-backend",
+        "crate-name=pyo3-build-config",
         "manual",
         "noclippy",
         "norustfmt",
@@ -113,77 +110,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.28.2",
+    version = "0.29.0",
     deps = [
-        "@rpyo3c__heck-0.5.0//:heck",
-        "@rpyo3c__proc-macro2-1.0.101//:proc_macro2",
-        "@rpyo3c__pyo3-build-config-0.28.2//:pyo3_build_config",
-        "@rpyo3c__pyo3-macros-backend-0.28.2//:build_script_build",
-        "@rpyo3c__quote-1.0.41//:quote",
-        "@rpyo3c__syn-2.0.106//:syn",
+        "@rpyo3c__target-lexicon-0.13.3//:target_lexicon",
     ],
-)
-
-cargo_build_script(
-    name = "_bs",
-    srcs = glob(
-        include = ["**/*.rs"],
-        allow_empty = True,
-    ),
-    compile_data = glob(
-        include = ["**"],
-        allow_empty = True,
-        exclude = [
-            "**/* *",
-            "**/*.rs",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    crate_features = [
-        "experimental-inspect",
-    ],
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(
-        include = ["**"],
-        allow_empty = True,
-        exclude = [
-            "**/* *",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    edition = "2021",
-    pkg_name = "pyo3-macros-backend",
-    rustc_env_files = [
-        ":cargo_toml_env_vars",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    tags = [
-        "cargo-bazel",
-        "crate-name=pyo3-macros-backend",
-        "manual",
-        "noclippy",
-        "norustfmt",
-    ],
-    version = "0.28.2",
-    visibility = ["//visibility:private"],
-    deps = [
-        "@rpyo3c__pyo3-build-config-0.28.2//:pyo3_build_config",
-    ],
-)
-
-alias(
-    name = "build_script_build",
-    actual = ":_bs",
-    tags = ["manual"],
 )

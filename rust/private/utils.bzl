@@ -978,3 +978,32 @@ def is_std_dylib(file):
         # for windows
         basename.startswith("std-") and basename.endswith(".dll")
     )
+
+def matches_prefix_filter(label, crate_root_path, pattern):
+    """Determines if a target matches a prefix filter pattern.
+
+    Matching works by comparing against the target's label or its execution path.
+
+    Args:
+        label (Label): The target's label.
+        crate_root_path (str): The target's execution path (e.g. crate root path).
+        pattern (str): The prefix pattern to match against.
+
+    Returns:
+        bool: True if the target matches the pattern, False otherwise.
+    """
+    if not pattern:
+        return True
+
+    label_string = str(label)
+    if label_string.startswith("@//"):
+        target_label = label_string[1:]
+    elif label_string.startswith(
+        # buildifier: disable=canonical-repository
+        "@@//",
+    ):
+        target_label = label_string[2:]
+    else:
+        target_label = label_string
+
+    return target_label.startswith(pattern) or crate_root_path.startswith(pattern)

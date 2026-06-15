@@ -20,9 +20,6 @@ use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
-
-inject_repo(crate, "openssl")
-
 crate.annotation(
     build_script_data = [
         "@openssl//:install",

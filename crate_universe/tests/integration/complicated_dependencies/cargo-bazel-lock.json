@@ -1,5 +1,5 @@
 {
-  "checksum": "a3b09e201ba3f88ca87f85078016cce27309cebfaa1b7602df394b928a6a0d8d",
+  "checksum": "19334385e62eab33f99e63eda21c73d7d5e676c4bf292e8abea1ee6471da3b19",
   "crates": {
     "bitflags 2.11.1": {
       "name": "bitflags",
@@ -587,7 +587,7 @@
       "common_attrs": {
         "compile_data": {
           "common": [
-            "@@openssl+//:install"
+            "@openssl//:install"
           ],
           "selects": {}
         },
@@ -619,7 +619,7 @@
         ],
         "data": {
           "common": [
-            "@@openssl+//:install"
+            "@openssl//:install"
           ],
           "selects": {}
         },
@@ -645,7 +645,7 @@
         },
         "build_script_env": {
           "common": {
-            "OPENSSL_DIR": "$(execpath @@openssl+//:install)",
+            "OPENSSL_DIR": "$(execpath @openssl//:install)",
             "OPENSSL_NO_VENDOR": "1",
             "OPENSSL_STATIC": "1"
           },

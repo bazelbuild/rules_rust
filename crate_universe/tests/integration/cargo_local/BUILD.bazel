@@ -4,7 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "cargo_local",
-    srcs = glob(["**/*.rs"]),
+    srcs = ["src/lib.rs"],
     aliases = aliases(),
     edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
@@ -25,4 +25,29 @@ build_test(
         "@crate_index_cargo_local//:autometrics",
         "@crate_index_cargo_local//:aws-lc-rs",
     ],
+)
+
+# Exercise transitive consumption of another module's crate_universe
+# extension: `cu_test_complicated_dependencies` declares
+# `crate.from_specs(... annotation(label_injections = ...))` for openssl,
+# and this root module never calls `use_extension` on it — yet building +
+# running its exposed `:openssl_version` binary forces the hub repo to be
+# fetched, the annotation-injected `@openssl` label to resolve, and the
+# resulting executable to link and run.
+rust_test(
+    name = "transitive_module_extension_test",
+    srcs = ["transitive_module_extension_test.rs"],
+    data = ["@cu_test_complicated_dependencies//:openssl_version"],
+    edition = "2018",
+    rustc_env = {
+        # rlocationpath emits a workspace-rooted runfiles path
+        # (`cu_test_complicated_dependencies+/openssl_version` etc.) that the
+        # runfiles library resolves at runtime via the test's RUNFILES_DIR /
+        # RUNFILES_MANIFEST_FILE. Using rootpath would only work when the
+        # test runs from the exec root, which isn't guaranteed (e.g. with
+        # `--enable_runfiles=false` on Windows or when invoked from a sh_test
+        # wrapper).
+        "EXECUTABLE_RLOCATIONPATH": "$(rlocationpath @cu_test_complicated_dependencies//:openssl_version)",
+    },
+    deps = ["@rules_rust//rust/runfiles"],
 )

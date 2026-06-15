@@ -645,7 +645,7 @@ def _rust_toolchain_impl(ctx):
         sysroot_anchor = sysroot.sysroot_anchor,
         sysroot_short_path = sysroot_short_path,
         target_arch = target_arch,
-        target_flag_value = target_json.path if target_json else target_triple.str,
+        target_flag_value = target_json if target_json else target_triple.str,
         target_json = target_json,
         target_os = target_os,
         target_abi = target_abi,
