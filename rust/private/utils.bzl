@@ -286,6 +286,26 @@ def _expand_location_for_build_script_runner(ctx, v, data, known_variables):
         if directive in v:
             # build script runner will expand pwd to execroot for us
             v = v.replace(directive, "$${pwd}/" + directive)
+
+    for directive in ("$(execpaths ", "$(locations "):
+        if directive in v:
+            # Plural forms expand to multiple space-separated paths, so we must
+            # expand each macro individually and prefix every resulting path.
+            # Split on the opening directive; each subsequent part begins with
+            # "label)rest", letting us reconstruct and expand one macro at a time.
+            parts = v.split(directive)
+            result = parts[0]
+            for part in parts[1:]:
+                end = part.find(")")
+                if end == -1:
+                    result += directive + part
+                    continue
+                macro = directive + part[:end] + ")"
+                expanded = ctx.expand_location(macro, data)
+                prefixed = " ".join(["$${pwd}/" + p for p in expanded.split(" ")])
+                result += prefixed + part[end + 1:]
+            v = result
+
     return ctx.expand_make_variables(
         v,
         ctx.expand_location(v, data),
@@ -295,11 +315,14 @@ def _expand_location_for_build_script_runner(ctx, v, data, known_variables):
 def expand_dict_value_locations(ctx, env, data, known_variables):
     """Performs location-macro expansion on string values.
 
-    $(execroot ...) and $(location ...) are prefixed with ${pwd},
-    which process_wrapper and build_script_runner will expand at run time
-    to the absolute path. This is necessary because include_str!() is relative
-    to the currently compiled file, and build scripts run relative to the
-    manifest dir, so we can not use execroot-relative paths.
+    $(execpath ...), $(execpaths ...), $(location ...) and $(locations ...) are
+    prefixed with ${pwd}, which process_wrapper and build_script_runner will
+    expand at run time to the absolute path.
+    This is necessary because include_str!() is relative to the currently
+    compiled file, and build scripts run relative to the manifest dir, so we
+    can not use execroot-relative paths.
+    Plural forms (execpaths/locations) expand to multiple space-separated paths;
+    each path receives its own ${pwd}/ prefix.
 
     $(rootpath ...) is unmodified, and is useful for passing in paths via
     rustc_env that are encoded in the binary with env!(), but utilized at

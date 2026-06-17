@@ -2,8 +2,15 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_library")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains")
+load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_env_value")
+
+def _find_action(tut, mnemonic):
+    for action in tut.actions:
+        if action.mnemonic == mnemonic:
+            return action
+    return None
 
 def _location_expansion_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
@@ -11,48 +18,81 @@ def _location_expansion_rustc_flags_test(ctx):
     action = tut.actions[1]
     assert_action_mnemonic(env, action, "Rustc")
 
-    # Because target `rustc_flags` use `$(execpath ...)`, the action does
+    # Because target `rustc_flags` use location macros, the action does
     # not advertise `supports-path-mapping`, so file paths remain at their
     # configuration-specific `ctx.bin_dir` locations.
     assert_argv_contains(env, action, ctx.bin_dir.path + "/test/unit/location_expansion/mylibrary.rs")
 
-    # `$(location ...)` is expanded at analysis time into a literal
-    # configuration-dependent string (`bazel-out/<config>/bin/...`).
-    # Bazel does not rewrite raw argv strings under path mapping, so this
-    # arg keeps the un-mapped configuration prefix even when the rest of
-    # the Rustc command uses `bazel-out/cfg/bin/...`. The action will
-    # fail at execution time under path mapping because the file is
-    # materialized at the mapped path; we accept that as documented in
-    # the Rust action implementation.
-    assert_argv_contains(env, action, "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/generated_flag.data")
+    # All four forms must be prefixed with @${pwd}/ so that process_wrapper
+    # can resolve them to absolute paths at run time. Each form references a
+    # distinct generated file so every assertion targets a unique path.
+    base = "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/"
+    assert_argv_contains(env, action, base + "flag_execpath.data")
+    assert_argv_contains(env, action, base + "flag_execpaths.data")
+    assert_argv_contains(env, action, base + "flag_location.data")
+    assert_argv_contains(env, action, base + "flag_locations.data")
     return analysistest.end(env)
 
 location_expansion_rustc_flags_test = analysistest.make(_location_expansion_rustc_flags_test)
 
+def _location_expansion_build_script_env_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = _find_action(tut, "CargoBuildScriptRun")
+    expected = "${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/flag_execpaths.data"
+    assert_env_value(env, action, "MY_DATA", expected)
+    return analysistest.end(env)
+
+location_expansion_build_script_env_test = analysistest.make(_location_expansion_build_script_env_test)
+
 def _location_expansion_test():
-    write_file(
-        name = "flag_generator",
-        out = "generated_flag.data",
-        content = [
-            "--cfg=test_flag",
-            "",
-        ],
-        newline = "unix",
-    )
+    for suffix in ("execpath", "execpaths", "location", "locations"):
+        write_file(
+            name = "flag_generator_" + suffix,
+            out = "flag_" + suffix + ".data",
+            content = [
+                "--cfg=test_flag",
+                "",
+            ],
+            newline = "unix",
+        )
 
     rust_library(
         name = "mylibrary",
         srcs = ["mylibrary.rs"],
         edition = "2018",
         rustc_flags = [
-            "@$(execpath :flag_generator)",
+            "@$(execpath :flag_generator_execpath)",
+            "@$(execpaths :flag_generator_execpaths)",
+            "@$(location :flag_generator_location)",
+            "@$(locations :flag_generator_locations)",
         ],
-        compile_data = [":flag_generator"],
+        compile_data = [
+            ":flag_generator_execpath",
+            ":flag_generator_execpaths",
+            ":flag_generator_location",
+            ":flag_generator_locations",
+        ],
+    )
+
+    cargo_build_script(
+        name = "mybuildscript",
+        srcs = ["build_script.rs"],
+        edition = "2018",
+        data = [":flag_generator_execpaths"],
+        build_script_env = {
+            "MY_DATA": "$(execpaths :flag_generator_execpaths)",
+        },
     )
 
     location_expansion_rustc_flags_test(
         name = "location_expansion_rustc_flags_test",
         target_under_test = ":mylibrary",
+    )
+
+    location_expansion_build_script_env_test(
+        name = "location_expansion_build_script_env_test",
+        target_under_test = ":mybuildscript",
     )
 
 def location_expansion_test_suite(name):
@@ -67,5 +107,6 @@ def location_expansion_test_suite(name):
         name = name,
         tests = [
             ":location_expansion_rustc_flags_test",
+            ":location_expansion_build_script_env_test",
         ],
     )
