@@ -25,6 +25,8 @@ load(
 )
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_debug_helper.bzl", "create_debug_packager_actions")
+load("@rules_cc//cc/common:cc_helper.bzl", "cc_helper", "linker_mode")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":lto.bzl", "construct_lto_arguments")
@@ -2083,12 +2085,22 @@ def rustc_compile(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
+    dwp_file = None
+    if (
+        crate_info.type in ("cdylib", "bin") and
+        rust_toolchain.target_os in ("darwin", "macos") and
+        (
+            not use_cc_common_link or
+            cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "generate_dsym_file")
+        )
+    ):
+        dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
+
     if crate_info.type in ("cdylib", "bin") and not use_cc_common_link:
         if rust_toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif rust_toolchain.target_os in ["macos", "darwin"]:
-            dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
+        elif dsym_folder:
             action_outputs.append(dsym_folder)
 
     if use_split_debuginfo:
@@ -2177,19 +2189,21 @@ def rustc_compile(
     if use_cc_common_link:
         malloc_library = attr._custom_malloc or attr.malloc
 
-        # Collect the linking contexts of the standard library and dependencies.
-        linking_contexts = [
-            malloc_library[CcInfo].linking_context,
+        # Collect the CcInfo values of the standard library and dependencies.
+        dependency_cc_infos = [
+            malloc_library[CcInfo],
             _get_std_and_alloc_info(
                 ctx,
                 rust_toolchain,
                 crate_info,
-            ).linking_context,
-            rust_toolchain.stdlib_linkflags.linking_context,
+            ),
+            rust_toolchain.stdlib_linkflags,
         ]
+        linking_contexts = [cc_info.linking_context for cc_info in dependency_cc_infos]
 
         for dep in crate_info.deps.to_list():
             for dep_cc_info in _collect_dep_cc_infos(dep):
+                dependency_cc_infos.append(dep_cc_info)
                 linking_contexts.append(dep_cc_info.linking_context)
 
         # In the cc_common.link action we need to pass the name of the final
@@ -2238,7 +2252,12 @@ def rustc_compile(
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             additional_linker_outputs.append(pdb_file)
 
-        cc_common.link(
+        variables_extension = {}
+        if dsym_folder:
+            additional_linker_outputs.append(dsym_folder)
+            variables_extension["dsym_path"] = dsym_folder
+
+        linking_outputs = cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
@@ -2249,7 +2268,31 @@ def rustc_compile(
             main_output = crate_info.output,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
             additional_outputs = additional_linker_outputs,
+            variables_extension = variables_extension,
         )
+
+        if rust_toolchain.target_os == "linux" and cc_helper.should_create_per_object_debug_info(feature_configuration, ctx.fragments.cpp):
+            dwp_file = ctx.actions.declare_file(
+                crate_info.output.basename + ".dwp",
+                sibling = crate_info.output,
+            )
+            create_debug_packager_actions(
+                ctx,
+                cc_toolchain,
+                dwp_file,
+                cc_compilation_outputs = compilation_outputs,
+                cc_debug_context = cc_helper.merge_cc_debug_contexts(compilation_outputs, dependency_cc_infos),
+                feature_configuration = feature_configuration,
+                linking_mode = linker_mode.LINKING_STATIC,
+                use_pic = should_use_pic(
+                    cc_toolchain = cc_toolchain,
+                    feature_configuration = feature_configuration,
+                    crate_type = crate_info.type,
+                    compilation_mode = ctx.var["COMPILATION_MODE"],
+                    toolchain = rust_toolchain,
+                ),
+                lto_artifacts = linking_outputs.all_lto_artifacts(),
+            )
 
         outputs = [crate_info.output]
 
@@ -2373,6 +2416,8 @@ def rustc_compile(
         output_group_info["pdb_file"] = depset([pdb_file])
     if dsym_folder:
         output_group_info["dsym_folder"] = depset([dsym_folder])
+    if dwp_file:
+        output_group_info["dwp_file"] = depset([dwp_file])
     if build_metadata:
         output_group_info["build_metadata"] = depset([build_metadata])
         if rustc_rmeta_output:
