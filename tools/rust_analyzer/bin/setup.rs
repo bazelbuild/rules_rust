@@ -202,6 +202,17 @@ struct Cli {
     #[arg(long, global = true)]
     cache_dir: Option<Utf8PathBuf>,
 
+    /// Pass `{arg}` to the discover command so rust-analyzer switches
+    /// workspaces to the per-file package. Off by default — the whole
+    /// workspace gets indexed as one project, which is simpler and what
+    /// most users want. Turn this on for monorepos where indexing the
+    /// whole graph hurts LSP responsiveness; the trade-off is that
+    /// rust-analyzer reloads (and re-runs discover) every time you jump
+    /// to a file in a different package, AND that dependents of the
+    /// package you're working on aren't indexed.
+    #[arg(long, global = true)]
+    per_package_workspaces: bool,
+
     #[command(subcommand)]
     ide: IdeCmd,
 }
@@ -274,6 +285,7 @@ fn main() -> Result<()> {
         flavor,
         skip_proc_macro_server: cli.skip_proc_macro_server,
         skip_rustfmt: cli.skip_rustfmt,
+        per_package_workspaces: cli.per_package_workspaces,
     };
 
     match cli.ide {
@@ -294,6 +306,7 @@ struct SetupCtx {
     flavor: LauncherFlavor,
     skip_proc_macro_server: bool,
     skip_rustfmt: bool,
+    per_package_workspaces: bool,
 }
 
 impl SetupCtx {
@@ -698,13 +711,19 @@ fn vscode_managed_keys(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> Vec<(String, 
         &launcher_filename(DISCOVER_LAUNCHER_BASENAME, ctx.flavor),
     );
     let bazel_outputs = || vec![(BAZEL_OUTPUTS_GLOB.to_string(), Value::Bool(true))];
+    // `{arg}` opts into per-package workspace switching. See `--per-package-workspaces`.
+    let discover_command = if ctx.per_package_workspaces {
+        json!([discover_rel, "{arg}"])
+    } else {
+        json!([discover_rel])
+    };
     let mut out = vec![
         (
             DISCOVER_CONFIG_KEY.to_string(),
             ManagedValue::Replace(json!({
                 // Point at the launcher script (not `bazel run`) — see
                 // launcher_discover_bazel_rust_project.sh for why.
-                "command": [discover_rel, "{arg}"],
+                "command": discover_command,
                 "progressLabel": "rules_rust",
                 "filesToWatch": [
                     "BUILD",
@@ -926,6 +945,12 @@ const TPL_RUSTFMT_LAUNCHER: &str = "__RUSTFMT_LAUNCHER__";
 // separated string list (`"a", "b"` for Lua/TOML/JSON — same syntax in
 // all three since they all quote with `"`).
 const TPL_EXCLUDE_ENTRIES: &str = "__EXCLUDE_ENTRIES__";
+// `__DISCOVER_PER_PACKAGE_ARG__` is filled with either `, "{arg}"` (when
+// `--per-package-workspaces` is set) or the empty string. Same syntax
+// across Lua/TOML/JSON since `"{arg}"` is a quoted string literal in all
+// three formats.
+const TPL_DISCOVER_PER_PACKAGE_ARG: &str = "__DISCOVER_PER_PACKAGE_ARG__";
+const PER_PACKAGE_ARG_SUFFIX: &str = ", \"{arg}\"";
 // Optional-block slots in the main templates.
 const TPL_OPT_PROC_MACRO: &str = "__OPT_PROC_MACRO__";
 const TPL_OPT_RUSTFMT: &str = "__OPT_RUSTFMT__";
@@ -939,7 +964,7 @@ const NEOVIM_LUA_TEMPLATE: &str = r#"require("lspconfig").rust_analyzer.setup({
     ["rust-analyzer"] = {
       workspace = {
         discoverConfig = {
-          command = { "__DISCOVER_LAUNCHER__", "{arg}" },
+          command = { "__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__ },
           progressLabel = "rules_rust",
           filesToWatch = { "BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel" },
         },
@@ -971,7 +996,7 @@ const HELIX_TOML_TEMPLATE: &str = r#"[language-server.rust-analyzer]
 command = "__RA_LAUNCHER__"
 
 [language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]
-command = ["__DISCOVER_LAUNCHER__", "{arg}"]
+command = ["__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__]
 progressLabel = "rules_rust"
 filesToWatch = ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
 __OPT_PROC_MACRO____OPT_RUSTFMT____OPT_EXCLUDES__
@@ -1005,7 +1030,7 @@ excludeDirs = [__EXCLUDE_ENTRIES__]
 const SETTINGS_JSON_TEMPLATE: &str = r#"{
   "rust-analyzer.server.path": "__RA_LAUNCHER__",
   "rust-analyzer.workspace.discoverConfig": {
-    "command": ["__DISCOVER_LAUNCHER__", "{arg}"],
+    "command": ["__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__],
     "progressLabel": "rules_rust",
     "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
   },
@@ -1075,6 +1100,17 @@ fn opt_block(enabled: bool, block: &str, substitute: impl FnOnce(&str) -> String
     }
 }
 
+/// Resolve the `__DISCOVER_PER_PACKAGE_ARG__` placeholder content. Returns
+/// `, "{arg}"` (suffix to the discover-command array) when per-package
+/// workspaces are on, empty string otherwise.
+fn per_package_suffix(ctx: &SetupCtx) -> &'static str {
+    if ctx.per_package_workspaces {
+        PER_PACKAGE_ARG_SUFFIX
+    } else {
+        ""
+    }
+}
+
 // -- Generators --
 
 /// `nvim-lspconfig` Lua snippet. The user pastes this into their
@@ -1098,6 +1134,7 @@ fn generate_neovim_lua(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
     NEOVIM_LUA_TEMPLATE
         .replace(TPL_RA_LAUNCHER, &ra)
         .replace(TPL_DISCOVER_LAUNCHER, &discover)
+        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
         .replace(TPL_OPT_PROC_MACRO, &proc_macro)
         .replace(TPL_OPT_RUSTFMT, &rustfmt)
         .replace(TPL_OPT_EXCLUDES, &excludes)
@@ -1124,6 +1161,7 @@ fn generate_helix_toml(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
     HELIX_TOML_TEMPLATE
         .replace(TPL_RA_LAUNCHER, &ra)
         .replace(TPL_DISCOVER_LAUNCHER, &discover)
+        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
         .replace(TPL_OPT_PROC_MACRO, &proc_macro)
         .replace(TPL_OPT_RUSTFMT, &rustfmt)
         .replace(TPL_OPT_EXCLUDES, &excludes)
@@ -1151,6 +1189,7 @@ fn generate_settings_json(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
     SETTINGS_JSON_TEMPLATE
         .replace(TPL_RA_LAUNCHER, &ra)
         .replace(TPL_DISCOVER_LAUNCHER, &discover)
+        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
         .replace(TPL_OPT_PROC_MACRO, &proc_macro)
         .replace(TPL_OPT_RUSTFMT, &rustfmt)
         .replace(TPL_OPT_EXCLUDES, &excludes)
@@ -1176,6 +1215,7 @@ mod tests {
             flavor: LauncherFlavor::Posix,
             skip_proc_macro_server: false,
             skip_rustfmt: false,
+            per_package_workspaces: false,
         };
         (ctx, launcher_dir)
     }
@@ -1608,6 +1648,85 @@ mod tests {
     /// Sanity-check that the templates ARE actually template-shaped: an
     /// edit that drops a placeholder would otherwise silently produce
     /// snippets with `__OPT_FOO__` literal text baked in.
+    /// Default (per-package off) → discover command has only the launcher
+    /// path. Opt-in (per-package on) → discover command also has `"{arg}"`,
+    /// the rust-analyzer placeholder for the file the user opened.
+    #[test]
+    fn discover_command_includes_per_package_arg_only_when_opted_in() {
+        let (mut ctx, launcher_dir) = dummy_ctx();
+        // Default: per_package_workspaces = false.
+        let keys = vscode_managed_keys(&ctx, &launcher_dir);
+        let cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
+            .get("command")
+            .and_then(|v| v.as_array())
+            .expect("command must be an array");
+        assert_eq!(
+            cmd.len(),
+            1,
+            "default: discover command should be [launcher]; got {cmd:?}"
+        );
+
+        // Opt-in.
+        ctx.per_package_workspaces = true;
+        let keys = vscode_managed_keys(&ctx, &launcher_dir);
+        let cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
+            .get("command")
+            .and_then(|v| v.as_array())
+            .expect("command must be an array");
+        assert_eq!(
+            cmd.len(),
+            2,
+            "per-package on: discover command should be [launcher, \"{{arg}}\"]; got {cmd:?}"
+        );
+        assert_eq!(cmd[1].as_str(), Some("{arg}"));
+    }
+
+    /// Same default-vs-opt-in coverage but for the Lua/TOML/JSON snippets,
+    /// since those go through a totally different substitution path.
+    #[test]
+    fn snippets_include_per_package_arg_only_when_opted_in() {
+        let (mut ctx, launcher_dir) = dummy_ctx();
+        // Default off.
+        let lua = generate_neovim_lua(&ctx, &launcher_dir);
+        let toml = generate_helix_toml(&ctx, &launcher_dir);
+        let json = generate_settings_json(&ctx, &launcher_dir);
+        assert!(
+            !lua.contains("\"{arg}\""),
+            "lua leaks {{arg}} when per-package off:\n{lua}"
+        );
+        assert!(
+            !toml.contains("\"{arg}\""),
+            "toml leaks {{arg}} when per-package off:\n{toml}"
+        );
+        assert!(
+            !json.contains("\"{arg}\""),
+            "json leaks {{arg}} when per-package off:\n{json}"
+        );
+        // No leftover placeholder either way.
+        for body in [&lua, &toml, &json] {
+            assert!(!body.contains(TPL_DISCOVER_PER_PACKAGE_ARG));
+        }
+        // Opt-in.
+        ctx.per_package_workspaces = true;
+        let lua = generate_neovim_lua(&ctx, &launcher_dir);
+        let toml = generate_helix_toml(&ctx, &launcher_dir);
+        let json = generate_settings_json(&ctx, &launcher_dir);
+        assert!(
+            lua.contains("\"{arg}\""),
+            "lua missing {{arg}} when per-package on:\n{lua}"
+        );
+        assert!(
+            toml.contains("\"{arg}\""),
+            "toml missing {{arg}} when per-package on:\n{toml}"
+        );
+        assert!(
+            json.contains("\"{arg}\""),
+            "json missing {{arg}} when per-package on:\n{json}"
+        );
+        // JSON must still parse.
+        serde_json::from_str::<Value>(&json).expect("json snippet stays valid with per-package on");
+    }
+
     #[test]
     fn snippet_templates_contain_every_placeholder_they_reference() {
         for (name, body) in [
@@ -1618,6 +1737,7 @@ mod tests {
             for ph in [
                 TPL_RA_LAUNCHER,
                 TPL_DISCOVER_LAUNCHER,
+                TPL_DISCOVER_PER_PACKAGE_ARG,
                 TPL_OPT_PROC_MACRO,
                 TPL_OPT_RUSTFMT,
                 TPL_OPT_EXCLUDES,

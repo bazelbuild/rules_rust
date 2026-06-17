@@ -8,40 +8,11 @@
 //! expansion failures that arise when an editor-bundled proc-macro-srv is
 //! mismatched against the project's compiler.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use runfiles::{rlocation, Runfiles};
 
-/// See `rust_analyzer.rs` for the rationale; mirrors the same fallback so
-/// editors that spawn the wrapper directly don't trip RunfilesDirNotFound.
-fn ensure_runfiles_env() {
-    if std::env::var_os("RUNFILES_MANIFEST_FILE").is_some()
-        || std::env::var_os("RUNFILES_DIR").is_some()
-        || std::env::var_os("TEST_SRCDIR").is_some()
-    {
-        return;
-    }
-    let argv0 = std::env::args_os().next().unwrap_or_default();
-    let exe = PathBuf::from(argv0);
-    let dir = match exe.parent() {
-        Some(d) => d,
-        None => return,
-    };
-    let file_name = match exe.file_name() {
-        Some(n) => n.to_owned(),
-        None => return,
-    };
-    let mut manifest_name = file_name;
-    manifest_name.push(".runfiles_manifest");
-    let manifest_path = dir.join(&manifest_name);
-    if manifest_path.is_file() {
-        std::env::set_var("RUNFILES_MANIFEST_FILE", manifest_path);
-    }
-}
-
 fn main() {
-    ensure_runfiles_env();
     let runfiles = Runfiles::create().unwrap_or_else(|e| {
         eprintln!("rust_analyzer_proc_macro_srv wrapper: failed to create runfiles: {e}");
         std::process::exit(1);

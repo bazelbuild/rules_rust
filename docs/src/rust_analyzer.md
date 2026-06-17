@@ -75,6 +75,14 @@ Re-run `setup vscode` any time. Flags:
   Windows for any non-trivial workspace: Bazel's path-length budget plus
   the deepest `external/+...//bin/...` paths it generates can blow MAX_PATH;
   point this at something short like `C:\ra-ob` or `D:\bzl\ra`.
+- `--per-package-workspaces` opts into rust-analyzer's per-package
+  workspace switching. Off by default — the whole workspace gets indexed
+  as one project, which is the simpler / less surprising default and
+  what most users want. Turn it on for monorepos where indexing the
+  whole graph hurts LSP responsiveness; the trade-off is that
+  rust-analyzer reloads (and re-runs discover) every time you jump to a
+  file in a different package, AND that dependents of the package you're
+  working on aren't indexed.
 
 ### What you get in the editor
 
@@ -150,6 +158,14 @@ diagnostics to stderr before exiting non-zero, and BEP captures that
 stderr regardless of action outcome. The wrapper forwards Bazel's exit
 code so rust-analyzer can distinguish "build succeeded with no errors"
 from "build tool itself broke" (e.g. a BUILD-file syntax error).
+
+Downstream targets of a failed action don't get rebuilt — `--keep_going`
+lets other *independent* targets in the graph continue, but anything
+that depends on the failed crate is skipped. The user sees diagnostics
+on the broken crate; the cascade further down the graph is invisible
+until they fix the root cause and save again. This matches cargo's
+flycheck behavior (a `cargo check` that fails on `foo` doesn't go on to
+check `foo`'s dependents either) and is what users expect.
 
 No `rust-analyzer.check.overrideCommand` configuration is needed —
 flycheck is on by default.
@@ -364,17 +380,22 @@ report its action-cache hits — typically a few seconds.
 
 ### Workspace splitting
 
-By default — and with `setup`'s generated config — the discover
-command is invoked with `{arg}` set to the file rust-analyzer just opened.
-The workspace root becomes the package containing that file, so only that
-package and its dependencies get built and indexed. rust-analyzer switches
-workspaces whenever an out-of-tree file gets opened, essentially indexing
-that crate and its dependencies separately. Keeps the LSP footprint small
-on monorepos.
+By default, `setup` configures rust-analyzer to treat the whole
+project as a single workspace — simpler to reason about, no surprise
+context switches when you jump between files. The discover command is
+invoked with just the launcher path and no per-file argument.
 
-Caveat: _dependents_ of the crate currently being worked on are not
-indexed and won't be tracked by `rust-analyzer`.
+For monorepos where indexing the whole graph is too slow, pass
+`--per-package-workspaces` to setup. That appends `"{arg}"` to the
+discover command array; rust-analyzer fills it with the path of the
+file you opened, and discover scopes the project to that file's package
++ deps. rust-analyzer reloads (and re-runs discover) whenever you jump
+to a file in a different package.
 
-To force whole-workspace mode instead, drop the `{arg}` from the
-`discoverConfig.command` array. The discover binary falls back to reading
-the root buildfile and treating its package as the root.
+Caveat of per-package mode: _dependents_ of the package you're working
+on are not indexed and won't be tracked by `rust-analyzer`. If you go
+fix a callee, then re-open a caller in a different package, the caller's
+view of the callee is whatever the caller's own discover saw.
+
+You can switch modes any time by re-running `setup vscode` (or your
+editor's subcommand) with or without `--per-package-workspaces`.

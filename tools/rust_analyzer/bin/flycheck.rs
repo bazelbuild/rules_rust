@@ -98,7 +98,8 @@ fn run() -> Result<u8> {
                 .map(Utf8PathBuf::from)
         })
         .unwrap_or_else(|| workspace.join(".vscode/.rules_rust_analyzer/output_user_root"));
-    let _ = std::fs::create_dir_all(&output_user_root);
+    std::fs::create_dir_all(&output_user_root)
+        .with_context(|| format!("creating output_user_root {output_user_root}"))?;
 
     let status = Command::new(args.bazel.as_str())
         .current_dir(&workspace)
@@ -136,7 +137,7 @@ fn run() -> Result<u8> {
         }
     };
 
-    emit_diagnostics(&stderr_files, &workspace);
+    emit_diagnostics(&stderr_files, &workspace)?;
 
     // Forward Bazel's exit code so rust-analyzer can tell apart "build
     // succeeded with diagnostics" from "build tool itself broke".
@@ -153,7 +154,13 @@ fn run() -> Result<u8> {
 ///
 /// Non-JSON lines (sandbox warnings, env dumps) are dropped so the LSP
 /// only sees parseable rustc messages.
-fn emit_diagnostics(files: &[Utf8PathBuf], workspace: &Utf8Path) {
+///
+/// Errors writing to stdout bubble up — rust-analyzer parses our stdout
+/// as the diagnostic stream, so silently dropping writes would surface as
+/// "no squiggles after save" with no clue why. A failed write is almost
+/// always "rust-analyzer closed the pipe" which is also worth surfacing
+/// (the editor is gone; flycheck has no consumer).
+fn emit_diagnostics(files: &[Utf8PathBuf], workspace: &Utf8Path) -> Result<()> {
     let stdout = io::stdout();
     let mut out = stdout.lock();
     for path in files {
@@ -172,19 +179,22 @@ fn emit_diagnostics(files: &[Utf8PathBuf], workspace: &Utf8Path) {
             match serde_json::from_str::<Value>(trimmed) {
                 Ok(mut value) => {
                     absolutize_file_names(&mut value, workspace);
-                    let _ = serde_json::to_writer(&mut out, &value);
-                    let _ = out.write_all(b"\n");
+                    serde_json::to_writer(&mut out, &value)
+                        .context("writing rewritten rustc JSON to stdout")?;
+                    out.write_all(b"\n").context("writing newline to stdout")?;
                 }
                 Err(_) => {
                     // Not strict JSON — pass through unmodified so we don't
                     // silently drop a diagnostic format we don't recognize.
-                    let _ = out.write_all(line.as_bytes());
-                    let _ = out.write_all(b"\n");
+                    out.write_all(line.as_bytes())
+                        .context("passing through non-JSON line to stdout")?;
+                    out.write_all(b"\n").context("writing newline to stdout")?;
                 }
             }
         }
     }
-    let _ = out.flush();
+    out.flush().context("flushing stdout")?;
+    Ok(())
 }
 
 /// Walk a rustc-diagnostic JSON value and rewrite every `"file_name"`
