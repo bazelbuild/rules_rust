@@ -84,7 +84,7 @@ impl BuildScriptOutput {
                         .map_or("", |(_, value)| value),
                     _ => unreachable!(),
                 };
-                if Self::contains_absolute_path(value) {
+                if Self::contains_existing_absolute_path(value) {
                     Some(format!("cargo::{directive}={original_value}"))
                 } else {
                     None
@@ -93,35 +93,36 @@ impl BuildScriptOutput {
             .collect()
     }
 
-    fn contains_absolute_path(value: &str) -> bool {
-        let path_is_rooted = |candidate: &str| {
+    fn contains_existing_absolute_path(value: &str) -> bool {
+        let path_exists_and_is_rooted = |candidate: &str| {
             let candidate = candidate.trim_matches(|character: char| {
                 character.is_ascii_whitespace()
                     || matches!(character, '\'' | '"' | ',' | '(' | ')' | '[' | ']')
             });
-            Path::new(candidate).has_root()
+            let path = Path::new(candidate);
+            path.has_root() && path.exists()
         };
 
-        if path_is_rooted(value) {
+        if path_exists_and_is_rooted(value) {
             return true;
         }
 
         value
-            .split(|character: char| character.is_ascii_whitespace() || character == ';')
+            .split(|character: char| {
+                character.is_ascii_whitespace() || matches!(character, ';' | '\x1f')
+            })
             .any(|token| {
-                if path_is_rooted(token) {
+                if path_exists_and_is_rooted(token) {
                     return true;
                 }
                 if token.contains("://") {
                     return false;
                 }
-                token
-                    .find(|character| matches!(character, '/' | '\\'))
-                    .is_some_and(|index| {
-                        let prefix = &token[..index];
-                        (prefix.starts_with('-') || prefix.ends_with('='))
-                            && path_is_rooted(&token[index..])
-                    })
+                token.char_indices().any(|(index, _)| {
+                    let prefix = &token[..index];
+                    (prefix.starts_with('-') || prefix.ends_with('='))
+                        && path_exists_and_is_rooted(&token[index..])
+                })
             })
     }
 
@@ -628,29 +629,53 @@ cargo::rustc-link-search=/abs/exec_root/other/path
 
     #[test]
     fn nonhermetic_absolute_paths_are_detected() {
+        let existing_path = std::env::current_dir().unwrap();
+        assert!(existing_path.exists());
+        let existing_path = existing_path.to_string_lossy();
+        let missing_path = std::env::temp_dir().join(format!(
+            "rules_rust_nonhermetic_path_test_missing_{}",
+            std::process::id()
+        ));
+        assert!(!missing_path.exists());
+        let missing_path = missing_path.to_string_lossy();
+
         let outputs = vec![
             BuildScriptOutput::LinkSearch("relative/path".to_owned()),
-            BuildScriptOutput::LinkSearch("native=/execroot/workspace/lib".to_owned()),
-            BuildScriptOutput::LinkSearch("/execroot/bazel-out/out/lib".to_owned()),
-            BuildScriptOutput::LinkSearch("/execrootish/not-redacted/lib".to_owned()),
-            BuildScriptOutput::LinkSearch("framework=/usr/local/lib".to_owned()),
-            BuildScriptOutput::LinkSearch("/opt/system/lib".to_owned()),
-            BuildScriptOutput::Env("HERMETIC=/execroot/workspace/include".to_owned()),
-            BuildScriptOutput::Env("SYSTEM_HEADER=/usr/include/zlib.h".to_owned()),
-            BuildScriptOutput::Env("CFLAGS=-I/opt/system/include -DOK=1".to_owned()),
-            BuildScriptOutput::DepEnv("ROOT=/usr/local/share/zlib".to_owned()),
+            BuildScriptOutput::LinkSearch(
+                "native=/rules_rust_test_execroot/workspace/lib".to_owned(),
+            ),
+            BuildScriptOutput::LinkSearch(
+                "/rules_rust_test_execroot/bazel-out/out/lib".to_owned(),
+            ),
+            BuildScriptOutput::LinkSearch(missing_path.to_string()),
+            BuildScriptOutput::LinkSearch(format!("framework={existing_path}")),
+            BuildScriptOutput::LinkSearch(existing_path.to_string()),
+            BuildScriptOutput::Env(
+                "HERMETIC=/rules_rust_test_execroot/workspace/include".to_owned(),
+            ),
+            BuildScriptOutput::Env(format!("MISSING={missing_path}")),
+            BuildScriptOutput::Env(format!("SYSTEM_HEADER={existing_path}")),
+            BuildScriptOutput::Env(format!(
+                "CARGO_ENCODED_RUSTFLAGS=-I{existing_path}\x1f-DOK=1"
+            )),
+            BuildScriptOutput::DepEnv(format!("ROOT={existing_path}")),
             BuildScriptOutput::Env("DOCS=https://example.com/a/path".to_owned()),
         ];
 
         assert_eq!(
-            BuildScriptOutput::nonhermetic_absolute_paths(&outputs, "/execroot", "bazel-out/out",),
+            BuildScriptOutput::nonhermetic_absolute_paths(
+                &outputs,
+                "/rules_rust_test_execroot",
+                "bazel-out/out",
+            ),
             vec![
-                "cargo::rustc-link-search=/execrootish/not-redacted/lib",
-                "cargo::rustc-link-search=framework=/usr/local/lib",
-                "cargo::rustc-link-search=/opt/system/lib",
-                "cargo::rustc-env=SYSTEM_HEADER=/usr/include/zlib.h",
-                "cargo::rustc-env=CFLAGS=-I/opt/system/include -DOK=1",
-                "cargo::metadata=ROOT=/usr/local/share/zlib",
+                format!("cargo::rustc-link-search=framework={existing_path}"),
+                format!("cargo::rustc-link-search={existing_path}"),
+                format!("cargo::rustc-env=SYSTEM_HEADER={existing_path}"),
+                format!(
+                    "cargo::rustc-env=CARGO_ENCODED_RUSTFLAGS=-I{existing_path}\x1f-DOK=1"
+                ),
+                format!("cargo::metadata=ROOT={existing_path}"),
             ]
         );
     }

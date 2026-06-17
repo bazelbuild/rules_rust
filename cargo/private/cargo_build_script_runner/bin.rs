@@ -185,7 +185,9 @@ fn run_buildrs() -> Result<(), String> {
                 "Build script emitted non-hermetic absolute path(s):\n  {}\n\
                  Absolute paths are only allowed when the build-script runner can redact them into portable placeholders. \
                  If these host-system paths are intentional, set \
-                 allow_build_script_to_detect_nonhermetic_paths = True on the cargo_build_script target.",
+                 allow_build_script_to_detect_nonhermetic_paths = True on the cargo_build_script target. \
+                 For a third-party crate, set allow_build_script_to_detect_nonhermetic_paths = True \
+                 on its crate.annotation.",
                 nonhermetic_paths.join("\n  ")
             ));
         }
