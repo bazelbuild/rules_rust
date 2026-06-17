@@ -6,11 +6,7 @@
 #     bazel run @@//3rdparty:crates_vendor
 ###############################################################################
 
-load(
-    "@rules_rust//cargo:defs.bzl",
-    "cargo_build_script",
-    "cargo_toml_env_vars",
-)
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -21,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "pyo3",
+    name = "pyo3_macros_backend",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -39,22 +35,10 @@ rust_library(
         ],
     ),
     crate_features = [
-        "abi3",
-        "abi3-py311",
-        "abi3-py312",
-        "abi3-py313",
-        "abi3-py314",
-        "default",
         "experimental-inspect",
-        "extension-module",
-        "macros",
-        "pyo3-macros",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    proc_macro_deps = [
-        "@rpyo3c__pyo3-macros-0.28.2//:pyo3_macros",
-    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -63,7 +47,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=pyo3",
+        "crate-name=pyo3-macros-backend",
         "manual",
         "noclippy",
         "norustfmt",
@@ -125,119 +109,11 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.28.2",
+    version = "0.29.0",
     deps = [
-        "@rpyo3c__libc-0.2.176//:libc",
-        "@rpyo3c__once_cell-1.21.3//:once_cell",
-        "@rpyo3c__pyo3-0.28.2//:build_script_build",
-        "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
-    ] + select({
-        "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv6m-none-eabi": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv7em-none-eabihf": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv7m-none-eabi": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "@rules_rust//rust/platform:thumbv8m.main-none-eabihf": [
-            "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
-        ],
-        "//conditions:default": [],
-    }),
-)
-
-cargo_build_script(
-    name = "_bs",
-    srcs = glob(
-        include = ["**/*.rs"],
-        allow_empty = True,
-    ),
-    compile_data = glob(
-        include = ["**"],
-        allow_empty = True,
-        exclude = [
-            "**/* *",
-            "**/*.rs",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    crate_features = [
-        "abi3",
-        "abi3-py311",
-        "abi3-py312",
-        "abi3-py313",
-        "abi3-py314",
-        "default",
-        "experimental-inspect",
-        "extension-module",
-        "macros",
-        "pyo3-macros",
+        "@rpyo3c__heck-0.5.0//:heck",
+        "@rpyo3c__proc-macro2-1.0.101//:proc_macro2",
+        "@rpyo3c__quote-1.0.41//:quote",
+        "@rpyo3c__syn-2.0.106//:syn",
     ],
-    crate_name = "build_script_build",
-    crate_root = "build.rs",
-    data = glob(
-        include = ["**"],
-        allow_empty = True,
-        exclude = [
-            "**/* *",
-            ".tmp_git_root/**/*",
-            "BUILD",
-            "BUILD.bazel",
-            "WORKSPACE",
-            "WORKSPACE.bazel",
-        ],
-    ),
-    edition = "2021",
-    link_deps = [
-        "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
-    ],
-    pkg_name = "pyo3",
-    rustc_env_files = [
-        ":cargo_toml_env_vars",
-    ],
-    rustc_flags = [
-        "--cap-lints=allow",
-    ],
-    tags = [
-        "cargo-bazel",
-        "crate-name=pyo3",
-        "manual",
-        "noclippy",
-        "norustfmt",
-    ],
-    version = "0.28.2",
-    visibility = ["//visibility:private"],
-    deps = [
-        "@rpyo3c__pyo3-build-config-0.28.2//:pyo3_build_config",
-    ],
-)
-
-alias(
-    name = "build_script_build",
-    actual = ":_bs",
-    tags = ["manual"],
 )

@@ -11,7 +11,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::config::{CrateId, RenderConfig};
+use crate::config::label_injection;
+use crate::config::{CrateId, LabelInjectionMapping, RenderConfig};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
@@ -160,6 +161,30 @@ impl Context {
             direct_deps,
             unused_patches,
         })
+    }
+
+    /// Rewrite apparent-label prefixes in every string under this Context to
+    /// their canonical form using the freshly-resolved mapping passed from
+    /// Starlark via [`Config::try_from_path`]. Done by a JSON serde
+    /// round-trip — the substitution surface is wide (deps, build_script_data,
+    /// build_script_env, additive_build_file_content, etc.) and a typed walk
+    /// would have to be re-derived whenever new string fields are added; the
+    /// round-trip naturally tracks the schema.
+    ///
+    /// Called just before rendering BUILD files; the Context written to the
+    /// lockfile is the pre-rewrite form, so the lockfile and digest stay
+    /// stable across `single_version_override` / `multiple_version_override`
+    /// changes the root module makes.
+    pub(crate) fn apply_label_injection_mapping(
+        self,
+        mapping: &LabelInjectionMapping,
+    ) -> Result<Self> {
+        if mapping.is_empty() {
+            return Ok(self);
+        }
+        let mut value = serde_json::to_value(&self)?;
+        label_injection::apply_mapping_to_value(&mut value, mapping);
+        Ok(serde_json::from_value(value)?)
     }
 
     // A helper function for locating the unique path in a workspace to a workspace member

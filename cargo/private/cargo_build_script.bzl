@@ -207,12 +207,39 @@ def _pwd_flags_resource_dir(args):
     """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-resource-dir=", "-resource-dir"])
 
+_DIRECT_LIB_EXTENSIONS = (".a", ".o", ".so", ".dylib")
+
+def _pwd_flags_direct_libs(args):
+    """Prefix execroot-relative object/library file arguments with ${pwd}.
+
+    Handles bare object and library file paths passed directly to the linker
+    without any associated flag (e.g. a positional path to
+    libclang_rt.builtins.a, or a positional .o/.so/.dylib). These are emitted
+    by some cc toolchains (e.g. hermetic LLVM passing the compiler-rt builtins
+    archive as a positional input) and would otherwise stay execroot-relative
+    and fail to resolve from the build script's working directory.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list with relative object/library file
+            paths prefixed with ${pwd}.
+    """
+    res = []
+    for arg in args:
+        if not arg.startswith("-") and not paths.is_absolute(arg) and arg.endswith(_DIRECT_LIB_EXTENSIONS):
+            res.append("${{pwd}}/{}".format(arg))
+        else:
+            res.append(arg)
+    return res
+
 def _pwd_paths(args):
     """Prefix execroot-relative paths with ${pwd}."""
     return _prefix_pwd_to_paths(args)
 
 def _pwd_flags(args):
-    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
+    return _pwd_flags_direct_libs(_pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args)))))))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
@@ -246,16 +273,13 @@ def _rlocationpath(file, workspace_name):
 def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
     """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
 
+    Merges runfiles from both the script binary and the data runfiles target,
+    filtering out the fake executable from the data runfiles.
+
     Due to the inability to forcibly generate runfiles directories for use as inputs
     to actions, this function creates a custom runfiles directory that can more
     consistently be relied upon as an input. For more details see:
     https://github.com/bazelbuild/bazel/issues/15486
-
-    Merges runfiles from both the script binary and the data runfiles target,
-    filtering out the fake executable from the data runfiles.
-
-    If runfiles directories can ever be more directly treated as an input this function
-    can be retired.
 
     Args:
         ctx (ctx): The rule's context object
@@ -507,7 +531,6 @@ def _cargo_build_script_impl(ctx):
 
     tools = depset(
         direct = [
-            script,
             ctx.executable._cargo_build_script_runner,
         ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + toolchain_tools,
@@ -593,7 +616,10 @@ def _cargo_build_script_impl(ctx):
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
-        tools = tools,
+        tools = [
+            ctx.attr.script[DefaultInfo].files_to_run,
+            tools,
+        ],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),

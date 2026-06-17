@@ -53,6 +53,7 @@ load(
     "is_exec_configuration",
     "is_std_dylib",
     "make_static_lib_symlink",
+    "matches_prefix_filter",
     "parse_env_strings",
     "relativize",
 )
@@ -103,6 +104,19 @@ ExtraExecRustcFlagsInfo = provider(
 PerCrateRustcFlagsInfo = provider(
     doc = "Pass each value as an additional flag to non-exec rustc invocations for crates matching the provided filter",
     fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
+)
+
+UnstableSelfProfileInfo = provider(
+    doc = "Passes -Zself-profile and -Zself-profile-events flags to matching rust crates.",
+    fields = {
+        "events": (
+            "List[tuple[str, str]]: A list of `(pattern, event_types)` pairs. The `pattern` " +
+            "matches against a target's label (with leading `@//` stripped) or " +
+            "its execution path (an empty `pattern` matches all targets). The `event_types` " +
+            "specifies comma-separated categories of self-profile events to pass to " +
+            "`-Zself-profile-events` (e.g., `all`)."
+        ),
+    },
 )
 
 def _get_rustc_env(attr, toolchain, crate_name):
@@ -651,6 +665,7 @@ def collect_inputs(
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
+        include_linker_inputs = False,
         include_link_flags = True):
     """Gather's the inputs and required input information for a rustc action
 
@@ -673,6 +688,7 @@ def collect_inputs(
             metadata, even for libraries. This is used in rustdoc tests.
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
             rust binaries.
+        include_linker_inputs (bool, optional): Whether to include linker inputs in transitive dependencies.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
 
     Returns:
@@ -713,7 +729,7 @@ def collect_inputs(
     # flattened on each transitive rust_library dependency.
     libs_from_linker_inputs = []
     ambiguous_libs = {}
-    if crate_info.type not in ("lib", "rlib"):
+    if crate_info.type not in ("lib", "rlib") or include_linker_inputs:
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
@@ -834,7 +850,10 @@ def collect_inputs(
 
 def _will_emit_object_file(emit):
     for e in emit:
-        if e == "obj" or e.startswith("obj="):
+        if type(e) in ["tuple", "list"] and len(e) == 2:
+            if e[0] == "obj":
+                return True
+        elif type(e) == "string" and (e == "obj" or e.startswith("obj=")):
             return True
     return False
 
@@ -1173,6 +1192,10 @@ def construct_arguments(
     for kind in emit:
         if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
+        elif type(kind) in ["tuple", "list"] and len(kind) == 2:
+            # 'kind' is a (string, File) tuple/list. Passing the File object directly to
+            # Args.add allows Bazel to perform path mapping on the path.
+            rustc_flags.add(kind[1], format = "--emit=" + kind[0] + "=%s")
         else:
             emit_without_paths.append(kind)
 
@@ -1446,6 +1469,45 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     return flags
 
+def setup_zself_profile(ctx, crate_info):
+    """Sets up rustc self-profiling if enabled by zself_profile_events.
+
+    Args:
+        ctx (ctx): The current rule's context object.
+        crate_info (CrateInfo): The CrateInfo provider of the target crate.
+
+    Returns:
+        tuple: A tuple containing:
+            - File: The declared self-profile directory, or None if disabled.
+            - list[str]: The self-profile flags to pass to rustc.
+    """
+    if not getattr(ctx.attr, "zself_profile_events", None) or UnstableSelfProfileInfo not in ctx.attr.zself_profile_events:
+        return None, []
+
+    events_info = ctx.attr.zself_profile_events[UnstableSelfProfileInfo].events
+
+    is_self_profile_enabled = False
+    event_types_to_use = None
+
+    # Check if the current crate matches any of the specified prefix filters.
+    # Matching works by comparing against the target's label or its execution path.
+    for pattern, event_types in events_info:
+        if matches_prefix_filter(ctx.label, crate_info.root.path, pattern):
+            is_self_profile_enabled = True
+            event_types_to_use = event_types
+            break
+
+    if not is_self_profile_enabled:
+        return None, []
+
+    profiling_dir = ctx.actions.declare_directory(crate_info.output.basename + "_self-profile", sibling = crate_info.output)
+
+    profiling_flags = ["-Zself-profile=%s" % profiling_dir.path]
+    if event_types_to_use:
+        profiling_flags.append("-Zself-profile-events=%s" % event_types_to_use)
+
+    return profiling_dir, profiling_flags
+
 def rustc_compile_action(
         *,
         ctx,
@@ -1533,6 +1595,9 @@ def rustc_compile_action(
         rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
         lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
 
+    profiling_dir, profiling_flags = setup_zself_profile(ctx, crate_info)
+    rust_flags = rust_flags + profiling_flags
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -1562,6 +1627,23 @@ def rustc_compile_action(
         emit.append("metadata")
     if experimental_use_cc_common_link:
         emit = ["obj"]
+
+    # Declares the outputs of the rustc compile action.
+    # By default this is the binary output; if cc_common.link is used, this is
+    # the main `.o` file (`output_o` below).
+    outputs = [crate_info.output]
+
+    # The `.o` output file, only used for linking via cc_common.link.
+    # When output_hash is set (e.g. for rust_test targets), include it in the
+    # filename to avoid collisions with other targets sharing the same crate name.
+    output_o = None
+    if "obj" in emit:
+        obj_ext = ".o"
+        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
+        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
+        outputs = [output_o]
+        emit.remove("obj")
+        emit.append(("obj", output_o))
 
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
     require_explicit_unstable_features = False
@@ -1637,21 +1719,6 @@ def rustc_compile_action(
     else:
         formatted_version = ""
 
-    # Declares the outputs of the rustc compile action.
-    # By default this is the binary output; if cc_common.link is used, this is
-    # the main `.o` file (`output_o` below).
-    outputs = [crate_info.output]
-
-    # The `.o` output file, only used for linking via cc_common.link.
-    # When output_hash is set (e.g. for rust_test targets), include it in the
-    # filename to avoid collisions with other targets sharing the same crate name.
-    output_o = None
-    if experimental_use_cc_common_link:
-        obj_ext = ".o"
-        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
-        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
-        outputs = [output_o]
-
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
     interface_library = None
@@ -1665,6 +1732,8 @@ def rustc_compile_action(
     action_outputs = list(outputs)
     if rustc_output:
         action_outputs.append(rustc_output)
+    if profiling_dir:
+        action_outputs.append(profiling_dir)
 
     # Get the compilation mode for the current target.
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
@@ -1939,7 +2008,8 @@ def rustc_compile_action(
             output_group_info["rustc_rmeta_output"] = depset([rustc_rmeta_output])
     if rustc_output:
         output_group_info["rustc_output"] = depset([rustc_output])
-
+    if profiling_dir:
+        output_group_info["self_profile"] = depset([profiling_dir])
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
 
@@ -2625,8 +2695,6 @@ def _add_native_link_flags(
         use_direct_link_driver (bool): Whether the linker is a direct driver (e.g. `ld`, `wasm-ld`) vs a wrapper (e.g. `clang`, `gcc`).
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
     """
-    if crate_type in ["lib", "rlib"]:
-        return
 
     use_pic = should_use_pic(
         cc_toolchain = cc_toolchain,
@@ -2728,19 +2796,7 @@ def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
         if not flag:
             fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
 
-        label_string = str(ctx.label)
-        if label_string.startswith("@//"):
-            label = label_string[1:]
-        elif label_string.startswith(
-            # buildifier: disable=canonical-repository
-            "@@//",
-        ):
-            label = label_string[2:]
-        else:
-            label = label_string
-        execution_path = crate_root.path
-
-        if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
+        if matches_prefix_filter(ctx.label, crate_root.path, prefix_filter):
             flags.append(flag)
 
     return flags
@@ -2936,4 +2992,39 @@ no_std = rule(
         "_no_std": attr.label(default = "//rust/settings:no_std"),
     },
     implementation = _no_std_impl,
+)
+
+def _zself_profile_events_impl(ctx):
+    events = []
+    for val in ctx.build_setting_value:
+        if not val:
+            continue
+        if "@" in val:
+            pattern, event_types = val.split("@", 1)
+            events.append((pattern, event_types))
+        else:
+            fail("zself_profile_events '{}' does not follow the expected format: prefix_filter@comma_separated_flag".format(val))
+    return [UnstableSelfProfileInfo(events = events)]
+
+zself_profile_events = rule(
+    doc = (
+        "Passes -Zself-profile and -Zself-profile-events flags to matching Rust crates." +
+        "This feature allows end-users to profile rustc compiler performance on specific crates " +
+        "using rustc's self-profiler. Because these flags are unstable, using them requires a " +
+        "nightly compiler toolchain. The setting is configured from the command line via " +
+        "`--@rules_rust//rust/settings:zself_profile_events`." +
+        "The expected value format is `<prefix_filter>@<events_specification>`. Multiple uses of " +
+        "this flag are accumulated, however only first <events_specification> will be applied for same" +
+        "<prefix_filter>." +
+        "If the target prefix matches with <prefix_filter>, `-Zself-profile` and `-Zself-profile-events` " +
+        "with values as `<crate_name>.self-profile/` and <events_specification> respectively " +
+        "is passed to rustc compiler. The generated profile files (e.g., `.mm_profdata`) are placed" +
+        "under `bazel-out/bin/path/to/package/crate_name_self-profile/` which can be seen by passing" +
+        " `--output_groups=self_profile` flag." +
+        "blaze build //my/project:my_lib \\" +
+        "--@rules_rust//rust/settings:zself_profile_events=//my/project@all \\" +
+        "--output_groups=self_profile"
+    ),
+    implementation = _zself_profile_events_impl,
+    build_setting = config.string_list(flag = True, repeatable = True),
 )

@@ -139,6 +139,7 @@ impl RunfilesMaker {
             .next()
             .unwrap_or_else(|| panic!("Not enough arguments provided."))
             .split(',')
+            .filter(|s| !s.is_empty())
             .map(|s| s.to_owned())
             .collect::<BTreeSet<String>>();
         let runfiles = args

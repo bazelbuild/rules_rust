@@ -565,3 +565,25 @@ def include_mixed_test(name):
             "//conditions:default": "/test/absolute/include:${pwd}/test/relative/path",
         }),
     )
+
+def direct_libs_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["bazel-out/bin/compiler-rt/libclang_rt.builtins.static.a", "test/relative/obj.o", "test/relative/libfoo.so", "test/relative/libbar.dylib", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["${pwd}/bazel-out/bin/compiler-rt/libclang_rt.builtins.static.a", "${pwd}/test/relative/obj.o", "${pwd}/test/relative/libfoo.so", "${pwd}/test/relative/libbar.dylib", "some_unrelated_arg"],
+    )
+
+def direct_libs_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["/test/absolute/libclang_rt.builtins.static.a", "/test/absolute/obj.o", "/test/absolute/libfoo.so", "/test/absolute/libbar.dylib", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["/test/absolute/libclang_rt.builtins.static.a", "/test/absolute/obj.o", "/test/absolute/libfoo.so", "/test/absolute/libbar.dylib", "some_unrelated_arg"],
+    )

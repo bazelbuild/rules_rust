@@ -1,6 +1,6 @@
 //! A module for configuration information
 
-mod label_injection;
+pub(crate) mod label_injection;
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -719,6 +719,18 @@ pub(crate) struct Config {
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) supported_platform_triples: BTreeSet<TargetTriple>,
+
+    /// Apparent -> canonical label_injection map extracted from each
+    /// annotation's `label_injections` field at load time. Populated by
+    /// `Config::try_from_path`; not present in config.json itself
+    /// (`deny_unknown_fields` is fine because `extract_global_mapping`
+    /// strips `label_injections` before deserialization). Sanitized to
+    /// `Default::default()` in `Digest::new` before hashing — same trick
+    /// as `Context.checksum = None` in `lockfile.rs` — so consumer-side
+    /// `single_version_override` shifts (which change the canonical names
+    /// here) don't perturb the digest and force a producer-side repin.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) label_injection_mapping: LabelInjectionMapping,
 }
 
 // rules_rust/crate_universe/private/generate_utils.bzl:generate_config
@@ -744,13 +756,33 @@ where
 }
 
 impl Config {
+    /// Load a config JSON and extract its per-annotation `label_injections`
+    /// into a single `label_injection_mapping` on the Config. The Config
+    /// itself keeps the user's APPARENT labels in annotation strings — the
+    /// rewrite to canonical happens via
+    /// [`label_injection::apply_mapping_to_value`] just before each render
+    /// (see [`crate::context::Context::apply_label_injection_mapping`]),
+    /// using whatever mapping the current bazel session resolved (reflecting
+    /// any root-level `single_version_override` / `multiple_version_override`).
+    ///
+    /// The mapping is excluded from the digest hash via
+    /// [`crate::lockfile::Digest::new`], mirroring the
+    /// `Context.checksum = None` clear in the same file. That's what keeps
+    /// the digest stable across consumer-side overrides.
     pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path)?;
         let mut value: serde_json::Value = serde_json::from_str(&data)?;
-        label_injection::apply(&mut value);
-        Ok(serde_json::from_value(value)?)
+        let mapping = label_injection::extract_global_mapping(&mut value)?;
+        let mut config: Self = serde_json::from_value(value)?;
+        config.label_injection_mapping = mapping;
+        Ok(config)
     }
 }
+
+/// Apparent-repo-prefix -> canonical-repo-prefix map carried on
+/// [`Config::label_injection_mapping`]. See [`label_injection`] for the WHY
+/// of the deferred-substitution design.
+pub(crate) type LabelInjectionMapping = std::collections::BTreeMap<String, String>;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CrateNameAndVersionReq {
