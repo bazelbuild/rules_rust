@@ -1,3 +1,4 @@
+load("@bazel_lib//:bzl_library.bzl", doc_extract_bzl_library = "bzl_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 exports_files([
@@ -13,4 +14,11 @@ bzl_library(
         "//cargo/private:bzl_lib",
         "//cargo/settings:bzl_lib",
     ],
+)
+
+doc_extract_bzl_library(
+    name = "doc_extract_tests",
+    testonly = True,
+    srcs = glob(["*.bzl"]),
+    deps = [":bzl_lib"],
 )

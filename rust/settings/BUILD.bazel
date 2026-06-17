@@ -1,3 +1,4 @@
+load("@bazel_lib//:bzl_library.bzl", doc_extract_bzl_library = "bzl_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     ":settings.bzl",
@@ -57,6 +58,13 @@ bzl_library(
         "//rust/private:bzl_lib",
         "@bazel_skylib//rules:common_settings",
     ],
+)
+
+doc_extract_bzl_library(
+    name = "doc_extract_tests",
+    testonly = True,
+    srcs = glob(["*.bzl"]),
+    deps = [":bzl_lib"],
 )
 
 always_enable_metadata_output_groups()

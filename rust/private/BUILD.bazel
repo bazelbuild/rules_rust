@@ -42,6 +42,7 @@ bzl_library(
     srcs = ["@rules_cc//cc:bzl_srcs"],
     deps = [
         "@rules_cc//cc/common",
+        "@rules_cc//cc/common:cc_debug_helper_bzl",
     ],
 )
 
