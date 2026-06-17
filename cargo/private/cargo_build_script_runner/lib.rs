@@ -118,10 +118,16 @@ impl BuildScriptOutput {
                 if token.contains("://") {
                     return false;
                 }
-                token.char_indices().any(|(index, _)| {
-                    let prefix = &token[..index];
-                    (prefix.starts_with('-') || prefix.ends_with('='))
-                        && path_exists_and_is_rooted(&token[index..])
+                std::env::split_paths(token).any(|component| {
+                    let component = component.to_string_lossy();
+                    if path_exists_and_is_rooted(&component) {
+                        return true;
+                    }
+                    component.char_indices().any(|(index, _)| {
+                        let prefix = &component[..index];
+                        (prefix.starts_with('-') || prefix.ends_with('='))
+                            && path_exists_and_is_rooted(&component[index..])
+                    })
                 })
             })
     }
@@ -631,12 +637,16 @@ cargo::rustc-link-search=/abs/exec_root/other/path
     fn nonhermetic_absolute_paths_are_detected() {
         let existing_path = std::env::current_dir().unwrap();
         assert!(existing_path.exists());
-        let existing_path = existing_path.to_string_lossy();
         let missing_path = std::env::temp_dir().join(format!(
             "rules_rust_nonhermetic_path_test_missing_{}",
             std::process::id()
         ));
         assert!(!missing_path.exists());
+        let search_paths = std::env::join_paths([&missing_path, &existing_path])
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let existing_path = existing_path.to_string_lossy();
         let missing_path = missing_path.to_string_lossy();
 
         let outputs = vec![
@@ -644,9 +654,7 @@ cargo::rustc-link-search=/abs/exec_root/other/path
             BuildScriptOutput::LinkSearch(
                 "native=/rules_rust_test_execroot/workspace/lib".to_owned(),
             ),
-            BuildScriptOutput::LinkSearch(
-                "/rules_rust_test_execroot/bazel-out/out/lib".to_owned(),
-            ),
+            BuildScriptOutput::LinkSearch("/rules_rust_test_execroot/bazel-out/out/lib".to_owned()),
             BuildScriptOutput::LinkSearch(missing_path.to_string()),
             BuildScriptOutput::LinkSearch(format!("framework={existing_path}")),
             BuildScriptOutput::LinkSearch(existing_path.to_string()),
@@ -655,6 +663,7 @@ cargo::rustc-link-search=/abs/exec_root/other/path
             ),
             BuildScriptOutput::Env(format!("MISSING={missing_path}")),
             BuildScriptOutput::Env(format!("SYSTEM_HEADER={existing_path}")),
+            BuildScriptOutput::Env(format!("SEARCH_PATHS={search_paths}")),
             BuildScriptOutput::Env(format!(
                 "CARGO_ENCODED_RUSTFLAGS=-I{existing_path}\x1f-DOK=1"
             )),
@@ -672,9 +681,8 @@ cargo::rustc-link-search=/abs/exec_root/other/path
                 format!("cargo::rustc-link-search=framework={existing_path}"),
                 format!("cargo::rustc-link-search={existing_path}"),
                 format!("cargo::rustc-env=SYSTEM_HEADER={existing_path}"),
-                format!(
-                    "cargo::rustc-env=CARGO_ENCODED_RUSTFLAGS=-I{existing_path}\x1f-DOK=1"
-                ),
+                format!("cargo::rustc-env=SEARCH_PATHS={search_paths}"),
+                format!("cargo::rustc-env=CARGO_ENCODED_RUSTFLAGS=-I{existing_path}\x1f-DOK=1"),
                 format!("cargo::metadata=ROOT={existing_path}"),
             ]
         );
