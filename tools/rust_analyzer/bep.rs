@@ -50,10 +50,7 @@ struct EventId {
 }
 
 #[derive(Debug, Deserialize)]
-struct ActionCompletedId {
-    #[serde(default)]
-    label: Option<String>,
-}
+struct ActionCompletedId {}
 
 #[derive(Debug, Deserialize)]
 struct ActionPayload {
@@ -184,60 +181,20 @@ pub fn parse_spec_paths(bep_path: &Utf8Path) -> Result<Vec<Utf8PathBuf>> {
     parse_output_group_paths(bep_path, SPEC_OUTPUT_GROUP)
 }
 
-/// Compare two Bazel labels for equality, ignoring repo-prefix shorthand
-/// differences. BEP reports canonical `//pkg:name` (or `@@repo//pkg:name`)
-/// while the spec used to emit non-canonical `pkg:name`; strict string
-/// equality silently dropped every match. Normalizing both sides to the
-/// trailing `pkg:name` form is robust to either change.
-fn labels_match(a: &str, b: &str) -> bool {
-    fn trim(s: &str) -> &str {
-        // Strip an optional `@@` or `@` repository sigil, then the `//`
-        // package separator. Anything left is `pkg:name` (or `:name` for a
-        // root-package target, which is fine — both sides reduce equally).
-        let s = s.trim_start_matches("@@").trim_start_matches('@');
-        s.trim_start_matches("//")
-    }
-    trim(a) == trim(b)
-}
-
-#[cfg(test)]
-mod label_match_tests {
-    use super::labels_match;
-
-    #[test]
-    fn matches_canonical_vs_short() {
-        assert!(labels_match("//util/label:label", "util/label:label"));
-        assert!(labels_match("util/label:label", "//util/label:label"));
-    }
-
-    #[test]
-    fn matches_identical() {
-        assert!(labels_match("//util/label:label", "//util/label:label"));
-        assert!(labels_match("util/label:label", "util/label:label"));
-    }
-
-    #[test]
-    fn handles_external_repo_sigils() {
-        assert!(labels_match("@@//util/label:label", "//util/label:label"));
-        assert!(labels_match("@repo//pkg:t", "@@repo//pkg:t"));
-    }
-
-    #[test]
-    fn rejects_different_targets() {
-        assert!(!labels_match("//util/label:label", "//util/label:other"));
-        assert!(!labels_match("//util/label:label", "//util/other:label"));
-    }
-}
-
-/// Return the stderr file path captured for each completed Bazel action
-/// whose label matches `target_label`. With `error_format=json` set on the
-/// build, the file contains rustc's machine-readable diagnostics — the
+/// Return the stderr file path captured for every completed Bazel action
+/// in the BEP, regardless of label. With `error_format=json` set on the
+/// build, those files contain rustc's machine-readable diagnostics — the
 /// only place to read them when the action fails (failed actions don't
 /// produce their declared `.rustc-output` artifacts).
-pub fn parse_action_stderr_paths(
-    bep_path: &Utf8Path,
-    target_label: &str,
-) -> Result<Vec<Utf8PathBuf>> {
+///
+/// We deliberately do NOT filter by the saved-file's target label.
+/// That matches `cargo check`'s behavior: when a dep of the edited
+/// crate fails, cargo surfaces the dep's rustc errors at the dep's
+/// file paths, and rust-analyzer renders them there. Filtering by the
+/// saved-file's label silently drops every upstream failure, which
+/// surfaces in the editor as "no diagnostics anywhere" — the user has
+/// no idea why their save produced nothing.
+pub fn parse_action_stderr_paths(bep_path: &Utf8Path) -> Result<Vec<Utf8PathBuf>> {
     let file = File::open(bep_path).with_context(|| format!("opening BEP file {bep_path}"))?;
     let reader = BufReader::new(file);
 
@@ -251,18 +208,12 @@ pub fn parse_action_stderr_paths(
             Ok(e) => e,
             Err(_) => continue,
         };
-        let action_id = match event.id.as_ref().and_then(|i| i.action_completed.as_ref()) {
-            Some(a) => a,
-            None => continue,
-        };
-        // Only keep actions for the target the user is checking. Aspect
-        // actions (e.g. clippy) also fire for the same label and get
-        // included — that's the desirable behavior.
-        let bep_label = match action_id.label.as_deref() {
-            Some(l) => l,
-            None => continue,
-        };
-        if !labels_match(bep_label, target_label) {
+        if event
+            .id
+            .as_ref()
+            .and_then(|i| i.action_completed.as_ref())
+            .is_none()
+        {
             continue;
         }
         let action = match event.action {

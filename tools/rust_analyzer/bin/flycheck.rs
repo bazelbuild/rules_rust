@@ -137,7 +137,7 @@ fn run() -> Result<u8> {
         .status()
         .with_context(|| format!("invoking {}", args.bazel))?;
 
-    let stderr_files = match bep::parse_action_stderr_paths(&bep_path, &args.label) {
+    let stderr_files = match bep::parse_action_stderr_paths(&bep_path) {
         Ok(paths) => paths,
         Err(e) => {
             eprintln!("flycheck: parsing BEP failed: {e:#}");
