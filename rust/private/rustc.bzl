@@ -1790,7 +1790,7 @@ def rustc_compile_action(
             action_outputs.append(dsym_folder)
 
     if use_split_debuginfo:
-        action_outputs.append(dwo_outputs)
+        action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
     if ctx.executable._process_wrapper:
         # Run as normal
@@ -2185,6 +2185,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         interface_library (File): Optional interface library for cdylib crates on Windows.
+        debug_context (CcDebugContextInfo): The current debug context.
 
     Returns:
         list: A list containing the `CcInfo` provider and optionally `AllocatorLibrariesImplInfo`
