@@ -260,20 +260,19 @@ struct VscodeArgs {
 
 fn main() -> Result<()> {
     env_logger::init();
-    let cli = Cli::parse();
+    let Cli {
+        workspace,
+        skip_proc_macro_server,
+        skip_rustfmt,
+        output_user_root,
+        cache_dir,
+        per_package_workspaces,
+        ide,
+    } = Cli::parse();
 
-    let workspace = cli
-        .workspace
-        .clone()
-        .unwrap_or_else(|| Utf8PathBuf::from("."));
-    let output_user_root = cli
-        .output_user_root
-        .clone()
-        .unwrap_or_else(|| default_output_user_root(&workspace));
-    let cache_dir = cli
-        .cache_dir
-        .clone()
-        .unwrap_or_else(|| default_cache_dir(&workspace));
+    let workspace = workspace.unwrap_or_else(|| Utf8PathBuf::from("."));
+    let output_user_root = output_user_root.unwrap_or_else(|| default_output_user_root(&workspace));
+    let cache_dir = cache_dir.unwrap_or_else(|| default_cache_dir(&workspace));
     let flavor = LauncherFlavor::detect();
     info!("Using --output_user_root = {output_user_root}");
     info!("Using --cache-dir = {cache_dir}");
@@ -283,12 +282,12 @@ fn main() -> Result<()> {
         output_user_root,
         cache_dir,
         flavor,
-        skip_proc_macro_server: cli.skip_proc_macro_server,
-        skip_rustfmt: cli.skip_rustfmt,
-        per_package_workspaces: cli.per_package_workspaces,
+        skip_proc_macro_server,
+        skip_rustfmt,
+        per_package_workspaces,
     };
 
-    match cli.ide {
+    match ide {
         IdeCmd::Vscode(args) => run_vscode(&ctx, args),
         IdeCmd::Neovim => run_neovim(&ctx),
         IdeCmd::Helix => run_helix(&ctx),
@@ -820,7 +819,8 @@ fn merge_into_existing(path: &Utf8Path, managed: Vec<(String, ManagedValue)>) ->
                         Value::Number(_) => "number",
                         Value::String(_) => "string",
                         Value::Array(_) => "array",
-                        Value::Object(_) => unreachable!(),
+                        // `Object` handled by the outer Ok(Value::Object(...)) arm.
+                        Value::Object(_) => "object",
                     }
                 );
             }
@@ -853,15 +853,11 @@ fn apply_managed(object: &mut Map<String, Value>, key: String, value: ManagedVal
             let existing = object
                 .entry(key)
                 .or_insert_with(|| Value::Object(Map::new()));
-            let map = match existing {
-                Value::Object(m) => m,
-                _ => {
-                    *existing = Value::Object(Map::new());
-                    match existing {
-                        Value::Object(m) => m,
-                        _ => unreachable!(),
-                    }
-                }
+            if !matches!(existing, Value::Object(_)) {
+                *existing = Value::Object(Map::new());
+            }
+            let Value::Object(map) = existing else {
+                unreachable!("just assigned to Value::Object above")
             };
             for (sub_k, sub_v) in entries {
                 // `or_insert` preserves any pre-existing entry under the
@@ -876,15 +872,11 @@ fn apply_managed(object: &mut Map<String, Value>, key: String, value: ManagedVal
             let existing = object
                 .entry(key)
                 .or_insert_with(|| Value::Array(Vec::new()));
-            let arr = match existing {
-                Value::Array(a) => a,
-                _ => {
-                    *existing = Value::Array(Vec::new());
-                    match existing {
-                        Value::Array(a) => a,
-                        _ => unreachable!(),
-                    }
-                }
+            if !matches!(existing, Value::Array(_)) {
+                *existing = Value::Array(Vec::new());
+            }
+            let Value::Array(arr) = existing else {
+                unreachable!("just assigned to Value::Array above")
             };
             for entry in entries {
                 if !arr.iter().any(|existing| existing == &entry) {

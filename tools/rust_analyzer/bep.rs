@@ -418,7 +418,7 @@ mod tests {
 "#,
         )
         .unwrap();
-        let rustc = parse_output_group_paths(&bep_path, "rustc_output").unwrap();
+        let rustc = parse_output_group_paths(&bep_path, RUSTC_OUTPUT_GROUP).unwrap();
         assert_eq!(rustc, vec![Utf8PathBuf::from("/abs/lib.rustc-output")]);
         let specs = parse_output_group_paths(&bep_path, "rust_analyzer_crate_spec").unwrap();
         assert_eq!(specs, vec![Utf8PathBuf::from("/abs/lib.spec.json")]);

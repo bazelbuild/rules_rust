@@ -29,6 +29,15 @@ use camino::{Utf8Path, Utf8PathBuf};
 /// an action output, which has its own correctness headaches.
 const CACHE_DIR_REL: &str = ".rules_rust_analyzer/cache";
 
+/// Schema version mixed into every cache key. Bump on any change to
+/// the assembled `rust-project.json` shape — old cache entries become
+/// ignored rather than served as stale. The cache key is content-keyed
+/// on inputs (not on rules_rust source), so without this bump an
+/// unchanged workspace would keep serving JSON assembled by an older
+/// version of the assembler. See the explanatory comment on
+/// `compute_key` for the incident that motivated this.
+const CACHE_SCHEMA_VERSION: u32 = 0;
+
 /// Compute the cache key for an assembled rust-project.json from the raw
 /// spec contents plus every auxiliary input the assembler bakes into its
 /// output. Anything that changes the bytes of the JSON must factor into the
@@ -45,18 +54,7 @@ pub fn compute_key(
     execution_root: &Utf8Path,
 ) -> String {
     let mut hasher = DefaultHasher::new();
-    // Format version: bump whenever the assembled JSON shape changes so old
-    // cache entries are ignored rather than served as stale. The cache key
-    // is content-keyed on inputs, NOT on rules_rust source — without this
-    // bump, an unchanged workspace would keep serving JSON assembled by a
-    // previous version of the assembly code (which is exactly what
-    // happened when the flycheck runnable shape changed from
-    // `bazel run @rules_rust//tools/rust_analyzer:flycheck` to the
-    // launcher path; rust-analyzer kept getting the old runnable and was
-    // miss-resolving diagnostic file paths against the saved file's
-    // directory). Increment the constant on any rust_project.rs change
-    // that alters the assembled JSON.
-    0u32.hash(&mut hasher);
+    CACHE_SCHEMA_VERSION.hash(&mut hasher);
     bazel.as_str().hash(&mut hasher);
     workspace.as_str().hash(&mut hasher);
     execution_root.as_str().hash(&mut hasher);

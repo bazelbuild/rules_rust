@@ -5,42 +5,11 @@
 //! formatter version matches the Bazel toolchain and lets users format
 //! without ever installing rustfmt on the host.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use runfiles::{rlocation, Runfiles};
 
-/// Mirror of the same helper in `rust_analyzer.rs`. Editors spawn the
-/// underlying binary directly (no `bazel run`), so we have to find our
-/// runfiles via the `.runfiles_manifest` file sitting next to argv[0]
-/// — `Runfiles::create()` only looks at env vars and a `.runfiles/` dir.
-fn ensure_runfiles_env() {
-    if std::env::var_os("RUNFILES_MANIFEST_FILE").is_some()
-        || std::env::var_os("RUNFILES_DIR").is_some()
-        || std::env::var_os("TEST_SRCDIR").is_some()
-    {
-        return;
-    }
-    let argv0 = std::env::args_os().next().unwrap_or_default();
-    let exe = PathBuf::from(argv0);
-    let dir = match exe.parent() {
-        Some(d) => d,
-        None => return,
-    };
-    let file_name = match exe.file_name() {
-        Some(n) => n.to_owned(),
-        None => return,
-    };
-    let mut manifest_name = file_name;
-    manifest_name.push(".runfiles_manifest");
-    let manifest_path = dir.join(&manifest_name);
-    if manifest_path.is_file() {
-        std::env::set_var("RUNFILES_MANIFEST_FILE", manifest_path);
-    }
-}
-
 fn main() {
-    ensure_runfiles_env();
     let runfiles = Runfiles::create().unwrap_or_else(|e| {
         eprintln!("rustfmt wrapper: failed to create runfiles: {e}");
         std::process::exit(1);
