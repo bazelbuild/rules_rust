@@ -1682,7 +1682,11 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
-    use_split_debuginfo = cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and ctx.fragments.cpp.fission_active_for_current_compilation_mode()
+    use_split_debuginfo = (
+        feature_configuration and
+        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and
+        ctx.fragments.cpp.fission_active_for_current_compilation_mode()
+    )
     if use_split_debuginfo:
         rust_flags = rust_flags + [
             "--codegen=split-debuginfo=unpacked",
