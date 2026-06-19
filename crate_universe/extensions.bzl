@@ -175,9 +175,9 @@ rust_binary(
     ]),
     deps = [
         # External crates
-        "@crates//:serde",
-        "@crates//:serde_json",
-        "@crates//:tokio",
+        "@crates//serde",
+        "@crates//serde_json",
+        "@crates//tokio",
     ],
     visibility = ["//visibility:public"],
 )
@@ -388,6 +388,7 @@ load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPL
 load(
     "//crate_universe/private:crates_vendor.bzl",
     "CRATES_VENDOR_ATTRS",
+    "crates_vendor_remote_repository",
     "generate_config_file",
     "generate_splicing_manifest",
 )
@@ -421,24 +422,6 @@ def _get_or_insert(d, key, value):
     if key not in d:
         d[key] = value
     return d[key]
-
-def _generate_repo_impl(repository_ctx):
-    for path, contents in repository_ctx.attr.contents.items():
-        repository_ctx.file(path, contents)
-    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
-        repository_ctx.name,
-    ))
-
-_generate_repo = repository_rule(
-    doc = "A utility for generating a hub repo.",
-    implementation = _generate_repo_impl,
-    attrs = {
-        "contents": attr.string_dict(
-            doc = "A mapping of file names to text they should contain.",
-            mandatory = True,
-        ),
-    },
-)
 
 def _annotations_for_repo(module_annotations, repo_specific_annotations):
     """Merges the set of global annotations with the repo-specific ones
@@ -704,11 +687,12 @@ def _generate_hub_and_spokes(
         print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)
-    _generate_repo(
+    crates_vendor_remote_repository(
         name = cfg.name,
         contents = {
             "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
             "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
+            "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
             "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
         },
     )
@@ -1520,8 +1504,8 @@ can be found below where the supported keys for each template can be found in th
             default = "//:BUILD.{name}-{version}.bazel",
         ),
         "crate_alias_template": attr.string(
-            doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
-            default = "@{repository}//:{name}-{version}-{target}",
+            doc = "The base template to use for crate aliases. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
+            default = "//:{name}-{version}",
         ),
         "crate_label_template": attr.string(
             doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",

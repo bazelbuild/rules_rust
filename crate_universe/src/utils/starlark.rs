@@ -82,7 +82,7 @@ pub(crate) struct Filegroup {
     pub(crate) srcs: Glob,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Alias {
     pub(crate) rule: String,
     pub(crate) name: String,

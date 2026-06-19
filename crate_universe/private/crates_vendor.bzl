@@ -324,9 +324,7 @@ def generate_config_file(
         if workspace_name != "":
             build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel".format(workspace_name, output_pkg)
         crate_label_template = render_config["crate_label_template"]
-        crate_alias_template = "@{{repository}}//:{{name}}-{{version}}".format(
-            output_pkg,
-        )
+        crate_alias_template = render_config["crate_alias_template"]
 
     # If `workspace_name` is blank (such as when using modules), the `@{}//{}:{{file}}` template would generate
     # a reference like `Label(@//<stuff>)`. This causes issues if the module doing the `crates_vendor`ing is not the root module.
@@ -346,11 +344,15 @@ def generate_config_file(
         "vendor_mode": mode,
     }
 
-    # "crate_label_template" is explicitly supported above in non-local modes
-    excluded_from_key_check = ["crate_label_template", "crate_alias_template"]
+    excluded_from_key_check = [
+        "crate_label_template",
+        "crate_alias_template",
+    ]
 
     for key in updates:
-        if (render_config[key] != default_render_config[key]) and key not in excluded_from_key_check:
+        if key in excluded_from_key_check:
+            continue
+        if render_config[key] != default_render_config[key]:
             if hasattr(ctx, "label"):
                 label = ctx.label
             else:
@@ -668,28 +670,93 @@ call against the generated workspace. The following table describes how to contr
     toolchains = ["@rules_rust//rust:toolchain_type"],
 )
 
-def _crates_vendor_remote_repository_impl(repository_ctx):
-    build_file = repository_ctx.path(repository_ctx.attr.build_file)
-    defs_module = repository_ctx.path(repository_ctx.attr.defs_module)
+def _resolve_vendor_files(repository_ctx):
+    """Resolve the (BUILD.bazel, crates.bzl, defs.bzl) paths the hub mirrors.
 
-    repository_ctx.file("BUILD.bazel", repository_ctx.read(build_file))
-    repository_ctx.file("defs.bzl", repository_ctx.read(defs_module))
-    repository_ctx.file("crates.bzl", "")
+    Supports a lean form (just `crates_module`) and a legacy form
+    (`build_file` + `defs_module`, optionally with `crates_module`).
+    Mixing forms is rejected.
+
+    Args:
+        repository_ctx: The repository rule's context.
+
+    Returns:
+        struct: A `struct(build_file, crates_module, defs_module)` of paths.
+    """
+    attr = repository_ctx.attr
+    lean = bool(attr.crates_module) and not (attr.build_file or attr.defs_module)
+    legacy = bool(attr.build_file) or bool(attr.defs_module)
+
+    if lean:
+        crates_module = repository_ctx.path(attr.crates_module)
+        vendor_dir = crates_module.dirname
+        return struct(
+            build_file = vendor_dir.get_child("BUILD.bazel"),
+            crates_module = crates_module,
+            defs_module = vendor_dir.get_child("defs.bzl"),
+        )
+
+    if legacy:
+        if not (attr.build_file and attr.defs_module):
+            fail(
+                "crates_vendor_remote_repository: legacy interface requires both " +
+                "`build_file` and `defs_module`. Prefer the lean form: pass only " +
+                "`crates_module = Label(\":crates.bzl\")` instead.",
+            )
+        build_file = repository_ctx.path(attr.build_file)
+        if attr.crates_module:
+            crates_module = repository_ctx.path(attr.crates_module)
+        else:
+            crates_module = build_file.dirname.get_child("crates.bzl")
+        return struct(
+            build_file = build_file,
+            crates_module = crates_module,
+            defs_module = repository_ctx.path(attr.defs_module),
+        )
+
+    fail(
+        "crates_vendor_remote_repository: must set either `crates_module` (preferred) " +
+        "or both `build_file` and `defs_module` (legacy).",
+    )
+
+def _crates_vendor_remote_repository_impl(repository_ctx):
+    if repository_ctx.attr.contents:
+        contents = repository_ctx.attr.contents
+    else:
+        srcs = _resolve_vendor_files(repository_ctx)
+        contents = {
+            "BUILD.bazel": repository_ctx.read(srcs.build_file),
+            "crates.bzl": repository_ctx.read(srcs.crates_module),
+            "defs.bzl": repository_ctx.read(srcs.defs_module),
+        }
+
+    for path, text in contents.items():
+        repository_ctx.file(path, text)
+
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
 
 crates_vendor_remote_repository = repository_rule(
-    doc = "Creates a repository paired with `crates_vendor` targets using the `remote` vendor mode.",
+    doc = (
+        "Materializes the crate_universe hub repo. Accepts either a `contents` " +
+        "dict of `{filename: text}` (used by the bzlmod extension, whose " +
+        "scratch outputs aren't addressable as labels) or the vendor-side " +
+        "label attrs (`crates_module`, or legacy `build_file` + `defs_module`)."
+    ),
     implementation = _crates_vendor_remote_repository_impl,
     attrs = {
         "build_file": attr.label(
-            doc = "The BUILD file to use for the root package",
-            mandatory = True,
+            doc = "Legacy: the vendored root `BUILD.bazel`. Pair with `defs_module`.",
+        ),
+        "contents": attr.string_dict(
+            doc = "Hub file contents keyed by relative path. Mutually exclusive with the label attrs.",
+        ),
+        "crates_module": attr.label(
+            doc = "Preferred: a label to the vendored `crates.bzl`; siblings derive from its directory.",
         ),
         "defs_module": attr.label(
-            doc = "The `defs.bzl` file to use in the repository",
-            mandatory = True,
+            doc = "Legacy: the vendored `defs.bzl` re-export shim. Pair with `build_file`.",
         ),
     },
 )
