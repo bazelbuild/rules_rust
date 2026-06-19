@@ -11,6 +11,7 @@ package(default_visibility = ["//visibility:public"])
 exports_files(
     [
         "cargo-bazel.json",
+        "crates.bzl",
         "defs.bzl",
     ] + glob(
         include = ["*.bazel"],
@@ -43,14 +44,14 @@ alias(
 )
 
 alias(
-    name = "tokio-1.52.1",
-    actual = "//local_manifests/crates/tokio-1.52.1:tokio",
+    name = "tokio-1.52.3",
+    actual = "//local_manifests/crates/tokio-1.52.3:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "//local_manifests/crates/tokio-1.52.1:tokio",
+    actual = "//local_manifests/crates/tokio-1.52.3:tokio",
     tags = ["manual"],
 )
 

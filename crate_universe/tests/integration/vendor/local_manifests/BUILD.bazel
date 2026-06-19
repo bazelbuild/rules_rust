@@ -1,6 +1,6 @@
 load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-load("//local_manifests/crates:defs.bzl", "aliases", "all_crate_deps")
+load("//local_manifests/crates:crates.bzl", "aliases", "all_crate_deps")
 
 crates_vendor(
     name = "crates_vendor",
