@@ -94,7 +94,22 @@ pub fn get_crate_specs(
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
     log::info!("running bazel aquery...");
     log::debug!("Get crate specs with targets: {:?}", targets);
-    let target_pattern = format!("deps({})", targets.join("+"));
+    let target_pattern = format!(
+        "deps({})",
+        targets
+            .iter()
+            .map(|t| {
+                if let Some(stripped) = t.strip_prefix('-') {
+                    format!(" - {stripped}")
+                } else {
+                    format!(" + {t}")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("")
+            .trim_start_matches(" + ")
+            .to_owned()
+    );
 
     let mut aquery_command = bazel_command(bazel, Some(workspace), Some(output_base));
     aquery_command
