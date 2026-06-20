@@ -436,7 +436,7 @@ impl Renderer {
                 });
             }
 
-            let package = Package::default_visibility_public(package_metadata);
+            let package = self.crate_package(package_metadata);
             starlark.push(Starlark::Package(package));
 
             starlark.push(Starlark::PackageInfo(starlark::PackageInfo {
@@ -461,7 +461,7 @@ impl Renderer {
             }
         } else {
             // Package visibility.
-            let package = Package::default_visibility_public(BTreeSet::new());
+            let package = self.crate_package(BTreeSet::new());
             starlark.push(Starlark::Package(package));
         }
 
@@ -888,6 +888,22 @@ impl Renderer {
             }),
             extra_deps,
         )
+    }
+
+    /// Constructs a `Package` for an individual crate BUILD file, using
+    /// `crate_package_default_visibility` from the render config if set,
+    /// otherwise falling back to `//visibility:public`.
+    fn crate_package(&self, default_package_metadata: BTreeSet<Label>) -> Package {
+        match &self.config.crate_package_default_visibility {
+            Some(visibility) => {
+                let default_visibility = visibility.iter().cloned().collect();
+                Package {
+                    default_package_metadata,
+                    default_visibility,
+                }
+            }
+            None => Package::default_visibility_public(default_package_metadata),
+        }
     }
 
     fn render_vendor_support_files(
@@ -2389,6 +2405,99 @@ mod test {
         assert!(
             binary_section[proc_macro_deps_pos..].contains(":my_proc_macro"),
             "proc-macro lib must appear in proc_macro_deps:\n{binary_section}"
+        );
+    }
+
+    #[test]
+    fn render_crate_package_default_visibility() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let config = Arc::new(RenderConfig {
+            repository_name: "test_rendering".to_owned(),
+            regen_command: "cargo_bazel_regen_command".to_owned(),
+            crate_package_default_visibility: Some(vec![
+                "//third_party/rust:__subpackages__".to_owned()
+            ]),
+            ..RenderConfig::default()
+        });
+        let renderer = Renderer::new(config, mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(
+            build_file_content.contains("//third_party/rust:__subpackages__"),
+            "Expected custom visibility in BUILD file:\n{}",
+            build_file_content
+        );
+        assert!(
+            !build_file_content.contains("//visibility:public"),
+            "Expected no public visibility in BUILD file:\n{}",
+            build_file_content
+        );
+    }
+
+    #[test]
+    fn render_default_visibility_when_not_configured() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(
+            build_file_content.contains("//visibility:public"),
+            "Expected public visibility in BUILD file:\n{}",
+            build_file_content
         );
     }
 }
