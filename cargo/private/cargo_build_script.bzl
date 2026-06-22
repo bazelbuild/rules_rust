@@ -6,7 +6,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -378,6 +378,7 @@ def _cargo_build_script_impl(ctx):
         list: A list containing a BuildInfo provider
     """
     script = ctx.executable.script
+    script_target = ctx.attr.script[0] if type(ctx.attr.script) == "list" else ctx.attr.script
     toolchain = find_toolchain(ctx)
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
@@ -404,7 +405,7 @@ def _cargo_build_script_impl(ctx):
     # https://github.com/bazelbuild/bazel/issues/15486
     runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
         ctx = ctx,
-        script = ctx.attr.script,
+        script = script_target,
         data_runfiles = ctx.attr.data_runfiles,
         retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
         workspace_name = workspace_name,
@@ -626,20 +627,8 @@ def _cargo_build_script_impl(ctx):
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
 
-    for dep in ctx.attr.deps:
-        dep_infos = []
-        if DepInfo in dep:
-            dep_infos = [dep[DepInfo]]
-        else:
-            dep_infos = [
-                dep_variant_info.dep_info
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
-                if dep_variant_info.dep_info
-            ]
-
-        for dep_info in dep_infos:
-            for dep_build_info in dep_info.transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+    for dep_build_info in script_target[DepInfo].transitive_build_infos.to_list():
+        build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -674,7 +663,7 @@ def _cargo_build_script_impl(ctx):
             runfiles_dir,
         ] + extra_output,
         tools = [
-            ctx.attr.script[DefaultInfo].files_to_run,
+            script_target[DefaultInfo].files_to_run,
             tools,
         ],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
@@ -704,6 +693,27 @@ def _cargo_build_script_impl(ctx):
             **output_groups
         ),
     ]
+
+_COMPILATION_MODE = "//command_line_option:compilation_mode"
+
+def _cargo_build_script_compilation_mode_transition_impl(_settings, attr):
+    return {
+        _COMPILATION_MODE: attr.target_compilation_mode,
+    }
+
+_cargo_build_script_compilation_mode_transition = transition(
+    implementation = _cargo_build_script_compilation_mode_transition_impl,
+    inputs = [],
+    outputs = [_COMPILATION_MODE],
+)
+
+def _get_cargo_build_script_cfg():
+    build_script_cfg = config.exec()
+    if hasattr(build_script_cfg, "and_then"):
+        build_script_cfg = build_script_cfg.and_then(_cargo_build_script_compilation_mode_transition)
+    return build_script_cfg
+
+_cargo_build_script_cfg = _get_cargo_build_script_cfg()
 
 cargo_build_script = rule(
     doc = (
@@ -751,11 +761,6 @@ cargo_build_script = rule(
             cfg = "target",
             executable = True,
         ),
-        "deps": attr.label_list(
-            doc = "The Rust build-dependencies of the crate",
-            providers = [[DepInfo], [CrateGroupInfo]],
-            cfg = "exec",
-        ),
         "emit_warnings": attr.bool(
             doc = dedent("""\
                 Whether to forward `cargo::warning=` lines from the build script to stderr.
@@ -793,13 +798,18 @@ cargo_build_script = rule(
             doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             mandatory = True,
-            cfg = "exec",
-            providers = [rust_common.crate_info],
+            cfg = _cargo_build_script_cfg,
+            providers = [rust_common.crate_info, DepInfo],
         ),
         "tools": attr.label_list(
             doc = "Tools required by the build script.",
             allow_files = True,
             cfg = "exec",
+        ),
+        "target_compilation_mode": attr.string(
+            doc = "The parent target's compilation mode.",
+            mandatory = True,
+            values = ["dbg", "fastbuild", "opt"],
         ),
         "use_default_shell_env": attr.int(
             doc = dedent("""\

@@ -12,13 +12,19 @@ DepActionsInfo = provider(
 def _collect_dep_actions_aspect_impl(target, ctx):
     actions = []
     actions.extend(target.actions)
-    for dep in ctx.rule.attr.deps:
-        actions.extend(dep[DepActionsInfo].actions)
+    attr_name = "script" if hasattr(ctx.rule.attr, "script") else "deps"
+    if hasattr(ctx.rule.attr, attr_name):
+        deps = getattr(ctx.rule.attr, attr_name)
+        if type(deps) != "list":
+            deps = [deps]
+        for dep in deps:
+            if DepActionsInfo in dep:
+                actions.extend(dep[DepActionsInfo].actions)
     return [DepActionsInfo(actions = actions)]
 
 collect_dep_actions_aspect = aspect(
     implementation = _collect_dep_actions_aspect_impl,
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "script"],
 )
 
 def _outputs_contain(outputs, substring):
@@ -47,6 +53,14 @@ def _build_script_deps_test_impl(ctx):
         ("-exec-" in rlib_output.path) or ("-exec/bin/" in rlib_output.path),
         "Expected rlib output to be in an exec configuration, but got: {}".format(rlib_output.path),
     )
+    if hasattr(config.exec(), "and_then"):
+        asserts.true(
+            env,
+            "--codegen=opt-level=0" in build_script_deps_action.argv,
+            "Expected build script dependencies to use fastbuild compilation mode, but got: {}".format(
+                build_script_deps_action.argv,
+            ),
+        )
     return analysistest.end(env)
 
 build_script_deps_test = analysistest.make(
@@ -77,6 +91,12 @@ def build_script_test_suite(name):
         name = "build_script_deps_in_exec_mode_test",
         target_under_test = ":build_script_deps_in_exec_mode",
     )
+
+    if hasattr(config.exec(), "and_then"):
+        native.filegroup(
+            name = "transition_and_then_supported",
+            tags = ["manual"],
+        )
 
     native.test_suite(
         name = name,

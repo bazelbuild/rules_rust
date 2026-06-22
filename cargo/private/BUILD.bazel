@@ -1,6 +1,24 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:defs.bzl", "rust_binary")
 
+config_setting(
+    name = "compilation_mode_dbg",
+    values = {"compilation_mode": "dbg"},
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "compilation_mode_fastbuild",
+    values = {"compilation_mode": "fastbuild"},
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "compilation_mode_opt",
+    values = {"compilation_mode": "opt"},
+    visibility = ["//visibility:public"],
+)
+
 rust_binary(
     name = "copy_file",
     srcs = ["copy_file.rs"],
@@ -10,9 +28,9 @@ rust_binary(
 
 bzl_library(
     name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
     deps = [
         "//rust:bzl_lib",
     ],
-    srcs = glob(["**/*.bzl"]),
-    visibility = ["//visibility:public"],
 )

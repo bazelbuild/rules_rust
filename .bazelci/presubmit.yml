@@ -371,6 +371,8 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:build_script_path_mapping_test_binary
   linux_docs:
     name: Docs
     platform: ubuntu2204

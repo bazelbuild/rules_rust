@@ -1,6 +1,12 @@
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 sh_binary(
+    name = "build_script_path_mapping_test_binary",
+    srcs = ["build_script_path_mapping_test.sh"],
+    data = ["build_script_path_mapping_test.py"],
+)
+
+sh_binary(
     name = "query_test_binary",
     srcs = ["query_test_binary.sh"],
 )
