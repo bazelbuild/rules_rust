@@ -1,6 +1,7 @@
 //! Crate specific information embedded into [crate::context::Context] objects.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 
 use camino::Utf8PathBuf;
 use cargo_metadata::{Node, Package, PackageId};
@@ -496,16 +497,8 @@ impl CrateContext {
 
         let build_script_attrs = if let Some(target) = build_script_target {
             // Track the build script dependency
-            common_attrs.deps.insert(
-                CrateDependency {
-                    id: current_crate_id,
-                    target: target.crate_name.clone(),
-                    alias: None,
-                    local_path: match source_annotations.get(&annotation.node.id) {
-                        Some(SourceAnnotation::Path { path }) => Some(path.clone()),
-                        _ => None,
-                    },
-                },
+            common_attrs.extra_deps.insert(
+                Label::from_str(&format!(":{}", target.crate_name)).unwrap(),
                 None,
             );
 
