@@ -491,7 +491,7 @@ cargo::rustc-link-search=/abs/exec_root/other/path
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(
             BuildScriptOutput::outputs_to_flags(
                 &result,
