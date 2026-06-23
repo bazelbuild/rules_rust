@@ -170,6 +170,21 @@
 --@rules_rust//cargo/settings:debug_std_streams_output_group
 </pre>
 <p>A flag which adds a <code>streams</code> output group to <code>cargo_build_script</code> targets that contain     the raw <code>stderr</code> and <code>stdout</code> streams from the build script.</p>
+<p><a id="emit_build_script_warnings"></a></p>
+<h2 id="emit_build_script_warnings"><a class="header" href="#emit_build_script_warnings">emit_build_script_warnings</a></h2>
+<pre>
+--@rules_rust//cargo/settings:emit_build_script_warnings
+</pre>
+<p>A flag which controls whether <code>cargo_build_script</code> warnings     (<code>cargo::warning=</code>) are printed to stderr.</p>
+<p>Supported values:</p>
+<ul>
+<li><code>on</code>: emit warnings for every <code>cargo_build_script</code> target, overriding any
+per-target <code>emit_warnings = False</code>.</li>
+<li><code>auto</code> (default): respect the per-target <code>emit_warnings</code> attribute.
+<code>crate_universe</code>-generated targets set it to <code>False</code>, so registry/git
+crates stay quiet (matching Cargo); first-party targets emit by default.</li>
+<li><code>off</code>: silence warnings build-wide.</li>
+</ul>
 <p><a id="experimental_symlink_execroot"></a></p>
 <h2 id="experimental_symlink_execroot"><a class="header" href="#experimental_symlink_execroot">experimental_symlink_execroot</a></h2>
 <pre>
