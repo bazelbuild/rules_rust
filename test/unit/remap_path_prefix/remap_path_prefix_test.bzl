@@ -6,6 +6,9 @@ load("//rust:defs.bzl", "rust_binary", "rust_library")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
+    "assert_argv_contains",
+    "assert_argv_contains_prefix_not",
+    "assert_argv_contains_prefix_suffix",
     "assert_list_contains_adjacent_elements",
 )
 
@@ -25,6 +28,38 @@ def _remap_path_prefix_test_impl(ctx):
     return analysistest.end(env)
 
 _remap_path_prefix_test = analysistest.make(_remap_path_prefix_test_impl)
+
+def _remap_path_prefix_source_test_impl(ctx):
+    """Verify that source targets do NOT get the relative bin-dir remap."""
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = target.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+
+    assert_argv_contains(env, action, "--remap-path-prefix=${pwd}=.")
+    assert_argv_contains(env, action, "--remap-path-prefix=${exec_root}=.")
+    assert_argv_contains(env, action, "--remap-path-prefix=${output_base}=.")
+    assert_argv_contains_prefix_not(env, action, "--remap-path-prefix=bazel-out/")
+
+    return analysistest.end(env)
+
+_remap_path_prefix_source_test = analysistest.make(_remap_path_prefix_source_test_impl)
+
+def _remap_file_macro_generated_test_impl(ctx):
+    """Verify that generated-source targets get a relative bin-dir remap for file!()."""
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = target.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+
+    # Should have the relative bin-dir remap (e.g. --remap-path-prefix=bazel-out/k8-fastbuild/bin/=)
+    assert_argv_contains_prefix_suffix(env, action, "--remap-path-prefix=bazel-out/", "/bin/=")
+
+    return analysistest.end(env)
+
+_remap_file_macro_generated_test = analysistest.make(_remap_file_macro_generated_test_impl)
 
 def _subst_flags_test_impl(ctx):
     """Verify that process wrapper --subst flags are present."""
@@ -88,6 +123,23 @@ def remap_path_prefix_test_suite(name):
         target_under_test = ":remap_bin",
     )
 
+    # Verify source targets do NOT get the relative bin-dir remap.
+    _remap_path_prefix_source_test(
+        name = "remap_path_prefix_source_lib_test",
+        target_under_test = ":dep",
+    )
+
+    # Verify generated-source targets get the relative bin-dir remap for file!().
+    _remap_file_macro_generated_test(
+        name = "remap_file_macro_generated_lib_test",
+        target_under_test = ":remap_lib",
+    )
+
+    _remap_file_macro_generated_test(
+        name = "remap_file_macro_generated_bin_test",
+        target_under_test = ":remap_bin",
+    )
+
     _subst_flags_test(
         name = "subst_flags_lib_test",
         target_under_test = ":remap_lib",
@@ -101,6 +153,9 @@ def remap_path_prefix_test_suite(name):
     tests = [
         ":remap_path_prefix_lib_test",
         ":remap_path_prefix_bin_test",
+        ":remap_path_prefix_source_lib_test",
+        ":remap_file_macro_generated_lib_test",
+        ":remap_file_macro_generated_bin_test",
         ":subst_flags_lib_test",
         ":subst_flags_bin_test",
     ]
