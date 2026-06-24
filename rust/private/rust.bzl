@@ -103,7 +103,7 @@ def _assert_correct_dep_mapping(ctx):
             print(
                 ("\nWARNING: Target {dep} in 'deps' of {target} is a C++ library. " +
                  "Only Rust targets are allowed in 'deps'. " +
-                 "Please use 'link_deps' for manual FFI linkage or 'cc_deps' for binding generation. " +
+                 "Please use 'link_deps' for manual FFI linkage. " +
                  "Support for C++ libraries in 'deps' is deprecated and will be removed in a future release.").format(
                     dep = dep.label,
                     target = ctx.label,
