@@ -60,6 +60,142 @@ rust_binary(
     ],
 )
 
+# Stable entry point for editors / LSP clients. Locates the Bazel-built
+# rust-analyzer via runfiles and `exec`s it so the LSP server matches the
+# Bazel toolchain's rustc, sysroot, and (when invoked as its own proc-macro
+# subcommand) proc-macro-srv. Point `rust-analyzer.server.path` at
+# `bazel-bin/tools/rust_analyzer/rust_analyzer` after `bazel build`.
+rust_binary(
+    name = "rust_analyzer",
+    srcs = ["bin/rust_analyzer.rs"],
+    data = [
+        "//rust/toolchain:current_rust_analyzer_toolchain",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "RUST_ANALYZER_RLOCATIONPATH": "$(RUST_ANALYZER_RLOCATIONPATH)",
+    },
+    toolchains = ["//rust/toolchain:current_rust_analyzer_toolchain"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+    ],
+)
+
+# Companion wrapper for the proc-macro server. Use when an editor's bundled
+# rust-analyzer is a different version than the one in the Bazel toolchain
+# and proc-macro ABI mismatches cause silent expansion failures — point
+# `rust-analyzer.procMacro.server` at
+# `bazel-bin/tools/rust_analyzer/rust_analyzer_proc_macro_srv`.
+rust_binary(
+    name = "rust_analyzer_proc_macro_srv",
+    srcs = ["bin/rust_analyzer_proc_macro_srv.rs"],
+    data = [
+        "//rust/toolchain:current_rust_analyzer_toolchain",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH": "$(RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH)",
+    },
+    toolchains = ["//rust/toolchain:current_rust_analyzer_toolchain"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+    ],
+)
+
+# Wrapper around the Bazel rustfmt toolchain's binary. setup_vscode wires
+# `rust-analyzer.rustfmt.overrideCommand` at the launcher that exec's this;
+# the LSP server pipes file contents on stdin and reads formatted output on
+# stdout, so users can format `.rs` files without ever installing rustfmt
+# on the host.
+rust_binary(
+    name = "rustfmt",
+    srcs = ["bin/rustfmt.rs"],
+    data = [
+        "//rust/toolchain:current_rustfmt_toolchain",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
+    },
+    toolchains = ["//rust/toolchain:current_rustfmt_toolchain"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+    ],
+)
+
+# On-save flycheck wrapper. The assembled rust-project.json wires its
+# `flycheck` runnable to `bazel run` this target with `{label}` and
+# `{saved_file}` after rust-analyzer substitutes them. It runs
+# `bazel build` with rustc diagnostics enabled, harvests the resulting
+# `.rustc-output` files via BEP, and streams rustc JSON to stdout for
+# rust-analyzer to render as inline squiggles.
+rust_binary(
+    name = "flycheck",
+    srcs = ["bin/flycheck.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":gen_rust_project_lib",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)
+
+rust_test(
+    name = "flycheck_test",
+    crate = ":flycheck",
+)
+
+# One-command bootstrap that wires VSCode, Neovim, Helix, or any other
+# rust-analyzer-capable editor at the Bazel rust-analyzer toolchain. Drops
+# small launcher scripts at editor-appropriate locations so the LSP /
+# discover / flycheck / rustfmt commands keep working across `bazel clean`,
+# and (where the editor's config format is mergeable JSON) writes/merges
+# the relevant settings. Re-runnable; preserves user keys.
+#
+# Invoke with a subcommand per IDE: `vscode`, `neovim`, `helix`, `print`.
+rust_binary(
+    name = "setup",
+    srcs = ["bin/setup.rs"],
+    # Embedded via `include_str!` into the binary so the launcher templates
+    # ship inside `setup` itself and need no runfiles resolution. Both POSIX
+    # and Windows variants ship; setup picks one at runtime.
+    compile_data = [
+        "data/launcher_discover_bazel_rust_project.bat",
+        "data/launcher_discover_bazel_rust_project.sh",
+        "data/launcher_flycheck.bat",
+        "data/launcher_flycheck.sh",
+        "data/launcher_rust_analyzer.bat",
+        "data/launcher_rust_analyzer.sh",
+        "data/launcher_rust_analyzer_proc_macro_srv.bat",
+        "data/launcher_rust_analyzer_proc_macro_srv.sh",
+        "data/launcher_rustfmt.bat",
+        "data/launcher_rustfmt.sh",
+    ],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)
+
+rust_test(
+    name = "setup_test",
+    crate = ":setup",
+)
+
 rust_library(
     name = "gen_rust_project_lib",
     srcs = glob(

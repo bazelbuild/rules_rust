@@ -7,9 +7,14 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
+
+// `Deserialize` on the project shape is needed so cache hits can round-trip
+// the persisted JSON back into the `RustProject` the callers want. Cache
+// writes are still produced via the canonical assembly path, so the schema
+// can drift forward freely; only Deserialize-on-cache-hit relies on it.
 
 use crate::{
     aquery::{CrateSpec, CrateType},
@@ -53,6 +58,9 @@ impl FromStr for RustAnalyzerArg {
 /// The format that `rust_analyzer` expects as a response when automatically invoked.
 /// See [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
+// `Progress` carries an `&fmt::Arguments` for in-flight log lines, which can't
+// be deserialized; the cache stores the inner `RustProject`, never the
+// discovery envelope, so Serialize is all we need here.
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "snake_case")]
@@ -73,7 +81,7 @@ pub enum DiscoverProject<'a> {
 /// A `rust-project.json` workspace representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RustProject {
     /// The path to a Rust sysroot.
     sysroot: Utf8PathBuf,
@@ -96,7 +104,7 @@ pub struct RustProject {
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -116,7 +124,7 @@ pub struct Crate {
     is_workspace_member: Option<bool>,
 
     /// Optionally specify the (super)set of `.rs` files comprising this crate.
-    #[serde(skip_serializing_if = "Source::is_empty")]
+    #[serde(skip_serializing_if = "Source::is_empty", default)]
     source: Source,
 
     /// The set of cfgs activated for a given crate, like
@@ -143,7 +151,7 @@ pub struct Crate {
     build: Option<Build>,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Source {
     include_dirs: Vec<String>,
     exclude_dirs: Vec<String>,
@@ -155,7 +163,7 @@ impl Source {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Dependency {
     /// Index of a crate in the `crates` array.
     #[serde(rename = "crate")]
@@ -165,7 +173,7 @@ pub struct Dependency {
     name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Build {
     /// The name associated with this crate.
     ///
@@ -190,7 +198,7 @@ pub struct Build {
     target_kind: TargetKind,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TargetKind {
     Bin,
@@ -222,7 +230,7 @@ pub enum TargetKind {
 ///     "kind": "testOne"
 /// }
 /// ```
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Runnable {
     /// The program invoked by the runnable.
     ///
@@ -240,16 +248,214 @@ pub struct Runnable {
 }
 
 /// The kind of runnable.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RunnableKind {
     Check,
 
+    /// On-save build that emits rustc JSON diagnostics on stdout for
+    /// rust-analyzer to render as inline squiggles.
+    Flycheck,
+
     /// Can run a binary.
     Run,
 
-    /// Run a single test.
+    /// Run a single test. rust-analyzer substitutes `{test_id}` with
+    /// the function's canonical path (e.g. `tests::it_works`).
     TestOne,
+
+    /// Run every test in a module. rust-analyzer substitutes
+    /// `{test_pattern}` with the module path (e.g. `tests::`). Even if
+    /// the resulting Bazel command is approximate (Bazel's test filter
+    /// is per-target, not per-module), THIS TEMPLATE MUST EXIST: when
+    /// a crate has a `build` field, rust-analyzer routes every runnable
+    /// through `ProjectJsonTargetSpec` lookup, and missing kinds cause
+    /// the codelens-rendering pipeline to silently drop BOTH the
+    /// missing-kind and adjacent runnables of OTHER kinds at the same
+    /// source range. Without TestMod, the `▶ Run Test` codelens on
+    /// every `#[test]` fn inside a `#[cfg(test)] mod tests { }` block
+    /// disappears entirely.
+    TestMod,
+}
+
+/// Workspace-relative path of the flycheck launcher script that
+/// `setup_vscode` writes. The path itself is platform-dependent (`.sh` on
+/// POSIX, `.bat` on Windows) but the directory layout is fixed and shared
+/// with `bin/setup_vscode.rs` — keep them in sync.
+fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
+    let filename = if cfg!(windows) {
+        "flycheck.bat"
+    } else {
+        "flycheck.sh"
+    };
+    workspace
+        .join(".vscode")
+        .join(".rules_rust_analyzer")
+        .join(filename)
+}
+
+/// Findings from inspecting the consolidated `CrateSpec` set for problems
+/// that would otherwise silently degrade the IDE experience.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct AssemblyDiagnostics {
+    /// Each entry is `(referencing_crate_id, missing_dep_crate_id)`. The
+    /// missing dep was filtered out during dep resolution — usually it
+    /// means a target was a non-Rust dep that the aspect skipped, or its
+    /// spec generation failed.
+    pub missing_deps: Vec<(String, String)>,
+    /// Each cycle is rendered as an ordered list of `crate_id`s with the
+    /// first node repeated at the end so the loop is visually obvious:
+    /// e.g. `["ID-a", "ID-b", "ID-a"]` for an A → B → A cycle.
+    pub cycles: Vec<Vec<String>>,
+}
+
+impl AssemblyDiagnostics {
+    pub fn is_empty(&self) -> bool {
+        self.missing_deps.is_empty() && self.cycles.is_empty()
+    }
+}
+
+/// Inspect the consolidated `CrateSpec` set for problems. This is a pure
+/// function returning the findings; callers are responsible for surfacing
+/// them (`log::warn!`, persistent log file, etc).
+pub fn diagnose(crate_specs: &BTreeSet<CrateSpec>) -> AssemblyDiagnostics {
+    use std::collections::BTreeSet as Set;
+
+    let id_set: Set<&str> = crate_specs.iter().map(|c| c.crate_id.as_str()).collect();
+
+    // Pass 1: deps that don't resolve to any crate in the spec set.
+    let mut missing_deps: Vec<(String, String)> = Vec::new();
+    for c in crate_specs {
+        for dep in &c.deps {
+            if !id_set.contains(dep.as_str()) {
+                missing_deps.push((c.crate_id.clone(), dep.clone()));
+            }
+        }
+    }
+    missing_deps.sort();
+
+    // Pass 2: cycles in the resolved (intra-project) dep graph. Only
+    // consider edges that point at known crate_ids so missing deps aren't
+    // double-reported as cycles.
+    let adj: BTreeMap<&str, Vec<&str>> = crate_specs
+        .iter()
+        .map(|c| {
+            (
+                c.crate_id.as_str(),
+                c.deps
+                    .iter()
+                    .filter(|d| id_set.contains(d.as_str()))
+                    .map(|d| d.as_str())
+                    .collect(),
+            )
+        })
+        .collect();
+    let cycles = find_all_cycles(&adj);
+
+    AssemblyDiagnostics {
+        missing_deps,
+        cycles,
+    }
+}
+
+/// Render a human-readable warning report. Used both for `log::warn!`
+/// emission (one line per finding) and for the persistent log file.
+pub fn format_diagnostics(diag: &AssemblyDiagnostics) -> String {
+    let mut out = String::new();
+    for (referencing, missing) in &diag.missing_deps {
+        out.push_str(&format!(
+            "missing dep: crate {referencing} references {missing} which is not in the project (target may be a non-Rust dep, filtered, or its spec generation failed)\n"
+        ));
+    }
+    for cycle in &diag.cycles {
+        out.push_str(&format!("dep cycle: {}\n", cycle.join(" → ")));
+    }
+    out
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DfsColor {
+    White,
+    Gray,
+    Black,
+}
+
+fn find_all_cycles(adj: &BTreeMap<&str, Vec<&str>>) -> Vec<Vec<String>> {
+    let mut colors: HashMap<&str, DfsColor> = adj.keys().map(|&k| (k, DfsColor::White)).collect();
+    let mut found: BTreeSet<Vec<String>> = BTreeSet::new();
+    let mut path: Vec<&str> = Vec::new();
+
+    // BTreeMap iteration is sorted, so DFS roots are visited deterministically
+    // and the produced cycle paths are stable across runs (important for
+    // tests).
+    for &start in &adj.keys().copied().collect::<Vec<_>>() {
+        if colors.get(start).copied().unwrap_or(DfsColor::White) == DfsColor::White {
+            dfs_collect_cycles(start, adj, &mut colors, &mut path, &mut found);
+        }
+    }
+
+    // Render: close each cycle by repeating the first node at the end.
+    found
+        .into_iter()
+        .map(|mut cycle| {
+            if let Some(first) = cycle.first().cloned() {
+                cycle.push(first);
+            }
+            cycle
+        })
+        .collect()
+}
+
+fn dfs_collect_cycles<'a>(
+    node: &'a str,
+    adj: &BTreeMap<&'a str, Vec<&'a str>>,
+    colors: &mut HashMap<&'a str, DfsColor>,
+    path: &mut Vec<&'a str>,
+    found: &mut BTreeSet<Vec<String>>,
+) {
+    colors.insert(node, DfsColor::Gray);
+    path.push(node);
+
+    if let Some(neighbors) = adj.get(node) {
+        for &next in neighbors {
+            match colors.get(next).copied().unwrap_or(DfsColor::White) {
+                DfsColor::White => dfs_collect_cycles(next, adj, colors, path, found),
+                DfsColor::Gray => {
+                    // Back-edge: cycle from `next` (on path) back to itself
+                    // via `node`. Self-loops (node == next) are handled by
+                    // the same code path — `start_idx` points at the last
+                    // path entry, producing a single-element cycle.
+                    if let Some(start_idx) = path.iter().position(|&n| n == next) {
+                        let cycle_nodes: Vec<&str> = path[start_idx..].to_vec();
+                        found.insert(canonicalize_cycle(&cycle_nodes));
+                    }
+                }
+                DfsColor::Black => {
+                    // Already fully processed: cannot be on the current
+                    // path, so no cycle involving it from here.
+                }
+            }
+        }
+    }
+
+    colors.insert(node, DfsColor::Black);
+    path.pop();
+}
+
+/// Rotate a cycle so its lexicographically smallest element is first; this
+/// makes A→B→C→A and B→C→A→B compare equal after canonicalization, so the
+/// dedup set treats them as the same cycle regardless of which DFS root
+/// discovered it.
+fn canonicalize_cycle(cycle: &[&str]) -> Vec<String> {
+    if cycle.is_empty() {
+        return Vec::new();
+    }
+    let min_idx = (0..cycle.len()).min_by_key(|&i| cycle[i]).unwrap_or(0);
+    cycle[min_idx..]
+        .iter()
+        .chain(cycle[..min_idx].iter())
+        .map(|s| s.to_string())
+        .collect()
 }
 
 pub fn assemble_rust_project(
@@ -269,6 +475,27 @@ pub fn assemble_rust_project(
                 cwd: workspace.to_owned(),
                 kind: RunnableKind::Check,
             },
+            // On-save flycheck. rust-analyzer substitutes `{label}` with
+            // the saved file's owning crate and runs the launcher; the
+            // launcher dispatches via `bazel run` to the flycheck wrapper,
+            // which spawns `bazel build` for that label with rustc
+            // diagnostics enabled, harvests the resulting .rustc-output
+            // files via BEP, and streams their JSON contents to stdout
+            // for rust-analyzer to parse into squiggles.
+            //
+            // We point at the launcher (written by `setup_vscode` into
+            // `.vscode/.rules_rust_analyzer/`) rather than at `bazel run
+            // flycheck` directly so the per-shim `--output_user_root`
+            // (an absolute path on the user's machine) doesn't end up
+            // serialized into rust-project.json — the launcher bakes it
+            // in once at setup time and isolates Bazel-server contention
+            // from the user's primary build.
+            Runnable {
+                program: flycheck_launcher_path(workspace).to_string(),
+                args: vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+                cwd: workspace.to_owned(),
+                kind: RunnableKind::Flycheck,
+            },
             Runnable {
                 program: bazel.to_string(),
                 args: vec![
@@ -286,166 +513,128 @@ pub fn assemble_rust_project(
                 cwd: workspace.to_owned(),
                 kind: RunnableKind::TestOne,
             },
+            // TestMod is REQUIRED for `▶ Run Test` codelens to render on
+            // any `#[test]` fn — see the doc on `RunnableKind::TestMod`
+            // for why. `{test_pattern}` is rust-analyzer's module path
+            // (e.g. `tests::`); Bazel's test filter is per-target rather
+            // than per-module, so we forward it as `--test_arg` and let
+            // libtest's name-prefix match do the filtering. Approximate
+            // but functionally correct for the typical lib + inline
+            // `#[cfg(test)] mod tests` layout.
+            Runnable {
+                program: bazel.to_string(),
+                args: vec![
+                    "test".to_owned(),
+                    "{label}".to_owned(),
+                    "--test_output".to_owned(),
+                    "streamed".to_owned(),
+                    "--test_arg".to_owned(),
+                    "--nocapture".to_owned(),
+                    "--test_arg".to_owned(),
+                    "{test_pattern}".to_owned(),
+                ],
+                cwd: workspace.to_owned(),
+                kind: RunnableKind::TestMod,
+            },
+            // Run is REQUIRED — same quirk as TestMod above. Without
+            // this template, per-`#[test]`-fn TestOne codelens silently
+            // disappears (only mod-level "Run Tests" survives). The
+            // template itself is only INVOKED for binary `fn main()`s
+            // (which lib crates don't have), so emitting it has no
+            // user-visible effect beyond unlocking TestOne — but it MUST
+            // be present. Empirically verified against rust-analyzer
+            // 1.96.0; if this constraint loosens upstream, drop it
+            // again because `bazel run` of a `rust_test` target is a
+            // no-op confusing UX.
+            Runnable {
+                program: bazel.to_string(),
+                args: vec!["run".to_owned(), "{label}".to_owned()],
+                cwd: workspace.to_owned(),
+                kind: RunnableKind::Run,
+            },
         ],
     };
 
-    let mut unmerged_crates: Vec<&CrateSpec> = crate_specs.iter().collect();
-    let mut skipped_crates: Vec<&CrateSpec> = Vec::new();
-    let mut merged_crates_index: HashMap<String, usize> = HashMap::new();
+    // Pre-compute crate_id → index and crate_id → spec maps so the dep
+    // resolution pass below can reference any crate (forward or backward)
+    // without toposorting. The artificial cycles that the merge-by-root-
+    // module heuristic produced are gone now that crate_id is unique per
+    // Bazel target; but even if a future change ever introduced duplicate
+    // ids or a true cycle, the worst case here is silently dropping a dep
+    // edge rather than failing the whole project load.
+    let id_to_index: HashMap<&str, usize> = crate_specs
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.crate_id.as_str(), i))
+        .collect();
+    let id_to_spec: HashMap<&str, &CrateSpec> = crate_specs
+        .iter()
+        .map(|c| (c.crate_id.as_str(), c))
+        .collect();
 
-    while !unmerged_crates.is_empty() {
-        for c in unmerged_crates.iter() {
-            if c.deps
-                .iter()
-                .any(|dep| !merged_crates_index.contains_key(dep))
-            {
-                log::trace!(
-                    "Skipped crate {} because missing deps: {:?}",
-                    c.crate_id,
-                    c.deps
-                        .iter()
-                        .filter(|dep| !merged_crates_index.contains_key(*dep))
-                        .cloned()
-                        .collect::<Vec<_>>()
-                );
-                skipped_crates.push(c);
-            } else {
-                log::trace!("Merging crate {}", c.crate_id);
-                merged_crates_index.insert(c.crate_id.clone(), project.crates.len());
+    for c in crate_specs {
+        let target_kind = match c.crate_type {
+            CrateType::Bin if c.is_test => TargetKind::Test,
+            CrateType::Bin => TargetKind::Bin,
+            CrateType::Rlib
+            | CrateType::Lib
+            | CrateType::Dylib
+            | CrateType::Cdylib
+            | CrateType::Staticlib
+            | CrateType::ProcMacro => TargetKind::Lib,
+        };
 
-                let target_kind = match c.crate_type {
-                    CrateType::Bin if c.is_test => TargetKind::Test,
-                    CrateType::Bin => TargetKind::Bin,
-                    CrateType::Rlib
-                    | CrateType::Lib
-                    | CrateType::Dylib
-                    | CrateType::Cdylib
-                    | CrateType::Staticlib
-                    | CrateType::ProcMacro => TargetKind::Lib,
-                };
+        // (No per-crate Run runnable here — rust-analyzer's
+        // `runnable_template(kind)` only looks at the first matching entry
+        // and substitutes `{label}` from the crate's `build.label`. The
+        // single Run template assembled above covers every bin.)
 
-                if let Some(build) = &c.build {
-                    if target_kind == TargetKind::Bin {
-                        project.runnables.push(Runnable {
-                            program: bazel.to_string(),
-                            args: vec!["run".to_string(), build.label.to_owned()],
-                            cwd: workspace.to_owned(),
-                            kind: RunnableKind::Run,
-                        });
-                    }
-                }
+        let deps: Vec<Dependency> = c
+            .deps
+            .iter()
+            .filter_map(|dep_id| {
+                let crate_index = *id_to_index.get(dep_id.as_str())?;
+                let dep_spec = id_to_spec.get(dep_id.as_str())?;
+                let name = c
+                    .aliases
+                    .get(dep_id.as_str())
+                    .cloned()
+                    .unwrap_or_else(|| dep_spec.display_name.clone());
+                Some(Dependency { crate_index, name })
+            })
+            .collect();
 
-                project.crates.push(Crate {
-                    display_name: Some(c.display_name.clone()),
-                    root_module: c.root_module.clone(),
-                    edition: c.edition.clone(),
-                    deps: c
-                        .deps
-                        .iter()
-                        .map(|dep| {
-                            let crate_index = *merged_crates_index
-                                .get(dep)
-                                .expect("failed to find dependency on second lookup");
-                            let dep_crate = &project.crates[crate_index];
-                            let name = if let Some(alias) = c.aliases.get(dep) {
-                                alias.clone()
-                            } else {
-                                dep_crate
-                                    .display_name
-                                    .as_ref()
-                                    .expect("all crates should have display_name")
-                                    .clone()
-                            };
-                            Dependency { crate_index, name }
-                        })
-                        .collect(),
-                    is_workspace_member: Some(c.is_workspace_member),
-                    source: match &c.source {
-                        Some(s) => Source {
-                            exclude_dirs: s.exclude_dirs.clone(),
-                            include_dirs: s.include_dirs.clone(),
-                        },
-                        None => Source::default(),
-                    },
-                    cfg: c.cfg.clone(),
-                    target: Some(c.target.clone()),
-                    env: Some(c.env.clone()),
-                    is_proc_macro: c.proc_macro_dylib_path.is_some(),
-                    proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
-                    build: c.build.as_ref().map(|b| Build {
-                        label: b.label.clone(),
-                        build_file: b.build_file.clone().into(),
-                        target_kind,
-                    }),
-                });
-            }
-        }
-
-        // This should not happen, but if it does exit to prevent infinite loop.
-        if unmerged_crates.len() == skipped_crates.len() {
-            log::debug!(
-                "Did not make progress on {} unmerged crates. Crates: {:?}",
-                skipped_crates.len(),
-                skipped_crates
-            );
-            let crate_map: BTreeMap<String, &CrateSpec> = unmerged_crates
-                .iter()
-                .map(|c| (c.crate_id.to_string(), *c))
-                .collect();
-
-            for unmerged_crate in &unmerged_crates {
-                let mut path = vec![];
-                if let Some(cycle) = detect_cycle(unmerged_crate, &crate_map, &mut path) {
-                    log::warn!(
-                        "Cycle detected: {:?}",
-                        cycle
-                            .iter()
-                            .map(|c| c.crate_id.to_string())
-                            .collect::<Vec<String>>()
-                    );
-                }
-            }
-            return Err(anyhow!(
-                "Failed to make progress on building crate dependency graph"
-            ));
-        }
-        std::mem::swap(&mut unmerged_crates, &mut skipped_crates);
-        skipped_crates.clear();
+        project.crates.push(Crate {
+            display_name: Some(c.display_name.clone()),
+            root_module: c.root_module.clone(),
+            edition: c.edition.clone(),
+            deps,
+            is_workspace_member: Some(c.is_workspace_member),
+            source: match &c.source {
+                Some(s) => Source {
+                    exclude_dirs: s.exclude_dirs.clone(),
+                    include_dirs: s.include_dirs.clone(),
+                },
+                None => Source::default(),
+            },
+            cfg: c.cfg.clone(),
+            target: Some(c.target.clone()),
+            env: Some(c.env.clone()),
+            is_proc_macro: c.proc_macro_dylib_path.is_some(),
+            proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
+            build: c.build.as_ref().map(|b| Build {
+                // `consolidate_crate_specs` already replaces the lib's
+                // build.label with the sibling test's, so `{label}`
+                // substitution in TestOne / Check templates is always a
+                // valid Bazel target.
+                label: b.label.clone(),
+                build_file: b.build_file.clone().into(),
+                target_kind,
+            }),
+        });
     }
 
     Ok(project)
-}
-
-fn detect_cycle<'a>(
-    current_crate: &'a CrateSpec,
-    all_crates: &'a BTreeMap<String, &'a CrateSpec>,
-    path: &mut Vec<&'a CrateSpec>,
-) -> Option<Vec<&'a CrateSpec>> {
-    if path
-        .iter()
-        .any(|dependent_crate| dependent_crate.crate_id == current_crate.crate_id)
-    {
-        let mut cycle_path = path.clone();
-        cycle_path.push(current_crate);
-        return Some(cycle_path);
-    }
-
-    path.push(current_crate);
-
-    for dep in &current_crate.deps {
-        match all_crates.get(dep) {
-            Some(dep_crate) => {
-                if let Some(cycle) = detect_cycle(dep_crate, all_crates, path) {
-                    return Some(cycle);
-                }
-            }
-            None => log::debug!("dep {dep} not found in unmerged crate map"),
-        }
-    }
-
-    path.pop();
-
-    None
 }
 
 #[cfg(test)]
@@ -567,5 +756,189 @@ mod tests {
         );
         let c = &project.crates[2];
         assert_eq!(c.display_name, Some("example".into()));
+    }
+
+    fn spec(id: &str, deps: &[&str]) -> CrateSpec {
+        CrateSpec {
+            aliases: BTreeMap::new(),
+            crate_id: id.into(),
+            display_name: id.replace("ID-", ""),
+            edition: "2018".into(),
+            root_module: format!("{}/lib.rs", id.replace("ID-", "")),
+            is_workspace_member: true,
+            deps: deps.iter().map(|s| s.to_string()).collect(),
+            proc_macro_dylib_path: None,
+            source: None,
+            cfg: vec![],
+            env: BTreeMap::new(),
+            target: "x86_64-unknown-linux-gnu".into(),
+            crate_type: CrateType::Rlib,
+            is_test: false,
+            build: None,
+        }
+    }
+
+    /// A cyclic input — A depends on B and B depends on A — must still
+    /// produce a usable project. Earlier code returned an `Err` here, which
+    /// hid every crate from rust-analyzer.
+    #[test]
+    fn cycle_does_not_break_assembly() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
+            &BTreeSet::from([spec("ID-a", &["ID-b"]), spec("ID-b", &["ID-a"])]),
+        )
+        .expect("cycle must not fail assembly");
+
+        // Both crates present and both edges resolved by index — a real
+        // graph cycle in the JSON, which rust-analyzer handles fine.
+        assert_eq!(project.crates.len(), 2);
+        let a = project
+            .crates
+            .iter()
+            .find(|c| c.display_name.as_deref() == Some("a"))
+            .unwrap();
+        let b = project
+            .crates
+            .iter()
+            .find(|c| c.display_name.as_deref() == Some("b"))
+            .unwrap();
+        assert_eq!(a.deps.len(), 1);
+        assert_eq!(b.deps.len(), 1);
+    }
+
+    /// A dep pointing at a non-existent crate_id (e.g., a target whose spec
+    /// got filtered) must drop just that edge, not bail.
+    #[test]
+    fn missing_dep_is_dropped_not_fatal() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
+            &BTreeSet::from([spec("ID-a", &["ID-nonexistent"])]),
+        )
+        .expect("missing dep must not fail assembly");
+
+        assert_eq!(project.crates.len(), 1);
+        assert_eq!(project.crates[0].deps.len(), 0);
+    }
+
+    // --- diagnose() suite ---
+
+    #[test]
+    fn diagnose_missing_dep_names_both_crates() {
+        let diag = diagnose(&BTreeSet::from([spec("ID-a", &["ID-nonexistent"])]));
+        assert_eq!(diag.cycles, Vec::<Vec<String>>::new());
+        assert_eq!(
+            diag.missing_deps,
+            vec![("ID-a".to_string(), "ID-nonexistent".to_string())]
+        );
+    }
+
+    #[test]
+    fn diagnose_simple_cycle_reports_full_path() {
+        let diag = diagnose(&BTreeSet::from([
+            spec("ID-a", &["ID-b"]),
+            spec("ID-b", &["ID-a"]),
+        ]));
+        assert!(diag.missing_deps.is_empty(), "{:?}", diag.missing_deps);
+        // Canonical form: lex-smallest first ("ID-a"), closed loop.
+        assert_eq!(diag.cycles, vec![vec!["ID-a", "ID-b", "ID-a"]]);
+    }
+
+    #[test]
+    fn diagnose_three_cycle_reports_full_path() {
+        let diag = diagnose(&BTreeSet::from([
+            spec("ID-a", &["ID-b"]),
+            spec("ID-b", &["ID-c"]),
+            spec("ID-c", &["ID-a"]),
+        ]));
+        assert!(diag.missing_deps.is_empty());
+        assert_eq!(diag.cycles, vec![vec!["ID-a", "ID-b", "ID-c", "ID-a"]]);
+    }
+
+    #[test]
+    fn diagnose_self_loop_is_a_cycle() {
+        let diag = diagnose(&BTreeSet::from([spec("ID-a", &["ID-a"])]));
+        assert!(diag.missing_deps.is_empty());
+        // Self-loop reports as the node back to itself.
+        assert_eq!(diag.cycles, vec![vec!["ID-a", "ID-a"]]);
+    }
+
+    #[test]
+    fn diagnose_independent_cycles_all_reported() {
+        let diag = diagnose(&BTreeSet::from([
+            // First disjoint cycle: a → b → a
+            spec("ID-a", &["ID-b"]),
+            spec("ID-b", &["ID-a"]),
+            // Second disjoint cycle: x → y → x
+            spec("ID-x", &["ID-y"]),
+            spec("ID-y", &["ID-x"]),
+        ]));
+        assert!(diag.missing_deps.is_empty());
+        assert_eq!(
+            diag.cycles,
+            vec![vec!["ID-a", "ID-b", "ID-a"], vec!["ID-x", "ID-y", "ID-x"],]
+        );
+    }
+
+    #[test]
+    fn diagnose_acyclic_graph_reports_nothing() {
+        let diag = diagnose(&BTreeSet::from([
+            spec("ID-a", &["ID-b", "ID-c"]),
+            spec("ID-b", &["ID-c"]),
+            spec("ID-c", &[]),
+        ]));
+        assert!(diag.is_empty(), "expected no diagnostics, got {:?}", diag);
+    }
+
+    #[test]
+    fn diagnose_diamond_dependency_no_cycle() {
+        // Classic diamond: A depends on B and C, both depend on D. No cycles.
+        let diag = diagnose(&BTreeSet::from([
+            spec("ID-a", &["ID-b", "ID-c"]),
+            spec("ID-b", &["ID-d"]),
+            spec("ID-c", &["ID-d"]),
+            spec("ID-d", &[]),
+        ]));
+        assert!(
+            diag.cycles.is_empty(),
+            "diamond is not a cycle, got {:?}",
+            diag.cycles
+        );
+    }
+
+    #[test]
+    fn diagnose_reports_missing_and_cycle_together() {
+        // Mixed: cycle a ↔ b, plus a missing dep on c.
+        let diag = diagnose(&BTreeSet::from([
+            spec("ID-a", &["ID-b", "ID-missing"]),
+            spec("ID-b", &["ID-a"]),
+        ]));
+        assert_eq!(
+            diag.missing_deps,
+            vec![("ID-a".to_string(), "ID-missing".to_string())]
+        );
+        // Only the resolvable edge contributes to cycle detection — the
+        // missing dep isn't double-counted.
+        assert_eq!(diag.cycles, vec![vec!["ID-a", "ID-b", "ID-a"]]);
+    }
+
+    #[test]
+    fn format_diagnostics_renders_human_readable_lines() {
+        let diag = AssemblyDiagnostics {
+            missing_deps: vec![("ID-foo".into(), "ID-bar".into())],
+            cycles: vec![vec!["ID-a".into(), "ID-b".into(), "ID-a".into()]],
+        };
+        let out = format_diagnostics(&diag);
+        assert!(out.contains("missing dep: crate ID-foo references ID-bar"));
+        assert!(out.contains("dep cycle: ID-a → ID-b → ID-a"));
     }
 }

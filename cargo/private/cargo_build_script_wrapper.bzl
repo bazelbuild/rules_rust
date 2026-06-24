@@ -23,6 +23,7 @@ def cargo_build_script(
         proc_macro_deps = [],
         build_script_env = {},
         build_script_env_files = [],
+        emit_warnings = True,
         use_default_shell_env = None,
         data = [],
         compile_data = [],
@@ -112,6 +113,10 @@ def cargo_build_script(
         build_script_env (dict, optional): Environment variables for build scripts.
         build_script_env_files (list of label, optional): Files containing additional environment variables to set
             when running the build script.
+        emit_warnings (bool, optional): Whether to forward `cargo::warning=` lines from the build script
+            to stderr. Honored only when
+            `@rules_rust//cargo/settings:emit_build_script_warnings` is `auto` (the
+            default); set the flag to `on` or `off` to override every target.
         use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
             setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
@@ -219,6 +224,7 @@ def cargo_build_script(
         version = version,
         build_script_env = build_script_env,
         build_script_env_files = build_script_env_files,
+        emit_warnings = emit_warnings,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,

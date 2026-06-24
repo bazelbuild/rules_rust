@@ -120,6 +120,12 @@ def _rust_analyzer_aspect_impl(target, ctx):
     _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "deps", []))
     _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "proc_macro_deps", []))
 
+    # For `rust_test(crate = X)` we add X to dep_infos. Since X has the same
+    # crate_id as us (same root_module), the dep-list filter in
+    # `_create_single_crate` later drops it as a self-reference, and
+    # `consolidate_crate_specs` merges X's spec with ours. End result: one
+    # rust-analyzer crate with the union of deps and the test target's
+    # build label.
     _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "crate", None))
     _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "actual", None))
 
@@ -213,7 +219,16 @@ _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
 
 def _crate_id(crate_info):
-    """Returns a unique stable identifier for a crate
+    """Returns a unique stable identifier for a crate.
+
+    Keyed on the crate's root module path so that `rust_library(name = "lib")`
+    and `rust_test(name = "lib_test", crate = ":lib")` — which share a root
+    module — produce specs with the SAME crate_id. `consolidate_crate_specs`
+    then merges them into one rust-analyzer crate with the union of deps and
+    the test target's `build.label` (so TestOne runnables work). Without that
+    merge, rust-analyzer ends up with two crates pointing at the same source
+    file, which its IDE-side runnable detection doesn't handle well — test
+    codelens silently vanishes.
 
     Returns:
         (string): This crate's unique stable id.
@@ -255,7 +270,12 @@ def _create_single_crate(ctx, attrs, info):
     if not is_external and not is_generated:
         crate["build"] = {
             "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
-            "label": ctx.label.package + ":" + ctx.label.name,
+            # Emit canonical `//pkg:name` form. Bazel's BEP reports action
+            # labels in this form, and the flycheck wrapper matches spec
+            # labels against BEP labels to find each action's stderr for
+            # diagnostics. Without the leading `//`, the match silently
+            # fails and the wrapper emits no diagnostics for the crate.
+            "label": "//" + ctx.label.package + ":" + ctx.label.name,
         }
 
     if is_generated:
@@ -310,10 +330,17 @@ def _rlocationpath(file, workspace_name):
     return "{}/{}".format(workspace_name, file.short_path)
 
 def _rust_analyzer_toolchain_impl(ctx):
-    make_variable_info = platform_common.TemplateVariableInfo({
+    make_vars = {
         "RUST_ANALYZER": ctx.file.rust_analyzer.path,
         "RUST_ANALYZER_RLOCATIONPATH": _rlocationpath(ctx.file.rust_analyzer, ctx.workspace_name),
-    })
+    }
+    if ctx.file.proc_macro_srv:
+        make_vars["RUST_ANALYZER_PROC_MACRO_SRV"] = ctx.file.proc_macro_srv.path
+        make_vars["RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH"] = _rlocationpath(
+            ctx.file.proc_macro_srv,
+            ctx.workspace_name,
+        )
+    make_variable_info = platform_common.TemplateVariableInfo(make_vars)
 
     toolchain = platform_common.ToolchainInfo(
         proc_macro_srv = ctx.executable.proc_macro_srv,
