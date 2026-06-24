@@ -30,6 +30,20 @@ use crate::utils::{self, sanitize_repository_name};
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
 pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
+/// A single hub alias — the `alias()` target and the `alias_rule` it uses.
+struct HubAlias {
+    alias_rule: AliasRule,
+    alias: Alias,
+}
+
+/// Every top-level alias the hub repository would emit, split by source so
+/// the renderer can preserve the existing "# Workspace Member Dependencies"
+/// / "# Binaries" comment sections when rendering into the flat root BUILD.
+struct HubAliases {
+    workspace_member: Vec<HubAlias>,
+    binaries: Vec<HubAlias>,
+}
+
 pub(crate) struct Renderer {
     config: Arc<RenderConfig>,
     supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
@@ -54,24 +68,14 @@ impl Renderer {
         let conditions = Arc::new(context.conditions.clone());
         let engine = self.create_engine(Arc::clone(&conditions));
 
-        let mut output = BTreeMap::new();
+        let aliases = self.collect_hub_aliases(context)?;
 
+        let mut files = BTreeMap::new();
         let platforms = self.render_platform_labels(conditions);
-        output.extend(self.render_build_files(&engine, context, &platforms)?);
-        output.extend(self.render_crates_module(&engine, context, &platforms, generator)?);
+        files.extend(self.render_build_files(&engine, context, &platforms)?);
+        files.extend(self.render_crates_module(&engine, context, &platforms, generator, &aliases)?);
 
-        if let Some(vendor_mode) = &self.config.vendor_mode {
-            match vendor_mode {
-                crate::config::VendorMode::Local => {
-                    // Nothing to do for local vendor crate
-                }
-                crate::config::VendorMode::Remote => {
-                    output.extend(self.render_vendor_support_files(&engine, context)?);
-                }
-            }
-        }
-
-        Ok(output)
+        Ok(files)
     }
 
     pub(crate) fn create_engine(
@@ -114,41 +118,39 @@ impl Renderer {
         context: &Context,
         platforms: &Platforms,
         generator: Option<Label>,
+        aliases: &HubAliases,
     ) -> Result<BTreeMap<PathBuf, String>> {
-        let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
-            .context("Failed to resolve string to module file label")?;
-        let module_build_label =
-            render_module_label(&self.config.crates_module_template, "BUILD.bazel")
+        let path = |name: &str| -> Result<PathBuf> {
+            let label = render_module_label(&self.config.crates_module_template, name)
                 .context("Failed to resolve string to module file label")?;
-        let module_alias_rules_label =
-            render_module_label(&self.config.crates_module_template, "alias_rules.bzl")
-                .context("Failed to resolve string to module file label")?;
+            Ok(Renderer::label_to_path(&label))
+        };
 
-        let mut map = BTreeMap::new();
-        map.insert(
-            Renderer::label_to_path(&module_label),
-            engine.render_module_bzl(context, platforms, generator)?,
-        );
-        map.insert(
-            Renderer::label_to_path(&module_build_label),
-            self.render_module_build_file(engine, context)?,
-        );
-        map.insert(
-            Renderer::label_to_path(&module_alias_rules_label),
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/src/rendering/verbatim/alias_rules.bzl"
-            ))
-            .to_owned(),
-        );
-
-        Ok(map)
+        Ok(BTreeMap::from([
+            (
+                path("crates.bzl")?,
+                engine.render_crates_bzl(context, platforms, generator)?,
+            ),
+            (path("defs.bzl")?, engine.render_defs_bzl_shim()?),
+            (
+                path("BUILD.bazel")?,
+                self.render_module_build_file(engine, aliases)?,
+            ),
+            (
+                path("alias_rules.bzl")?,
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/rendering/verbatim/alias_rules.bzl"
+                ))
+                .to_owned(),
+            ),
+        ]))
     }
 
     fn render_module_build_file(
         &self,
         engine: &TemplateEngine,
-        context: &Context,
+        aliases: &HubAliases,
     ) -> Result<String> {
         let mut starlark = Vec::new();
 
@@ -156,14 +158,13 @@ impl Renderer {
         let header = engine.render_header()?;
         starlark.push(Starlark::Verbatim(header));
 
-        // Load any `alias_rule`s.
+        // Load any `alias_rule`s referenced by the hub aliases.
         let mut loads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        for alias_rule in Iterator::chain(
-            std::iter::once(&self.config.default_alias_rule),
-            context
-                .workspace_member_deps()
+        for alias_rule in std::iter::once(&self.config.default_alias_rule).chain(
+            aliases
+                .workspace_member
                 .iter()
-                .flat_map(|dep| &context.crates[&dep.id].alias_rule),
+                .map(|entry| &entry.alias_rule),
         ) {
             if let Some(bzl) = alias_rule.bzl() {
                 loads.entry(bzl).or_default().insert(alias_rule.rule());
@@ -177,17 +178,18 @@ impl Renderer {
         let package = Package::default_visibility_public(BTreeSet::new());
         starlark.push(Starlark::Package(package));
 
-        let mut exports_files = ExportsFiles {
-            paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
+        let exports_files = ExportsFiles {
+            paths: BTreeSet::from([
+                "cargo-bazel.json".to_owned(),
+                "crates.bzl".to_owned(),
+                "defs.bzl".to_owned(),
+            ]),
             globs: Glob {
                 allow_empty: true,
                 include: BTreeSet::from(["*.bazel".to_owned()]),
                 exclude: BTreeSet::new(),
             },
         };
-        if let Some(VendorMode::Remote) = self.config.vendor_mode {
-            exports_files.paths.insert("crates.bzl".to_owned());
-        }
         starlark.push(Starlark::ExportsFiles(exports_files));
 
         let filegroup = Filegroup {
@@ -200,14 +202,44 @@ impl Renderer {
         };
         starlark.push(Starlark::Filegroup(filegroup));
 
-        // An `alias` for each direct dependency of a workspace member crate.
-        let mut dependencies = Vec::new();
+        if !aliases.workspace_member.is_empty() {
+            let comment = "# Workspace Member Dependencies".to_owned();
+            starlark.push(Starlark::Verbatim(comment));
+            starlark.extend(
+                aliases
+                    .workspace_member
+                    .iter()
+                    .map(|entry| Starlark::Alias(entry.alias.clone())),
+            );
+        }
+        if !aliases.binaries.is_empty() {
+            let comment = "# Binaries".to_owned();
+            starlark.push(Starlark::Verbatim(comment));
+            starlark.extend(
+                aliases
+                    .binaries
+                    .iter()
+                    .map(|entry| Starlark::Alias(entry.alias.clone())),
+            );
+        }
+
+        let starlark = starlark::serialize(&starlark)?;
+        Ok(starlark)
+    }
+
+    /// Collect every alias the hub repository would emit (workspace member
+    /// deps, version-disambiguated, renames, `extra_aliased_targets`, and
+    /// binary aliases).
+    fn collect_hub_aliases(&self, context: &Context) -> Result<HubAliases> {
+        let mut workspace_member = Vec::new();
+
         for dep in context.workspace_member_deps() {
             let krate = &context.crates[&dep.id];
             let alias_rule = krate
                 .alias_rule
                 .as_ref()
-                .unwrap_or(&self.config.default_alias_rule);
+                .unwrap_or(&self.config.default_alias_rule)
+                .clone();
 
             if let Some(library_target_name) = &krate.library_target_name {
                 // Avoid adding the <crate_name>-<version> alias if there are
@@ -224,30 +256,36 @@ impl Renderer {
                     || !context.has_duplicate_workspace_member_dep_by_version(&dep);
 
                 if add_primary_alias {
-                    dependencies.push(Alias {
-                        rule: alias_rule.rule(),
-                        name: format!("{}-{}", krate.name, krate.version),
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    });
-                }
-
-                let shorthand = if let Some(rename) = dep.alias.as_ref() {
-                    // when the alias is the same as the crate name, don't create the alias
-                    if krate.name != *rename {
-                        dependencies.push(Alias {
+                    workspace_member.push(HubAlias {
+                        alias_rule: alias_rule.clone(),
+                        alias: Alias {
                             rule: alias_rule.rule(),
-                            name: format!("{}-{}", rename, krate.version),
+                            name: format!("{}-{}", krate.name, krate.version),
                             actual: self.crate_label(
                                 &krate.name,
                                 &krate.version.to_string(),
                                 library_target_name,
                             ),
                             tags: BTreeSet::from(["manual".to_owned()]),
+                        },
+                    });
+                }
+
+                let shorthand = if let Some(rename) = dep.alias.as_ref() {
+                    // when the alias is the same as the crate name, don't create the alias
+                    if krate.name != *rename {
+                        workspace_member.push(HubAlias {
+                            alias_rule: alias_rule.clone(),
+                            alias: Alias {
+                                rule: alias_rule.rule(),
+                                name: format!("{}-{}", rename, krate.version),
+                                actual: self.crate_label(
+                                    &krate.name,
+                                    &krate.version.to_string(),
+                                    library_target_name,
+                                ),
+                                tags: BTreeSet::from(["manual".to_owned()]),
+                            },
                         });
                     }
                     rename
@@ -259,32 +297,66 @@ impl Renderer {
                 // entry. Shorthands for duplicate entries would lead to ambiguous
                 // dependencies.
                 if !context.has_duplicate_workspace_member_dep_by_alias(&dep) {
-                    dependencies.push(Alias {
-                        rule: alias_rule.rule(),
-                        name: shorthand.clone(),
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
+                    workspace_member.push(HubAlias {
+                        alias_rule: alias_rule.clone(),
+                        alias: Alias {
+                            rule: alias_rule.rule(),
+                            name: shorthand.clone(),
+                            actual: self.crate_label(
+                                &krate.name,
+                                &krate.version.to_string(),
+                                library_target_name,
+                            ),
+                            tags: BTreeSet::from(["manual".to_owned()]),
+                        },
                     });
                 }
             }
 
             for (alias, target) in &krate.extra_aliased_targets {
-                dependencies.push(Alias {
-                    rule: alias_rule.rule(),
-                    name: alias.clone(),
-                    actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
-                    tags: BTreeSet::from(["manual".to_owned()]),
+                workspace_member.push(HubAlias {
+                    alias_rule: alias_rule.clone(),
+                    alias: Alias {
+                        rule: alias_rule.rule(),
+                        name: alias.clone(),
+                        actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    },
                 });
             }
         }
 
-        let duplicates: Vec<_> = dependencies
+        let mut binaries = Vec::new();
+        for crate_id in &context.binary_crates {
+            let krate = &context.crates[crate_id];
+            for rule in &krate.targets {
+                if let Rule::Binary(bin) = rule {
+                    binaries.push(HubAlias {
+                        alias_rule: AliasRule::default(),
+                        alias: Alias {
+                            rule: AliasRule::default().rule(),
+                            // If duplicates exist, include version to disambiguate them.
+                            name: if context.has_duplicate_binary_crate(crate_id) {
+                                format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
+                            } else {
+                                format!("{}__{}", krate.name, bin.crate_name)
+                            },
+                            actual: self.crate_label(
+                                &krate.name,
+                                &krate.version.to_string(),
+                                &format!("{}__bin", bin.crate_name),
+                            ),
+                            tags: BTreeSet::from(["manual".to_owned()]),
+                        },
+                    });
+                }
+            }
+        }
+
+        let duplicates: Vec<_> = workspace_member
             .iter()
-            .map(|alias| &alias.name)
+            .chain(binaries.iter())
+            .map(|entry| &entry.alias.name)
             .duplicates()
             .sorted()
             .collect();
@@ -295,44 +367,10 @@ impl Renderer {
             duplicates
         );
 
-        if !dependencies.is_empty() {
-            let comment = "# Workspace Member Dependencies".to_owned();
-            starlark.push(Starlark::Verbatim(comment));
-            starlark.extend(dependencies.into_iter().map(Starlark::Alias));
-        }
-
-        // An `alias` for each binary dependency.
-        let mut binaries = Vec::new();
-        for crate_id in &context.binary_crates {
-            let krate = &context.crates[crate_id];
-            for rule in &krate.targets {
-                if let Rule::Binary(bin) = rule {
-                    binaries.push(Alias {
-                        rule: AliasRule::default().rule(),
-                        // If duplicates exist, include version to disambiguate them.
-                        name: if context.has_duplicate_binary_crate(crate_id) {
-                            format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
-                        } else {
-                            format!("{}__{}", krate.name, bin.crate_name)
-                        },
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            &format!("{}__bin", bin.crate_name),
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    });
-                }
-            }
-        }
-        if !binaries.is_empty() {
-            let comment = "# Binaries".to_owned();
-            starlark.push(Starlark::Verbatim(comment));
-            starlark.extend(binaries.into_iter().map(Starlark::Alias));
-        }
-
-        let starlark = starlark::serialize(&starlark)?;
-        Ok(starlark)
+        Ok(HubAliases {
+            workspace_member,
+            binaries,
+        })
     }
 
     fn render_build_files(
@@ -610,6 +648,9 @@ impl Renderer {
                 ),
                 platforms,
             ),
+            // Match Cargo's default: registry/git crates are quiet unless the
+            // build fails or the user passes `-vv`.
+            emit_warnings: false,
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
@@ -888,23 +929,6 @@ impl Renderer {
             }),
             extra_deps,
         )
-    }
-
-    fn render_vendor_support_files(
-        &self,
-        engine: &TemplateEngine,
-        context: &Context,
-    ) -> Result<BTreeMap<PathBuf, String>> {
-        let module_label = render_module_label(&self.config.crates_module_template, "crates.bzl")
-            .context("Failed to resolve string to module file label")?;
-
-        let mut map = BTreeMap::new();
-        map.insert(
-            Renderer::label_to_path(&module_label),
-            engine.render_vendor_module_file(context)?,
-        );
-
-        Ok(map)
     }
 
     fn label_to_path(label: &Label) -> PathBuf {
@@ -1244,6 +1268,11 @@ mod test {
             "```\n{}```\n",
             build_file_content
         );
+        assert!(
+            build_file_content.contains("emit_warnings = False"),
+            "```\n{}```\n",
+            build_file_content
+        );
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"_bs\""));
@@ -1510,9 +1539,13 @@ mod test {
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context, None).unwrap();
 
+        // `crates.bzl` is the source of truth; `defs.bzl` is a
+        // back-compat re-export shim that only loads + re-exports.
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+        assert!(crates_module.contains("def crate_repositories():"));
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
-
-        assert!(defs_module.contains("def crate_repositories():"));
+        assert!(defs_module.contains("_crate_repositories = \"crate_repositories\""));
+        assert!(!defs_module.contains("def crate_repositories"));
     }
 
     #[test]
@@ -1550,10 +1583,9 @@ mod test {
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context, None).unwrap();
 
-        let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
-
-        assert!(defs_module.contains("def crate_edition("));
-        assert!(defs_module.contains(r#""mock_crate": "2021","#));
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+        assert!(crates_module.contains("def crate_edition("));
+        assert!(crates_module.contains(r#""mock_crate": "2021","#));
     }
 
     #[test]
@@ -1589,11 +1621,13 @@ mod test {
         );
         let output = renderer.render(&context, None).unwrap();
 
-        let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
-        assert!(defs_module.contains("def crate_repositories():"));
-
+        // Source of truth lives in `crates.bzl`; `defs.bzl` is a
+        // back-compat shim that loads + re-exports from `crates.bzl`.
         let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
         assert!(crates_module.contains("def crate_repositories():"));
+        let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
+        assert!(defs_module.contains("_crate_repositories = \"crate_repositories\""));
+        assert!(!defs_module.contains("def crate_repositories"));
     }
 
     #[test]
@@ -1629,12 +1663,12 @@ mod test {
         );
         let output = renderer.render(&context, None).unwrap();
 
-        // Local vendoring does not produce a `crate_repositories` macro
+        // Local vendoring does not produce a `crate_repositories` macro.
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+        assert!(!crates_module.contains("def crate_repositories():"));
+        // `defs.bzl` shim is always rendered as a back-compat re-export.
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
-        assert!(!defs_module.contains("def crate_repositories():"));
-
-        // Local vendoring does not produce a `crates.bzl` file.
-        assert!(!output.contains_key(&PathBuf::from("crates.bzl")));
+        assert!(defs_module.contains("_aliases = \"aliases\""));
     }
 
     #[test]
@@ -2046,12 +2080,9 @@ mod test {
         let renderer = Renderer::new(config, mock_supported_platform_triples());
         let output = renderer.render(&context, None).unwrap();
         eprintln!("output before {:?}", output.keys());
-        // Local vendoring does not produce a `crate_repositories` macro
-        let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
-        assert!(!defs_module.contains("def crate_repositories():"));
-
-        // Local vendoring does not produce a `crates.bzl` file.
-        assert!(!output.contains_key(&PathBuf::from("crates.bzl")));
+        // Local vendoring does not produce a `crate_repositories` macro.
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+        assert!(!crates_module.contains("def crate_repositories():"));
 
         // create tempdir to write to
         let outdir = tempfile::tempdir().unwrap();
@@ -2144,6 +2175,7 @@ mod test {
             exports_files(
                 [
                     "cargo-bazel.json",
+                    "crates.bzl",
                     "defs.bzl",
                 ] + glob(
                     allow_empty = True,
@@ -2277,6 +2309,7 @@ mod test {
             exports_files(
                 [
                     "cargo-bazel.json",
+                    "crates.bzl",
                     "defs.bzl",
                 ] + glob(
                     allow_empty = True,

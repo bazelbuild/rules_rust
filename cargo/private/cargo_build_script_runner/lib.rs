@@ -17,6 +17,8 @@
 use std::io::{BufRead, BufReader, Read};
 use std::process::{Command, Output};
 
+pub const SUPPRESS_WARNINGS_ENV: &str = "RULES_RUST_SUPPRESS_BUILD_SCRIPT_WARNINGS";
+
 pub mod cargo_manifest_dir;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -57,13 +59,7 @@ pub enum BuildScriptOutput {
 }
 
 impl BuildScriptOutput {
-    /// Converts a line into a [BuildScriptOutput] enum.
-    ///
-    /// Examples
-    /// ```rust
-    /// assert_eq!(BuildScriptOutput::new("cargo::rustc-link-lib=lib"), Some(BuildScriptOutput::LinkLib("lib".to_owned())));
-    /// ```
-    fn new(line: &str) -> Option<BuildScriptOutput> {
+    fn new(line: &str, emit_warnings: bool) -> Option<BuildScriptOutput> {
         let split = line.splitn(2, '=').collect::<Vec<_>>();
         if split.len() <= 1 {
             // Not a cargo directive.
@@ -94,7 +90,9 @@ impl BuildScriptOutput {
                 None
             }
             "warning" => {
-                eprint!("Build Script Warning: {}", split[1]);
+                if emit_warnings {
+                    eprint!("Build Script Warning: {}", split[1]);
+                }
                 None
             }
             "metadata" => {
@@ -117,10 +115,12 @@ impl BuildScriptOutput {
             "rustc-link-arg-bins" => Some(BuildScriptOutput::BinLinkArg(param)),
             "rustc-link-arg-bin" => {
                 // cargo::rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
-                eprint!(
-                    "Warning: build script returned unsupported directive `{}`",
-                    split[0]
-                );
+                if emit_warnings {
+                    eprint!(
+                        "Warning: build script returned unsupported directive `{}`",
+                        split[0]
+                    );
+                }
                 None
             }
             _ => {
@@ -135,7 +135,10 @@ impl BuildScriptOutput {
     }
 
     /// Converts a [BufReader] into a vector of [BuildScriptOutput] enums.
-    fn outputs_from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
+    fn outputs_from_reader<T: Read>(
+        mut reader: BufReader<T>,
+        emit_warnings: bool,
+    ) -> Vec<BuildScriptOutput> {
         let mut result = Vec::<BuildScriptOutput>::new();
         let mut buf = Vec::new();
         while reader
@@ -145,7 +148,7 @@ impl BuildScriptOutput {
         {
             // like cargo, ignore any lines that are not valid utf8
             if let Ok(line) = String::from_utf8(buf.clone()) {
-                if let Some(bso) = BuildScriptOutput::new(&line) {
+                if let Some(bso) = BuildScriptOutput::new(&line, emit_warnings) {
                     result.push(bso);
                 }
             }
@@ -157,13 +160,14 @@ impl BuildScriptOutput {
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
     pub fn outputs_from_command(
         cmd: &mut Command,
+        emit_warnings: bool,
     ) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
         let child_output = cmd
             .output()
             .unwrap_or_else(|e| panic!("Unable to start command:\n{:#?}\n{:?}", cmd, e));
         if child_output.status.success() {
             let reader = BufReader::new(child_output.stdout.as_slice());
-            let output = Self::outputs_from_reader(reader);
+            let output = Self::outputs_from_reader(reader, emit_warnings);
             Ok((output, child_output))
         } else {
             Err(child_output)
@@ -308,7 +312,7 @@ mod tests {
 
     fn from_read_buffer_to_env_and_flags_test_impl(buff: Cursor<&str>) {
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 13);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
@@ -399,7 +403,7 @@ cargo::rustc-cdylib-link-arg=-undefined
 cargo::rustc-link-arg-bins=-Wl,--whole-archive
 cargo::rustc-link-arg-bin=mybin=-Wl,--per-bin",
         );
-        let result = BuildScriptOutput::outputs_from_reader(BufReader::new(buff));
+        let result = BuildScriptOutput::outputs_from_reader(BufReader::new(buff), false);
 
         // `rustc-link-arg-bin` (the per-binary form) is unsupported and dropped.
         assert_eq!(
@@ -453,7 +457,7 @@ cargo::rustc-env=valid2=2
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 2);
         assert_eq!(
             &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path", ""),
@@ -472,7 +476,7 @@ cargo:rustc-env=valid2=2
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 2);
         assert_eq!(
             &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path", ""),
@@ -481,9 +485,21 @@ cargo:rustc-env=valid2=2
     }
 
     #[test]
+    fn warning_lines_never_appear_in_outputs() {
+        let lines = "cargo::warning=hello\ncargo::rustc-env=A=1\n";
+        for emit_warnings in [true, false] {
+            let result = BuildScriptOutput::outputs_from_reader(
+                BufReader::new(Cursor::new(lines)),
+                emit_warnings,
+            );
+            assert_eq!(result, vec![BuildScriptOutput::Env("A=1".to_owned())]);
+        }
+    }
+
+    #[test]
     fn metadata_directive_maps_to_dep_env_key_value() {
         let reader = BufReader::new(Cursor::new("cargo::metadata=version_1_10_0=1\n"));
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(
             result,
             vec![BuildScriptOutput::DepEnv("VERSION_1_10_0=1".to_owned())]
@@ -507,7 +523,7 @@ cargo::rustc-env=BAR=/abs/exec_root/elsewhere/file.rs
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(
             BuildScriptOutput::outputs_to_env(
                 &result,
@@ -531,7 +547,7 @@ cargo::rustc-link-search=/abs/exec_root/other/path
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(
             BuildScriptOutput::outputs_to_flags(
                 &result,

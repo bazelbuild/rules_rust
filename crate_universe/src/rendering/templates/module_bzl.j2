@@ -19,7 +19,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@rules_rust//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor_remote_repository", "local_crate_mirror")
 
 ###############################################################################
 # MACROS API
@@ -357,6 +357,13 @@ def crate_repositories():
     Returns:
       A list of repos visible to the module through the module extension.
     """
+    maybe(
+        crates_vendor_remote_repository,
+        name = "{{ repository_name }}",
+        # Lean interface: just point at `crates.bzl`; the repo rule
+        # derives the sibling `BUILD.bazel` and `defs.bzl`.
+        crates_module = Label("{{ crates_module_label(file="crates.bzl") }}"),
+    )
 {%- for id, crate in context.crates %}
 {%- if not crate.repository %}{% continue %}{% endif %}
 {%- for repository_type, attrs in crate.repository %}
@@ -381,6 +388,7 @@ def crate_repositories():
 {%- endfor %}
 {%- endfor %}
     return [
+        struct(repo = "{{ repository_name }}", is_dev_dep = False),
         {%- for id in context.direct_deps %}
         {%- set crate = context.crates | get(key=id) %}
         {%- if crate.repository %}

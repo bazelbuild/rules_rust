@@ -1,0 +1,21 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+cargo_build_script(
+    name = "build_quiet",
+    srcs = ["build.rs"],
+    edition = "2018",
+    emit_warnings = False,
+)
+
+rust_library(
+    name = "quiet_lib",
+    srcs = ["test_lib.rs"],
+    edition = "2018",
+    deps = [":build_quiet"],
+)
+
+rust_test(
+    name = "quiet_test",
+    crate = ":quiet_lib",
+)
