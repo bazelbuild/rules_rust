@@ -92,7 +92,7 @@ def get_generator(repository_ctx, host_triple):
 def render_config(
         build_file_template = "//:BUILD.{name}-{version}.bazel",
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
-        crate_alias_template = "//:{name}-{version}",
+        crate_alias_template = "//{name}-{version}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
@@ -102,7 +102,8 @@ def render_config(
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
         vendor_mode = None,
-        generate_rules_license_metadata = False):
+        generate_rules_license_metadata = False,
+        incompatible_no_root_alias_targets = False):
     """Various settings used to configure rendered outputs
 
     The template parameters each support a select number of format keys. A description of each key
@@ -145,6 +146,11 @@ def render_config(
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
         generate_rules_license_metadata (bool, optional): Whether to generate rules license metadata
+        incompatible_no_root_alias_targets (bool, optional): Incompatibility flag. Suppresses the top-level
+            `alias()` rules in the hub repository's root `BUILD.bazel` (e.g. `@crate_index//:clap`). Per-alias
+            subpackages (e.g. `@crate_index//clap`) are always emitted, so flipping this flag on lets users
+            keep consuming aliases through the subpackage path while the root version disappears. Planned to
+            flip to default-on in a future release.
 
     Returns:
         string: A json encoded struct to match the Rust `config::RenderConfig` struct
@@ -160,6 +166,7 @@ def render_config(
         generate_cargo_toml_env_vars = generate_cargo_toml_env_vars,
         generate_rules_license_metadata = generate_rules_license_metadata,
         generate_target_compatible_with = generate_target_compatible_with,
+        incompatible_no_root_alias_targets = incompatible_no_root_alias_targets,
         platforms_template = platforms_template,
         regen_command = regen_command,
         vendor_mode = vendor_mode,
@@ -440,6 +447,7 @@ def execute_generator(
         nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file,
         warnings_output_file,
+        hub_packages_output_file,
         skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile,
         metadata = None,
@@ -456,6 +464,9 @@ def execute_generator(
         nonhermetic_root_bazel_workspace_dir (path): The path to the current workspace root
         paths_to_track_file (path): Path to file where generator should write which files should trigger re-generating as a JSON list.
         warnings_output_file (path): Path to file where generator should write warnings to print.
+        hub_packages_output_file (path): Path to file where the generator should write the names of hub alias
+            subpackages it produced. Always populated; the bzlmod extension reads it to learn which
+            `<name>/BUILD.bazel` files to slurp into the hub repository.
         skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
             You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
             But you probably don't want to set this.
@@ -488,6 +499,8 @@ def execute_generator(
         paths_to_track_file,
         "--warnings-output-path",
         warnings_output_file,
+        "--hub-packages-output-path",
+        hub_packages_output_file,
     ]
 
     if generator_label:

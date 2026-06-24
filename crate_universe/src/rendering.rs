@@ -44,6 +44,15 @@ struct HubAliases {
     binaries: Vec<HubAlias>,
 }
 
+/// The renderer's output. `files` is the map ready for [`write_outputs`];
+/// `hub_packages` lists the per-alias subpackage names so the bzlmod
+/// extension can read each `<name>/BUILD.bazel` from disk via a sidecar
+/// (it cannot enumerate directories).
+pub(crate) struct RenderedHub {
+    pub(crate) files: BTreeMap<PathBuf, String>,
+    pub(crate) hub_packages: Vec<String>,
+}
+
 pub(crate) struct Renderer {
     config: Arc<RenderConfig>,
     supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
@@ -65,6 +74,17 @@ impl Renderer {
         context: &Context,
         generator: Option<Label>,
     ) -> Result<BTreeMap<PathBuf, String>> {
+        Ok(self.render_hub(context, generator)?.files)
+    }
+
+    /// Like [`render`], but also returns the names of the per-alias hub
+    /// subpackages produced. Tests usually want just the files and call
+    /// [`render`].
+    pub(crate) fn render_hub(
+        &self,
+        context: &Context,
+        generator: Option<Label>,
+    ) -> Result<RenderedHub> {
         let conditions = Arc::new(context.conditions.clone());
         let engine = self.create_engine(Arc::clone(&conditions));
 
@@ -75,7 +95,17 @@ impl Renderer {
         files.extend(self.render_build_files(&engine, context, &platforms)?);
         files.extend(self.render_crates_module(&engine, context, &platforms, generator, &aliases)?);
 
-        Ok(files)
+        let hub_packages = aliases
+            .workspace_member
+            .iter()
+            .chain(aliases.binaries.iter())
+            .map(|entry| entry.alias.name.clone())
+            .collect();
+
+        Ok(RenderedHub {
+            files,
+            hub_packages,
+        })
     }
 
     pub(crate) fn create_engine(
@@ -126,7 +156,7 @@ impl Renderer {
             Ok(Renderer::label_to_path(&label))
         };
 
-        Ok(BTreeMap::from([
+        let mut map = BTreeMap::from([
             (
                 path("crates.bzl")?,
                 engine.render_crates_bzl(context, platforms, generator)?,
@@ -144,7 +174,62 @@ impl Renderer {
                 ))
                 .to_owned(),
             ),
-        ]))
+        ]);
+
+        // Per-alias subpackage `BUILD.bazel`s let consumers migrate to
+        // `@<repo>//<alias>` independently of the hub owner flipping
+        // `incompatible_no_root_alias_targets`. Skip in local-vendor mode,
+        // where the per-crate paths `<output_pkg>/<name>-<version>/BUILD.bazel`
+        // are already occupied by the vendored `rust_library` `BUILD.bazel`s.
+        if self.config.vendor_mode != Some(VendorMode::Local) {
+            map.extend(self.render_alias_subpackages(engine, aliases)?);
+        }
+
+        Ok(map)
+    }
+
+    /// Render one `<alias>/BUILD.bazel` per hub alias. Each subpackage holds
+    /// a single `alias()` (plus any `load()` its `alias_rule` requires) so
+    /// that `@<repo>//<alias>` resolves to that alias as the package's
+    /// default target.
+    fn render_alias_subpackages(
+        &self,
+        engine: &TemplateEngine,
+        aliases: &HubAliases,
+    ) -> Result<BTreeMap<PathBuf, String>> {
+        let header = engine.render_header()?;
+
+        let mut map = BTreeMap::new();
+        for entry in aliases
+            .workspace_member
+            .iter()
+            .chain(aliases.binaries.iter())
+        {
+            let mut starlark = vec![Starlark::Verbatim(header.clone())];
+
+            if let Some(bzl) = entry.alias_rule.bzl() {
+                starlark.push(Starlark::Load(Load {
+                    bzl,
+                    items: BTreeSet::from([entry.alias_rule.rule()]),
+                }));
+            }
+
+            starlark.push(Starlark::Package(Package::default_visibility_public(
+                BTreeSet::new(),
+            )));
+            starlark.push(Starlark::Alias(entry.alias.clone()));
+
+            let subpackage_label = render_module_label(
+                &self.config.crates_module_template,
+                &format!("{}/BUILD.bazel", entry.alias.name),
+            )
+            .context("Failed to resolve subpackage BUILD file label")?;
+            map.insert(
+                Renderer::label_to_path(&subpackage_label),
+                starlark::serialize(&starlark)?,
+            );
+        }
+        Ok(map)
     }
 
     fn render_module_build_file(
@@ -158,20 +243,25 @@ impl Renderer {
         let header = engine.render_header()?;
         starlark.push(Starlark::Verbatim(header));
 
-        // Load any `alias_rule`s referenced by the hub aliases.
-        let mut loads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        for alias_rule in std::iter::once(&self.config.default_alias_rule).chain(
-            aliases
-                .workspace_member
-                .iter()
-                .map(|entry| &entry.alias_rule),
-        ) {
-            if let Some(bzl) = alias_rule.bzl() {
-                loads.entry(bzl).or_default().insert(alias_rule.rule());
+        // Load any `alias_rule`s referenced by the hub aliases. Per-alias
+        // subpackage `BUILD.bazel`s each carry their own scoped load, so when
+        // `incompatible_no_root_alias_targets` is on the root needs no
+        // alias-rule loads.
+        if !self.config.incompatible_no_root_alias_targets {
+            let mut loads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+            for alias_rule in std::iter::once(&self.config.default_alias_rule).chain(
+                aliases
+                    .workspace_member
+                    .iter()
+                    .map(|entry| &entry.alias_rule),
+            ) {
+                if let Some(bzl) = alias_rule.bzl() {
+                    loads.entry(bzl).or_default().insert(alias_rule.rule());
+                }
             }
-        }
-        for (bzl, items) in loads {
-            starlark.push(Starlark::Load(Load { bzl, items }))
+            for (bzl, items) in loads {
+                starlark.push(Starlark::Load(Load { bzl, items }))
+            }
         }
 
         // Package visibility, exported bzl files.
@@ -202,25 +292,31 @@ impl Renderer {
         };
         starlark.push(Starlark::Filegroup(filegroup));
 
-        if !aliases.workspace_member.is_empty() {
-            let comment = "# Workspace Member Dependencies".to_owned();
-            starlark.push(Starlark::Verbatim(comment));
-            starlark.extend(
-                aliases
-                    .workspace_member
-                    .iter()
-                    .map(|entry| Starlark::Alias(entry.alias.clone())),
-            );
-        }
-        if !aliases.binaries.is_empty() {
-            let comment = "# Binaries".to_owned();
-            starlark.push(Starlark::Verbatim(comment));
-            starlark.extend(
-                aliases
-                    .binaries
-                    .iter()
-                    .map(|entry| Starlark::Alias(entry.alias.clone())),
-            );
+        // `incompatible_no_root_alias_targets` drops the duplicate root-level
+        // `alias()` rules. Subpackage `BUILD.bazel`s always exist, so consumers
+        // can still use `@<repo>//<name>` — the flag just stops emitting the
+        // parallel `@<repo>//:<name>` form.
+        if !self.config.incompatible_no_root_alias_targets {
+            if !aliases.workspace_member.is_empty() {
+                let comment = "# Workspace Member Dependencies".to_owned();
+                starlark.push(Starlark::Verbatim(comment));
+                starlark.extend(
+                    aliases
+                        .workspace_member
+                        .iter()
+                        .map(|entry| Starlark::Alias(entry.alias.clone())),
+                );
+            }
+            if !aliases.binaries.is_empty() {
+                let comment = "# Binaries".to_owned();
+                starlark.push(Starlark::Verbatim(comment));
+                starlark.extend(
+                    aliases
+                        .binaries
+                        .iter()
+                        .map(|entry| Starlark::Alias(entry.alias.clone())),
+                );
+            }
         }
 
         let starlark = starlark::serialize(&starlark)?;

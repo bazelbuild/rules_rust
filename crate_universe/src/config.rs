@@ -62,8 +62,10 @@ pub(crate) struct RenderConfig {
     #[serde(default = "default_crate_label_template")]
     pub(crate) crate_label_template: String,
 
-    /// The pattern to use for a crate alias.
-    /// Eg. `@{repository}//:{name}-{version}-{target}`
+    /// The pattern to use for a crate alias. Defaults to the hub subpackage
+    /// form (`//{name}-{version}`) emitted by the always-on per-alias
+    /// subpackage layout. Override to point `aliases()` /
+    /// `all_crate_deps()` at custom labels.
     #[serde(default = "default_crate_alias_template")]
     pub(crate) crate_alias_template: String,
 
@@ -109,6 +111,27 @@ pub(crate) struct RenderConfig {
     /// Whether to generate cargo_toml_env_vars targets.
     /// This is expected to always be true except for bootstrapping.
     pub(crate) generate_cargo_toml_env_vars: bool,
+
+    /// Incompatibility flag. Suppresses the top-level `alias()` rules in the
+    /// hub repository's root `BUILD.bazel` (e.g. `@crate_index//:clap`).
+    /// Per-alias subpackages (e.g. `@crate_index//clap`) are always emitted,
+    /// so flipping this flag on lets users keep consuming aliases through
+    /// the subpackage path while the root version disappears. Default
+    /// `false`; planned to flip to `true` (and ultimately have the
+    /// root-emitting code removed) in a future release.
+    #[serde(default)]
+    pub(crate) incompatible_no_root_alias_targets: bool,
+
+    /// Internal: true when the rendered output is destined for the
+    /// `crates_vendor` workflow (committed into the user's workspace
+    /// alongside `crates.bzl`). The renderer routes per-alias subpackage
+    /// `BUILD.bazel`s into `_HUB_PACKAGE_BUILDS` inside `crates.bzl` (synthesized
+    /// at fetch time by `crates_vendor_remote_repository`) instead of
+    /// writing them to disk — keeps the vendor tree free of generated
+    /// subdirectories. Defaults `false`; bzlmod / `crates_repository`
+    /// continue to write subpackage `BUILD.bazel`s into the hub repo directly.
+    #[serde(default)]
+    pub(crate) crates_vendor_synthesizes_subpackages: bool,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -131,6 +154,8 @@ impl Default for RenderConfig {
             regen_command: String::default(),
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
+            incompatible_no_root_alias_targets: false,
+            crates_vendor_synthesizes_subpackages: false,
         }
     }
 }
@@ -154,7 +179,11 @@ fn default_crate_label_template() -> String {
 }
 
 fn default_crate_alias_template() -> String {
-    "//:{name}-{version}".to_owned()
+    // Points `aliases()` / `all_crate_deps()` at the per-alias subpackage
+    // layout (e.g. `Label("@crate_index//clap-1.0.0")`). Subpackage `BUILD.bazel`s
+    // are always emitted, so this default works whether or not the user
+    // sets `incompatible_no_root_alias_targets`.
+    "//{name}-{version}".to_owned()
 }
 
 fn default_crate_repository_template() -> String {

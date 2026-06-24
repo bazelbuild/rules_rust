@@ -42,11 +42,17 @@ pub(crate) fn normalize_cargo_file_paths(
                 .to_str()
                 .expect("All file paths should be strings");
 
-            let path = if original_parent_path_str.contains('+') {
-                let new_parent_file_path = sanitize_repository_name(original_parent_path_str);
+            // Vendor mode pre-creates the source directory (cargo's
+            // `+`-bearing layout) and we rewrite it to be label-friendly.
+            // Other render paths — e.g. the per-alias hub subpackage
+            // `BUILD.bazel`s whose parent name happens to contain a semver `+` —
+            // have nothing pre-created on disk; leave their paths alone so
+            // the directory and the alias name stay in sync.
+            let src = out_dir.join(original_parent_path_str);
+            let path = if original_parent_path_str.contains('+') && src.exists() {
                 std::fs::rename(
-                    out_dir.join(original_parent_path_str),
-                    out_dir.join(new_parent_file_path),
+                    src,
+                    out_dir.join(sanitize_repository_name(original_parent_path_str)),
                 )
                 .expect("Could not rename paths");
                 PathBuf::from(&original_path_str.replace('+', "-"))

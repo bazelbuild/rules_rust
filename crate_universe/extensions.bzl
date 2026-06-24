@@ -657,6 +657,7 @@ def _generate_hub_and_spokes(
 
     paths_to_track_file = tag_path.get_child("paths_to_track.json")
     warnings_output_file = tag_path.get_child("warnings_output.json")
+    hub_packages_output_file = tag_path.get_child("hub_packages.json")
 
     # Run the generator
     module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))
@@ -670,6 +671,7 @@ def _generate_hub_and_spokes(
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        hub_packages_output_file = hub_packages_output_file,
         skip_cargo_lockfile_overwrite = skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile = strip_internal_dependencies_from_cargo_lockfile,
         **kwargs
@@ -687,14 +689,25 @@ def _generate_hub_and_spokes(
         print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)
+    hub_contents = {
+        "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
+        "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
+        "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
+        "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
+    }
+
+    # Per-alias subpackages always render so users can consume
+    # `@<repo>//<alias>`. `module_ctx` cannot enumerate a directory, so the
+    # renderer writes a sidecar list of subpackage names we slurp here.
+    hub_packages = json.decode(module_ctx.read(hub_packages_output_file))
+    for hub_package in hub_packages:
+        hub_contents["{}/BUILD.bazel".format(hub_package)] = module_ctx.read(
+            crates_dir.get_child(hub_package).get_child("BUILD.bazel"),
+        )
+
     crates_vendor_remote_repository(
         name = cfg.name,
-        contents = {
-            "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
-            "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
-            "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
-            "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
-        },
+        contents = hub_contents,
     )
 
     contents = json.decode(module_ctx.read(lockfile))
@@ -1504,8 +1517,15 @@ can be found below where the supported keys for each template can be found in th
             default = "//:BUILD.{name}-{version}.bazel",
         ),
         "crate_alias_template": attr.string(
-            doc = "The base template to use for crate aliases. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
-            default = "//:{name}-{version}",
+            doc = (
+                "The base template to use for crate aliases. The available format keys are " +
+                "[`{repository}`, `{name}`, `{version}`, `{target}`]. Defaults to the per-alias " +
+                "subpackage layout (`//{name}-{version}`); set to `//:{name}-{version}` if " +
+                "you intentionally want `aliases()` / `all_crate_deps()` to point at the " +
+                "legacy root-package aliases (only valid while " +
+                "`incompatible_no_root_alias_targets` is off)."
+            ),
+            default = "//{name}-{version}",
         ),
         "crate_label_template": attr.string(
             doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
@@ -1541,6 +1561,16 @@ can be found below where the supported keys for each template can be found in th
         "generate_target_compatible_with": attr.bool(
             doc = "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` being targeted that isn't declared in `supported_platform_triples`.",
             default = True,
+        ),
+        "incompatible_no_root_alias_targets": attr.bool(
+            doc = (
+                "Incompatibility flag. Suppresses the top-level `alias()` rules in the hub " +
+                "repository's root `BUILD.bazel` (e.g. `@crate_index//:clap`). Per-alias " +
+                "subpackages (e.g. `@crate_index//clap`) are always emitted, so flipping this " +
+                "flag on lets users keep consuming aliases through the subpackage path while " +
+                "the root version disappears."
+            ),
+            default = False,
         ),
         "platforms_template": attr.string(
             doc = "The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [`{triple}`].",
