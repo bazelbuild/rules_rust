@@ -364,6 +364,8 @@ def _rust_bindgen_impl(ctx):
         # The cc_toolchain merged these flags into its returned flags - don't strip these out.
         if arg in ctx.attr.clang_flags:
             args.add(arg)
+            if arg in param_flags_known_to_clang:
+                open_arg = True
             continue
 
         if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:

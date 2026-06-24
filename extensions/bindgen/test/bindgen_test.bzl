@@ -46,6 +46,8 @@ def _fake_cc_toolchain_config_impl(ctx):
         abi_version = "unknown",
         abi_libc_version = "unknown",
         features = [xclang_flags_feature],
+        # Add a known include directory to ensure that it is not removed by bindgen.
+        cxx_builtin_include_directories = ["/fake/builtin/sys/include"],
     )
 
 _fake_cc_toolchain_config = rule(
@@ -200,6 +202,9 @@ def _test_cc_lib_object_merging_disabled(name):
 def _test_resource_dir_impl(env, target):
     env.expect.that_int(len(target.actions)).is_greater_than(0)
     env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["-isystem", "/fake/builtin/sys/include"],
+    )
     env.expect.that_action(target.actions[0]).argv().contains_predicate(
         matching.all(
             matching.str_startswith("-resource-dir="),
@@ -224,6 +229,9 @@ def _test_resource_dir(name):
 def _test_strip_xclang_impl(env, target):
     env.expect.that_int(len(target.actions)).is_greater_than(0)
     env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["-isystem", "/fake/builtin/sys/include"],
+    )
     env.expect.that_action(target.actions[0]).not_contains_arg(
         "-fexperimental-optimized-noescape",
     )
@@ -255,6 +263,51 @@ def _test_strip_xclang(name):
         },
     )
 
+def _test_isystem_preservation_impl(env, target):
+    env.expect.that_int(len(target.actions)).is_greater_than(0)
+    env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["-isystem", "/fake/builtin/sys/include"],
+    )
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["-isystem", "third_party/custom_sys/include"],
+    )
+
+def _test_isystem_preservation(name):
+    # Test that specifying and `-isystem` flag in `clang_flags`:
+    # 1) Gets passed through the bindgen invocation
+    # 2) Does not cause other `-isystem` flags that come from the toolchain to
+    #    be overwritten.
+
+    _fake_cc_toolchain(name + "_toolchain")
+
+    cc_library(
+        name = name + "_cc",
+        hdrs = ["simple.h"],
+        srcs = ["simple.cc"],
+    )
+
+    rust_bindgen_library(
+        name = name + "_rust_bindgen",
+        cc_lib = name + "_cc",
+        header = "simple.h",
+        clang_flags = [
+            "-isystem",
+            "third_party/custom_sys/include",
+        ],
+        tags = ["manual"],
+        edition = "2021",
+    )
+
+    analysis_test(
+        name = name,
+        target = name + "_rust_bindgen__bindgen",
+        impl = _test_isystem_preservation_impl,
+        config_settings = {
+            "//command_line_option:extra_toolchains": [str(native.package_relative_label(name + "_toolchain"))],
+        },
+    )
+
 def bindgen_test_suite(name):
     test_suite(
         name = name,
@@ -264,5 +317,6 @@ def bindgen_test_suite(name):
             _test_cc_lib_object_merging_disabled,
             _test_resource_dir,
             _test_strip_xclang,
+            _test_isystem_preservation,
         ],
     )
