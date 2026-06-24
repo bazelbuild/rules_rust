@@ -138,7 +138,7 @@ rust_library(
     }),
     version = "1.52.3",
     deps = [
-        "@rmdbi__bytes-1.11.1//:bytes",
+        "@rmdbi__bytes-1.12.0//:bytes",
         "@rmdbi__mio-1.2.1//:mio",
         "@rmdbi__pin-project-lite-0.2.17//:pin_project_lite",
     ] + select({

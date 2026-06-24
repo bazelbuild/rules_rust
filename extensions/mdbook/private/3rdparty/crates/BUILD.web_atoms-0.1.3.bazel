@@ -152,6 +152,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "web_atoms",
     rustc_env_files = [
         ":cargo_toml_env_vars",

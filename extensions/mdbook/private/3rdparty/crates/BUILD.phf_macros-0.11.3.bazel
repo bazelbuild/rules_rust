@@ -111,7 +111,7 @@ rust_proc_macro(
         "@rmdbi__phf_generator-0.11.3//:phf_generator",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
         "@rmdbi__proc-macro2-1.0.106//:proc_macro2",
-        "@rmdbi__quote-1.0.45//:quote",
-        "@rmdbi__syn-2.0.117//:syn",
+        "@rmdbi__quote-1.0.46//:quote",
+        "@rmdbi__syn-2.0.118//:syn",
     ],
 )

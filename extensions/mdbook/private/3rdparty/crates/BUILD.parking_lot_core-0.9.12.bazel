@@ -114,7 +114,7 @@ rust_library(
     deps = [
         "@rmdbi__cfg-if-1.0.4//:cfg_if",
         "@rmdbi__parking_lot_core-0.9.12//:build_script_build",
-        "@rmdbi__smallvec-1.15.1//:smallvec",
+        "@rmdbi__smallvec-1.15.2//:smallvec",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(unix)
@@ -265,6 +265,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "parking_lot_core",
     rustc_env_files = [
         ":cargo_toml_env_vars",

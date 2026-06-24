@@ -115,7 +115,7 @@ rust_library(
     version = "6.4.1",
     deps = [
         "@rmdbi__derive_builder-0.20.2//:derive_builder",
-        "@rmdbi__log-0.4.30//:log",
+        "@rmdbi__log-0.4.33//:log",
         "@rmdbi__num-order-1.2.0//:num_order",
         "@rmdbi__pest-2.8.6//:pest",
         "@rmdbi__serde-1.0.228//:serde",

@@ -115,8 +115,8 @@ rust_library(
         "@rmdbi__fnv-1.0.7//:fnv",
         "@rmdbi__ident_case-1.0.1//:ident_case",
         "@rmdbi__proc-macro2-1.0.106//:proc_macro2",
-        "@rmdbi__quote-1.0.45//:quote",
+        "@rmdbi__quote-1.0.46//:quote",
         "@rmdbi__strsim-0.11.1//:strsim",
-        "@rmdbi__syn-2.0.117//:syn",
+        "@rmdbi__syn-2.0.118//:syn",
     ],
 )

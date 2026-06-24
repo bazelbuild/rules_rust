@@ -113,7 +113,7 @@ rust_library(
     deps = [
         "@rmdbi__potential_utf-0.1.5//:potential_utf",
         "@rmdbi__utf8_iter-1.0.4//:utf8_iter",
-        "@rmdbi__yoke-0.8.2//:yoke",
+        "@rmdbi__yoke-0.8.3//:yoke",
         "@rmdbi__zerofrom-0.1.8//:zerofrom",
         "@rmdbi__zerovec-0.11.6//:zerovec",
     ],

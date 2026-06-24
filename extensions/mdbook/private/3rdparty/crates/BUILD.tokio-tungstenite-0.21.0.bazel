@@ -115,7 +115,7 @@ rust_library(
     version = "0.21.0",
     deps = [
         "@rmdbi__futures-util-0.3.32//:futures_util",
-        "@rmdbi__log-0.4.30//:log",
+        "@rmdbi__log-0.4.33//:log",
         "@rmdbi__tokio-1.52.3//:tokio",
         "@rmdbi__tungstenite-0.21.0//:tungstenite",
     ],

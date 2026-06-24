@@ -37,57 +37,7 @@ rust_library(
     crate_features = [
         "default",
         "std",
-    ] + select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "serde",  # aarch64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "serde",  # aarch64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "serde",  # aarch64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "serde",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-        ],
-        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "serde",  # arm-unknown-linux-gnueabi
-        ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "serde",  # i686-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "serde",  # i686-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
-            "serde",  # loongarch64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "serde",  # powerpc-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
-            "serde",  # riscv64gc-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "serde",  # s390x-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "serde",  # x86_64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "serde",  # x86_64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "serde",  # x86_64-unknown-freebsd
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "serde",  # x86_64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "serde",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-        ],
-        "//conditions:default": [],
-    }),
+    ],
     crate_root = "src/lib.rs",
     edition = "2024",
     rustc_env_files = [
@@ -164,55 +114,5 @@ rust_library(
     deps = [
         "@rmdbi__equivalent-1.0.2//:equivalent",
         "@rmdbi__hashbrown-0.17.1//:hashbrown",
-    ] + select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # aarch64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # aarch64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # aarch64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-        ],
-        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # arm-unknown-linux-gnueabi
-        ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # i686-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # i686-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # loongarch64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # powerpc-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # riscv64gc-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # s390x-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # x86_64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # x86_64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # x86_64-unknown-freebsd
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # x86_64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rmdbi__serde_core-1.0.228//:serde_core",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )

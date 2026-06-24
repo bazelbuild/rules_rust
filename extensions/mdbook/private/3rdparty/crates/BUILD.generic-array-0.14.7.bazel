@@ -116,7 +116,7 @@ rust_library(
     version = "0.14.7",
     deps = [
         "@rmdbi__generic-array-0.14.7//:build_script_build",
-        "@rmdbi__typenum-1.20.0//:typenum",
+        "@rmdbi__typenum-1.20.1//:typenum",
     ],
 )
 
@@ -157,6 +157,7 @@ cargo_build_script(
         ],
     ),
     edition = "2015",
+    emit_warnings = False,
     pkg_name = "generic-array",
     rustc_env_files = [
         ":cargo_toml_env_vars",

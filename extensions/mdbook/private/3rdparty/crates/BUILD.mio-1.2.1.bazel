@@ -228,19 +228,19 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-apple-ios
+            "@rmdbi__log-0.4.33//:log",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-macabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-apple-ios-macabi
+            "@rmdbi__log-0.4.33//:log",  # aarch64-apple-ios-macabi
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-apple-ios-sim
+            "@rmdbi__log-0.4.33//:log",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-linux-android
+            "@rmdbi__log-0.4.33//:log",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@rmdbi__windows-sys-0.61.2//:windows_sys",  # cfg(windows)
@@ -250,80 +250,80 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rmdbi__log-0.4.33//:log",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # arm-unknown-linux-gnueabi
+            "@rmdbi__log-0.4.33//:log",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # arm-unknown-linux-musleabi
+            "@rmdbi__log-0.4.33//:log",  # arm-unknown-linux-musleabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # armv7-linux-androideabi
+            "@rmdbi__log-0.4.33//:log",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # armv7-unknown-linux-gnueabi
+            "@rmdbi__log-0.4.33//:log",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # i686-linux-android
+            "@rmdbi__log-0.4.33//:log",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@rmdbi__windows-sys-0.61.2//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # i686-unknown-freebsd
+            "@rmdbi__log-0.4.33//:log",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # i686-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # loongarch64-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # loongarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # mips-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # mips-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # powerpc-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # riscv64gc-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # s390x-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:sparc64-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # sparc64-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # sparc64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:sparc64-unknown-netbsd": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # sparc64-unknown-netbsd
+            "@rmdbi__log-0.4.33//:log",  # sparc64-unknown-netbsd
         ],
         "@rules_rust//rust/platform:sparc64-unknown-openbsd": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # sparc64-unknown-openbsd
+            "@rmdbi__log-0.4.33//:log",  # sparc64-unknown-openbsd
         ],
         "@rules_rust//rust/platform:wasm32-unknown-emscripten": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
@@ -345,33 +345,33 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-apple-ios
+            "@rmdbi__log-0.4.33//:log",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios-macabi": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-apple-ios-macabi
+            "@rmdbi__log-0.4.33//:log",  # x86_64-apple-ios-macabi
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-linux-android
+            "@rmdbi__log-0.4.33//:log",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@rmdbi__windows-sys-0.61.2//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-unknown-freebsd
+            "@rmdbi__log-0.4.33//:log",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-unknown-linux-gnu
+            "@rmdbi__log-0.4.33//:log",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
             "@rmdbi__libc-0.2.186//:libc",  # cfg(any(unix, target_os = "hermit", target_os = "wasi"))
-            "@rmdbi__log-0.4.30//:log",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rmdbi__log-0.4.33//:log",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

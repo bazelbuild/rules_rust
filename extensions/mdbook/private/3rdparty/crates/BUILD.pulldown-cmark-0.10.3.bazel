@@ -116,8 +116,8 @@ rust_library(
     }),
     version = "0.10.3",
     deps = [
-        "@rmdbi__bitflags-2.11.1//:bitflags",
-        "@rmdbi__memchr-2.8.1//:memchr",
+        "@rmdbi__bitflags-2.13.0//:bitflags",
+        "@rmdbi__memchr-2.8.2//:memchr",
         "@rmdbi__pulldown-cmark-0.10.3//:build_script_build",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
         "@rmdbi__unicase-2.9.0//:unicase",
@@ -162,6 +162,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "pulldown-cmark",
     rustc_env_files = [
         ":cargo_toml_env_vars",

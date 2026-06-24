@@ -176,6 +176,7 @@ cargo_build_script(
         ],
     ),
     edition = "2015",
+    emit_warnings = False,
     pkg_name = "winapi",
     rustc_env_files = [
         ":cargo_toml_env_vars",

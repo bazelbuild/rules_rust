@@ -181,6 +181,7 @@ cargo_build_script(
         "@rules_rust_pyo3//:current_pyo3_toolchain",
     ],
     edition = "2021",
+    emit_warnings = False,
     links = "python",
     pkg_name = "pyo3-ffi",
     rustc_env_files = [

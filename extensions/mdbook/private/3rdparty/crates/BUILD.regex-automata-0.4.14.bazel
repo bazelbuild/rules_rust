@@ -179,7 +179,7 @@ rust_library(
     version = "0.4.14",
     deps = [
         "@rmdbi__aho-corasick-1.1.4//:aho_corasick",
-        "@rmdbi__memchr-2.8.1//:memchr",
-        "@rmdbi__regex-syntax-0.8.10//:regex_syntax",
+        "@rmdbi__memchr-2.8.2//:memchr",
+        "@rmdbi__regex-syntax-0.8.11//:regex_syntax",
     ],
 )

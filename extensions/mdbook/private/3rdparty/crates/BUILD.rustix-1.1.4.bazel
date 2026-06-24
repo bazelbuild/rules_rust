@@ -360,7 +360,7 @@ rust_library(
     }),
     version = "1.1.4",
     deps = [
-        "@rmdbi__bitflags-2.11.1//:bitflags",
+        "@rmdbi__bitflags-2.13.0//:bitflags",
         "@rmdbi__rustix-1.1.4//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
@@ -727,6 +727,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "rustix",
     rustc_env_files = [
         ":cargo_toml_env_vars",
