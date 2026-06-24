@@ -5,7 +5,7 @@ rust_library(
     srcs = glob(["src/*.rs"]),
     edition = "2018",
     deps = [
-        "@override_target//:foo",
+        "@override_target//foo",
     ],
 )
 

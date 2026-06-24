@@ -17,6 +17,10 @@ use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.render_config(
+    incompatible_no_root_alias_targets = True,
+    repositories = ["cargo_aliases"],
+)
 crate.annotation(
     crate = "names",
     repositories = ["cargo_aliases"],

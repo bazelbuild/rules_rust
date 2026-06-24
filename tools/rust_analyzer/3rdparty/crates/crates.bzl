@@ -319,14 +319,14 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "tools/rust_analyzer/3rdparty": {
         _COMMON_CONDITION: {
-            "anyhow": Label("//:anyhow-1.0.102"),
-            "camino": Label("//:camino-1.2.2"),
-            "clap": Label("//:clap-4.6.0"),
-            "env_logger": Label("//:env_logger-0.11.10"),
-            "itertools": Label("//:itertools-0.14.0"),
-            "log": Label("//:log-0.4.29"),
-            "serde": Label("//:serde-1.0.228"),
-            "serde_json": Label("//:serde_json-1.0.149"),
+            "anyhow": Label("//anyhow-1.0.102"),
+            "camino": Label("//camino-1.2.2"),
+            "clap": Label("//clap-4.6.0"),
+            "env_logger": Label("//env_logger-0.11.10"),
+            "itertools": Label("//itertools-0.14.0"),
+            "log": Label("//log-0.4.29"),
+            "serde": Label("//serde-1.0.228"),
+            "serde_json": Label("//serde_json-1.0.149"),
         },
     },
 }

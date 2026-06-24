@@ -319,7 +319,7 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "mdbook": Label("//:mdbook-0.4.44"),
+            "mdbook": Label("//mdbook-0.4.44"),
         },
     },
 }
@@ -1209,12 +1209,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__handlebars-6.4.1",
-        sha256 = "d43ccdfe15a81ab0a8af639e90254227c9a46afd9c5f5b6ec7efaa345c4b0f00",
+        name = "rmdbi__handlebars-6.4.2",
+        sha256 = "f26569a2763497b7bd3fbd19374b774ea6038c5293678771259cd534d49740ff",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/handlebars/6.4.1/download"],
-        strip_prefix = "handlebars-6.4.1",
-        build_file = Label("//private/3rdparty/crates:BUILD.handlebars-6.4.1.bazel"),
+        urls = ["https://static.crates.io/crates/handlebars/6.4.2/download"],
+        strip_prefix = "handlebars-6.4.2",
+        build_file = Label("//private/3rdparty/crates:BUILD.handlebars-6.4.2.bazel"),
     )
 
     maybe(

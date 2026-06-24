@@ -319,8 +319,8 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "clap": Label("//:clap-3.1.5"),
-            "rand": Label("//:rand-0.8.5"),
+            "clap": Label("//clap-3.1.5"),
+            "rand": Label("//rand-0.8.5"),
         },
     },
 }
@@ -335,7 +335,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "version-sync": Label("//:version-sync-0.9.4"),
+            "version-sync": Label("//version-sync-0.9.4"),
         },
     },
 }

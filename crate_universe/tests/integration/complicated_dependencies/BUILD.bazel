@@ -10,7 +10,7 @@ rust_binary(
     srcs = ["src/main.rs"],
     edition = "2021",
     visibility = ["//visibility:public"],
-    deps = ["@complicated_dependencies//:openssl"],
+    deps = ["@complicated_dependencies//openssl"],
 )
 
 build_test(

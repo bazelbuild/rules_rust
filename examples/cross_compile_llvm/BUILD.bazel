@@ -16,8 +16,8 @@ rust_binary(
     name = "hello_world_host",
     srcs = ["src/main.rs"],
     deps = [
-        "@crates//:lz4-sys",
-        "@crates//:mimalloc",
+        "@crates//lz4-sys",
+        "@crates//mimalloc",
     ],
 )
 
@@ -26,8 +26,8 @@ rust_binary(
     srcs = ["src/main.rs"],
     platform = "//build/platforms:linux-x86_64",
     deps = [
-        "@crates//:lz4-sys",
-        "@crates//:mimalloc",
+        "@crates//lz4-sys",
+        "@crates//mimalloc",
     ],
 )
 
@@ -36,8 +36,8 @@ rust_binary(
     srcs = ["src/main.rs"],
     platform = "//build/platforms:linux-aarch64",
     deps = [
-        "@crates//:lz4-sys",
-        "@crates//:mimalloc",
+        "@crates//lz4-sys",
+        "@crates//mimalloc",
     ],
 )
 

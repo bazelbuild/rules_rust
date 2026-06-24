@@ -40,6 +40,8 @@ rust_library(
     ),
     crate_features = [
         "default",
+        "indexmap",
+        "preserve_order",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -116,6 +118,7 @@ rust_library(
     }),
     version = "1.0.150",
     deps = [
+        "@rmdbi__indexmap-2.14.0//:indexmap",
         "@rmdbi__itoa-1.0.18//:itoa",
         "@rmdbi__memchr-2.8.2//:memchr",
         "@rmdbi__serde_core-1.0.228//:serde_core",
@@ -145,6 +148,8 @@ cargo_build_script(
     ),
     crate_features = [
         "default",
+        "indexmap",
+        "preserve_order",
         "std",
     ],
     crate_name = "build_script_build",

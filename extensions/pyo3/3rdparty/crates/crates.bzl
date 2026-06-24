@@ -319,9 +319,9 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "pyo3": Label("//:pyo3-0.29.0"),
-            "pyo3-ffi": Label("//:pyo3-ffi-0.29.0"),
-            "pyo3-introspection": Label("//:pyo3-introspection-0.29.0"),
+            "pyo3": Label("//pyo3-0.29.0"),
+            "pyo3-ffi": Label("//pyo3-ffi-0.29.0"),
+            "pyo3-introspection": Label("//pyo3-introspection-0.29.0"),
         },
     },
 }
