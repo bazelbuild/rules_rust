@@ -11,6 +11,7 @@ bzl_library(
         "@bazel_tools//tools:bzl_srcs",
     ],
     deps = [
+        "@apple_support//lib:apple_support",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:selects",
         "@bazel_skylib//lib:structs",
