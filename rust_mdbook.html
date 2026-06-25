@@ -193,6 +193,17 @@ load("@rules_rust_mdbook//:defs.bzl", "mdbook_server")
 mdbook_server(<a href="#mdbook_server-name">name</a>, <a href="#mdbook_server-book">book</a>, <a href="#mdbook_server-hostname">hostname</a>, <a href="#mdbook_server-port">port</a>)
 </pre>
 <p>Spawn an mdbook server for a given <code>mdbook</code> target.</p>
+<p>The server stages every input (including generated sources) into an isolated working directory before invoking <code>mdbook serve</code>, so the running book always reflects the bazel-built sources rather than the workspace checkout.</p>
+<p>For live-reload during development, add <code>tags = ["ibazel_notify_changes"]</code> and invoke with <a href="https://github.com/bazelbuild/bazel-watcher">ibazel</a>:</p>
+<pre><code class="language-python">mdbook_server(
+    name = "book_server",
+    book = ":book",
+    tags = ["ibazel_notify_changes"],
+)
+</code></pre>
+<pre><code class="language-sh">ibazel run //path/to:book_server
+</code></pre>
+<p>ibazel will rebuild on source changes and signal the running server via stdin; the server re-stages the freshly built inputs and <code>mdbook serve</code> reloads any connected browsers.</p>
 <p><strong>ATTRIBUTES</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="mdbook_server-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
