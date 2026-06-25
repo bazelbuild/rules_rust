@@ -100,6 +100,9 @@ tar -czf "${ARCHIVE}" \
     --exclude=".git" \
     --exclude=".github" \
     --exclude="crate_universe/target" \
+    --exclude="bazel-*" \
+    --exclude="rules_rust-*.tar.gz" \
+    --exclude="cargo-bazel-*" \
     examples/hello_world \
     --exclude="examples" \
     .
