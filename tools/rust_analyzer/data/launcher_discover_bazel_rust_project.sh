@@ -19,6 +19,13 @@ set -e
 # is workspace-local `.rules_rust_analyzer/cache/`.
 export RULES_RUST_RA_CACHE_DIR="__RULES_RUST_RA_CACHE_DIR__"
 
+# Baked at install time so the flycheck runnable that discover
+# materializes into rust-project.json points at the editor-specific
+# launcher dir (`.vscode/.rules_rust_analyzer/`, `.helix/...`, or
+# `<workspace>/.rules_rust_analyzer/`). Without this, every editor
+# would share a hardcoded `.vscode/` path that breaks non-vscode users.
+export RULES_RUST_RA_LAUNCHER_DIR="__RULES_RUST_RA_LAUNCHER_DIR__"
+
 WORKSPACE="__WORKSPACE_ROOT__"
 WRAPPER="$WORKSPACE/bazel-bin/tools/rust_analyzer/discover_bazel_rust_project"
 

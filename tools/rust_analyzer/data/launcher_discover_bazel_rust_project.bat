@@ -6,6 +6,7 @@
 setlocal
 
 set "RULES_RUST_RA_CACHE_DIR=__RULES_RUST_RA_CACHE_DIR__"
+set "RULES_RUST_RA_LAUNCHER_DIR=__RULES_RUST_RA_LAUNCHER_DIR__"
 
 set "WORKSPACE=__WORKSPACE_ROOT__"
 set "WRAPPER=%WORKSPACE%\bazel-bin\tools\rust_analyzer\discover_bazel_rust_project.exe"

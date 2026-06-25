@@ -46,12 +46,14 @@ const CACHE_SCHEMA_VERSION: u32 = 0;
 ///
 /// `spec_contents` should already be sorted by spec path so the key is
 /// independent of file-system enumeration order.
+#[allow(clippy::too_many_arguments)]
 pub fn compute_key(
     spec_contents: &[(Utf8PathBuf, String)],
     toolchain_info: &str,
     bazel: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    launcher_dir: &str,
 ) -> String {
     let mut hasher = DefaultHasher::new();
     CACHE_SCHEMA_VERSION.hash(&mut hasher);
@@ -59,12 +61,25 @@ pub fn compute_key(
     workspace.as_str().hash(&mut hasher);
     execution_root.as_str().hash(&mut hasher);
     toolchain_info.hash(&mut hasher);
+    // Hashed because `flycheck_launcher_path` in `rust_project.rs` reads
+    // `$RULES_RUST_RA_LAUNCHER_DIR` to bake an absolute path into the
+    // assembled JSON. If we left this out, switching editors
+    // (vscode→neovim→helix) on the same workspace would silently serve
+    // the previously-cached editor's launcher path.
+    launcher_dir.hash(&mut hasher);
     for (path, content) in spec_contents {
         path.as_str().hash(&mut hasher);
         content.hash(&mut hasher);
     }
     format!("{:016x}", hasher.finish())
 }
+
+/// Env var setup bakes into the discover launcher carrying the editor-
+/// specific directory where launchers live. Consumed by both
+/// `compute_key` (cache shard) and `rust_project::flycheck_launcher_path`
+/// (path embedded in the assembled JSON). Reading it once at the call
+/// site keeps both readers consistent.
+pub const LAUNCHER_DIR_ENV_VAR: &str = "RULES_RUST_RA_LAUNCHER_DIR";
 
 /// Env var that overrides the cache directory location. `setup` bakes the
 /// resolved path into the discover launcher (`export RULES_RUST_RA_CACHE_DIR=...`)
@@ -74,7 +89,13 @@ const CACHE_DIR_ENV_VAR: &str = "RULES_RUST_RA_CACHE_DIR";
 
 /// Resolve the cache directory. `$RULES_RUST_RA_CACHE_DIR` wins if set;
 /// otherwise we fall back to `<workspace>/.rules_rust_analyzer/cache`.
-/// Callers can use this directly when they want to list / nuke entries.
+///
+/// `setup` is authoritative over the actual location — it bakes the
+/// resolved path (editor-specific or `--cache-dir`-overridden) into the
+/// discover launcher's `$RULES_RUST_RA_CACHE_DIR` env. This fallback
+/// only fires when discover is invoked outside the launcher (e.g.
+/// direct exec for debugging); the workspace-local default keeps that
+/// case from depending on per-user state.
 pub fn cache_dir(workspace: &Utf8Path) -> Utf8PathBuf {
     if let Ok(s) = std::env::var(CACHE_DIR_ENV_VAR) {
         if !s.is_empty() {
@@ -145,8 +166,8 @@ mod tests {
                 String::from("{\"id\":\"b\"}"),
             ),
         ];
-        let k1 = compute_key(&specs, toolchain, bazel, ws, er);
-        let k2 = compute_key(&specs, toolchain, bazel, ws, er);
+        let k1 = compute_key(&specs, toolchain, bazel, ws, er, "");
+        let k2 = compute_key(&specs, toolchain, bazel, ws, er, "");
         assert_eq!(k1, k2);
     }
 
@@ -159,8 +180,8 @@ mod tests {
         let base = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         let mutated = vec![(Utf8PathBuf::from("a.json"), "b".to_string())];
         assert_ne!(
-            compute_key(&base, toolchain, bazel, ws, er),
-            compute_key(&mutated, toolchain, bazel, ws, er)
+            compute_key(&base, toolchain, bazel, ws, er, ""),
+            compute_key(&mutated, toolchain, bazel, ws, er, "")
         );
     }
 
@@ -171,8 +192,8 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er),
-            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er),
+            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er, ""),
+            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er, ""),
         );
     }
 
@@ -182,8 +203,38 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er),
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er, ""),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er, ""),
+        );
+    }
+
+    #[test]
+    fn compute_key_changes_with_launcher_dir() {
+        // Editor switch on the same workspace must invalidate the
+        // cache, otherwise the assembled rust-project.json would still
+        // contain the previously-cached launcher path (see comment in
+        // `compute_key`).
+        let bazel = Utf8Path::new("/usr/bin/bazel");
+        let ws = Utf8Path::new("/ws");
+        let er = Utf8Path::new("/er");
+        let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
+        assert_ne!(
+            compute_key(
+                &specs,
+                "{}",
+                bazel,
+                ws,
+                er,
+                "/ws/.vscode/.rules_rust_analyzer"
+            ),
+            compute_key(
+                &specs,
+                "{}",
+                bazel,
+                ws,
+                er,
+                "/ws/.helix/.rules_rust_analyzer"
+            ),
         );
     }
 }

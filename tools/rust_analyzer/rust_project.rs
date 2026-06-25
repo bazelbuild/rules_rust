@@ -278,20 +278,32 @@ pub enum RunnableKind {
     TestMod,
 }
 
-/// Workspace-relative path of the flycheck launcher script that
-/// `setup_vscode` writes. The path itself is platform-dependent (`.sh` on
-/// POSIX, `.bat` on Windows) but the directory layout is fixed and shared
-/// with `bin/setup_vscode.rs` — keep them in sync.
+/// Absolute path of the flycheck launcher script that `setup` writes.
+///
+/// `setup` bakes the editor-specific launcher dir into the discover
+/// launcher as `$RULES_RUST_RA_LAUNCHER_DIR`; we read it here so the
+/// flycheck runnable embedded in `rust-project.json` points at the
+/// right per-editor path (`.vscode/.rules_rust_analyzer/`,
+/// `.helix/.rules_rust_analyzer/`, or `<workspace>/.rules_rust_analyzer/`).
+///
+/// When the env var is unset (discover invoked outside the
+/// setup-generated launcher — direct exec for debugging, or a config
+/// that predates setup) we fall back to `<workspace>/.rules_rust_analyzer/`,
+/// the editor-agnostic default. The fallback is only "right" for
+/// neovim/print users; vscode/helix users who bypass the launcher will
+/// get a stale path, which matches every other fallback in this code.
 fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
     let filename = if cfg!(windows) {
         "flycheck.bat"
     } else {
         "flycheck.sh"
     };
-    workspace
-        .join(".vscode")
-        .join(".rules_rust_analyzer")
-        .join(filename)
+    let launcher_dir = std::env::var("RULES_RUST_RA_LAUNCHER_DIR")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(Utf8PathBuf::from)
+        .unwrap_or_else(|| workspace.join(".rules_rust_analyzer"));
+    launcher_dir.join(filename)
 }
 
 /// Findings from inspecting the consolidated `CrateSpec` set for problems

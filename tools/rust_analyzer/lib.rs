@@ -69,12 +69,14 @@ pub fn generate_rust_project(
     // consolidate/assemble step on a miss.
     let spec_contents = read_specs(&spec_paths)?;
 
+    let launcher_dir = std::env::var(cache::LAUNCHER_DIR_ENV_VAR).unwrap_or_default();
     let cache_key = cache::compute_key(
         &spec_contents,
         &toolchain_info_raw,
         bazel,
         workspace,
         execution_root,
+        &launcher_dir,
     );
     if let Some(bytes) = cache::get(workspace, &cache_key)? {
         match serde_json::from_slice::<RustProject>(&bytes) {

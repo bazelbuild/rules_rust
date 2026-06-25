@@ -117,6 +117,14 @@ const OUTPUT_USER_ROOT_PLACEHOLDER: &str = "__RULES_RUST_RA_OUTPUT_USER_ROOT__";
 /// contain this placeholder — nothing else touches the cache.
 const CACHE_DIR_PLACEHOLDER: &str = "__RULES_RUST_RA_CACHE_DIR__";
 
+/// Baked at install time with the editor-specific launcher dir setup
+/// wrote launchers into. discover reads it (via `$RULES_RUST_RA_LAUNCHER_DIR`)
+/// and uses it to materialize the flycheck runnable's `program` path in
+/// the assembled rust-project.json. Only the discover launcher
+/// templates contain this placeholder — the other launchers don't
+/// publish runnables.
+const LAUNCHER_DIR_PLACEHOLDER: &str = "__RULES_RUST_RA_LAUNCHER_DIR__";
+
 // ---------------------------------------------------------------------------
 // Launcher flavor (POSIX vs Windows)
 // ---------------------------------------------------------------------------
@@ -190,9 +198,11 @@ struct Cli {
 
     /// `--output_user_root` to bake into the flycheck launcher (the
     /// dedicated Bazel server for on-save diagnostics, isolated from the
-    /// user's primary `bazel build`). Picks a HOME-rooted default when
-    /// unset — see [`default_output_user_root`]. Required on Windows for
-    /// any non-trivial workspace: Bazel's path-length budget vs MAX_PATH.
+    /// user's primary `bazel build`). Defaults to
+    /// `<launcher-dir>/output_user_root`, i.e. nested inside the
+    /// editor-specific subdir setup writes launchers to. Required on
+    /// Windows for any non-trivial workspace: Bazel's path-length
+    /// budget vs MAX_PATH.
     #[arg(long, global = true)]
     output_user_root: Option<Utf8PathBuf>,
 
@@ -271,14 +281,22 @@ fn main() -> Result<()> {
     } = Cli::parse();
 
     let workspace = workspace.unwrap_or_else(|| Utf8PathBuf::from("."));
-    let output_user_root = output_user_root.unwrap_or_else(|| default_output_user_root(&workspace));
-    let cache_dir = cache_dir.unwrap_or_else(|| default_cache_dir(&workspace));
+    let launcher_dir = launcher_dir_for(&workspace, &ide);
+    // Default cache + output_user_root sit alongside the launcher
+    // scripts so they share the editor's chosen home (vscode lives
+    // under `.vscode/.rules_rust_analyzer/`, helix under
+    // `.helix/.rules_rust_analyzer/`, neovim/print under the
+    // workspace-root `.rules_rust_analyzer/`). CLI flags override.
+    let output_user_root =
+        output_user_root.unwrap_or_else(|| launcher_dir.join("output_user_root"));
+    let cache_dir = cache_dir.unwrap_or_else(|| launcher_dir.join("cache"));
     let flavor = LauncherFlavor::detect();
     info!("Using --output_user_root = {output_user_root}");
     info!("Using --cache-dir = {cache_dir}");
 
     let ctx = SetupCtx {
         workspace,
+        launcher_dir,
         output_user_root,
         cache_dir,
         flavor,
@@ -296,10 +314,13 @@ fn main() -> Result<()> {
 }
 
 /// Shared state computed once at startup and threaded through every
-/// per-IDE runner. Keeping this in one struct avoids passing the same 5
-/// arguments to every helper function.
+/// per-IDE runner.
 struct SetupCtx {
     workspace: Utf8PathBuf,
+    /// Editor-specific dir setup writes launcher scripts into. Defaults
+    /// for cache_dir / output_user_root sit alongside it unless the
+    /// user passed CLI overrides.
+    launcher_dir: Utf8PathBuf,
     output_user_root: Utf8PathBuf,
     cache_dir: Utf8PathBuf,
     flavor: LauncherFlavor,
@@ -336,13 +357,9 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
     } else {
         ctx.workspace.join(&args.output)
     };
-    let vscode_dir = output_path
-        .parent()
-        .map(|p| p.to_owned())
-        .unwrap_or_else(|| ctx.workspace.join(".vscode"));
-    let launcher_dir = vscode_dir.join(LAUNCHER_SUBDIR);
+    let launcher_dir = &ctx.launcher_dir;
 
-    let managed = vscode_managed_keys(ctx, &launcher_dir);
+    let managed = vscode_managed_keys(ctx, launcher_dir);
     let key_count = managed.len();
 
     let merged = if args.replace {
@@ -362,7 +379,7 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
     }
 
     write_settings(output_path.as_std_path(), &merged)?;
-    write_all_launchers(ctx, &launcher_dir)?;
+    write_all_launchers(ctx, launcher_dir)?;
 
     info!(
         "{} {} key(s) in {} (+ {:?} launcher scripts in {})",
@@ -380,11 +397,9 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_neovim(ctx: &SetupCtx) -> Result<()> {
-    // Neovim has no canonical per-project dotdir — drop launchers at the
-    // workspace root in `.rules_rust_analyzer/`.
-    let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
-    write_all_launchers(ctx, &launcher_dir)?;
-    let snippet = generate_neovim_lua(ctx, &launcher_dir);
+    let launcher_dir = &ctx.launcher_dir;
+    write_all_launchers(ctx, launcher_dir)?;
+    let snippet = generate_neovim_lua(ctx, launcher_dir);
     print_snippet_with_banner("Add this to your init.lua (nvim-lspconfig):", &snippet);
     info!(
         "Wrote {} launcher script(s) to {}",
@@ -399,11 +414,9 @@ fn run_neovim(ctx: &SetupCtx) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_helix(ctx: &SetupCtx) -> Result<()> {
-    // Helix already conventionally uses `.helix/` for per-project config
-    // (`.helix/languages.toml` etc.), so nest the launchers there.
-    let launcher_dir = ctx.workspace.join(".helix").join(LAUNCHER_SUBDIR);
-    write_all_launchers(ctx, &launcher_dir)?;
-    let snippet = generate_helix_toml(ctx, &launcher_dir);
+    let launcher_dir = &ctx.launcher_dir;
+    write_all_launchers(ctx, launcher_dir)?;
+    let snippet = generate_helix_toml(ctx, launcher_dir);
     print_snippet_with_banner(
         "Add this to .helix/languages.toml at the workspace root:",
         &snippet,
@@ -421,9 +434,9 @@ fn run_helix(ctx: &SetupCtx) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_print(ctx: &SetupCtx) -> Result<()> {
-    let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
-    write_all_launchers(ctx, &launcher_dir)?;
-    let snippet = generate_settings_json(ctx, &launcher_dir);
+    let launcher_dir = &ctx.launcher_dir;
+    write_all_launchers(ctx, launcher_dir)?;
+    let snippet = generate_settings_json(ctx, launcher_dir);
     print_snippet_with_banner(
         "Add this to your editor's rust-analyzer settings (coc-settings.json, etc.):",
         &snippet,
@@ -461,6 +474,7 @@ fn launcher_filename(basename: &str, flavor: LauncherFlavor) -> String {
     format!("{basename}.{}", flavor.extension())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn write_launcher(
     dir: &Utf8Path,
     basename: &str,
@@ -479,6 +493,9 @@ fn write_launcher(
         workspace_root.as_str(),
         output_user_root.as_str(),
         cache_dir.as_str(),
+        // The launcher's own directory is also the launcher_dir the
+        // flycheck runnable should point at — they're always the same.
+        dir.as_str(),
     );
     fs::write(&path, body).with_context(|| format!("writing launcher {path}"))?;
     if flavor == LauncherFlavor::Posix {
@@ -498,9 +515,10 @@ fn write_launcher(
 }
 
 /// Substitute the launcher template placeholders. `WORKSPACE_ROOT_PLACEHOLDER`
-/// is present in every template; `OUTPUT_USER_ROOT_PLACEHOLDER` only in the
-/// flycheck templates; `CACHE_DIR_PLACEHOLDER` only in the discover templates.
-/// `replace` is a no-op when a placeholder is absent, so a single function
+/// is present in every template; `OUTPUT_USER_ROOT_PLACEHOLDER` only in
+/// the flycheck templates; `CACHE_DIR_PLACEHOLDER` and
+/// `LAUNCHER_DIR_PLACEHOLDER` only in the discover templates. `replace`
+/// is a no-op when a placeholder is absent, so a single function
 /// handles every template.
 ///
 /// All substituted paths are normalized to forward slashes — see
@@ -510,6 +528,7 @@ fn bake_placeholders(
     workspace_root: &str,
     output_user_root: &str,
     cache_dir: &str,
+    launcher_dir: &str,
 ) -> String {
     template
         .replace(
@@ -521,6 +540,7 @@ fn bake_placeholders(
             &to_forward_slashes(output_user_root),
         )
         .replace(CACHE_DIR_PLACEHOLDER, &to_forward_slashes(cache_dir))
+        .replace(LAUNCHER_DIR_PLACEHOLDER, &to_forward_slashes(launcher_dir))
 }
 
 /// Normalize backslashes to forward slashes. Applied to every path we
@@ -549,70 +569,33 @@ fn to_forward_slashes(path: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Output_user_root default + HOME resolution
+// Editor-relative defaults
 // ---------------------------------------------------------------------------
 
-/// Pick where the dedicated rules_rust Bazel server should live when the
-/// user didn't pass `--output-user-root` explicitly.
-///
-/// Default search order:
-///   1. `${HOME}/.vscode-server/.rules_rust_analyzer/output_user_root` —
-///      preferred when that directory exists, which is the signal that
-///      we're running inside VSCode Remote-SSH / Codespaces / WSL on the
-///      remote side.
-///   2. `${HOME}/.vscode/.rules_rust_analyzer/output_user_root` — the
-///      local-VSCode case. `.vscode/` is created lazily on first run.
-///   3. `<workspace>/.vscode/.rules_rust_analyzer/output_user_root` —
-///      fallback when neither `HOME` nor `USERPROFILE` is set (CI shells,
-///      bare containers). Workspace-local means it loses the per-user
-///      cache-sharing property but at least keeps the shim from
-///      exploding.
-///
-/// Per-workspace isolation is handled by Bazel itself: under
-/// `--output_user_root`, Bazel hashes the workspace path into a subdir,
-/// so multiple workspaces pointing at the same root each get their own
-/// server / cache and never collide.
-///
-/// The default still uses `.vscode-server` / `.vscode` even for non-VSCode
-/// IDEs — those directories are simply convenient HOME-relative places to
-/// stash a Bazel output root, and they already get gitignored on most
-/// machines. Override with `--output-user-root` if you'd rather keep it
-/// elsewhere.
-fn default_output_user_root(workspace: &Utf8Path) -> Utf8PathBuf {
-    if let Some(home) = home_dir() {
-        let server = home.join(".vscode-server");
-        if server.is_dir() {
-            return server.join(".rules_rust_analyzer").join("output_user_root");
+/// Resolve the launcher directory for a given IDE subcommand. Setup is
+/// authoritative over launcher/cache/output_user_root placement; every
+/// downstream default is computed by appending to whatever this
+/// returns.
+fn launcher_dir_for(workspace: &Utf8Path, ide: &IdeCmd) -> Utf8PathBuf {
+    match ide {
+        IdeCmd::Vscode(args) => {
+            let output_path = if args.output.is_absolute() {
+                args.output.clone()
+            } else {
+                workspace.join(&args.output)
+            };
+            output_path
+                .parent()
+                .map(|p| p.to_owned())
+                .unwrap_or_else(|| workspace.join(".vscode"))
+                .join(LAUNCHER_SUBDIR)
         }
-        return home
-            .join(".vscode")
-            .join(".rules_rust_analyzer")
-            .join("output_user_root");
+        IdeCmd::Helix => workspace.join(".helix").join(LAUNCHER_SUBDIR),
+        // Neovim has no canonical per-project dotdir; print covers
+        // editor-agnostic JSON-config LSP clients. Both land at the
+        // workspace root.
+        IdeCmd::Neovim | IdeCmd::Print => workspace.join(LAUNCHER_SUBDIR),
     }
-    workspace
-        .join(".vscode")
-        .join(".rules_rust_analyzer")
-        .join("output_user_root")
-}
-
-/// Default merge-cache directory: workspace-local
-/// `.rules_rust_analyzer/cache/`. Mirrored from `cache::CACHE_DIR_REL`
-/// (we don't depend on `gen_rust_project_lib` here just for that one
-/// constant — it's small enough to duplicate, and a test catches any
-/// drift if either side moves).
-fn default_cache_dir(workspace: &Utf8Path) -> Utf8PathBuf {
-    workspace.join(".rules_rust_analyzer").join("cache")
-}
-
-/// Cross-platform user home. Reads `HOME` on POSIX-y systems and
-/// `USERPROFILE` on Windows — the same two variables `dirs::home_dir`
-/// consults, without taking the dep.
-fn home_dir() -> Option<Utf8PathBuf> {
-    let var = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
-    std::env::var(var)
-        .ok()
-        .filter(|s| !s.is_empty())
-        .map(Utf8PathBuf::from)
 }
 
 // ---------------------------------------------------------------------------
@@ -1199,11 +1182,10 @@ mod tests {
         let workspace = Utf8PathBuf::from("/ws");
         let launcher_dir = workspace.join(".vscode").join(LAUNCHER_SUBDIR);
         let ctx = SetupCtx {
-            cache_dir: default_cache_dir(&workspace),
             workspace,
-            output_user_root: Utf8PathBuf::from(
-                "/home/u/.vscode/.rules_rust_analyzer/output_user_root",
-            ),
+            output_user_root: launcher_dir.join("output_user_root"),
+            cache_dir: launcher_dir.join("cache"),
+            launcher_dir: launcher_dir.clone(),
             flavor: LauncherFlavor::Posix,
             skip_proc_macro_server: false,
             skip_rustfmt: false,
@@ -1421,15 +1403,23 @@ mod tests {
     }
 
     #[test]
-    fn bake_placeholders_substitutes_all_three_placeholders() {
-        let template = "WS=\"__WORKSPACE_ROOT__\"\nOUR=\"__RULES_RUST_RA_OUTPUT_USER_ROOT__\"\nCACHE=\"__RULES_RUST_RA_CACHE_DIR__\"\n";
-        let baked = bake_placeholders(template, "/abs/ws", "/home/u/out", "/abs/ws/cache");
+    fn bake_placeholders_substitutes_all_four_placeholders() {
+        let template = "WS=\"__WORKSPACE_ROOT__\"\nOUR=\"__RULES_RUST_RA_OUTPUT_USER_ROOT__\"\nCACHE=\"__RULES_RUST_RA_CACHE_DIR__\"\nLDIR=\"__RULES_RUST_RA_LAUNCHER_DIR__\"\n";
+        let baked = bake_placeholders(
+            template,
+            "/abs/ws",
+            "/home/u/out",
+            "/abs/ws/cache",
+            "/abs/ws/.vscode/.rules_rust_analyzer",
+        );
         assert!(baked.contains("WS=\"/abs/ws\""));
         assert!(baked.contains("OUR=\"/home/u/out\""));
         assert!(baked.contains("CACHE=\"/abs/ws/cache\""));
+        assert!(baked.contains("LDIR=\"/abs/ws/.vscode/.rules_rust_analyzer\""));
         assert!(!baked.contains(WORKSPACE_ROOT_PLACEHOLDER));
         assert!(!baked.contains(OUTPUT_USER_ROOT_PLACEHOLDER));
         assert!(!baked.contains(CACHE_DIR_PLACEHOLDER));
+        assert!(!baked.contains(LAUNCHER_DIR_PLACEHOLDER));
     }
 
     #[test]
@@ -1453,6 +1443,31 @@ mod tests {
             assert!(
                 !body.contains(CACHE_DIR_PLACEHOLDER),
                 "{name} unexpectedly contains the cache-dir placeholder"
+            );
+        }
+    }
+
+    #[test]
+    fn launcher_dir_placeholder_is_present_only_in_discover_launchers() {
+        // Discover bakes the editor-specific launcher dir so the flycheck
+        // runnable it materializes in rust-project.json points at the
+        // right path. Other launchers don't publish runnables and must
+        // not contain the placeholder.
+        assert!(DISCOVER_LAUNCHER_SH.contains(LAUNCHER_DIR_PLACEHOLDER));
+        assert!(DISCOVER_LAUNCHER_BAT.contains(LAUNCHER_DIR_PLACEHOLDER));
+        for (name, body) in [
+            ("ra.sh", RA_LAUNCHER_SH),
+            ("ra.bat", RA_LAUNCHER_BAT),
+            ("pms.sh", PMS_LAUNCHER_SH),
+            ("pms.bat", PMS_LAUNCHER_BAT),
+            ("rustfmt.sh", RUSTFMT_LAUNCHER_SH),
+            ("rustfmt.bat", RUSTFMT_LAUNCHER_BAT),
+            ("flycheck.sh", FLYCHECK_LAUNCHER_SH),
+            ("flycheck.bat", FLYCHECK_LAUNCHER_BAT),
+        ] {
+            assert!(
+                !body.contains(LAUNCHER_DIR_PLACEHOLDER),
+                "{name} unexpectedly contains the launcher-dir placeholder"
             );
         }
     }
@@ -1510,32 +1525,46 @@ mod tests {
     }
 
     #[test]
-    fn default_output_user_root_falls_back_to_workspace_without_home() {
-        // Isolate from the test runner's real HOME / USERPROFILE so the
-        // fallback branch is actually exercised. We restore both because
-        // other tests in this binary may rely on them.
-        let saved_home = std::env::var("HOME").ok();
-        let saved_userprofile = std::env::var("USERPROFILE").ok();
-        // SAFETY: tests are single-threaded with --test-threads=1 in
-        // Bazel's default rust_test config, so env mutation is fine.
-        unsafe {
-            std::env::remove_var("HOME");
-            std::env::remove_var("USERPROFILE");
-        }
+    fn launcher_dir_for_picks_editor_specific_subdir() {
         let ws = Utf8PathBuf::from("/workspace");
-        let resolved = default_output_user_root(&ws);
         assert_eq!(
-            resolved,
-            Utf8PathBuf::from("/workspace/.vscode/.rules_rust_analyzer/output_user_root"),
+            launcher_dir_for(
+                &ws,
+                &IdeCmd::Vscode(VscodeArgs {
+                    output: Utf8PathBuf::from(".vscode/settings.json"),
+                    dry_run: false,
+                    replace: false,
+                }),
+            ),
+            Utf8PathBuf::from("/workspace/.vscode/.rules_rust_analyzer"),
         );
-        unsafe {
-            if let Some(v) = saved_home {
-                std::env::set_var("HOME", v);
-            }
-            if let Some(v) = saved_userprofile {
-                std::env::set_var("USERPROFILE", v);
-            }
-        }
+        assert_eq!(
+            launcher_dir_for(&ws, &IdeCmd::Helix),
+            Utf8PathBuf::from("/workspace/.helix/.rules_rust_analyzer"),
+        );
+        assert_eq!(
+            launcher_dir_for(&ws, &IdeCmd::Neovim),
+            Utf8PathBuf::from("/workspace/.rules_rust_analyzer"),
+        );
+        assert_eq!(
+            launcher_dir_for(&ws, &IdeCmd::Print),
+            Utf8PathBuf::from("/workspace/.rules_rust_analyzer"),
+        );
+    }
+
+    #[test]
+    fn launcher_dir_for_vscode_honors_custom_output() {
+        let ws = Utf8PathBuf::from("/workspace");
+        // Custom output path → launcher dir sits alongside it.
+        let custom = IdeCmd::Vscode(VscodeArgs {
+            output: Utf8PathBuf::from(".custom/conf.json"),
+            dry_run: false,
+            replace: false,
+        });
+        assert_eq!(
+            launcher_dir_for(&ws, &custom),
+            Utf8PathBuf::from("/workspace/.custom/.rules_rust_analyzer"),
+        );
     }
 
     #[test]
