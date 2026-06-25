@@ -17,6 +17,7 @@ load(
     "resource_dir_absolute_test",
     "resource_dir_relative_test",
     "sysroot_absolute_test",
+    "sysroot_bazel_placeholder_test",
     "sysroot_next_absolute_test",
     "sysroot_relative_test",
     "xclang_isystem_absolute_test",
@@ -28,6 +29,8 @@ sysroot_relative_test(name = "sysroot_relative_test")
 sysroot_absolute_test(name = "sysroot_absolute_test")
 
 sysroot_next_absolute_test(name = "sysroot_next_absolute_test")
+
+sysroot_bazel_placeholder_test(name = "sysroot_bazel_placeholder_test")
 
 isystem_relative_test(name = "isystem_relative_test")
 

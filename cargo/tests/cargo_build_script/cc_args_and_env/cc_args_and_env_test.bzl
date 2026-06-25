@@ -342,23 +342,47 @@ def cargo_build_script_with_extra_cc_compile_flags(
 def sysroot_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
-        extra_cc_compile_flags = ["--sysroot=test/relative/sysroot"],
+        extra_cc_compile_flags = [
+            "--sysroot=test/relative/sysroot",
+            "--sysroot",
+            "test/relative/sysroot2",
+            "-isysroot",
+            "test/relative/sysroot3",
+        ],
     )
     cc_args_and_env_analysis_test(
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
-        expected_cflags = ["--sysroot=${pwd}/test/relative/sysroot"],
+        expected_cflags = [
+            "--sysroot=${pwd}/test/relative/sysroot",
+            "--sysroot",
+            "${pwd}/test/relative/sysroot2",
+            "-isysroot",
+            "${pwd}/test/relative/sysroot3",
+        ],
     )
 
 def sysroot_absolute_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
-        extra_cc_compile_flags = ["--sysroot=/test/absolute/sysroot"],
+        extra_cc_compile_flags = [
+            "--sysroot=/test/absolute/sysroot",
+            "--sysroot",
+            "/test/absolute/sysroot2",
+            "-isysroot",
+            "/test/absolute/sysroot3",
+        ],
     )
     cc_args_and_env_analysis_test(
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
-        expected_cflags = ["--sysroot=/test/absolute/sysroot"],
+        expected_cflags = [
+            "--sysroot=/test/absolute/sysroot",
+            "--sysroot",
+            "/test/absolute/sysroot2",
+            "-isysroot",
+            "/test/absolute/sysroot3",
+        ],
     )
 
 def sysroot_next_absolute_test(name):
@@ -370,6 +394,29 @@ def sysroot_next_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["--sysroot=/test/absolute/sysroot", "test/relative/another"],
+    )
+
+def sysroot_bazel_placeholder_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = [
+            "-isysroot",
+            "__BAZEL_XCODE_SDKROOT__",
+            "--sysroot",
+            "__BAZEL_XCODE_SDKROOT__/nested",
+            "--sysroot=__BAZEL_XCODE_DEVELOPER_DIR__/nested",
+        ],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = [
+            "-isysroot",
+            "__BAZEL_XCODE_SDKROOT__",
+            "--sysroot",
+            "__BAZEL_XCODE_SDKROOT__/nested",
+            "--sysroot=__BAZEL_XCODE_DEVELOPER_DIR__/nested",
+        ],
     )
 
 def xclang_isystem_relative_test(name):
