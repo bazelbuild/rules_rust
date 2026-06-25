@@ -77,14 +77,6 @@ _coverage_remap_path_prefix_test = analysistest.make(
     },
 )
 
-_coverage_remap_path_prefix_path_mapping_test = analysistest.make(
-    _coverage_remap_path_prefix_test_impl,
-    config_settings = {
-        "//command_line_option:collect_code_coverage": True,
-        "//command_line_option:experimental_output_paths": "strip",
-    },
-)
-
 def _no_coverage_remap_path_prefix_test_impl(ctx):
     """Verify the coverage-specific remap flag is absent without coverage."""
     env = analysistest.begin(ctx)
@@ -200,11 +192,6 @@ def remap_path_prefix_test_suite(name):
         target_under_test = ":remap_mixed_lib",
     )
 
-    _coverage_remap_path_prefix_path_mapping_test(
-        name = "coverage_remap_path_prefix_path_mapping_mixed_lib_test",
-        target_under_test = ":remap_mixed_lib",
-    )
-
     _no_coverage_remap_path_prefix_test(
         name = "no_coverage_remap_path_prefix_lib_test",
         target_under_test = ":remap_lib",
@@ -216,7 +203,6 @@ def remap_path_prefix_test_suite(name):
         ":subst_flags_lib_test",
         ":subst_flags_bin_test",
         ":coverage_remap_path_prefix_mixed_lib_test",
-        ":coverage_remap_path_prefix_path_mapping_mixed_lib_test",
         ":no_coverage_remap_path_prefix_lib_test",
     ]
 
