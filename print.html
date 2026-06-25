@@ -2764,7 +2764,8 @@ crate.render_config(<a href="crate_universe_bzlmod.html#crate.render_config-buil
                     <a href="crate_universe_bzlmod.html#crate.render_config-crate_repository_template">crate_repository_template</a>, <a href="crate_universe_bzlmod.html#crate.render_config-crates_module_template">crates_module_template</a>, <a href="crate_universe_bzlmod.html#crate.render_config-default_alias_rule_bzl">default_alias_rule_bzl</a>,
                     <a href="crate_universe_bzlmod.html#crate.render_config-default_alias_rule_name">default_alias_rule_name</a>, <a href="crate_universe_bzlmod.html#crate.render_config-default_package_name">default_package_name</a>, <a href="crate_universe_bzlmod.html#crate.render_config-generate_cargo_toml_env_vars">generate_cargo_toml_env_vars</a>,
                     <a href="crate_universe_bzlmod.html#crate.render_config-generate_rules_license_metadata">generate_rules_license_metadata</a>, <a href="crate_universe_bzlmod.html#crate.render_config-generate_target_compatible_with">generate_target_compatible_with</a>,
-                    <a href="crate_universe_bzlmod.html#crate.render_config-platforms_template">platforms_template</a>, <a href="crate_universe_bzlmod.html#crate.render_config-regen_command">regen_command</a>, <a href="crate_universe_bzlmod.html#crate.render_config-repositories">repositories</a>, <a href="crate_universe_bzlmod.html#crate.render_config-vendor_mode">vendor_mode</a>)
+                    <a href="crate_universe_bzlmod.html#crate.render_config-incompatible_no_root_alias_targets">incompatible_no_root_alias_targets</a>, <a href="crate_universe_bzlmod.html#crate.render_config-platforms_template">platforms_template</a>, <a href="crate_universe_bzlmod.html#crate.render_config-regen_command">regen_command</a>,
+                    <a href="crate_universe_bzlmod.html#crate.render_config-repositories">repositories</a>, <a href="crate_universe_bzlmod.html#crate.render_config-vendor_mode">vendor_mode</a>)
 crate.spec(<a href="crate_universe_bzlmod.html#crate.spec-artifact">artifact</a>, <a href="crate_universe_bzlmod.html#crate.spec-branch">branch</a>, <a href="crate_universe_bzlmod.html#crate.spec-default_features">default_features</a>, <a href="crate_universe_bzlmod.html#crate.spec-features">features</a>, <a href="crate_universe_bzlmod.html#crate.spec-git">git</a>, <a href="crate_universe_bzlmod.html#crate.spec-lib">lib</a>, <a href="crate_universe_bzlmod.html#crate.spec-package">package</a>, <a href="crate_universe_bzlmod.html#crate.spec-package_alias">package_alias</a>, <a href="crate_universe_bzlmod.html#crate.spec-path">path</a>,
            <a href="crate_universe_bzlmod.html#crate.spec-repositories">repositories</a>, <a href="crate_universe_bzlmod.html#crate.spec-rev">rev</a>, <a href="crate_universe_bzlmod.html#crate.spec-tag">tag</a>, <a href="crate_universe_bzlmod.html#crate.spec-version">version</a>)
 crate.splicing_config(<a href="crate_universe_bzlmod.html#crate.splicing_config-repositories">repositories</a>, <a href="crate_universe_bzlmod.html#crate.splicing_config-resolver_version">resolver_version</a>)
@@ -2914,7 +2915,7 @@ can be found below where the supported keys for each template can be found in th
 <p><strong>Attributes</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="crate.render_config-build_file_template"></a>build_file_template</td><td style="text-align: left">The base template to use for BUILD file names. The available format keys are [<code>{name}</code>, {version}`].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"//:BUILD.{name}-{version}.bazel"</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.render_config-crate_alias_template"></a>crate_alias_template</td><td style="text-align: left">The base template to use for crate aliases. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"//:{name}-{version}"</code></td></tr>
+<tr><td style="text-align: left"><a id="crate.render_config-crate_alias_template"></a>crate_alias_template</td><td style="text-align: left">The base template to use for crate aliases. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>]. Defaults to the per-alias subpackage layout (<code>//{name}-{version}</code>); set to <code>//:{name}-{version}</code> if you intentionally want <code>aliases()</code> / <code>all_crate_deps()</code> to point at the legacy root-package aliases (only valid while <code>incompatible_no_root_alias_targets</code> is off).</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"//{name}-{version}"</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-crate_label_template"></a>crate_label_template</td><td style="text-align: left">The base template to use for crate labels. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@{repository}__{name}-{version}//:{target}"</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-crate_repository_template"></a>crate_repository_template</td><td style="text-align: left">The base template to use for Crate label repository names. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"{repository}__{name}-{version}"</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-crates_module_template"></a>crates_module_template</td><td style="text-align: left">The pattern to use for the <code>defs.bzl</code> and <code>BUILD.bazel</code> file names used for the crates module. The available format keys are [<code>{file}</code>].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"//:{file}"</code></td></tr>
@@ -2924,6 +2925,7 @@ can be found below where the supported keys for each template can be found in th
 <tr><td style="text-align: left"><a id="crate.render_config-generate_cargo_toml_env_vars"></a>generate_cargo_toml_env_vars</td><td style="text-align: left">Whether to generate cargo_toml_env_vars targets.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-generate_rules_license_metadata"></a>generate_rules_license_metadata</td><td style="text-align: left">Whether to generate rules license metadata.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-generate_target_compatible_with"></a>generate_target_compatible_with</td><td style="text-align: left">Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code> being targeted that isn't declared in <code>supported_platform_triples</code>.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+<tr><td style="text-align: left"><a id="crate.render_config-incompatible_no_root_alias_targets"></a>incompatible_no_root_alias_targets</td><td style="text-align: left">Incompatibility flag. Suppresses the top-level <code>alias()</code> rules in the hub repository's root <code>BUILD.bazel</code> (e.g. <code>@crate_index//:clap</code>). Per-alias subpackages (e.g. <code>@crate_index//clap</code>) are always emitted, so flipping this flag on lets users keep consuming aliases through the subpackage path while the root version disappears.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-platforms_template"></a>platforms_template</td><td style="text-align: left">The base template to use for platform names. See <a href="https://docs.bazel.build/versions/main/platforms.html">platforms documentation</a>. The available format keys are [<code>{triple}</code>].</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//rust/platform:{triple}"</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-regen_command"></a>regen_command</td><td style="text-align: left">An optional command to demonstrate how generated files should be regenerated.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.render_config-repositories"></a>repositories</td><td style="text-align: left">A list of repository names specified from <code>crate.from_cargo(name=...)</code> that this annotation is applied to. Defaults to all repositories.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
@@ -3232,7 +3234,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library_group")
 rust_library_group(
     name = "prost_runtime",
     deps = [
-        "@crates_io//:prost",
+        "@crates_io//prost",
     ],
 )
 
@@ -3240,17 +3242,17 @@ rust_library_group(
     name = "tonic_runtime",
     deps = [
         ":prost_runtime",
-        "@crates_io//:tonic",
+        "@crates_io//tonic",
     ],
 )
 
 rust_prost_toolchain(
     name = "prost_toolchain_impl",
-    prost_plugin = "@crates_io//:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin = "@crates_io//protoc-gen-prost__protoc-gen-prost",
     prost_runtime = ":prost_runtime",
-    prost_types = "@crates_io//:prost-types",
+    prost_types = "@crates_io//prost-types",
     proto_compiler = "@com_google_protobuf//:protoc",
-    tonic_plugin = "@crates_io//:protoc-gen-tonic__protoc-gen-tonic",
+    tonic_plugin = "@crates_io//protoc-gen-tonic__protoc-gen-tonic",
     tonic_runtime = ":tonic_runtime",
 )
 
