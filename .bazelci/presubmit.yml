@@ -71,6 +71,18 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
       ; 1>&2 head -50 bazel-out/_coverage/_coverage_report.dat \
       ; exit 1 \
       ; }
+  # Regression check: mixed in-tree/generated-source crates must produce
+  # real coverage, not just the zero-LF baseline record.
+  - |
+    awk '/^SF:test\/generated_inputs\/lib\.rs$/,/^end_of_record$/' \
+        bazel-out/_coverage/_coverage_report.dat \
+      | grep -qE '^LF:[1-9]' \
+    || { 1>&2 echo "No coverage for mixed-source crate (test/generated_inputs/lib.rs)" \
+      ; 1>&2 echo "Coverage was silently dropped for crates with generated sources." \
+      ; 1>&2 awk '/^SF:test\/generated_inputs\/lib\.rs$/,/^end_of_record$/' \
+          bazel-out/_coverage/_coverage_report.dat \
+      ; exit 1 \
+      ; }
 split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
   - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
   - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc

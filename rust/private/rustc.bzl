@@ -897,6 +897,14 @@ def _has_location_expansion(flags):
                 return True
     return False
 
+def _args_map_bin_dir(file):
+    """Extract `bazel-out/<config>/bin` from a File whose path lives in the configuration's bin directory.
+
+    Evaluated at action-execution time so that Bazel's path mapping (`--experimental_output_paths=strip`) can
+    rewrite the `<config>` segment to `cfg` before we slice it off.
+    """
+    return "/".join(file.path.split("/", 3)[:3])
+
 def construct_arguments(
         *,
         ctx,
@@ -1325,6 +1333,25 @@ def construct_arguments(
     if toolchain.coverage_supported and ctx.configuration.coverage_enabled:
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
+
+        # Crates with generated sources are compiled from the output tree
+        # (see `transform_sources`), so the coverage mapping records their
+        # files with a `bazel-out/<config>/bin/` prefix. Bazel's lcov
+        # merger silently drops all coverage for such crates, so we remap
+        # the prefix away. The prefix is derived from the crate's own
+        # output File (rather than `ctx.bin_dir`) so that Bazel's path
+        # mapping (`--experimental_output_paths=strip`) can rewrite the
+        # `<config>` segment to `cfg` before the value reaches rustc —
+        # `ctx.bin_dir` is a `root`, not a `File`, and is not subject to
+        # path-mapping rewriting. Skipped for rustdoc (which passes
+        # `remap_path_prefix=None`), since rustdoc only supports
+        # `--remap-path-prefix` behind `-Zunstable-options`.
+        if remap_path_prefix != None:
+            rustc_flags.add_all(
+                [crate_info.output],
+                format_each = "--remap-path-prefix=%s/=",
+                map_each = _args_map_bin_dir,
+            )
 
     if toolchain._experimental_link_std_dylib:
         rustc_flags.add("--codegen=prefer-dynamic")
