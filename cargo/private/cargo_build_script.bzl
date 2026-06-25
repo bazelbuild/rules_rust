@@ -98,6 +98,9 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
+# These get replaced with the non-hermetic values magically, and result in
+# absolute paths, so they shouldn't have PWD prefixed.
+# https://github.com/bazelbuild/apple_support/blob/20913e2a9ad4a00a1849a464b856d04b5cd3bdcb/lib/apple_support.bzl#L174-L198
 _BAZEL_PATH_PLACEHOLDERS = [
     apple_support.path_placeholders.xcode(),
     apple_support.path_placeholders.sdkroot(),
