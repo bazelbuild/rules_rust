@@ -31,6 +31,7 @@ load(
     "incompatible_do_not_include_transitive_data_in_compile_inputs",
     "lto",
     "no_std",
+    "opt_level",
     "pipelined_compilation",
     "rename_first_party_crates",
     "require_explicit_unstable_features",
@@ -120,6 +121,8 @@ incompatible_do_not_include_transitive_data_in_compile_inputs()
 lto()
 
 no_std()
+
+opt_level()
 
 pipelined_compilation()
 

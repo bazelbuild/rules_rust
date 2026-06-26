@@ -49,6 +49,61 @@ _opt_level_for_opt_test = analysistest.make(
     },
 )
 
+def _opt_level_dbg_setting_test_impl(ctx):
+    return _opt_level_test_impl(ctx, "1")
+
+_opt_level_dbg_setting_test = analysistest.make(
+    _opt_level_dbg_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "dbg",
+        str(Label("//rust/settings:opt_level_dbg")): "1",
+    },
+)
+
+def _opt_level_opt_setting_test_impl(ctx):
+    return _opt_level_test_impl(ctx, "2")
+
+_opt_level_opt_setting_test = analysistest.make(
+    _opt_level_opt_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        str(Label("//rust/settings:opt_level_opt")): "2",
+    },
+)
+
+def _opt_level_fastbuild_setting_test_impl(ctx):
+    return _opt_level_test_impl(ctx, "1")
+
+_opt_level_fastbuild_setting_test = analysistest.make(
+    _opt_level_fastbuild_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "fastbuild",
+        str(Label("//rust/settings:opt_level_fastbuild")): "1",
+    },
+)
+
+def _opt_level_size_setting_test_impl(ctx):
+    return _opt_level_test_impl(ctx, "s")
+
+_opt_level_size_setting_test = analysistest.make(
+    _opt_level_size_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        str(Label("//rust/settings:opt_level_opt")): "s",
+    },
+)
+
+def _opt_level_minsize_setting_test_impl(ctx):
+    return _opt_level_test_impl(ctx, "z")
+
+_opt_level_minsize_setting_test = analysistest.make(
+    _opt_level_minsize_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        str(Label("//rust/settings:opt_level_opt")): "z",
+    },
+)
+
 def opt_level_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -85,11 +140,41 @@ def opt_level_test_suite(name):
         target_under_test = ":bin",
     )
 
+    _opt_level_dbg_setting_test(
+        name = "opt_level_dbg_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _opt_level_opt_setting_test(
+        name = "opt_level_opt_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _opt_level_fastbuild_setting_test(
+        name = "opt_level_fastbuild_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _opt_level_size_setting_test(
+        name = "opt_level_size_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _opt_level_minsize_setting_test(
+        name = "opt_level_minsize_setting_test",
+        target_under_test = ":bin",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":opt_level_for_dbg_test",
             ":opt_level_for_fastbuild_test",
             ":opt_level_for_opt_test",
+            ":opt_level_dbg_setting_test",
+            ":opt_level_opt_setting_test",
+            ":opt_level_fastbuild_setting_test",
+            ":opt_level_size_setting_test",
+            ":opt_level_minsize_setting_test",
         ],
     )

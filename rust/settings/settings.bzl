@@ -17,6 +17,7 @@ load(
     _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
 load("//rust/private:lto.bzl", "rust_lto_flag")
+load("//rust/private:opt_level.bzl", "rust_opt_level_flag")
 load(
     "//rust/private:rustc.bzl",
     _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
@@ -65,6 +66,40 @@ def lto():
     rust_lto_flag(
         name = "lto",
         build_setting_default = "unspecified",
+    )
+
+# buildifier: disable=unnamed-macro
+def opt_level():
+    """Build settings to control the rustc optimization level per compilation mode.
+
+    Each flag sets the default opt-level for all toolchains that do not explicitly 
+    override it viathe `opt_level` attribute.
+
+    Defaults match Bazel's conventional compilation modes: `dbg` and `fastbuild`
+    use level 0 (no optimization), `opt` uses level 3 (full optimization).
+
+    Override from the command line:
+
+    ```
+    build --@rules_rust//rust/settings:opt_level_dbg=1
+    build --@rules_rust//rust/settings:opt_level_opt=2
+    build --@rules_rust//rust/settings:opt_level_fastbuild=1
+    ```
+    """
+    string_flag(
+        name = "opt_level_dbg",
+        build_setting_default = "0",
+    )
+    string_flag(
+        name = "opt_level_opt",
+        build_setting_default = "3",
+    )
+    string_flag(
+        name = "opt_level_fastbuild",
+        build_setting_default = "0",
+    )
+    rust_opt_level_flag(
+        name = "opt_level",
     )
 
 def rename_first_party_crates():

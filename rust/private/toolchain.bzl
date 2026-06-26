@@ -9,6 +9,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:lto.bzl", "RustLtoInfo")
+load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
 load(
     "//rust/private:rust_allocator_libraries.bzl",
     "make_libstd_and_allocator_ccinfo",
@@ -393,16 +394,19 @@ def _rust_toolchain_impl(ctx):
     Returns:
         list: A list containing the target's toolchain Provider info
     """
+    effective_opt_levels = dict(ctx.attr._opt_level[RustOptLevelInfo].levels)
+    effective_opt_levels.update(ctx.attr.opt_level)
+
     compilation_mode_opts = {}
-    for k, opt_level in ctx.attr.opt_level.items():
+    for k, opt_level in effective_opt_levels.items():
         if not k in ctx.attr.debug_info:
-            fail("Compilation mode {} is not defined in debug_info but is defined opt_level".format(k))
+            fail("Compilation mode {} is not defined in debug_info but is defined in opt_level".format(k))
         if not k in ctx.attr.strip_level:
-            fail("Compilation mode {} is not defined in strip_level but is defined opt_level".format(k))
+            fail("Compilation mode {} is not defined in strip_level but is defined in opt_level".format(k))
         compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = opt_level, strip_level = ctx.attr.strip_level[k])
     for k in ctx.attr.debug_info.keys():
-        if not k in ctx.attr.opt_level:
-            fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
+        if not k in effective_opt_levels:
+            fail("Compilation mode {} is not defined in opt_level but is defined in debug_info".format(k))
 
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
@@ -796,12 +800,13 @@ rust_toolchain = rule(
             doc = "Label to an LTO setting whether which can enable custom LTO settings",
         ),
         "opt_level": attr.string_dict(
-            doc = "Rustc optimization levels.",
-            default = {
-                "dbg": "0",
-                "fastbuild": "0",
-                "opt": "3",
-            },
+            doc = "Per-toolchain opt-level overrides per compilation mode. Any mode set here takes precedence over the global `//rust/settings:opt_level_*` flags. Omit a mode (or leave empty) to use the global flag value.",
+            default = {},
+        ),
+        "_opt_level": attr.label(
+            default = Label("//rust/settings:opt_level"),
+            providers = [RustOptLevelInfo],
+            doc = "Global opt-level defaults, read from the `//rust/settings:opt_level_*` int flags.",
         ),
         "per_crate_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
