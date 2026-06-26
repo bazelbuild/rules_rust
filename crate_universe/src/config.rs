@@ -282,6 +282,10 @@ pub(crate) struct CrateAnnotations {
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
     pub(crate) proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
+    /// Additional data to pass to
+    /// [link_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-link_deps) attribute.
+    pub(crate) link_deps: Option<Select<BTreeSet<Label>>>,
+
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
     pub(crate) crate_features: Option<Select<BTreeSet<String>>>,
@@ -446,6 +450,7 @@ impl Add for CrateAnnotations {
             gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
             deps: select_merge(self.deps, rhs.deps),
             proc_macro_deps: select_merge(self.proc_macro_deps, rhs.proc_macro_deps),
+            link_deps: select_merge(self.link_deps, rhs.link_deps),
             crate_features: select_merge(self.crate_features, rhs.crate_features),
             data: select_merge(self.data, rhs.data),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
@@ -511,6 +516,7 @@ pub(crate) struct AnnotationsProvidedByPackage {
     pub(crate) data: Option<Select<BTreeSet<Label>>>,
     pub(crate) data_glob: Option<BTreeSet<String>>,
     pub(crate) deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) link_deps: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data_glob: Option<BTreeSet<String>>,
     pub(crate) compile_data_glob_excludes: Option<BTreeSet<String>>,
@@ -535,6 +541,7 @@ impl CrateAnnotations {
             data,
             data_glob,
             deps,
+            link_deps,
             compile_data,
             compile_data_glob,
             compile_data_glob_excludes,
@@ -567,6 +574,7 @@ impl CrateAnnotations {
         default(&mut self.data, data);
         default(&mut self.data_glob, data_glob);
         default(&mut self.deps, deps);
+        default(&mut self.link_deps, link_deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
         default(

@@ -110,6 +110,7 @@ def _annotation(
         data = None,
         data_glob = None,
         deps = None,
+        link_deps = None,
         extra_aliased_targets = None,
         gen_binaries = None,
         disable_pipelining = False,
@@ -160,6 +161,7 @@ def _annotation(
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
+        link_deps (list, optional): A list of labels to add to a crate's `rust_library::link_deps` attribute.
         extra_aliased_targets (dict, optional): A list of targets to add to the generated aliases in the root
             crate_universe repository.
         gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
@@ -222,6 +224,7 @@ def _annotation(
             data = _stringify_list(data),
             data_glob = data_glob,
             deps = _stringify_list(deps),
+            link_deps = _stringify_list(link_deps),
             extra_aliased_targets = extra_aliased_targets,
             gen_binaries = gen_binaries,
             disable_pipelining = disable_pipelining,

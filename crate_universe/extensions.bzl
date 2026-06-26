@@ -1397,6 +1397,9 @@ _ANNOTATION_SELECT_ATTRS = {
     "deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::deps` attribute.",
     ),
+    "link_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::link_deps` attribute.",
+    ),
     "proc_macro_deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::proc_macro_deps` attribute.",
     ),

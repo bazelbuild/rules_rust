@@ -860,6 +860,7 @@ impl Renderer {
                 ),
                 platforms,
             ),
+            link_deps: SelectSet::new(krate.common_attrs.extra_link_deps.clone(), platforms),
             aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
             disable_pipelining: krate.disable_pipelining,
@@ -901,6 +902,7 @@ impl Renderer {
             name: format!("{}__bin", target.crate_name),
             deps: SelectSet::new(deps, platforms),
             proc_macro_deps: SelectSet::new(proc_macro_deps, platforms),
+            link_deps: SelectSet::new(krate.common_attrs.extra_link_deps.clone(), platforms),
             aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })

@@ -133,6 +133,9 @@ pub(crate) struct CommonAttributes {
     pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) extra_link_deps: Select<BTreeSet<Label>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -167,6 +170,7 @@ impl Default for CommonAttributes {
             linker_script: Default::default(),
             proc_macro_deps: Default::default(),
             extra_proc_macro_deps: Default::default(),
+            extra_link_deps: Default::default(),
             proc_macro_deps_dev: Default::default(),
             rustc_env: Default::default(),
             rustc_env_files: Default::default(),
@@ -589,6 +593,12 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.proc_macro_deps {
                 self.common_attrs.extra_proc_macro_deps =
                     Select::merge(self.common_attrs.extra_proc_macro_deps, extra.clone());
+            }
+
+            // Link deps
+            if let Some(extra) = &crate_extra.link_deps {
+                self.common_attrs.extra_link_deps =
+                    Select::merge(self.common_attrs.extra_link_deps, extra.clone());
             }
 
             // Compile data

@@ -173,6 +173,8 @@ pub(crate) struct RustLibrary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
@@ -188,6 +190,8 @@ pub(crate) struct RustBinary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
