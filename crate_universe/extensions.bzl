@@ -540,6 +540,7 @@ def _generate_hub_and_spokes(
         lockfile,
         skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile,
+        is_root,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -561,6 +562,12 @@ def _generate_hub_and_spokes(
             Bazel only requires external dependencies to be present in the lockfile.
             By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
             in other lockfiles where the cargo lockfile's sha is stored.
+        is_root (bool): Whether the module owning this extension call is the workspace's root module.
+            For non-root (transitive) modules the lockfile is trusted as-is — the digest check is
+            skipped and repinning is never attempted, because the digest can legitimately differ
+            across rust / cargo / rules_rust versions between the producing module and the consumer,
+            and the producer's lockfile typically lives in a read-only bzlmod cache that can't be
+            repinned anyway.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -604,15 +611,27 @@ def _generate_hub_and_spokes(
     # TODO: Repins should never be allowed if the lockfile is not within
     # https://github.com/bazelbuild/rules_rust/issues/1738
 
-    # Determine whether or not to repin dependencies
-    repin = not lockfile or determine_repin(
-        repository_ctx = module_ctx,
-        repository_name = cfg.name,
-        cargo_bazel_fn = cargo_bazel_fn,
-        lockfile_path = lockfile,
-        config = config_file,
-        splicing_manifest = splicing_manifest,
-    )
+    # Determine whether or not to repin dependencies. Transitive (non-root)
+    # modules are taken as-is: the digest check would fail across rust /
+    # cargo / rules_rust version differences between the producing module
+    # and the consumer, and the producer's lockfile typically lives in a
+    # read-only bzlmod cache so repinning isn't an option anyway.
+    if not is_root:
+        if not lockfile:
+            fail(("crate_universe extension call `{}` is in a non-root module " +
+                  "but has no lockfile. Transitive crate_universe repositories " +
+                  "must ship a `lockfile = ...` because repinning is not " +
+                  "supported across module boundaries.").format(cfg.name))
+        repin = False
+    else:
+        repin = not lockfile or determine_repin(
+            repository_ctx = module_ctx,
+            repository_name = cfg.name,
+            cargo_bazel_fn = cargo_bazel_fn,
+            lockfile_path = lockfile,
+            config = config_file,
+            splicing_manifest = splicing_manifest,
+        )
 
     # The workspace root when one is explicitly provided.
     # buildifier: disable=canonical-repository
@@ -1178,6 +1197,7 @@ def _crate_impl(module_ctx):
                 packages = packages,
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
+                is_root = mod.is_root,
             )
 
             # Watch cfg.lockfile AFTER generation. The generator may modify it during
