@@ -2,33 +2,44 @@
 //!
 //! `setup` is split into one subcommand per editor:
 //!
-//!   * `vscode` — writes/merges `.vscode/settings.json` with the four
+//!   * `vscode` — writes/merges `.vscode/settings.json` with the
 //!     `rust-analyzer.*` keys + `files.excludeDirs` auto-populated from
 //!     nested `Cargo.toml` discovery + matching `files.exclude` /
 //!     `watcherExclude` / `search.exclude` for the Bazel convenience
-//!     symlinks. Launcher scripts live in `.vscode/.rules_rust_analyzer/`.
-//!   * `neovim` — writes the same launchers to `.rules_rust_analyzer/` at
-//!     the workspace root (no `.vscode` references) and prints an
+//!     symlinks. Source binaries live in `.vscode/.rules_rust_analyzer/`.
+//!   * `neovim` — copies the source binaries to `.rules_rust_analyzer/`
+//!     at the workspace root (no `.vscode` references) and prints an
 //!     `nvim-lspconfig` Lua snippet to stdout for the user to paste.
-//!   * `helix` — writes the launchers to `.helix/.rules_rust_analyzer/`
+//!   * `helix` — copies the source binaries to `.helix/.rules_rust_analyzer/`
 //!     (Helix already uses `.helix/` for its per-project config) and
 //!     prints a `languages.toml` snippet to stdout.
-//!   * `print` — writes the launchers to `.rules_rust_analyzer/` and
-//!     prints a generic JSON snippet (the same `rust-analyzer.*` keys
-//!     VSCode uses; works with coc.nvim, helix-via-JSON, etc.).
+//!   * `print` — copies the source binaries to `.rules_rust_analyzer/`
+//!     and prints a generic JSON snippet (the same `rust-analyzer.*`
+//!     keys VSCode uses; works with coc.nvim, helix-via-JSON, etc.).
 //!
-//! Common flags (`--workspace`, `--output-user-root`,
-//! `--skip-proc-macro-server`, `--skip-rustfmt`) are declared once at the
-//! top level with `global = true` and accepted on any subcommand. See the
-//! `Cli` struct below.
+//! Common flags (`--workspace`, `--skip-proc-macro-server`,
+//! `--skip-rustfmt`, `--per-package-workspaces`) are declared once at
+//! the top level with `global = true` and accepted on any subcommand.
+//! See the `Cli` struct below.
 //!
-//! All launchers are template-substituted at install time:
+//! There are no launcher shell scripts. Editors point directly at:
 //!
-//!   * `__WORKSPACE_ROOT__` — absolute path to the workspace root,
-//!     baked in so the launcher works no matter how deep it lives.
-//!   * `__RULES_RUST_RA_OUTPUT_USER_ROOT__` — present only in the
-//!     flycheck launcher; baked with the dedicated `--output_user_root`
-//!     path for the flycheck Bazel server.
+//!   * **Toolchain binaries** (rust-analyzer LSP, proc-macro server,
+//!     rustfmt) by their absolute `output_base/external/...` paths,
+//!     resolved at install time via setup's own runfiles and baked
+//!     directly into the editor config. Toolchain binaries survive
+//!     `bazel clean`; only `bazel clean --expunge` invalidates them, in
+//!     which case re-running setup re-resolves.
+//!   * **Source binaries** (`discover_bazel_rust_project`, `flycheck`)
+//!     are also resolved via setup's runfiles, then *copied* into the
+//!     launcher dir. They live in `bazel-out` originally and would be
+//!     wiped by a regular `bazel clean`; the copy keeps the editor
+//!     config self-contained. These binaries self-locate their cache
+//!     and output dirs from `current_exe()` at runtime (see
+//!     `gen_rust_project_lib::install_dir`); the toolchain-info JSON
+//!     they consume is baked into them at compile time as an env-var
+//!     literal (see `gen_rust_project_lib`'s `rustc_env_files` wiring),
+//!     so no install-time files follow them.
 
 use std::{fs, path::Path};
 
@@ -36,6 +47,7 @@ use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Args, Parser, Subcommand};
 use log::info;
+use runfiles::{rlocation, Runfiles};
 use serde_json::{json, Map, Value};
 
 // ---------------------------------------------------------------------------
@@ -74,102 +86,30 @@ const FILES_EXCLUDE_DIRS_KEY: &str = "rust-analyzer.files.excludeDirs";
 const BAZEL_OUTPUTS_GLOB: &str = "**/bazel-*/**";
 
 // ---------------------------------------------------------------------------
-// Launcher templates
+// Launcher dir + source-binary install paths
 // ---------------------------------------------------------------------------
 
-/// Subdirectory name used (under the per-IDE launcher root) to hold our
-/// managed launcher scripts. The leading dot keeps tidy file explorers
-/// from surfacing it as workspace content; the rules_rust prefix prevents
-/// collisions with anything else that might want to drop files into the
-/// same parent dir.
+/// Subdirectory name used (under the per-IDE launcher root) to hold the
+/// source binaries setup copies in. The leading dot keeps tidy file
+/// explorers from surfacing it as workspace content; the rules_rust
+/// prefix prevents collisions with anything else that might want to drop
+/// files into the same parent dir.
 const LAUNCHER_SUBDIR: &str = ".rules_rust_analyzer";
 
-const RA_LAUNCHER_BASENAME: &str = "rust_analyzer";
-const PMS_LAUNCHER_BASENAME: &str = "rust_analyzer_proc_macro_srv";
-const RUSTFMT_LAUNCHER_BASENAME: &str = "rustfmt";
-const FLYCHECK_LAUNCHER_BASENAME: &str = "flycheck";
-const DISCOVER_LAUNCHER_BASENAME: &str = "discover_bazel_rust_project";
+// On-disk filenames setup uses for the binaries it copies into the
+// launcher dir. Re-exported from `gen_rust_project_lib` so the install
+// side and the consumer side (rust_project.rs's flycheck-runnable
+// path emitter) agree on extension handling — including the `.exe`
+// suffix on Windows.
+use gen_rust_project_lib::{DISCOVER_BINARY_FILENAME, FLYCHECK_BINARY_FILENAME};
 
-const RA_LAUNCHER_SH: &str = include_str!("../data/launcher_rust_analyzer.sh");
-const PMS_LAUNCHER_SH: &str = include_str!("../data/launcher_rust_analyzer_proc_macro_srv.sh");
-const RUSTFMT_LAUNCHER_SH: &str = include_str!("../data/launcher_rustfmt.sh");
-const FLYCHECK_LAUNCHER_SH: &str = include_str!("../data/launcher_flycheck.sh");
-const DISCOVER_LAUNCHER_SH: &str = include_str!("../data/launcher_discover_bazel_rust_project.sh");
-const RA_LAUNCHER_BAT: &str = include_str!("../data/launcher_rust_analyzer.bat");
-const PMS_LAUNCHER_BAT: &str = include_str!("../data/launcher_rust_analyzer_proc_macro_srv.bat");
-const RUSTFMT_LAUNCHER_BAT: &str = include_str!("../data/launcher_rustfmt.bat");
-const FLYCHECK_LAUNCHER_BAT: &str = include_str!("../data/launcher_flycheck.bat");
-const DISCOVER_LAUNCHER_BAT: &str =
-    include_str!("../data/launcher_discover_bazel_rust_project.bat");
-
-/// Baked at install time with the absolute path to the workspace root.
-/// Present in every launcher template — they need to find `bazel-bin/`
-/// and where to `cd` for the build-if-missing fallback.
-const WORKSPACE_ROOT_PLACEHOLDER: &str = "__WORKSPACE_ROOT__";
-
-/// Baked at install time with the flycheck wrapper's dedicated
-/// `--output_user_root`. Only the flycheck launcher templates contain
-/// this placeholder — the other launchers don't call Bazel themselves.
-const OUTPUT_USER_ROOT_PLACEHOLDER: &str = "__RULES_RUST_RA_OUTPUT_USER_ROOT__";
-
-/// Baked at install time with the directory the discover binary should
-/// write its merge cache into. Only the discover launcher templates
-/// contain this placeholder — nothing else touches the cache.
-const CACHE_DIR_PLACEHOLDER: &str = "__RULES_RUST_RA_CACHE_DIR__";
-
-/// Baked at install time with the editor-specific launcher dir setup
-/// wrote launchers into. discover reads it (via `$RULES_RUST_RA_LAUNCHER_DIR`)
-/// and uses it to materialize the flycheck runnable's `program` path in
-/// the assembled rust-project.json. Only the discover launcher
-/// templates contain this placeholder — the other launchers don't
-/// publish runnables.
-const LAUNCHER_DIR_PLACEHOLDER: &str = "__RULES_RUST_RA_LAUNCHER_DIR__";
-
-// ---------------------------------------------------------------------------
-// Launcher flavor (POSIX vs Windows)
-// ---------------------------------------------------------------------------
-
-/// Shell flavor the host OS expects. Picked at runtime so a user on
-/// macOS / Linux gets a POSIX shell script and a user on Windows gets a
-/// `cmd.exe` batch file.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum LauncherFlavor {
-    Posix,
-    Windows,
-}
-
-impl LauncherFlavor {
-    fn detect() -> Self {
-        if std::env::consts::OS == "windows" {
-            Self::Windows
-        } else {
-            Self::Posix
-        }
-    }
-
-    fn extension(self) -> &'static str {
-        match self {
-            Self::Posix => "sh",
-            Self::Windows => "bat",
-        }
-    }
-
-    fn template_for(self, basename: &str) -> &'static str {
-        match (self, basename) {
-            (Self::Posix, b) if b == RA_LAUNCHER_BASENAME => RA_LAUNCHER_SH,
-            (Self::Posix, b) if b == PMS_LAUNCHER_BASENAME => PMS_LAUNCHER_SH,
-            (Self::Posix, b) if b == RUSTFMT_LAUNCHER_BASENAME => RUSTFMT_LAUNCHER_SH,
-            (Self::Posix, b) if b == FLYCHECK_LAUNCHER_BASENAME => FLYCHECK_LAUNCHER_SH,
-            (Self::Posix, b) if b == DISCOVER_LAUNCHER_BASENAME => DISCOVER_LAUNCHER_SH,
-            (Self::Windows, b) if b == RA_LAUNCHER_BASENAME => RA_LAUNCHER_BAT,
-            (Self::Windows, b) if b == PMS_LAUNCHER_BASENAME => PMS_LAUNCHER_BAT,
-            (Self::Windows, b) if b == RUSTFMT_LAUNCHER_BASENAME => RUSTFMT_LAUNCHER_BAT,
-            (Self::Windows, b) if b == FLYCHECK_LAUNCHER_BASENAME => FLYCHECK_LAUNCHER_BAT,
-            (Self::Windows, b) if b == DISCOVER_LAUNCHER_BASENAME => DISCOVER_LAUNCHER_BAT,
-            _ => panic!("no launcher template for {basename:?}"),
-        }
-    }
-}
+// Runfiles paths setup looks up via `Runfiles::create()` at install
+// time. The `_opt` suffix points at the `opt_executable` wrapper in
+// `opt_transition.bzl` — these run on every save / discovery and pay
+// off in opt mode.
+const DISCOVER_BINARY_RLOCATION: &str =
+    "rules_rust/tools/rust_analyzer/discover_bazel_rust_project_opt";
+const FLYCHECK_BINARY_RLOCATION: &str = "rules_rust/tools/rust_analyzer/flycheck_opt";
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -196,22 +136,6 @@ struct Cli {
     #[arg(long, global = true)]
     skip_rustfmt: bool,
 
-    /// `--output_user_root` to bake into the flycheck launcher (the
-    /// dedicated Bazel server for on-save diagnostics, isolated from the
-    /// user's primary `bazel build`). Defaults to
-    /// `<launcher-dir>/output_user_root`, i.e. nested inside the
-    /// editor-specific subdir setup writes launchers to. Required on
-    /// Windows for any non-trivial workspace: Bazel's path-length
-    /// budget vs MAX_PATH.
-    #[arg(long, global = true)]
-    output_user_root: Option<Utf8PathBuf>,
-
-    /// Directory the discover binary writes its merge cache into. Baked
-    /// into the discover launcher as `$RULES_RUST_RA_CACHE_DIR`.
-    /// Defaults to `<workspace>/.rules_rust_analyzer/cache/`.
-    #[arg(long, global = true)]
-    cache_dir: Option<Utf8PathBuf>,
-
     /// Pass `{arg}` to the discover command so rust-analyzer switches
     /// workspaces to the per-file package. Off by default — the whole
     /// workspace gets indexed as one project, which is simpler and what
@@ -229,21 +153,23 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum IdeCmd {
-    /// Write/merge `.vscode/settings.json` and install launchers under
-    /// `.vscode/.rules_rust_analyzer/`.
+    /// Write/merge `.vscode/settings.json` and install source binaries
+    /// under `.vscode/.rules_rust_analyzer/`.
     Vscode(VscodeArgs),
 
-    /// Install launchers under `.rules_rust_analyzer/` (no `.vscode/`
-    /// references) and print an `nvim-lspconfig` Lua snippet to stdout.
+    /// Install source binaries under `.rules_rust_analyzer/` (no
+    /// `.vscode/` references) and print an `nvim-lspconfig` Lua snippet
+    /// to stdout.
     Neovim,
 
-    /// Install launchers under `.helix/.rules_rust_analyzer/` and print a
-    /// `languages.toml` snippet to stdout.
+    /// Install source binaries under `.helix/.rules_rust_analyzer/` and
+    /// print a `languages.toml` snippet to stdout.
     Helix,
 
-    /// Install launchers under `.rules_rust_analyzer/` and print the
-    /// editor-agnostic JSON snippet (same `rust-analyzer.*` keys VSCode
-    /// uses; works with coc.nvim and similar JSON-config LSP clients).
+    /// Install source binaries under `.rules_rust_analyzer/` and print
+    /// the editor-agnostic JSON snippet (same `rust-analyzer.*` keys
+    /// VSCode uses; works with coc.nvim and similar JSON-config LSP
+    /// clients).
     Print,
 }
 
@@ -274,35 +200,31 @@ fn main() -> Result<()> {
         workspace,
         skip_proc_macro_server,
         skip_rustfmt,
-        output_user_root,
-        cache_dir,
         per_package_workspaces,
         ide,
     } = Cli::parse();
 
     let workspace = workspace.unwrap_or_else(|| Utf8PathBuf::from("."));
     let launcher_dir = launcher_dir_for(&workspace, &ide);
-    // Default cache + output_user_root sit alongside the launcher
-    // scripts so they share the editor's chosen home (vscode lives
-    // under `.vscode/.rules_rust_analyzer/`, helix under
-    // `.helix/.rules_rust_analyzer/`, neovim/print under the
-    // workspace-root `.rules_rust_analyzer/`). CLI flags override.
-    let output_user_root =
-        output_user_root.unwrap_or_else(|| launcher_dir.join("output_user_root"));
-    let cache_dir = cache_dir.unwrap_or_else(|| launcher_dir.join("cache"));
-    let flavor = LauncherFlavor::detect();
-    info!("Using --output_user_root = {output_user_root}");
-    info!("Using --cache-dir = {cache_dir}");
+    let runfiles = Runfiles::create().context("creating Runfiles for setup")?;
+    let toolchain = ToolchainBinaries {
+        rust_analyzer: lookup_canonical(&runfiles, env!("RUST_ANALYZER_RLOCATIONPATH"))?,
+        proc_macro_srv: lookup_canonical(
+            &runfiles,
+            env!("RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH"),
+        )?,
+        rustfmt: lookup_canonical(&runfiles, env!("RUSTFMT_RLOCATIONPATH"))?,
+    };
+
+    install_source_binaries(&launcher_dir, &runfiles)?;
 
     let ctx = SetupCtx {
         workspace,
         launcher_dir,
-        output_user_root,
-        cache_dir,
-        flavor,
         skip_proc_macro_server,
         skip_rustfmt,
         per_package_workspaces,
+        toolchain,
     };
 
     match ide {
@@ -317,34 +239,47 @@ fn main() -> Result<()> {
 /// per-IDE runner.
 struct SetupCtx {
     workspace: Utf8PathBuf,
-    /// Editor-specific dir setup writes launcher scripts into. Defaults
-    /// for cache_dir / output_user_root sit alongside it unless the
-    /// user passed CLI overrides.
+    /// Editor-specific dir setup copies source binaries into. The
+    /// discover/flycheck binaries self-locate their cache + output dirs
+    /// as siblings of themselves (`<launcher_dir>/cache` and
+    /// `<launcher_dir>/output_user_root` respectively).
     launcher_dir: Utf8PathBuf,
-    output_user_root: Utf8PathBuf,
-    cache_dir: Utf8PathBuf,
-    flavor: LauncherFlavor,
     skip_proc_macro_server: bool,
     skip_rustfmt: bool,
     per_package_workspaces: bool,
+    /// Canonical absolute paths of the three toolchain binaries, baked
+    /// directly into the editor config. See [`ToolchainBinaries`] for
+    /// how they're resolved.
+    toolchain: ToolchainBinaries,
 }
 
-impl SetupCtx {
-    /// List of (basename, write?) tuples for the launchers this run should
-    /// emit. Flycheck and discover are always written — without them the
-    /// runnable / discoverConfig commands point at non-existent paths.
-    fn launchers(&self) -> Vec<&'static str> {
-        let mut v = vec![RA_LAUNCHER_BASENAME];
-        if !self.skip_proc_macro_server {
-            v.push(PMS_LAUNCHER_BASENAME);
-        }
-        if !self.skip_rustfmt {
-            v.push(RUSTFMT_LAUNCHER_BASENAME);
-        }
-        v.push(FLYCHECK_LAUNCHER_BASENAME);
-        v.push(DISCOVER_LAUNCHER_BASENAME);
-        v
-    }
+/// Absolute, canonicalized paths to the three toolchain binaries the
+/// editor needs to reference. Resolved once in `main` via setup's own
+/// runfiles + the `*_RLOCATIONPATH` make-vars (baked at compile time
+/// by the `rustc_env` block on setup's BUILD target) + [`fs::canonicalize`]
+/// (escapes the runfiles symlink tree — which lives in `bazel-out` and
+/// would be wiped by `bazel clean` — and lands at the canonical
+/// `output_base/external/...` path that only goes away on
+/// `bazel clean --expunge`).
+struct ToolchainBinaries {
+    rust_analyzer: Utf8PathBuf,
+    proc_macro_srv: Utf8PathBuf,
+    rustfmt: Utf8PathBuf,
+}
+
+fn lookup_runfile(runfiles: &Runfiles, env_path: &str) -> Result<Utf8PathBuf> {
+    let pathbuf = rlocation!(runfiles, env_path)
+        .with_context(|| format!("rlocation not found: {env_path}"))?;
+    Utf8PathBuf::try_from(pathbuf)
+        .with_context(|| format!("rlocation {env_path} was not valid UTF-8"))
+}
+
+fn lookup_canonical(runfiles: &Runfiles, env_path: &str) -> Result<Utf8PathBuf> {
+    let path = lookup_runfile(runfiles, env_path)?;
+    let canonical = fs::canonicalize(&path)
+        .with_context(|| format!("canonicalizing rlocation {env_path} = {path}"))?;
+    Utf8PathBuf::try_from(canonical)
+        .with_context(|| format!("canonical path for {env_path} was not valid UTF-8"))
 }
 
 // ---------------------------------------------------------------------------
@@ -357,9 +292,8 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
     } else {
         ctx.workspace.join(&args.output)
     };
-    let launcher_dir = &ctx.launcher_dir;
 
-    let managed = vscode_managed_keys(ctx, launcher_dir);
+    let managed = vscode_managed_keys(ctx, &ctx.launcher_dir);
     let key_count = managed.len();
 
     let merged = if args.replace {
@@ -379,15 +313,10 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
     }
 
     write_settings(output_path.as_std_path(), &merged)?;
-    write_all_launchers(ctx, launcher_dir)?;
-
     info!(
-        "{} {} key(s) in {} (+ {:?} launcher scripts in {})",
+        "{} {} key(s) in {output_path}",
         if args.replace { "Wrote" } else { "Merged" },
         key_count,
-        output_path,
-        ctx.flavor,
-        launcher_dir,
     );
     Ok(())
 }
@@ -397,15 +326,8 @@ fn run_vscode(ctx: &SetupCtx, args: VscodeArgs) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_neovim(ctx: &SetupCtx) -> Result<()> {
-    let launcher_dir = &ctx.launcher_dir;
-    write_all_launchers(ctx, launcher_dir)?;
-    let snippet = generate_neovim_lua(ctx, launcher_dir);
+    let snippet = generate_neovim_lua(ctx, &ctx.launcher_dir);
     print_snippet_with_banner("Add this to your init.lua (nvim-lspconfig):", &snippet);
-    info!(
-        "Wrote {} launcher script(s) to {}",
-        ctx.launchers().len(),
-        launcher_dir,
-    );
     Ok(())
 }
 
@@ -414,17 +336,10 @@ fn run_neovim(ctx: &SetupCtx) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_helix(ctx: &SetupCtx) -> Result<()> {
-    let launcher_dir = &ctx.launcher_dir;
-    write_all_launchers(ctx, launcher_dir)?;
-    let snippet = generate_helix_toml(ctx, launcher_dir);
+    let snippet = generate_helix_toml(ctx, &ctx.launcher_dir);
     print_snippet_with_banner(
         "Add this to .helix/languages.toml at the workspace root:",
         &snippet,
-    );
-    info!(
-        "Wrote {} launcher script(s) to {}",
-        ctx.launchers().len(),
-        launcher_dir,
     );
     Ok(())
 }
@@ -434,132 +349,72 @@ fn run_helix(ctx: &SetupCtx) -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn run_print(ctx: &SetupCtx) -> Result<()> {
-    let launcher_dir = &ctx.launcher_dir;
-    write_all_launchers(ctx, launcher_dir)?;
-    let snippet = generate_settings_json(ctx, launcher_dir);
+    let snippet = generate_settings_json(ctx, &ctx.launcher_dir);
     print_snippet_with_banner(
         "Add this to your editor's rust-analyzer settings (coc-settings.json, etc.):",
         &snippet,
     );
-    info!(
-        "Wrote {} launcher script(s) to {}",
-        ctx.launchers().len(),
-        launcher_dir,
-    );
     Ok(())
 }
 
 // ---------------------------------------------------------------------------
-// Shared launcher writing
+// Source-binary install
 // ---------------------------------------------------------------------------
 
-/// Write the full set of launchers `ctx` calls for to `dir`.
-fn write_all_launchers(ctx: &SetupCtx, dir: &Utf8Path) -> Result<()> {
-    for basename in ctx.launchers() {
-        write_launcher(
-            dir,
-            basename,
-            ctx.flavor,
-            ctx.flavor.template_for(basename),
-            &ctx.workspace,
-            &ctx.output_user_root,
-            &ctx.cache_dir,
-        )?;
-    }
-    Ok(())
-}
-
-/// Compute the full launcher filename (basename + flavor extension).
-fn launcher_filename(basename: &str, flavor: LauncherFlavor) -> String {
-    format!("{basename}.{}", flavor.extension())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn write_launcher(
-    dir: &Utf8Path,
-    basename: &str,
-    flavor: LauncherFlavor,
-    content: &str,
-    workspace_root: &Utf8Path,
-    output_user_root: &Utf8Path,
-    cache_dir: &Utf8Path,
-) -> Result<()> {
-    let path = dir.join(launcher_filename(basename, flavor));
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).with_context(|| format!("creating directory {parent}"))?;
-    }
-    let body = bake_placeholders(
-        content,
-        workspace_root.as_str(),
-        output_user_root.as_str(),
-        cache_dir.as_str(),
-        // The launcher's own directory is also the launcher_dir the
-        // flycheck runnable should point at — they're always the same.
-        dir.as_str(),
-    );
-    fs::write(&path, body).with_context(|| format!("writing launcher {path}"))?;
-    if flavor == LauncherFlavor::Posix {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut perms = fs::metadata(&path)
-                .with_context(|| format!("stat {path}"))?
-                .permissions();
-            // rwxr-xr-x: rust-analyzer (and the user from a shell) must be
-            // able to exec this; group/other read+exec is harmless.
-            perms.set_mode(0o755);
-            fs::set_permissions(&path, perms).with_context(|| format!("chmod {path}"))?;
-        }
-    }
-    Ok(())
-}
-
-/// Substitute the launcher template placeholders. `WORKSPACE_ROOT_PLACEHOLDER`
-/// is present in every template; `OUTPUT_USER_ROOT_PLACEHOLDER` only in
-/// the flycheck templates; `CACHE_DIR_PLACEHOLDER` and
-/// `LAUNCHER_DIR_PLACEHOLDER` only in the discover templates. `replace`
-/// is a no-op when a placeholder is absent, so a single function
-/// handles every template.
+/// Copy the discover binary and the flycheck binary into `dir`. These
+/// live in `bazel-out` originally and would be wiped by `bazel clean`;
+/// the copy keeps the installation self-contained until the next
+/// `bazel clean --expunge` (which removes the toolchain binaries from
+/// `output_base` and requires re-running setup anyway).
 ///
-/// All substituted paths are normalized to forward slashes — see
-/// [`to_forward_slashes`] for why.
-fn bake_placeholders(
-    template: &str,
-    workspace_root: &str,
-    output_user_root: &str,
-    cache_dir: &str,
-    launcher_dir: &str,
-) -> String {
-    template
-        .replace(
-            WORKSPACE_ROOT_PLACEHOLDER,
-            &to_forward_slashes(workspace_root),
-        )
-        .replace(
-            OUTPUT_USER_ROOT_PLACEHOLDER,
-            &to_forward_slashes(output_user_root),
-        )
-        .replace(CACHE_DIR_PLACEHOLDER, &to_forward_slashes(cache_dir))
-        .replace(LAUNCHER_DIR_PLACEHOLDER, &to_forward_slashes(launcher_dir))
+/// The toolchain-info JSON discover used to consume at runtime is no
+/// longer copied here — its content is baked into the binary at compile
+/// time via an `env!()` literal (see `gen_rust_project_lib`'s
+/// `rustc_env_files` wiring on the BUILD target).
+fn install_source_binaries(dir: &Utf8Path, runfiles: &Runfiles) -> Result<()> {
+    fs::create_dir_all(dir).with_context(|| format!("creating directory {dir}"))?;
+    for (rlocation, filename) in [
+        (DISCOVER_BINARY_RLOCATION, DISCOVER_BINARY_FILENAME),
+        (FLYCHECK_BINARY_RLOCATION, FLYCHECK_BINARY_FILENAME),
+    ] {
+        let src = lookup_runfile(runfiles, rlocation)?;
+        let dest = dir.join(filename);
+        fs::copy(&src, &dest).with_context(|| format!("copying {src} -> {dest}"))?;
+        set_executable(&dest)?;
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn set_executable(path: &Utf8Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let mut perms = fs::metadata(path)
+        .with_context(|| format!("stat {path}"))?
+        .permissions();
+    // rwxr-xr-x: rust-analyzer (and the user from a shell) must be able
+    // to exec this; group/other read+exec is harmless.
+    perms.set_mode(0o755);
+    fs::set_permissions(path, perms).with_context(|| format!("chmod {path}"))?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn set_executable(_path: &Utf8Path) -> Result<()> {
+    // Windows doesn't use POSIX exec bits; `.bat`/`.exe` extension
+    // is the cue for the OS loader.
+    Ok(())
 }
 
 /// Normalize backslashes to forward slashes. Applied to every path we
 /// hand to an editor's config file (settings.json, languages.toml, init.lua,
-/// coc-settings.json) AND to every path we bake into a launcher script.
+/// coc-settings.json).
 ///
 /// Why everywhere:
 ///   * In JSON / Lua / TOML, `\` is an escape character — Windows-native
 ///     paths (`C:\Users\me\...`) embed as invalid escape sequences and
 ///     break the parser.
-///   * In shell launchers, `.sh` is POSIX (needs forward slashes), and
-///     `.bat` on Windows accepts forward slashes everywhere we use them
-///     (`set`, `if exist`, `cd`, child-process exec).
 ///   * Modern Windows tooling — VSCode, rust-analyzer, bazel.exe — all
 ///     accept forward slashes universally.
-///
-/// Applying one rule everywhere is simpler than per-context branching
-/// and avoids the surprise of "snippet works, launcher doesn't" or vice
-/// versa.
 fn to_forward_slashes(path: &str) -> String {
     if cfg!(windows) {
         path.replace('\\', "/")
@@ -573,9 +428,9 @@ fn to_forward_slashes(path: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// Resolve the launcher directory for a given IDE subcommand. Setup is
-/// authoritative over launcher/cache/output_user_root placement; every
-/// downstream default is computed by appending to whatever this
-/// returns.
+/// authoritative over the binary install dir / cache / output_user_root
+/// placement; every downstream default is computed by appending to
+/// whatever this returns.
 fn launcher_dir_for(workspace: &Utf8Path, ide: &IdeCmd) -> Utf8PathBuf {
     match ide {
         IdeCmd::Vscode(args) => {
@@ -672,39 +527,23 @@ enum ManagedValue {
 
 /// VSCode-flavored managed keys, in canonical order.
 fn vscode_managed_keys(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> Vec<(String, ManagedValue)> {
-    let ra_rel = launcher_workspace_path(
-        &ctx.workspace,
-        launcher_dir,
-        &launcher_filename(RA_LAUNCHER_BASENAME, ctx.flavor),
-    );
-    let pms_rel = launcher_workspace_path(
-        &ctx.workspace,
-        launcher_dir,
-        &launcher_filename(PMS_LAUNCHER_BASENAME, ctx.flavor),
-    );
-    let rustfmt_rel = launcher_workspace_path(
-        &ctx.workspace,
-        launcher_dir,
-        &launcher_filename(RUSTFMT_LAUNCHER_BASENAME, ctx.flavor),
-    );
-    let discover_rel = launcher_workspace_path(
-        &ctx.workspace,
-        launcher_dir,
-        &launcher_filename(DISCOVER_LAUNCHER_BASENAME, ctx.flavor),
-    );
+    let ra_path = to_forward_slashes(ctx.toolchain.rust_analyzer.as_str());
+    let pms_path = to_forward_slashes(ctx.toolchain.proc_macro_srv.as_str());
+    let rustfmt_path = to_forward_slashes(ctx.toolchain.rustfmt.as_str());
+    let discover_path = to_forward_slashes(launcher_dir.join(DISCOVER_BINARY_FILENAME).as_str());
     let bazel_outputs = || vec![(BAZEL_OUTPUTS_GLOB.to_string(), Value::Bool(true))];
     // `{arg}` opts into per-package workspace switching. See `--per-package-workspaces`.
     let discover_command = if ctx.per_package_workspaces {
-        json!([discover_rel, "{arg}"])
+        json!([discover_path, "{arg}"])
     } else {
-        json!([discover_rel])
+        json!([discover_path])
     };
     let mut out = vec![
         (
             DISCOVER_CONFIG_KEY.to_string(),
             ManagedValue::Replace(json!({
-                // Point at the launcher script (not `bazel run`) — see
-                // launcher_discover_bazel_rust_project.sh for why.
+                // Point directly at the discover binary; it self-locates
+                // its sibling toolchain JSON from `argv[0]`'s dirname.
                 "command": discover_command,
                 "progressLabel": "rules_rust",
                 "filesToWatch": [
@@ -718,22 +557,22 @@ fn vscode_managed_keys(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> Vec<(String, 
         ),
         (
             SERVER_PATH_KEY.to_string(),
-            ManagedValue::Replace(Value::String(ra_rel)),
+            ManagedValue::Replace(Value::String(ra_path)),
         ),
     ];
     if !ctx.skip_proc_macro_server {
         out.push((
             PROC_MACRO_SRV_KEY.to_string(),
-            ManagedValue::Replace(Value::String(pms_rel)),
+            ManagedValue::Replace(Value::String(pms_path)),
         ));
     }
     if !ctx.skip_rustfmt {
-        // overrideCommand is an argv array; the launcher takes file contents
-        // on stdin and writes formatted output to stdout, which is the
-        // contract rust-analyzer expects.
+        // overrideCommand is an argv array; the toolchain rustfmt takes
+        // file contents on stdin and writes formatted output to stdout,
+        // which is the contract rust-analyzer expects.
         out.push((
             RUSTFMT_OVERRIDE_KEY.to_string(),
-            ManagedValue::Replace(json!([rustfmt_rel])),
+            ManagedValue::Replace(json!([rustfmt_path])),
         ));
     }
     // Three exclude maps share the same Bazel-outputs glob — dict-merged
@@ -762,27 +601,6 @@ fn vscode_managed_keys(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> Vec<(String, 
         ));
     }
     out
-}
-
-/// Compute the `${workspaceFolder}`-relative path for a launcher script
-/// that will be written under the launcher directory. Falls back to an
-/// absolute path when the launcher is outside the workspace (unusual but
-/// possible if the caller passes a custom `--output`).
-///
-/// Always returns a forward-slash path: VSCode accepts both separators
-/// on Windows but the JSON we emit needs to be portable, and `\` is a
-/// JSON escape character.
-fn launcher_workspace_path(
-    workspace_root: &Utf8Path,
-    launcher_dir: &Utf8Path,
-    name: &str,
-) -> String {
-    let abs = launcher_dir.join(name);
-    let raw = match abs.strip_prefix(workspace_root) {
-        Ok(rel) => format!("${{workspaceFolder}}/{rel}"),
-        Err(_) => abs.to_string(),
-    };
-    to_forward_slashes(&raw)
 }
 
 /// Read the existing settings file (if any), apply each managed key per
@@ -1032,20 +850,6 @@ fn print_snippet_with_banner(banner: &str, snippet: &str) {
     eprintln!("========== end ==========\n");
 }
 
-/// Build the absolute path to a launcher script inside `launcher_dir`.
-/// Non-VSCode snippets use absolute paths because their config formats
-/// don't have a `${workspaceFolder}` equivalent (Lua / coc-settings.json
-/// / Helix TOML all expand only env vars at most).
-///
-/// Always returns a forward-slash path so the result is safe to embed
-/// in JSON / Lua / TOML on Windows. See [`to_forward_slashes`].
-fn launcher_abs_path(launcher_dir: &Utf8Path, basename: &str, flavor: LauncherFlavor) -> String {
-    let raw = launcher_dir
-        .join(launcher_filename(basename, flavor))
-        .to_string();
-    to_forward_slashes(&raw)
-}
-
 /// Format the cargo-excludes list for the `__EXCLUDE_ENTRIES__`
 /// placeholder. All three target formats (Lua / TOML / JSON) quote
 /// strings with `"` and separate with `, ` — same output works
@@ -1088,58 +892,89 @@ fn per_package_suffix(ctx: &SetupCtx) -> &'static str {
 
 // -- Generators --
 
-/// `nvim-lspconfig` Lua snippet. The user pastes this into their
-/// `init.lua` (or similar). Absolute paths are baked in at install
-/// time — re-run `setup neovim` if the workspace moves.
-fn generate_neovim_lua(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
-    let ra = launcher_abs_path(launcher_dir, RA_LAUNCHER_BASENAME, ctx.flavor);
-    let discover = launcher_abs_path(launcher_dir, DISCOVER_LAUNCHER_BASENAME, ctx.flavor);
-    let proc_macro = opt_block(!ctx.skip_proc_macro_server, NEOVIM_LUA_PROC_MACRO, |t| {
-        let pms = launcher_abs_path(launcher_dir, PMS_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_PMS_LAUNCHER, &pms)
+/// The four forward-slashed absolute paths every editor snippet
+/// (Neovim Lua, Helix TOML, JSON) needs. Three come from the toolchain
+/// directly; `discover` is at `<launcher_dir>/discover_bazel_rust_project`
+/// (setup copied it there). Precomputed once per generator call so the
+/// optional-block closures can borrow strings instead of re-running
+/// `to_forward_slashes` each time.
+struct SnippetPaths {
+    ra: String,
+    pms: String,
+    rustfmt: String,
+    discover: String,
+}
+
+impl SnippetPaths {
+    fn for_ctx(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> Self {
+        Self {
+            ra: to_forward_slashes(ctx.toolchain.rust_analyzer.as_str()),
+            pms: to_forward_slashes(ctx.toolchain.proc_macro_srv.as_str()),
+            rustfmt: to_forward_slashes(ctx.toolchain.rustfmt.as_str()),
+            discover: to_forward_slashes(launcher_dir.join(DISCOVER_BINARY_FILENAME).as_str()),
+        }
+    }
+}
+
+/// Render a snippet `main_template` plus three optional sub-templates
+/// (proc-macro, rustfmt, excludes) under their `TPL_OPT_*`
+/// placeholders. Shared by the three per-editor generators — they
+/// differ only in their template constants.
+fn render_snippet(
+    ctx: &SetupCtx,
+    paths: &SnippetPaths,
+    main_template: &str,
+    proc_macro_template: &str,
+    rustfmt_template: &str,
+    excludes_template: &str,
+) -> String {
+    let proc_macro = opt_block(!ctx.skip_proc_macro_server, proc_macro_template, |t| {
+        t.replace(TPL_PMS_LAUNCHER, &paths.pms)
     });
-    let rustfmt = opt_block(!ctx.skip_rustfmt, NEOVIM_LUA_RUSTFMT, |t| {
-        let path = launcher_abs_path(launcher_dir, RUSTFMT_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_RUSTFMT_LAUNCHER, &path)
+    let rustfmt = opt_block(!ctx.skip_rustfmt, rustfmt_template, |t| {
+        t.replace(TPL_RUSTFMT_LAUNCHER, &paths.rustfmt)
     });
     let excludes = match cargo_excludes_as_quoted_list(ctx) {
-        Some(entries) => NEOVIM_LUA_EXCLUDES.replace(TPL_EXCLUDE_ENTRIES, &entries),
+        Some(entries) => excludes_template.replace(TPL_EXCLUDE_ENTRIES, &entries),
         None => String::new(),
     };
-    NEOVIM_LUA_TEMPLATE
-        .replace(TPL_RA_LAUNCHER, &ra)
-        .replace(TPL_DISCOVER_LAUNCHER, &discover)
+    main_template
+        .replace(TPL_RA_LAUNCHER, &paths.ra)
+        .replace(TPL_DISCOVER_LAUNCHER, &paths.discover)
         .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
         .replace(TPL_OPT_PROC_MACRO, &proc_macro)
         .replace(TPL_OPT_RUSTFMT, &rustfmt)
         .replace(TPL_OPT_EXCLUDES, &excludes)
 }
 
+/// `nvim-lspconfig` Lua snippet. The user pastes this into their
+/// `init.lua` (or similar). Absolute paths are baked in at install
+/// time — re-run `setup neovim` if the workspace moves.
+fn generate_neovim_lua(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
+    let paths = SnippetPaths::for_ctx(ctx, launcher_dir);
+    render_snippet(
+        ctx,
+        &paths,
+        NEOVIM_LUA_TEMPLATE,
+        NEOVIM_LUA_PROC_MACRO,
+        NEOVIM_LUA_RUSTFMT,
+        NEOVIM_LUA_EXCLUDES,
+    )
+}
+
 /// Helix `languages.toml` snippet. Pasted under
 /// `.helix/languages.toml`. Absolute paths baked in (Helix's TOML
 /// parser doesn't expand env or workspace vars).
 fn generate_helix_toml(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
-    let ra = launcher_abs_path(launcher_dir, RA_LAUNCHER_BASENAME, ctx.flavor);
-    let discover = launcher_abs_path(launcher_dir, DISCOVER_LAUNCHER_BASENAME, ctx.flavor);
-    let proc_macro = opt_block(!ctx.skip_proc_macro_server, HELIX_TOML_PROC_MACRO, |t| {
-        let pms = launcher_abs_path(launcher_dir, PMS_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_PMS_LAUNCHER, &pms)
-    });
-    let rustfmt = opt_block(!ctx.skip_rustfmt, HELIX_TOML_RUSTFMT, |t| {
-        let path = launcher_abs_path(launcher_dir, RUSTFMT_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_RUSTFMT_LAUNCHER, &path)
-    });
-    let excludes = match cargo_excludes_as_quoted_list(ctx) {
-        Some(entries) => HELIX_TOML_EXCLUDES.replace(TPL_EXCLUDE_ENTRIES, &entries),
-        None => String::new(),
-    };
-    HELIX_TOML_TEMPLATE
-        .replace(TPL_RA_LAUNCHER, &ra)
-        .replace(TPL_DISCOVER_LAUNCHER, &discover)
-        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
-        .replace(TPL_OPT_PROC_MACRO, &proc_macro)
-        .replace(TPL_OPT_RUSTFMT, &rustfmt)
-        .replace(TPL_OPT_EXCLUDES, &excludes)
+    let paths = SnippetPaths::for_ctx(ctx, launcher_dir);
+    render_snippet(
+        ctx,
+        &paths,
+        HELIX_TOML_TEMPLATE,
+        HELIX_TOML_PROC_MACRO,
+        HELIX_TOML_RUSTFMT,
+        HELIX_TOML_EXCLUDES,
+    )
 }
 
 /// Editor-agnostic JSON snippet using the standard `rust-analyzer.*`
@@ -1147,27 +982,15 @@ fn generate_helix_toml(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
 /// vim-lsp, etc. — anything that lets you set `rust-analyzer` settings
 /// as JSON.
 fn generate_settings_json(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
-    let ra = launcher_abs_path(launcher_dir, RA_LAUNCHER_BASENAME, ctx.flavor);
-    let discover = launcher_abs_path(launcher_dir, DISCOVER_LAUNCHER_BASENAME, ctx.flavor);
-    let proc_macro = opt_block(!ctx.skip_proc_macro_server, SETTINGS_JSON_PROC_MACRO, |t| {
-        let pms = launcher_abs_path(launcher_dir, PMS_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_PMS_LAUNCHER, &pms)
-    });
-    let rustfmt = opt_block(!ctx.skip_rustfmt, SETTINGS_JSON_RUSTFMT, |t| {
-        let path = launcher_abs_path(launcher_dir, RUSTFMT_LAUNCHER_BASENAME, ctx.flavor);
-        t.replace(TPL_RUSTFMT_LAUNCHER, &path)
-    });
-    let excludes = match cargo_excludes_as_quoted_list(ctx) {
-        Some(entries) => SETTINGS_JSON_EXCLUDES.replace(TPL_EXCLUDE_ENTRIES, &entries),
-        None => String::new(),
-    };
-    SETTINGS_JSON_TEMPLATE
-        .replace(TPL_RA_LAUNCHER, &ra)
-        .replace(TPL_DISCOVER_LAUNCHER, &discover)
-        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
-        .replace(TPL_OPT_PROC_MACRO, &proc_macro)
-        .replace(TPL_OPT_RUSTFMT, &rustfmt)
-        .replace(TPL_OPT_EXCLUDES, &excludes)
+    let paths = SnippetPaths::for_ctx(ctx, launcher_dir);
+    render_snippet(
+        ctx,
+        &paths,
+        SETTINGS_JSON_TEMPLATE,
+        SETTINGS_JSON_PROC_MACRO,
+        SETTINGS_JSON_RUSTFMT,
+        SETTINGS_JSON_EXCLUDES,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1178,18 +1001,24 @@ fn generate_settings_json(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
 mod tests {
     use super::*;
 
+    fn dummy_toolchain() -> ToolchainBinaries {
+        ToolchainBinaries {
+            rust_analyzer: Utf8PathBuf::from("/obase/external/ra/rust-analyzer"),
+            proc_macro_srv: Utf8PathBuf::from("/obase/external/ra/proc-macro-srv"),
+            rustfmt: Utf8PathBuf::from("/obase/external/rfmt/rustfmt"),
+        }
+    }
+
     fn dummy_ctx() -> (SetupCtx, Utf8PathBuf) {
         let workspace = Utf8PathBuf::from("/ws");
         let launcher_dir = workspace.join(".vscode").join(LAUNCHER_SUBDIR);
         let ctx = SetupCtx {
             workspace,
-            output_user_root: launcher_dir.join("output_user_root"),
-            cache_dir: launcher_dir.join("cache"),
             launcher_dir: launcher_dir.clone(),
-            flavor: LauncherFlavor::Posix,
             skip_proc_macro_server: false,
             skip_rustfmt: false,
             per_package_workspaces: false,
+            toolchain: dummy_toolchain(),
         };
         (ctx, launcher_dir)
     }
@@ -1225,10 +1054,10 @@ mod tests {
         let obj = merged.as_object().unwrap();
         // User key preserved
         assert_eq!(obj.get("editor.tabSize"), Some(&json!(4)));
-        // Managed key overwritten and points at the namespaced launcher dir.
+        // Managed key overwritten and points at the canonical toolchain path.
         assert_eq!(
             obj.get(SERVER_PATH_KEY).unwrap().as_str().unwrap(),
-            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rust_analyzer.sh"
+            "/obase/external/ra/rust-analyzer"
         );
         // discoverConfig present
         assert!(obj.get(DISCOVER_CONFIG_KEY).is_some());
@@ -1278,36 +1107,36 @@ mod tests {
     }
 
     #[test]
-    fn rustfmt_override_is_argv_array_pointing_at_launcher() {
+    fn rustfmt_override_is_argv_array_pointing_at_toolchain() {
         let (ctx, launcher_dir) = dummy_ctx();
         let keys = vscode_managed_keys(&ctx, &launcher_dir);
         let val = replace_value(&keys, RUSTFMT_OVERRIDE_KEY);
         let arr = val.as_array().unwrap();
         assert_eq!(arr.len(), 1);
-        assert_eq!(
-            arr[0].as_str().unwrap(),
-            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rustfmt.sh"
-        );
+        assert_eq!(arr[0].as_str().unwrap(), "/obase/external/rfmt/rustfmt");
     }
 
     #[test]
-    fn launcher_path_falls_back_to_absolute_when_outside_workspace() {
-        let workspace = Utf8PathBuf::from("/ws");
-        let outside = Utf8PathBuf::from("/elsewhere/.vscode/.rules_rust_analyzer");
-        let path = launcher_workspace_path(&workspace, &outside, "rust_analyzer.sh");
-        assert!(path.starts_with("/elsewhere"));
-        assert!(!path.contains("workspaceFolder"));
-    }
-
-    #[test]
-    fn windows_flavor_emits_bat_extension() {
-        let (mut ctx, launcher_dir) = dummy_ctx();
-        ctx.flavor = LauncherFlavor::Windows;
+    fn vscode_managed_keys_emit_toolchain_paths_and_discover_in_launcher_dir() {
+        let (ctx, launcher_dir) = dummy_ctx();
         let keys = vscode_managed_keys(&ctx, &launcher_dir);
-        let server = replace_value(&keys, SERVER_PATH_KEY).as_str().unwrap();
-        assert!(
-            server.ends_with("/rust_analyzer.bat"),
-            "expected .bat extension on Windows; got {server}"
+        // The four rust-analyzer.* path keys map to the dummy toolchain
+        // absolutes; discoverConfig.command[0] is rooted at launcher_dir.
+        assert_eq!(
+            replace_value(&keys, SERVER_PATH_KEY).as_str().unwrap(),
+            "/obase/external/ra/rust-analyzer"
+        );
+        assert_eq!(
+            replace_value(&keys, PROC_MACRO_SRV_KEY).as_str().unwrap(),
+            "/obase/external/ra/proc-macro-srv"
+        );
+        let discover_cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
+            .get("command")
+            .and_then(|v| v.as_array())
+            .expect("command must be an array");
+        assert_eq!(
+            discover_cmd[0].as_str().unwrap(),
+            format!("/ws/.vscode/.rules_rust_analyzer/{DISCOVER_BINARY_FILENAME}")
         );
     }
 
@@ -1403,128 +1232,6 @@ mod tests {
     }
 
     #[test]
-    fn bake_placeholders_substitutes_all_four_placeholders() {
-        let template = "WS=\"__WORKSPACE_ROOT__\"\nOUR=\"__RULES_RUST_RA_OUTPUT_USER_ROOT__\"\nCACHE=\"__RULES_RUST_RA_CACHE_DIR__\"\nLDIR=\"__RULES_RUST_RA_LAUNCHER_DIR__\"\n";
-        let baked = bake_placeholders(
-            template,
-            "/abs/ws",
-            "/home/u/out",
-            "/abs/ws/cache",
-            "/abs/ws/.vscode/.rules_rust_analyzer",
-        );
-        assert!(baked.contains("WS=\"/abs/ws\""));
-        assert!(baked.contains("OUR=\"/home/u/out\""));
-        assert!(baked.contains("CACHE=\"/abs/ws/cache\""));
-        assert!(baked.contains("LDIR=\"/abs/ws/.vscode/.rules_rust_analyzer\""));
-        assert!(!baked.contains(WORKSPACE_ROOT_PLACEHOLDER));
-        assert!(!baked.contains(OUTPUT_USER_ROOT_PLACEHOLDER));
-        assert!(!baked.contains(CACHE_DIR_PLACEHOLDER));
-        assert!(!baked.contains(LAUNCHER_DIR_PLACEHOLDER));
-    }
-
-    #[test]
-    fn cache_dir_placeholder_is_present_only_in_discover_launchers() {
-        // Discover launchers need the cache-dir env var baked in; nothing
-        // else interacts with the cache. A regression that leaks the
-        // placeholder into another template would ship a launcher that
-        // silently sets a bogus env var on every invocation.
-        assert!(DISCOVER_LAUNCHER_SH.contains(CACHE_DIR_PLACEHOLDER));
-        assert!(DISCOVER_LAUNCHER_BAT.contains(CACHE_DIR_PLACEHOLDER));
-        for (name, body) in [
-            ("ra.sh", RA_LAUNCHER_SH),
-            ("ra.bat", RA_LAUNCHER_BAT),
-            ("pms.sh", PMS_LAUNCHER_SH),
-            ("pms.bat", PMS_LAUNCHER_BAT),
-            ("rustfmt.sh", RUSTFMT_LAUNCHER_SH),
-            ("rustfmt.bat", RUSTFMT_LAUNCHER_BAT),
-            ("flycheck.sh", FLYCHECK_LAUNCHER_SH),
-            ("flycheck.bat", FLYCHECK_LAUNCHER_BAT),
-        ] {
-            assert!(
-                !body.contains(CACHE_DIR_PLACEHOLDER),
-                "{name} unexpectedly contains the cache-dir placeholder"
-            );
-        }
-    }
-
-    #[test]
-    fn launcher_dir_placeholder_is_present_only_in_discover_launchers() {
-        // Discover bakes the editor-specific launcher dir so the flycheck
-        // runnable it materializes in rust-project.json points at the
-        // right path. Other launchers don't publish runnables and must
-        // not contain the placeholder.
-        assert!(DISCOVER_LAUNCHER_SH.contains(LAUNCHER_DIR_PLACEHOLDER));
-        assert!(DISCOVER_LAUNCHER_BAT.contains(LAUNCHER_DIR_PLACEHOLDER));
-        for (name, body) in [
-            ("ra.sh", RA_LAUNCHER_SH),
-            ("ra.bat", RA_LAUNCHER_BAT),
-            ("pms.sh", PMS_LAUNCHER_SH),
-            ("pms.bat", PMS_LAUNCHER_BAT),
-            ("rustfmt.sh", RUSTFMT_LAUNCHER_SH),
-            ("rustfmt.bat", RUSTFMT_LAUNCHER_BAT),
-            ("flycheck.sh", FLYCHECK_LAUNCHER_SH),
-            ("flycheck.bat", FLYCHECK_LAUNCHER_BAT),
-        ] {
-            assert!(
-                !body.contains(LAUNCHER_DIR_PLACEHOLDER),
-                "{name} unexpectedly contains the launcher-dir placeholder"
-            );
-        }
-    }
-
-    #[test]
-    fn every_launcher_template_contains_workspace_root_placeholder() {
-        // WORKSPACE_ROOT is in EVERY launcher (they all need to find
-        // bazel-bin). A regression that dropped it would result in a
-        // launcher that fails with `cd: __WORKSPACE_ROOT__: No such file`.
-        for (name, body) in [
-            ("ra.sh", RA_LAUNCHER_SH),
-            ("ra.bat", RA_LAUNCHER_BAT),
-            ("pms.sh", PMS_LAUNCHER_SH),
-            ("pms.bat", PMS_LAUNCHER_BAT),
-            ("rustfmt.sh", RUSTFMT_LAUNCHER_SH),
-            ("rustfmt.bat", RUSTFMT_LAUNCHER_BAT),
-            ("flycheck.sh", FLYCHECK_LAUNCHER_SH),
-            ("flycheck.bat", FLYCHECK_LAUNCHER_BAT),
-            ("discover.sh", DISCOVER_LAUNCHER_SH),
-            ("discover.bat", DISCOVER_LAUNCHER_BAT),
-        ] {
-            assert!(
-                body.contains(WORKSPACE_ROOT_PLACEHOLDER),
-                "{name} missing {WORKSPACE_ROOT_PLACEHOLDER}"
-            );
-        }
-    }
-
-    #[test]
-    fn only_flycheck_launchers_contain_output_user_root_placeholder() {
-        // The flycheck wrapper spawns `bazel build` internally and needs
-        // a dedicated output_user_root; setup bakes the path in via the
-        // placeholder. The other launchers exec their target directly and
-        // never call Bazel themselves, so they MUST NOT contain the
-        // placeholder — if one snuck in, the unsubstituted string would
-        // survive into the on-disk launcher and break the user's setup
-        // with a cryptic Bazel path error.
-        assert!(FLYCHECK_LAUNCHER_SH.contains(OUTPUT_USER_ROOT_PLACEHOLDER));
-        assert!(FLYCHECK_LAUNCHER_BAT.contains(OUTPUT_USER_ROOT_PLACEHOLDER));
-        for (name, body) in [
-            ("ra.sh", RA_LAUNCHER_SH),
-            ("ra.bat", RA_LAUNCHER_BAT),
-            ("pms.sh", PMS_LAUNCHER_SH),
-            ("pms.bat", PMS_LAUNCHER_BAT),
-            ("rustfmt.sh", RUSTFMT_LAUNCHER_SH),
-            ("rustfmt.bat", RUSTFMT_LAUNCHER_BAT),
-            ("discover.sh", DISCOVER_LAUNCHER_SH),
-            ("discover.bat", DISCOVER_LAUNCHER_BAT),
-        ] {
-            assert!(
-                !body.contains(OUTPUT_USER_ROOT_PLACEHOLDER),
-                "{name} unexpectedly contains the output_user_root placeholder"
-            );
-        }
-    }
-
-    #[test]
     fn launcher_dir_for_picks_editor_specific_subdir() {
         let ws = Utf8PathBuf::from("/workspace");
         assert_eq!(
@@ -1568,13 +1275,15 @@ mod tests {
     }
 
     #[test]
-    fn neovim_snippet_contains_launcher_paths_and_lens_enable() {
+    fn neovim_snippet_contains_toolchain_and_discover_paths_and_lens_enable() {
         let (ctx, _) = dummy_ctx();
         let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
         let snippet = generate_neovim_lua(&ctx, &launcher_dir);
         assert!(snippet.contains("require(\"lspconfig\").rust_analyzer.setup"));
-        assert!(snippet.contains("/ws/.rules_rust_analyzer/rust_analyzer.sh"));
-        assert!(snippet.contains("/ws/.rules_rust_analyzer/discover_bazel_rust_project.sh"));
+        // rust-analyzer LSP from the toolchain.
+        assert!(snippet.contains("/obase/external/ra/rust-analyzer"));
+        // discover binary from the launcher dir.
+        assert!(snippet.contains("/ws/.rules_rust_analyzer/discover_bazel_rust_project"));
         assert!(snippet.contains("lens = { enable = true }"));
     }
 
@@ -1587,7 +1296,10 @@ mod tests {
         assert!(snippet.contains(
             "[language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]"
         ));
-        assert!(snippet.contains("/ws/.helix/.rules_rust_analyzer/rust_analyzer.sh"));
+        // rust-analyzer LSP path comes from the toolchain.
+        assert!(snippet.contains("/obase/external/ra/rust-analyzer"));
+        // discover sits next to the helix-specific launcher dir.
+        assert!(snippet.contains("/ws/.helix/.rules_rust_analyzer/discover_bazel_rust_project"));
     }
 
     #[test]
@@ -1601,6 +1313,15 @@ mod tests {
         assert!(obj.contains_key(DISCOVER_CONFIG_KEY));
         assert!(obj.contains_key(PROC_MACRO_SRV_KEY));
         assert!(obj.contains_key(RUSTFMT_OVERRIDE_KEY));
+        // Toolchain paths land in the right JSON keys.
+        assert_eq!(
+            obj.get(SERVER_PATH_KEY).unwrap().as_str().unwrap(),
+            "/obase/external/ra/rust-analyzer"
+        );
+        assert_eq!(
+            obj.get(PROC_MACRO_SRV_KEY).unwrap().as_str().unwrap(),
+            "/obase/external/ra/proc-macro-srv"
+        );
     }
 
     /// JSON's trailing-comma intolerance is the trickiest template-
@@ -1666,10 +1387,7 @@ mod tests {
         assert!(obj.contains_key(DISCOVER_CONFIG_KEY));
     }
 
-    /// Sanity-check that the templates ARE actually template-shaped: an
-    /// edit that drops a placeholder would otherwise silently produce
-    /// snippets with `__OPT_FOO__` literal text baked in.
-    /// Default (per-package off) → discover command has only the launcher
+    /// Default (per-package off) → discover command has only the binary
     /// path. Opt-in (per-package on) → discover command also has `"{arg}"`,
     /// the rust-analyzer placeholder for the file the user opened.
     #[test]
@@ -1684,7 +1402,7 @@ mod tests {
         assert_eq!(
             cmd.len(),
             1,
-            "default: discover command should be [launcher]; got {cmd:?}"
+            "default: discover command should be [binary]; got {cmd:?}"
         );
 
         // Opt-in.
@@ -1697,7 +1415,7 @@ mod tests {
         assert_eq!(
             cmd.len(),
             2,
-            "per-package on: discover command should be [launcher, \"{{arg}}\"]; got {cmd:?}"
+            "per-package on: discover command should be [binary, \"{{arg}}\"]; got {cmd:?}"
         );
         assert_eq!(cmd[1].as_str(), Some("{arg}"));
     }

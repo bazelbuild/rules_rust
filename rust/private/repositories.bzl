@@ -774,6 +774,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         rustc = "//:rustc",
         proc_macro_srv = proc_macro_srv,
         rust_analyzer = rust_analyzer,
+        version = version,
     ))
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_contents))

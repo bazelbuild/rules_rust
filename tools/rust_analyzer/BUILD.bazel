@@ -1,6 +1,8 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
 load("//tools/private:tool_utils.bzl", "aspect_repository")
+load(":env_file.bzl", "env_file")
+load(":opt_transition.bzl", "opt_executable")
 
 rust_binary(
     name = "discover_bazel_rust_project",
@@ -60,72 +62,6 @@ rust_binary(
     ],
 )
 
-# Stable entry point for editors / LSP clients. Locates the Bazel-built
-# rust-analyzer via runfiles and `exec`s it so the LSP server matches the
-# Bazel toolchain's rustc, sysroot, and (when invoked as its own proc-macro
-# subcommand) proc-macro-srv. Point `rust-analyzer.server.path` at
-# `bazel-bin/tools/rust_analyzer/rust_analyzer` after `bazel build`.
-rust_binary(
-    name = "rust_analyzer",
-    srcs = ["bin/rust_analyzer.rs"],
-    data = [
-        "//rust/toolchain:current_rust_analyzer_toolchain",
-    ],
-    edition = "2021",
-    rustc_env = {
-        "RUST_ANALYZER_RLOCATIONPATH": "$(RUST_ANALYZER_RLOCATIONPATH)",
-    },
-    toolchains = ["//rust/toolchain:current_rust_analyzer_toolchain"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//rust/runfiles",
-    ],
-)
-
-# Companion wrapper for the proc-macro server. Use when an editor's bundled
-# rust-analyzer is a different version than the one in the Bazel toolchain
-# and proc-macro ABI mismatches cause silent expansion failures — point
-# `rust-analyzer.procMacro.server` at
-# `bazel-bin/tools/rust_analyzer/rust_analyzer_proc_macro_srv`.
-rust_binary(
-    name = "rust_analyzer_proc_macro_srv",
-    srcs = ["bin/rust_analyzer_proc_macro_srv.rs"],
-    data = [
-        "//rust/toolchain:current_rust_analyzer_toolchain",
-    ],
-    edition = "2021",
-    rustc_env = {
-        "RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH": "$(RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH)",
-    },
-    toolchains = ["//rust/toolchain:current_rust_analyzer_toolchain"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//rust/runfiles",
-    ],
-)
-
-# Wrapper around the Bazel rustfmt toolchain's binary. setup_vscode wires
-# `rust-analyzer.rustfmt.overrideCommand` at the launcher that exec's this;
-# the LSP server pipes file contents on stdin and reads formatted output on
-# stdout, so users can format `.rs` files without ever installing rustfmt
-# on the host.
-rust_binary(
-    name = "rustfmt",
-    srcs = ["bin/rustfmt.rs"],
-    data = [
-        "//rust/toolchain:current_rustfmt_toolchain",
-    ],
-    edition = "2021",
-    rustc_env = {
-        "RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
-    },
-    toolchains = ["//rust/toolchain:current_rustfmt_toolchain"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//rust/runfiles",
-    ],
-)
-
 # On-save flycheck wrapper. The assembled rust-project.json wires its
 # `flycheck` runnable to `bazel run` this target with `{label}` and
 # `{saved_file}` after rust-analyzer substitutes them. It runs
@@ -153,35 +89,68 @@ rust_test(
     crate = ":flycheck",
 )
 
+# Opt-mode re-exposures of the two source binaries setup copies into
+# the user's launcher dir. discover/flycheck run on every save /
+# discovery and pay the fastbuild→opt gap repeatedly; forcing `-c opt`
+# here means setup always installs the fastest available build,
+# independent of the parent build's `--compilation_mode`.
+opt_executable(
+    name = "discover_bazel_rust_project_opt",
+    src = ":discover_bazel_rust_project",
+    visibility = ["//visibility:private"],
+)
+
+opt_executable(
+    name = "flycheck_opt",
+    src = ":flycheck",
+    visibility = ["//visibility:private"],
+)
+
 # One-command bootstrap that wires VSCode, Neovim, Helix, or any other
-# rust-analyzer-capable editor at the Bazel rust-analyzer toolchain. Drops
-# small launcher scripts at editor-appropriate locations so the LSP /
-# discover / flycheck / rustfmt commands keep working across `bazel clean`,
-# and (where the editor's config format is mergeable JSON) writes/merges
-# the relevant settings. Re-runnable; preserves user keys.
+# rust-analyzer-capable editor at the Bazel rust-analyzer toolchain. Copies
+# the discover/flycheck binaries to editor-appropriate locations and
+# (where the editor's config format is mergeable JSON) writes/merges the
+# relevant settings. Re-runnable; preserves user keys.
 #
 # Invoke with a subcommand per IDE: `vscode`, `neovim`, `helix`, `print`.
 rust_binary(
     name = "setup",
     srcs = ["bin/setup.rs"],
-    # Embedded via `include_str!` into the binary so the launcher templates
-    # ship inside `setup` itself and need no runfiles resolution. Both POSIX
-    # and Windows variants ship; setup picks one at runtime.
-    compile_data = [
-        "data/launcher_discover_bazel_rust_project.bat",
-        "data/launcher_discover_bazel_rust_project.sh",
-        "data/launcher_flycheck.bat",
-        "data/launcher_flycheck.sh",
-        "data/launcher_rust_analyzer.bat",
-        "data/launcher_rust_analyzer.sh",
-        "data/launcher_rust_analyzer_proc_macro_srv.bat",
-        "data/launcher_rust_analyzer_proc_macro_srv.sh",
-        "data/launcher_rustfmt.bat",
-        "data/launcher_rustfmt.sh",
+    # setup resolves these via runfiles at install time:
+    #   * The three toolchain binaries get baked as absolute
+    #     `output_base/external/...` paths into the editor's
+    #     rust-analyzer settings (they survive `bazel clean`; only
+    #     `--expunge` invalidates them).
+    #   * The two source binaries (discover, flycheck) get copied into
+    #     the launcher dir so the editor's commands stay valid across
+    #     `bazel clean`. The binaries self-locate their config from
+    #     `current_exe()` — no launcher scripts. The toolchain-info
+    #     JSON used to be copied here too; it's now embedded into
+    #     `gen_rust_project_lib` at compile time via `include_str!`.
+    data = [
+        ":discover_bazel_rust_project_opt",
+        ":flycheck_opt",
+        "//rust/toolchain:current_rust_analyzer_toolchain",
+        "//rust/toolchain:current_rustfmt_toolchain",
     ],
     edition = "2021",
+    rustc_env = {
+        "RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
+        "RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH": "$(RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH)",
+        "RUST_ANALYZER_RLOCATIONPATH": "$(RUST_ANALYZER_RLOCATIONPATH)",
+    },
+    toolchains = [
+        "//rust/toolchain:current_rust_analyzer_toolchain",
+        "//rust/toolchain:current_rustfmt_toolchain",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        # Source of truth for the on-disk filenames setup copies into
+        # the launcher dir (`{DISCOVER,FLYCHECK}_BINARY_FILENAME`).
+        # Sharing them keeps the install side and the consumer side
+        # (rust_project.rs's flycheck-runnable path emitter) in sync.
+        ":gen_rust_project_lib",
+        "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
         "//tools/rust_analyzer/3rdparty/crates:camino",
         "//tools/rust_analyzer/3rdparty/crates:clap",
@@ -196,16 +165,36 @@ rust_test(
     crate = ":setup",
 )
 
+# Pairs with the `compile_data` entry below: the env_file emits
+# `RUST_ANALYZER_TOOLCHAIN_JSON=<src.path>` through a `map_each`
+# callback so Bazel's path mapping rewrites the path before the action
+# runs. `process_wrapper` reads the env file and sets the env var, then
+# lib.rs's `include_str!(env!("RUST_ANALYZER_TOOLCHAIN_JSON"))` opens
+# the same path-mapped JSON sibling. Going through `rustc_env =`
+# directly would bake the analysis-time path that path mapping never
+# rewrites — the compile-time read then fails to find the file under
+# `--experimental_output_paths=strip`.
+env_file(
+    name = "toolchain_info_env",
+    src = "//rust/private:rust_analyzer_detect_sysroot",
+    key = "RUST_ANALYZER_TOOLCHAIN_JSON",
+)
+
 rust_library(
     name = "gen_rust_project_lib",
     srcs = glob(
         ["**/*.rs"],
         exclude = ["bin"],
     ),
-    data = [
+    # The JSON file itself must be available to rustc — `:toolchain_info_env`
+    # only emits the env-var wrapper pointing at this path.
+    compile_data = [
         "//rust/private:rust_analyzer_detect_sysroot",
     ],
     edition = "2018",
+    rustc_env_files = [
+        ":toolchain_info_env",
+    ],
     deps = [
         "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",

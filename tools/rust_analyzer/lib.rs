@@ -3,11 +3,10 @@ pub mod bep;
 mod cache;
 mod rust_project;
 
-use std::{collections::BTreeMap, convert::TryInto, fs, process::Command};
+use std::{collections::BTreeMap, fs, process::Command};
 
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
-use runfiles::Runfiles;
 use rust_project::RustProject;
 pub use rust_project::{
     assemble_rust_project, diagnose, format_diagnostics, AssemblyDiagnostics, DiscoverProject,
@@ -21,6 +20,62 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
+
+/// On-disk filenames `setup` uses for the source binaries it copies
+/// into the editor's launcher dir. Shared with `rust_project.rs`'s
+/// flycheck-runnable path emitter and the discover-launcher key in
+/// the editor configs setup writes, so the install side and the
+/// reference side can't disagree on extension handling.
+///
+/// Windows binaries carry `.exe` (Bazel emits them with the extension
+/// in the runfiles tree; the install copy preserves it; rust-analyzer
+/// resolves the absolute path with extension intact). POSIX binaries
+/// have no extension.
+#[cfg(windows)]
+pub const FLYCHECK_BINARY_FILENAME: &str = "flycheck.exe";
+#[cfg(not(windows))]
+pub const FLYCHECK_BINARY_FILENAME: &str = "flycheck";
+
+#[cfg(windows)]
+pub const DISCOVER_BINARY_FILENAME: &str = "discover_bazel_rust_project.exe";
+#[cfg(not(windows))]
+pub const DISCOVER_BINARY_FILENAME: &str = "discover_bazel_rust_project";
+
+/// Embedded toolchain-info JSON. `:toolchain_info_env` (an `env_file`
+/// rule in `BUILD.bazel`) wraps `rust_analyzer_detect_sysroot`'s JSON
+/// output as `RUST_ANALYZER_TOOLCHAIN_JSON=<file.path>`, generated
+/// through an `Args.add_all` `map_each` callback so Bazel's path
+/// mapping rewrites the path. `process_wrapper` reads the env file and
+/// sets the env var, then rustc resolves `env!(...)` at compile time
+/// and `include_str!` reads the JSON sibling that `compile_data`
+/// supplied to the action — both files in the same path-mapped
+/// sandbox layout, no mismatch. Baking the path via
+/// `rustc_env = {"K": "$(execpath …)"}` would skip path mapping
+/// entirely (env values aren't path-mapped) and miss the file.
+///
+/// The content uses `__OUTPUT_BASE__` / `__WORKSPACE__` / `__EXEC_ROOT__`
+/// placeholder tokens substituted at runtime from `bazel info` values
+/// (see `deserialize_with_substitution`), so the compile-time constant
+/// is location-independent.
+const TOOLCHAIN_INFO_RAW: &str = include_str!(env!("RUST_ANALYZER_TOOLCHAIN_JSON"));
+
+/// The directory the binary that called this function was invoked from
+/// — i.e. `dirname(current_exe())`. `setup` copies the source binaries
+/// (`discover_bazel_rust_project`, `flycheck`) into the editor's
+/// launcher dir as real files (not symlinks), so `current_exe()`
+/// returns the install path on every platform. Used by both source
+/// binaries to self-locate their config-sibling files (toolchain JSON,
+/// cache dir, output_user_root). `current_exe` rather than `argv[0]`
+/// because the install is a real `fs::copy`, not a runfiles symlink
+/// (the runfiles crate's argv[0]-first policy doesn't apply post-install).
+pub fn install_dir() -> anyhow::Result<Utf8PathBuf> {
+    let exe = std::env::current_exe().context("locating current_exe")?;
+    let parent = exe
+        .parent()
+        .with_context(|| format!("current_exe has no parent: {}", exe.display()))?;
+    Utf8PathBuf::from_path_buf(parent.to_path_buf())
+        .map_err(|p| anyhow::anyhow!("install dir is not valid UTF-8: {}", p.display()))
+}
 
 #[allow(clippy::too_many_arguments)]
 pub fn generate_rust_project(
@@ -56,14 +111,9 @@ pub fn generate_rust_project(
         bep::parse_spec_paths(&bep_file).with_context(|| format!("parsing BEP file {bep_file}"))?;
     log::info!("discovered {} crate spec files via BEP", spec_paths.len());
 
-    let toolchain_info_path: Utf8PathBuf = runfiles::rlocation!(
-        Runfiles::create()?,
-        "rules_rust/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
-    )
-    .context("toolchain runfile not found")?
-    .try_into()?;
-    let toolchain_info_raw = fs::read_to_string(&toolchain_info_path)
-        .with_context(|| format!("reading toolchain info {toolchain_info_path}"))?;
+    // Toolchain-info JSON is embedded at compile time — see
+    // `TOOLCHAIN_INFO_RAW` (above) for the wiring.
+    let toolchain_info_raw = TOOLCHAIN_INFO_RAW;
 
     // Read every spec file once; the contents feed both the cache key and the
     // consolidate/assemble step on a miss.
@@ -72,7 +122,7 @@ pub fn generate_rust_project(
     let launcher_dir = std::env::var(cache::LAUNCHER_DIR_ENV_VAR).unwrap_or_default();
     let cache_key = cache::compute_key(
         &spec_contents,
-        &toolchain_info_raw,
+        toolchain_info_raw,
         bazel,
         workspace,
         execution_root,
@@ -95,8 +145,8 @@ pub fn generate_rust_project(
     }
 
     let toolchain_info: ToolchainInfo =
-        deserialize_with_substitution(&toolchain_info_raw, output_base, workspace, execution_root)
-            .with_context(|| format!("parsing toolchain info {toolchain_info_path}"))?;
+        deserialize_with_substitution(toolchain_info_raw, output_base, workspace, execution_root)
+            .context("parsing embedded toolchain info JSON")?;
 
     let crate_specs =
         parse_and_consolidate(&spec_contents, output_base, workspace, execution_root)?;
@@ -335,6 +385,14 @@ fn dir_to_bazel_package(dir: &str) -> String {
 pub struct ToolchainInfo {
     pub sysroot: Utf8PathBuf,
     pub sysroot_src: Utf8PathBuf,
+    /// Declared rust-analyzer version (e.g. `"1.96.0"`). Empty when the
+    /// toolchain rule didn't set it (user-supplied
+    /// `rust_analyzer_toolchain` that omits the attribute). Consumers
+    /// should treat empty as "assume oldest supported" to avoid emitting
+    /// features that newer rust-analyzer versions added but older ones
+    /// reject.
+    #[serde(default)]
+    pub version: String,
 }
 
 #[cfg(test)]

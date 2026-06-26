@@ -348,6 +348,7 @@ def _rust_analyzer_toolchain_impl(ctx):
         rustc = ctx.executable.rustc,
         rustc_srcs = ctx.attr.rustc_srcs,
         rustc_srcs_path = ctx.attr.rustc_srcs_path,
+        version = ctx.attr.version,
         make_variables = make_variable_info,
     )
 
@@ -386,6 +387,17 @@ rust_analyzer_toolchain = rule(
         "rustc_srcs_path": attr.string(
             doc = "The direct path to rustc srcs relative to rustc_srcs package root.",
             default = "library",
+        ),
+        "version": attr.string(
+            doc = (
+                "The rust-analyzer version (e.g. `1.96.0`). Optional. " +
+                "When set, consumers (e.g. the discover binary) can gate " +
+                "newer rust-analyzer features that older versions reject. " +
+                "Left empty for user-supplied toolchains where the version " +
+                "isn't known statically; consumers should treat the empty " +
+                "value as 'assume oldest supported'."
+            ),
+            default = "",
         ),
     },
 )
@@ -446,6 +458,11 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     toolchain_info = {
         "sysroot": sysroot,
         "sysroot_src": sysroot_src,
+        # Empty string when the toolchain doesn't declare a version
+        # (user-supplied rust_analyzer_toolchain that omits the attr).
+        # The Rust-side consumer treats empty as "assume oldest" so
+        # forward-compatible features stay off in that case.
+        "version": rust_analyzer_toolchain.version,
     }
 
     output = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_toolchain.json")

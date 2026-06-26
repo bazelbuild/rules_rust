@@ -109,6 +109,14 @@ stale entries — that's what the manual `rm -rf` is for.
 Check `<workspace>/.rules_rust_analyzer/flycheck.log` — the on-save
 wrapper appends one line per internal failure.
 
+### After `bazel clean --expunge` or toolchain changes
+
+Re-run `setup`. The launcher scripts reference the rust-analyzer /
+rustfmt / proc-macro-srv binaries by absolute path baked at install
+time. Those binaries live in Bazel's output_base; `--expunge` clears
+that, and toolchain changes move them to new paths. Re-running setup
+resolves the new paths and refreshes the launchers.
+
 ## Workspace splitting
 
 By default the whole project is treated as a single workspace.

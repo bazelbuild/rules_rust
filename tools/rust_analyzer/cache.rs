@@ -74,28 +74,27 @@ pub fn compute_key(
     format!("{:016x}", hasher.finish())
 }
 
-/// Env var setup bakes into the discover launcher carrying the editor-
-/// specific directory where launchers live. Consumed by both
-/// `compute_key` (cache shard) and `rust_project::flycheck_launcher_path`
-/// (path embedded in the assembled JSON). Reading it once at the call
-/// site keeps both readers consistent.
+/// Env var carrying the editor-specific install dir. Published by
+/// `discover_rust_project::self_locate_config` from `current_exe()`'s
+/// dirname; consumed by both `compute_key` (cache shard) and
+/// `rust_project::flycheck_launcher_path` (path embedded in the
+/// assembled JSON). Reading it once at the call site keeps both
+/// readers consistent.
 pub const LAUNCHER_DIR_ENV_VAR: &str = "RULES_RUST_RA_LAUNCHER_DIR";
 
-/// Env var that overrides the cache directory location. `setup` bakes the
-/// resolved path into the discover launcher (`export RULES_RUST_RA_CACHE_DIR=...`)
-/// so the discover binary inherits it; users can also set it manually for
-/// one-off runs.
+/// Env var that overrides the cache directory location. Published by
+/// `discover_rust_project::self_locate_config`; can also be set
+/// manually for one-off runs.
 const CACHE_DIR_ENV_VAR: &str = "RULES_RUST_RA_CACHE_DIR";
 
 /// Resolve the cache directory. `$RULES_RUST_RA_CACHE_DIR` wins if set;
 /// otherwise we fall back to `<workspace>/.rules_rust_analyzer/cache`.
 ///
-/// `setup` is authoritative over the actual location — it bakes the
-/// resolved path (editor-specific or `--cache-dir`-overridden) into the
-/// discover launcher's `$RULES_RUST_RA_CACHE_DIR` env. This fallback
-/// only fires when discover is invoked outside the launcher (e.g.
-/// direct exec for debugging); the workspace-local default keeps that
-/// case from depending on per-user state.
+/// `discover_rust_project::self_locate_config` publishes the env var
+/// from `current_exe()`'s dirname (the install dir setup copied us
+/// into). This fallback only fires when discover is invoked from
+/// somewhere other than an install dir — direct exec for debugging,
+/// or the legacy `gen_rust_project` binary which doesn't self-locate.
 pub fn cache_dir(workspace: &Utf8Path) -> Utf8PathBuf {
     if let Ok(s) = std::env::var(CACHE_DIR_ENV_VAR) {
         if !s.is_empty() {
