@@ -407,14 +407,7 @@ def _rust_toolchain_impl(ctx):
 
     compilation_mode_opts = {}
     for k, opt_level in effective_opt_levels.items():
-        if not k in effective_debug_info:
-            fail("Compilation mode {} is not defined in debug_info but is defined in opt_level".format(k))
-        if not k in effective_strip_level:
-            fail("Compilation mode {} is not defined in strip_level but is defined in opt_level".format(k))
         compilation_mode_opts[k] = struct(debug_info = effective_debug_info[k], opt_level = opt_level, strip_level = effective_strip_level[k])
-    for k in effective_debug_info.keys():
-        if not k in effective_opt_levels:
-            fail("Compilation mode {} is not defined in opt_level but is defined in debug_info".format(k))
 
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value

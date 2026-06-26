@@ -3,10 +3,36 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary", "rust_shared_library", "rust_test")
+load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
+load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
+load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
     "assert_argv_contains",
+)
+
+def _debug_info_modes_match_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    debug_modes = sorted(analysistest.target_under_test(env)[RustDebugInfoInfo].levels.keys())
+    opt_modes = sorted(ctx.attr._opt_level[RustOptLevelInfo].levels.keys())
+    strip_modes = sorted(ctx.attr._strip_level[RustStripLevelInfo].levels.keys())
+    asserts.equals(env, debug_modes, opt_modes, "debug_info and opt_level compilation modes must match")
+    asserts.equals(env, debug_modes, strip_modes, "debug_info and strip_level compilation modes must match")
+    return analysistest.end(env)
+
+_debug_info_modes_match_test = analysistest.make(
+    _debug_info_modes_match_test_impl,
+    attrs = {
+        "_opt_level": attr.label(
+            default = "//rust/settings:opt_level",
+            providers = [RustOptLevelInfo],
+        ),
+        "_strip_level": attr.label(
+            default = "//rust/settings:strip_level",
+            providers = [RustStripLevelInfo],
+        ),
+    },
 )
 
 def _pdb_file_test_impl(ctx, expect_pdb_file):
@@ -248,6 +274,11 @@ def debug_info_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:macos"],
     )
 
+    _debug_info_modes_match_test(
+        name = "debug_info_modes_match_test",
+        target_under_test = "//rust/settings:debug_info",
+    )
+
     write_file(
         name = "flag_bin_main",
         out = "flag_main.rs",
@@ -299,6 +330,7 @@ def debug_info_analysis_test_suite(name):
             ":lib_dsym_test",
             ":bin_dsym_test",
             ":test_dsym_test",
+            ":debug_info_modes_match_test",
             ":debug_info_for_dbg_test",
             ":debug_info_for_fastbuild_test",
             ":debug_info_for_opt_test",

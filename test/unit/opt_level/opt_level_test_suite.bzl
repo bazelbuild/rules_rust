@@ -1,8 +1,11 @@
 """Starlark tests for `rust_toolchain.opt_level`"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary")
+load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
+load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
+load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -104,6 +107,29 @@ _opt_level_minsize_setting_test = analysistest.make(
     },
 )
 
+def _opt_level_modes_match_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    opt_modes = sorted(analysistest.target_under_test(env)[RustOptLevelInfo].levels.keys())
+    debug_modes = sorted(ctx.attr._debug_info[RustDebugInfoInfo].levels.keys())
+    strip_modes = sorted(ctx.attr._strip_level[RustStripLevelInfo].levels.keys())
+    asserts.equals(env, opt_modes, debug_modes, "opt_level and debug_info compilation modes must match")
+    asserts.equals(env, opt_modes, strip_modes, "opt_level and strip_level compilation modes must match")
+    return analysistest.end(env)
+
+_opt_level_modes_match_test = analysistest.make(
+    _opt_level_modes_match_test_impl,
+    attrs = {
+        "_debug_info": attr.label(
+            default = "//rust/settings:debug_info",
+            providers = [RustDebugInfoInfo],
+        ),
+        "_strip_level": attr.label(
+            default = "//rust/settings:strip_level",
+            providers = [RustStripLevelInfo],
+        ),
+    },
+)
+
 def opt_level_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -165,6 +191,11 @@ def opt_level_test_suite(name):
         target_under_test = ":bin",
     )
 
+    _opt_level_modes_match_test(
+        name = "opt_level_modes_match_test",
+        target_under_test = "//rust/settings:opt_level",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -176,5 +207,6 @@ def opt_level_test_suite(name):
             ":opt_level_fastbuild_setting_test",
             ":opt_level_size_setting_test",
             ":opt_level_minsize_setting_test",
+            ":opt_level_modes_match_test",
         ],
     )
