@@ -1,0 +1,14 @@
+[package]
+name = "member"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+# Inherited from [workspace.dependencies]. Path goes outside the workspace.
+external_crate.workspace = true
+# Direct path dep that also goes outside the workspace.
+external_crate_b = { path = "../../external_crate_b" }
+# Inherited from [workspace.dependencies]. Path goes to a crate in a different Cargo workspace.
+ext_ws_crate.workspace = true

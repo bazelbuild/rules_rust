@@ -1,0 +1,47 @@
+"""Test for external relative path dependencies (issue #3089)"""
+
+module(
+    name = "external_relative_path_deps_test",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# Test: crate_universe with Cargo workspace where a member has path dependencies
+# that go OUTSIDE the Cargo workspace root (but still inside the Bazel workspace).
+#
+# Structure:
+#   external_crate/           <- Outside Cargo workspace (standalone)
+#   external_crate_b/         <- Outside Cargo workspace (standalone)
+#   external_workspace/       <- Separate Cargo workspace
+#     ext_ws_crate/           <- Member of external_workspace
+#   cargo_workspace/          <- Primary Cargo workspace
+#     Cargo.toml              <- [workspace] with [workspace.dependencies] for external_crate + ext_ws_crate
+#     member/
+#       Cargo.toml            <- external_crate via workspace = true,
+#                                external_crate_b via direct path dep,
+#                                ext_ws_crate via workspace = true
+#
+# Tests three code paths: workspace-inherited external path deps, direct
+# external path deps declared inline in a member, and external path deps
+# from a crate that belongs to a different Cargo workspace.
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//cargo_workspace:Cargo.lock",
+    manifests = [
+        "//cargo_workspace:Cargo.toml",
+        "//:external_workspace/ext_ws_crate/Cargo.toml",
+    ],
+)
+use_repo(crate, "crates")
