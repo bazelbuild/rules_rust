@@ -16,6 +16,7 @@ load(
     _clippy_flags = "clippy_flags",
     _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
+load("//rust/private:debug_info.bzl", "rust_debug_info_flag")
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load("//rust/private:opt_level.bzl", "rust_opt_level_flag")
 load(
@@ -100,6 +101,41 @@ def opt_level():
     )
     rust_opt_level_flag(
         name = "opt_level",
+    )
+
+# buildifier: disable=unnamed-macro
+def debug_info():
+    """Build settings to control the rustc debug info level per compilation mode.
+
+    Each flag accepts one of `"0"`, `"1"`, or `"2"` and sets the default
+    debug-info level for all toolchains that do not explicitly override it via
+    the `debug_info` attribute.
+
+    Defaults match Bazel's conventional compilation modes: `dbg` uses level 2
+    (full debug info), `fastbuild` and `opt` use level 0 (no debug info).
+
+    Override from the command line:
+
+    ```
+    build --@rules_rust//rust/settings:debug_info_dbg=1
+    build --@rules_rust//rust/settings:debug_info_opt=1
+    build --@rules_rust//rust/settings:debug_info_fastbuild=1
+    ```
+    """
+    string_flag(
+        name = "debug_info_dbg",
+        build_setting_default = "2",
+    )
+    string_flag(
+        name = "debug_info_opt",
+        build_setting_default = "0",
+    )
+    string_flag(
+        name = "debug_info_fastbuild",
+        build_setting_default = "0",
+    )
+    rust_debug_info_flag(
+        name = "debug_info",
     )
 
 def rename_first_party_crates():

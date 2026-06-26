@@ -29,6 +29,7 @@ load(
     "incompatible_change_clippy_error_format",
     "incompatible_do_not_include_data_in_compile_data",
     "incompatible_do_not_include_transitive_data_in_compile_inputs",
+    "debug_info",
     "lto",
     "no_std",
     "opt_level",
@@ -117,6 +118,8 @@ incompatible_change_clippy_error_format()
 incompatible_do_not_include_data_in_compile_data()
 
 incompatible_do_not_include_transitive_data_in_compile_inputs()
+
+debug_info()
 
 lto()
 

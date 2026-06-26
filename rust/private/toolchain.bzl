@@ -8,6 +8,7 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
 load("//rust/private:lto.bzl", "RustLtoInfo")
 load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
 load(
@@ -397,14 +398,17 @@ def _rust_toolchain_impl(ctx):
     effective_opt_levels = dict(ctx.attr._opt_level[RustOptLevelInfo].levels)
     effective_opt_levels.update(ctx.attr.opt_level)
 
+    effective_debug_info = dict(ctx.attr._debug_info[RustDebugInfoInfo].levels)
+    effective_debug_info.update(ctx.attr.debug_info)
+
     compilation_mode_opts = {}
     for k, opt_level in effective_opt_levels.items():
-        if not k in ctx.attr.debug_info:
+        if not k in effective_debug_info:
             fail("Compilation mode {} is not defined in debug_info but is defined in opt_level".format(k))
         if not k in ctx.attr.strip_level:
             fail("Compilation mode {} is not defined in strip_level but is defined in opt_level".format(k))
-        compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = opt_level, strip_level = ctx.attr.strip_level[k])
-    for k in ctx.attr.debug_info.keys():
+        compilation_mode_opts[k] = struct(debug_info = effective_debug_info[k], opt_level = opt_level, strip_level = ctx.attr.strip_level[k])
+    for k in effective_debug_info.keys():
         if not k in effective_opt_levels:
             fail("Compilation mode {} is not defined in opt_level but is defined in debug_info".format(k))
 
@@ -697,12 +701,13 @@ rust_toolchain = rule(
             cfg = "exec",
         ),
         "debug_info": attr.string_dict(
-            doc = "Rustc debug info levels per opt level",
-            default = {
-                "dbg": "2",
-                "fastbuild": "0",
-                "opt": "0",
-            },
+            doc = "Per-toolchain debug-info overrides per compilation mode. Any mode set here takes precedence over the global `//rust/settings:debug_info_*` flags. Omit a mode (or leave empty) to use the global flag value.",
+            default = {},
+        ),
+        "_debug_info": attr.label(
+            default = Label("//rust/settings:debug_info"),
+            providers = [RustDebugInfoInfo],
+            doc = "Global debug-info defaults, read from the `//rust/settings:debug_info_*` flags.",
         ),
         "default_edition": attr.string(
             doc = (
