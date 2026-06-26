@@ -19,7 +19,6 @@ load(
 load("//rust/private:debug_info.bzl", "rust_debug_info_flag")
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load("//rust/private:opt_level.bzl", "rust_opt_level_flag")
-load("//rust/private:strip_level.bzl", "rust_strip_level_flag")
 load(
     "//rust/private:rustc.bzl",
     _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
@@ -35,6 +34,7 @@ load(
     _rustc_output_diagnostics = "rustc_output_diagnostics",
     _zself_profile_events = "zself_profile_events",
 )
+load("//rust/private:strip_level.bzl", "rust_strip_level_flag")
 load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 

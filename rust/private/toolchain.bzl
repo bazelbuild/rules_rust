@@ -11,12 +11,12 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
 load("//rust/private:lto.bzl", "RustLtoInfo")
 load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
-load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
 load(
     "//rust/private:rust_allocator_libraries.bzl",
     "make_libstd_and_allocator_ccinfo",
 )
 load("//rust/private:semver.bzl", "semver")
+load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
 load(
     "//rust/private:utils.bzl",
     "deduplicate",
