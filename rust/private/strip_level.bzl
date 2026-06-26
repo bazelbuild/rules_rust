@@ -19,8 +19,8 @@ rust_strip_level_flag = rule(
     doc = "Aggregates the three per-mode strip-level flags into a single RustStripLevelInfo provider. Valid values are defined by rustc: https://doc.rust-lang.org/rustc/codegen-options/index.html#strip",
     implementation = _rust_strip_level_flag_impl,
     attrs = {
-        "dbg":       attr.label(default = "//rust/settings:strip_level_dbg"),
+        "dbg": attr.label(default = "//rust/settings:strip_level_dbg"),
         "fastbuild": attr.label(default = "//rust/settings:strip_level_fastbuild"),
-        "opt":       attr.label(default = "//rust/settings:strip_level_opt"),
+        "opt": attr.label(default = "//rust/settings:strip_level_opt"),
     },
 )

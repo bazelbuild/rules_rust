@@ -64,6 +64,7 @@ def rust_register_toolchains(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        debug_info = None,
         strip_level = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         versions = _RUST_TOOLCHAIN_VERSIONS,
@@ -103,6 +104,7 @@ def rust_register_toolchains(
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.
+        debug_info (dict, optional): Dictionary of target triples to debug info config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
@@ -187,6 +189,7 @@ def rust_register_toolchains(
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
             opt_level = opt_level_by_triple,
+            debug_info = debug_info,
             strip_level = strip_level,
             sha256s = sha256s,
             urls = urls,
@@ -274,6 +277,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
     "auth_patterns": attr.string_list(
         doc = "A list of patterns to match against urls for which the auth object should be used.",
+    ),
+    "debug_info": attr.string_dict(
+        doc = "Rustc debug info levels. For more details see the documentation for `rust_toolchain.debug_info`.",
     ),
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
@@ -483,6 +489,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
+        debug_info = ctx.attr.debug_info if ctx.attr.debug_info else None,
         strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
         version = toolchain_version,
         channel = channel,
@@ -595,6 +602,7 @@ def rust_toolchain_repository(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        debug_info = None,
         strip_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
@@ -627,6 +635,7 @@ def rust_toolchain_repository(
             Subject to Make variable expansion with respect to RUST_SYSROOT,
             RUST_SYSROOT_SHORT, RUSTC, etc.
         opt_level (dict, optional): Optimization level config for this toolchain.
+        debug_info (dict, optional): Debug info level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
@@ -660,6 +669,7 @@ def rust_toolchain_repository(
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
+        debug_info = debug_info,
         strip_level = strip_level,
         sha256s = sha256s,
         urls = urls,
@@ -993,6 +1003,7 @@ def rust_repository_set(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        debug_info = None,
         strip_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
@@ -1026,6 +1037,7 @@ def rust_repository_set(
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
         opt_level (dict, dict, optional): Dictionary of target triples to optimization config.
+        debug_info (dict, dict, optional): Dictionary of target triples to debug info config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
@@ -1083,6 +1095,7 @@ def rust_repository_set(
             extra_rustc_flags = toolchain_extra_rustc_flags,
             extra_exec_rustc_flags = toolchain_extra_exec_rustc_flags,
             opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
+            debug_info = debug_info.get(toolchain.target_triple) if debug_info != None else None,
             strip_level = strip_level.get(toolchain.target_triple) if strip_level != None else None,
             sha256s = sha256s,
             urls = urls,

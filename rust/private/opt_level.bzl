@@ -19,8 +19,8 @@ rust_opt_level_flag = rule(
     doc = "Aggregates the three per-mode opt-level flags into a single RustOptLevelInfo provider. Valid values are defined by rustc: https://doc.rust-lang.org/rustc/codegen-options/index.html#opt-level",
     implementation = _rust_opt_level_flag_impl,
     attrs = {
-        "dbg":       attr.label(default = "//rust/settings:opt_level_dbg"),
+        "dbg": attr.label(default = "//rust/settings:opt_level_dbg"),
         "fastbuild": attr.label(default = "//rust/settings:opt_level_fastbuild"),
-        "opt":       attr.label(default = "//rust/settings:opt_level_opt"),
+        "opt": attr.label(default = "//rust/settings:opt_level_opt"),
     },
 )

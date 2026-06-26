@@ -19,8 +19,8 @@ rust_debug_info_flag = rule(
     doc = "Aggregates the three per-mode debug-info flags into a single RustDebugInfoInfo provider. Valid values are defined by rustc: https://doc.rust-lang.org/rustc/codegen-options/index.html#debuginfo.",
     implementation = _rust_debug_info_flag_impl,
     attrs = {
-        "dbg":       attr.label(default = "//rust/settings:debug_info_dbg"),
+        "dbg": attr.label(default = "//rust/settings:debug_info_dbg"),
         "fastbuild": attr.label(default = "//rust/settings:debug_info_fastbuild"),
-        "opt":       attr.label(default = "//rust/settings:debug_info_opt"),
+        "opt": attr.label(default = "//rust/settings:debug_info_opt"),
     },
 )

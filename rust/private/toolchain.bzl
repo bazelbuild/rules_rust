@@ -808,7 +808,7 @@ rust_toolchain = rule(
         "_opt_level": attr.label(
             default = Label("//rust/settings:opt_level"),
             providers = [RustOptLevelInfo],
-            doc = "Global opt-level defaults, read from the `//rust/settings:opt_level_*` int flags.",
+            doc = "Global opt-level defaults, read from the `//rust/settings:opt_level_*` flags.",
         ),
         "per_crate_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",

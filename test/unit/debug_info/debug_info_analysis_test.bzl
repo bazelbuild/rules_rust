@@ -1,4 +1,4 @@
-"""Analysis tests for debug info in cdylib and bin targets."""
+"""Analysis tests for debug info: output files (PDB, dSYM) and global flag defaults."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
