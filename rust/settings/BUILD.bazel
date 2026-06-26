@@ -38,6 +38,7 @@ load(
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
     "rustfmt_toml",
+    "strip_level",
     "third_party_dir",
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
@@ -136,6 +137,8 @@ require_explicit_unstable_features()
 rustc_output_diagnostics()
 
 rustfmt_toml()
+
+strip_level()
 
 third_party_dir()
 

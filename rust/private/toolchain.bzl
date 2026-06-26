@@ -11,6 +11,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
 load("//rust/private:lto.bzl", "RustLtoInfo")
 load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
+load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
 load(
     "//rust/private:rust_allocator_libraries.bzl",
     "make_libstd_and_allocator_ccinfo",
@@ -401,13 +402,16 @@ def _rust_toolchain_impl(ctx):
     effective_debug_info = dict(ctx.attr._debug_info[RustDebugInfoInfo].levels)
     effective_debug_info.update(ctx.attr.debug_info)
 
+    effective_strip_level = dict(ctx.attr._strip_level[RustStripLevelInfo].levels)
+    effective_strip_level.update(ctx.attr.strip_level)
+
     compilation_mode_opts = {}
     for k, opt_level in effective_opt_levels.items():
         if not k in effective_debug_info:
             fail("Compilation mode {} is not defined in debug_info but is defined in opt_level".format(k))
-        if not k in ctx.attr.strip_level:
+        if not k in effective_strip_level:
             fail("Compilation mode {} is not defined in strip_level but is defined in opt_level".format(k))
-        compilation_mode_opts[k] = struct(debug_info = effective_debug_info[k], opt_level = opt_level, strip_level = ctx.attr.strip_level[k])
+        compilation_mode_opts[k] = struct(debug_info = effective_debug_info[k], opt_level = opt_level, strip_level = effective_strip_level[k])
     for k in effective_debug_info.keys():
         if not k in effective_opt_levels:
             fail("Compilation mode {} is not defined in opt_level but is defined in debug_info".format(k))
@@ -867,15 +871,13 @@ rust_toolchain = rule(
             mandatory = True,
         ),
         "strip_level": attr.string_dict(
-            doc = (
-                "Rustc strip levels. For all potential options, see " +
-                "https://doc.rust-lang.org/rustc/codegen-options/index.html#strip"
-            ),
-            default = {
-                "dbg": "none",
-                "fastbuild": "none",
-                "opt": "debuginfo",
-            },
+            doc = "Per-toolchain strip-level overrides per compilation mode. Any mode set here takes precedence over the global `//rust/settings:strip_level_*` flags. Omit a mode (or leave empty) to use the global flag value.",
+            default = {},
+        ),
+        "_strip_level": attr.label(
+            default = Label("//rust/settings:strip_level"),
+            providers = [RustStripLevelInfo],
+            doc = "Global strip-level defaults, read from the `//rust/settings:strip_level_*` flags.",
         ),
         "target_json": attr.string(
             doc = ("Override the target_triple with a custom target specification. " +

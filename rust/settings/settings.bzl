@@ -19,6 +19,7 @@ load(
 load("//rust/private:debug_info.bzl", "rust_debug_info_flag")
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load("//rust/private:opt_level.bzl", "rust_opt_level_flag")
+load("//rust/private:strip_level.bzl", "rust_strip_level_flag")
 load(
     "//rust/private:rustc.bzl",
     _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
@@ -136,6 +137,41 @@ def debug_info():
     )
     rust_debug_info_flag(
         name = "debug_info",
+    )
+
+# buildifier: disable=unnamed-macro
+def strip_level():
+    """Build settings to control the rustc strip level per compilation mode.
+
+    Each flag accepts one of `"none"`, `"debuginfo"`, or `"symbols"` and sets
+    the default strip level for all toolchains that do not explicitly override
+    it via the `strip_level` attribute.
+
+    Defaults match Bazel's conventional compilation modes: `dbg` and `fastbuild`
+    use `none` (no stripping), `opt` uses `debuginfo` (strip debug info).
+
+    Override from the command line:
+
+    ```
+    build --@rules_rust//rust/settings:strip_level_dbg=debuginfo
+    build --@rules_rust//rust/settings:strip_level_opt=symbols
+    build --@rules_rust//rust/settings:strip_level_fastbuild=debuginfo
+    ```
+    """
+    string_flag(
+        name = "strip_level_dbg",
+        build_setting_default = "none",
+    )
+    string_flag(
+        name = "strip_level_opt",
+        build_setting_default = "debuginfo",
+    )
+    string_flag(
+        name = "strip_level_fastbuild",
+        build_setting_default = "none",
+    )
+    rust_strip_level_flag(
+        name = "strip_level",
     )
 
 def rename_first_party_crates():

@@ -49,6 +49,39 @@ _strip_level_for_opt_test = analysistest.make(
     },
 )
 
+def _strip_level_dbg_setting_test_impl(ctx):
+    return _strip_level_test_impl(ctx, "symbols")
+
+_strip_level_dbg_setting_test = analysistest.make(
+    _strip_level_dbg_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "dbg",
+        str(Label("//rust/settings:strip_level_dbg")): "symbols",
+    },
+)
+
+def _strip_level_opt_setting_test_impl(ctx):
+    return _strip_level_test_impl(ctx, "symbols")
+
+_strip_level_opt_setting_test = analysistest.make(
+    _strip_level_opt_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        str(Label("//rust/settings:strip_level_opt")): "symbols",
+    },
+)
+
+def _strip_level_fastbuild_setting_test_impl(ctx):
+    return _strip_level_test_impl(ctx, "debuginfo")
+
+_strip_level_fastbuild_setting_test = analysistest.make(
+    _strip_level_fastbuild_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "fastbuild",
+        str(Label("//rust/settings:strip_level_fastbuild")): "debuginfo",
+    },
+)
+
 def strip_level_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -85,11 +118,29 @@ def strip_level_test_suite(name):
         target_under_test = ":bin",
     )
 
+    _strip_level_dbg_setting_test(
+        name = "strip_level_dbg_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _strip_level_opt_setting_test(
+        name = "strip_level_opt_setting_test",
+        target_under_test = ":bin",
+    )
+
+    _strip_level_fastbuild_setting_test(
+        name = "strip_level_fastbuild_setting_test",
+        target_under_test = ":bin",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":strip_level_for_dbg_test",
             ":strip_level_for_fastbuild_test",
             ":strip_level_for_opt_test",
+            ":strip_level_dbg_setting_test",
+            ":strip_level_opt_setting_test",
+            ":strip_level_fastbuild_setting_test",
         ],
     )
