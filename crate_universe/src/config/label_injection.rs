@@ -43,6 +43,8 @@ use std::collections::BTreeMap;
 use anyhow::{bail, Result};
 use serde_json::{Map, Value};
 
+use crate::utils::starlark::is_repo_name_byte;
+
 /// Walk `config.annotations` and:
 ///
 ///   * strip each annotation's `label_injections` field (so typed
@@ -160,10 +162,95 @@ fn rewrite(value: &mut Value, mapping: &BTreeMap<String, String>) {
 fn replace_all(input: &str, mapping: &BTreeMap<String, String>) -> String {
     let mut out = input.to_owned();
     for (canonical, apparent) in mapping {
-        if out.contains(apparent.as_str()) {
-            out = out.replace(apparent.as_str(), canonical.as_str());
-        }
+        out = replace_at_label_boundary(&out, apparent, canonical);
     }
+    out
+}
+
+/// Replace `apparent` with `canonical` in `input`, but only at label-prefix
+/// boundaries — i.e., where `apparent` is not preceded by another `@` and is
+/// not followed by another repo-name character (or `@`).
+///
+/// Plain `str::replace` is wrong for two reasons that combine catastrophically:
+///
+///   1. `sanitize_label_injections` partitions on `//`, so a user-written
+///      apparent of `@//pkg:tgt` reduces to a one-character apparent `@`.
+///      Naive replace would rewrite every `@` in every string, including the
+///      leading `@@` on already-canonical labels in the same Context (e.g.
+///      from `override_target_lib`'s `attr.label` resolution), producing
+///      `@@@@…` and failing the next `Label::from_str` on JSON roundtrip.
+///
+///   2. Even with a well-formed apparent like `@curl`, the substring also
+///      appears at position 1 of the canonical `@@curl+v8.0.0`, so any
+///      already-canonical occurrence in the same Context would be partially
+///      mangled to `@@@curl+v8.0.0+v8.0.0`.
+///
+/// Anchoring on `//` alone would fix (1) and (2) for `@curl//:tgt`, but break
+/// `$(execpath @curl)` — Bazel's location-expansion shorthand for the bare
+/// repo, which never carries a `//`. So we anchor on a label-boundary instead:
+///
+///   * Skip if the character before the match is `@` — that's the inside of
+///     a canonical `@@…` prefix, not a label boundary.
+///   * Skip if the character after the match is a repo-name char (alphanum,
+///     `_`, `-`, `.`, `+`, `~`) or `@` — that means the match is a prefix of
+///     a longer repo name (`@curl` inside `@curlx` or `@curl+v8`), or the
+///     run-up to a canonical `@@`.
+///
+/// One more wrinkle: when the apparent occurs in **bare-shorthand** position
+/// (no `//` follows), Bazel re-expands the bare form to `<repo>//:<repo>` at
+/// resolution time. The repo name in the canonical includes Bazel's `+`
+/// suffix (e.g. `native_lib+`), but the target that actually exists in the
+/// canonical repo's BUILD file is the user's original target name (e.g.
+/// `native_lib`). So substituting `@native_lib` → `@@native_lib+` for a
+/// bare-shorthand occurrence yields `@@native_lib+` which Bazel re-expands
+/// to `@@native_lib+//:native_lib+` — a target that doesn't exist. The
+/// bare-shorthand case is rewritten with an explicit
+/// `<canonical>//:<apparent_target>` to preserve the apparent target name
+/// (which always matches the apparent repo name and equals what the repo's
+/// BUILD file actually defines).
+fn replace_at_label_boundary(input: &str, apparent: &str, canonical: &str) -> String {
+    debug_assert!(
+        !apparent.is_empty(),
+        "empty apparents are filtered by `into_mapping`",
+    );
+    // Fast path: skip the per-match scan (and the output allocation) when the
+    // apparent doesn't occur at all. Mappings often have several entries and
+    // most Context strings won't reference most of them.
+    if !input.contains(apparent) {
+        return input.to_owned();
+    }
+    // The bare-shorthand target preserved on bare matches. `apparent` is
+    // usually `@<name>`, in which case `strip_prefix('@')` yields the
+    // bare repo name; for the degenerate `apparent = "@"` (which arises
+    // from a user-written `label_injections` value of `@//pkg:tgt` —
+    // see `does_not_mangle_at_signs_outside_repo_boundary`), the strip
+    // yields `""`, and the bare-shorthand emission below skips itself.
+    let apparent_target = apparent.strip_prefix('@').unwrap_or(apparent);
+
+    let bytes = input.as_bytes();
+    let mut out = String::with_capacity(input.len());
+    let mut last_end = 0;
+    for (start, _) in input.match_indices(apparent) {
+        if start > 0 && bytes[start - 1] == b'@' {
+            continue;
+        }
+        let after = start + apparent.len();
+        if matches!(bytes.get(after), Some(&n) if n == b'@' || is_repo_name_byte(n)) {
+            continue;
+        }
+        out.push_str(&input[last_end..start]);
+        out.push_str(canonical);
+        // Bare-shorthand expansion: when the apparent isn't followed by `//`,
+        // re-emit the apparent target name explicitly. See the doc comment.
+        // Skip when the apparent has no name (`@` alone): there's no target
+        // to derive, and emitting `<canonical>//:` would be malformed.
+        if !input[after..].starts_with("//") && !apparent_target.is_empty() {
+            out.push_str("//:");
+            out.push_str(apparent_target);
+        }
+        last_end = after;
+    }
+    out.push_str(&input[last_end..]);
     out
 }
 
@@ -175,7 +262,10 @@ mod tests {
     // `{canonical_repo_prefix: apparent_repo_prefix}` (the Label coercion is
     // where Starlark resolves apparent -> canonical for the current session).
     // Substitution here rewrites apparent -> canonical.
+    use std::str::FromStr;
+
     use super::*;
+    use crate::utils::starlark::Label;
     use serde_json::json;
 
     // ---- extract_global_mapping ----
@@ -414,6 +504,205 @@ mod tests {
                     }
                 }
             }),
+        );
+    }
+
+    #[test]
+    fn does_not_mangle_at_signs_outside_repo_boundary() {
+        // Regression: `sanitize_label_injections` partitions on `//` and so
+        // reduces an apparent value of `@//pkg:target` (a label in the root
+        // module, written with the explicit-apparent `@//` prefix) to just
+        // `@`. A naive `str::replace` would then rewrite every `@` in the
+        // Context — including the leading `@@` of already-canonical labels —
+        // producing invalid strings like `@@@@rules_rust++crate+crate_index//:heapless`
+        // that fail to parse on the JSON roundtrip back into Context.
+        let mut v = json!({
+            "override_targets": {
+                "lib": "@@rules_rust++crate+crate_index//:heapless"
+            },
+            "deps": ["@//pkg:tgt"]
+        });
+        let mapping = BTreeMap::from([("@@".to_owned(), "@".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(
+            v,
+            json!({
+                "override_targets": {
+                    "lib": "@@rules_rust++crate+crate_index//:heapless"
+                },
+                "deps": ["@@//pkg:tgt"]
+            }),
+            "anchored substitution must rewrite `@//pkg:tgt` but leave the \
+             unrelated `@@…//:` canonical untouched",
+        );
+    }
+
+    #[test]
+    fn substitutes_bare_repo_shorthand_in_location_expansion() {
+        // `$(execpath @curl)` is Bazel's location-expansion shorthand for
+        // `@curl//:curl` (no `//` separator). The label-boundary anchor must
+        // still rewrite the `@curl` in this position, and must emit the
+        // EXPLICIT canonical form `@@curl+v8.0.0//:curl` rather than the bare
+        // `@@curl+v8.0.0` — Bazel would re-expand the bare canonical to
+        // `@@curl+v8.0.0//:curl+v8.0.0` whose target name doesn't exist
+        // (see `expands_bare_repo_shorthand_to_apparent_target` below for
+        // the same shape in `deps`). The same mapping must NOT match
+        // `@curl` at position 1 of an already-canonical `@@curl+v8.0.0//:curl`
+        // (preceded by `@`), and must NOT match the prefix of a longer repo
+        // name like `@curlx//:foo`.
+        let mut v = json!({
+            "build_script_env": {
+                "common": {
+                    "CURL_BIN": "$(execpath @curl)",
+                    "CURL_LIB": "$(execpath @curl//:lib)",
+                }
+            },
+            "deps": [
+                "@curl",
+                "@curl//:curl",
+                "@@curl+v8.0.0//:curl",
+                "@curlx//:foo",
+            ]
+        });
+        let mapping = BTreeMap::from([("@@curl+v8.0.0".to_owned(), "@curl".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(
+            v,
+            json!({
+                "build_script_env": {
+                    "common": {
+                        "CURL_BIN": "$(execpath @@curl+v8.0.0//:curl)",
+                        "CURL_LIB": "$(execpath @@curl+v8.0.0//:lib)",
+                    }
+                },
+                "deps": [
+                    "@@curl+v8.0.0//:curl",
+                    "@@curl+v8.0.0//:curl",
+                    "@@curl+v8.0.0//:curl",
+                    "@curlx//:foo",
+                ]
+            }),
+        );
+    }
+
+    #[test]
+    fn does_not_corrupt_canonical_when_apparent_is_its_prefix() {
+        // Direct regression for the field-reported failure
+        // `Failed to parse label from string: @@@rules_rust_pyo3++//:current_pyo3_toolchain`.
+        //
+        // Setup: `bazel_dep(name = "rules_rust_pyo3", version = "0.71.0")`
+        // resolves to canonical `@@rules_rust_pyo3+`. The annotation has
+        // `label_injections = {"@rules_rust_pyo3//...": "@rules_rust_pyo3//..."}`
+        // so the sanitized mapping is `{"@@rules_rust_pyo3+": "@rules_rust_pyo3"}`.
+        //
+        // The annotation also references the same target in two shapes that
+        // coexist in the same Context:
+        //
+        //   * `build_script_data` is `attr.string_list`-typed, preserved
+        //     verbatim — value is the apparent `@rules_rust_pyo3//:…`.
+        //   * `build_script_toolchains` is `attr.label_list`-typed, so
+        //     Bazel resolves each entry to a Label and the JSON we receive
+        //     already has the canonical form `@@rules_rust_pyo3+//:…`.
+        //
+        // The boundary-blind `str::replace` shipped in 0.71.0 found the
+        // apparent at position 1 of the already-canonical string and
+        // produced `@@@rules_rust_pyo3++//:current_pyo3_toolchain` — three
+        // `@`s and the canonical's trailing `+` glued onto the input's `+`.
+        // The downstream `serde_json::from_value` then tried to parse it as
+        // a `Label` and surfaced the user-visible error.
+        let mut v = json!({
+            "build_script_data": [
+                "@rules_rust_pyo3//:current_pyo3_toolchain"
+            ],
+            "build_script_toolchains": [
+                "@@rules_rust_pyo3+//:current_pyo3_toolchain"
+            ],
+        });
+        let mapping = BTreeMap::from([(
+            "@@rules_rust_pyo3+".to_owned(),
+            "@rules_rust_pyo3".to_owned(),
+        )]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(
+            v,
+            json!({
+                "build_script_data": [
+                    "@@rules_rust_pyo3+//:current_pyo3_toolchain"
+                ],
+                "build_script_toolchains": [
+                    "@@rules_rust_pyo3+//:current_pyo3_toolchain"
+                ],
+            }),
+            "apparent in the apparent-form field must rewrite to canonical; \
+             the already-canonical field must be left untouched",
+        );
+
+        // Tie the test directly to the user-visible failure mode: every
+        // string in the rewritten Value must parse back as a `Label`. The
+        // 0.71.0 bug surfaced inside `Context::apply_label_injection_mapping`'s
+        // `serde_json::from_value` roundtrip, which uses exactly this
+        // parser. If anyone reintroduces the substitution bug, this
+        // assertion fails with the same `Failed to parse label from string:
+        // @@@…` text that was reported in the field.
+        for arr_key in ["build_script_data", "build_script_toolchains"] {
+            for s in v[arr_key].as_array().unwrap() {
+                Label::from_str(s.as_str().unwrap()).unwrap_or_else(|e| {
+                    panic!("rewritten value {s} must parse as Label, got: {e:#}")
+                });
+            }
+        }
+    }
+
+    #[test]
+    fn expands_bare_repo_shorthand_to_apparent_target() {
+        // Regression for the bare-shorthand-in-`deps` failure:
+        // `no such target '@@native_lib+//:native_lib+': target 'native_lib+' not declared`.
+        //
+        // Setup: a `bazel_dep(name = "native_lib", ...)` resolves to
+        // canonical `@@native_lib+`. The annotation is:
+        //
+        //     crate.annotation(
+        //         crate = "some-sys",
+        //         label_injections = {"@native_lib": "@native_lib"},
+        //         deps = ["@native_lib"],
+        //     )
+        //
+        // Sanitized mapping: `{"@@native_lib+": "@native_lib"}`. The
+        // `"@native_lib"` in `deps` is Bazel's bare-shorthand form for
+        // `@native_lib//:native_lib`.
+        //
+        // The fix must not substitute that to just `@@native_lib+` — Bazel
+        // would then re-expand the bare canonical to
+        // `@@native_lib+//:native_lib+`, and the target name `native_lib+`
+        // doesn't exist in the canonical repo's BUILD file (which defines
+        // `native_lib`, because `+` is part of the canonical-repo-name
+        // suffix, not the user's target name). The substitution must emit
+        // the explicit `@@native_lib+//:native_lib` form, preserving the
+        // apparent target name.
+        let mut v = json!({
+            "deps": ["@native_lib"],
+        });
+        let mapping = BTreeMap::from([("@@native_lib+".to_owned(), "@native_lib".to_owned())]);
+        apply_mapping_to_value(&mut v, &mapping);
+        assert_eq!(
+            v,
+            json!({
+                "deps": ["@@native_lib+//:native_lib"],
+            }),
+        );
+
+        // The rewritten label must round-trip through `Label::from_str` —
+        // i.e. it must be syntactically valid — and crucially must have
+        // target name `native_lib` (the user's intended target), not the
+        // canonical-name suffix `native_lib+` (which is what Bazel would
+        // derive from a bare canonical re-expansion).
+        let parsed =
+            Label::from_str(v["deps"][0].as_str().unwrap()).expect("rewritten label must parse");
+        assert_eq!(
+            parsed.target(),
+            "native_lib",
+            "explicit `//:native_lib` target preserves the apparent target name; \
+             the canonical-derived target `native_lib+` would not exist in the BUILD file",
         );
     }
 }
