@@ -884,9 +884,14 @@ def _should_add_oso_prefix(toolchain):
 def _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
     other_flags = []
     for flag in rust_flags:
-        if flag.startswith("-Zallow-features="):
-            all_allowed_unstable_features.extend(flag.removeprefix("-Zallow-features=").split(","))
+        if type(flag) == "string":
+            if flag.startswith("-Zallow-features="):
+                all_allowed_unstable_features.extend(flag.removeprefix("-Zallow-features=").split(","))
+            else:
+                other_flags.append(flag)
         else:
+            # It's a tuple/list (format_string, File), or at least not a string.
+            # We assume it's not a -Zallow-features flag.
             other_flags.append(flag)
     return other_flags
 
@@ -952,21 +957,22 @@ def construct_arguments(
         ambiguous_libs (dict): Ambiguous libs, see `_disambiguate_libs`
         output_hash (str): The hashed path of the crate root
         rust_flags (list or Args): Additional flags to pass to rustc. Accepts
-            either a plain `list[str]` (folded into the main `rustc_flags`
-            `Args` so flags intermix with the rest of the command line,
-            with any `-Zallow-features=` entries extracted and merged
-            with `unstable_rust_features_config`) or a `ctx.actions.args()`
-            `Args` object (returned on the `args` struct as
-            `extra_rustc_flags` and appended to `args.all` as a separate
+            either a plain `list[str | (str, File)]` (folded into the main
+            `rustc_flags` `Args` so flags intermix with the rest of the
+            command line, with any `-Zallow-features=` entries extracted and
+            merged with `unstable_rust_features_config`) or a
+            `ctx.actions.args()` `Args` object (returned on the `args` struct
+            as `extra_rustc_flags` and appended to `args.all` as a separate
             entry, since `Args` cannot be merged with one another). The
             `Args` form is opaque at analysis time, so any
             `-Zallow-features=` it carries passes through to rustc
             unchanged — callers that need it merged with
-            `unstable_rust_features_config` should keep using the
-            `list[str]` form. Use the `Args` form when the caller needs
-            `Args.add_all` features such as `map_each` (e.g. for
-            `File`-derived flags that must be rewritten by Bazel path
-            mapping).
+            `unstable_rust_features_config` should keep using the list form.
+            Use the `Args` form when the caller needs `Args.add_all` features
+            such as `map_each`. For individual `File`-derived flags that must
+            be rewritten by Bazel path mapping, they can be passed as
+            `(format_string, File)` tuples within the list form (e.g.
+            `("-Zsplit-dwarf-out-dir=%s", dwo_outputs)`).
         out_dir (File, optional): The build script's output directory.
             When provided, the directory is handed to `process_wrapper`
             via an explicit `--out-dir <path>` arg sourced from a
@@ -1228,27 +1234,37 @@ def construct_arguments(
         uniquify = True,
     )
 
-    # `rust_flags` is either a plain `list[str]` or a `ctx.actions.args()`
-    # `Args` object. Lists are folded into the main `rustc_flags` `Args`
-    # here, with any `-Zallow-features=` entries extracted into
-    # `all_allowed_unstable_features` so they can be merged with
-    # `unstable_rust_features_config` and re-emitted as a single arg
-    # below. `Args` inputs cannot be merged with another `Args` and are
-    # opaque at analysis time, so we capture the caller's `Args` here
-    # and append it as a separate entry in `args.all` (after the
-    # main `rustc_flags` `Args`, consistent with the existing "later
-    # flags win" semantics). Any `-Zallow-features=` baked into an
-    # `Args` value passes through to rustc unchanged — callers that
-    # need it merged with `unstable_rust_features_config` should keep
-    # using the `list[str]` form.
+    # `rust_flags` is either a plain `list[str | (format_string, File)]` or a
+    # `ctx.actions.args()` `Args` object.
+    #
+    # - Lists are folded into the main `rustc_flags` `Args` here, with any
+    #   `-Zallow-features=` entries extracted into
+    #   `all_allowed_unstable_features` so they can be merged with
+    #   `unstable_rust_features_config` and re-emitted as a single arg below.
+    #
+    # - `Args` inputs cannot be merged with another `Args` and are opaque at
+    #   analysis time, so we capture the caller's `Args` here and append it as a
+    #   separate entry in `args.all` (after the main `rustc_flags` `Args`,
+    #   consistent with the existing "later flags win" semantics). Any
+    #   `-Zallow-features=` baked into an `Args` value passes through to rustc
+    #   unchanged — callers that need it merged with
+    #   `unstable_rust_features_config` should keep using the list form.
     rust_flags_args = None
     if type(rust_flags) == "Args":
         rust_flags_args = rust_flags
     elif rust_flags:
-        rustc_flags.add_all(
-            _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features),
-            map_each = map_flag,
-        )
+        for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
+            if type(flag) in ["tuple", "list"] and len(flag) == 2:
+                rustc_flags.add_all(
+                    [flag[1]],
+                    format_each = flag[0],
+                    expand_directories = False,
+                )
+            else:
+                if map_flag:
+                    flag = map_flag(flag)
+                if flag != None:
+                    rustc_flags.add(flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1696,7 +1712,7 @@ def rustc_compile_action(
         if output_hash:
             fission_directory = fission_directory + "-" + output_hash
         dwo_outputs = ctx.actions.declare_directory(fission_directory, sibling = crate_info.output)
-        rust_flags.append("-Zsplit-dwarf-out-dir=%s" % dwo_outputs.path)
+        rust_flags.append(("-Zsplit-dwarf-out-dir=%s", dwo_outputs))
 
     args, env_from_args = construct_arguments(
         ctx = ctx,

@@ -1,7 +1,15 @@
 """Analysis tests for debug info in cdylib and bin targets."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_shared_library", "rust_test")
+load(
+    "//test/unit:common.bzl",
+    "assert_argv_contains",
+    "assert_argv_contains_not",
+    "assert_argv_contains_prefix",
+    "assert_argv_contains_prefix_not",
+)
 
 def _pdb_file_test_impl(ctx, expect_pdb_file):
     env = analysistest.begin(ctx)
@@ -69,6 +77,102 @@ def _dsym_folder_test_impl(ctx):
     return analysistest.end(env)
 
 dsym_folder_test = analysistest.make(_dsym_folder_test_impl)
+
+def _fission_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = None
+    for a in target.actions:
+        if a.mnemonic == "Rustc":
+            action = a
+            break
+    asserts.true(env, action != None, "Expected to find Rustc action")
+
+    assert_argv_contains(env, action, "--codegen=split-debuginfo=unpacked")
+    assert_argv_contains(env, action, "--codegen=debuginfo=full")
+    assert_argv_contains_prefix(env, action, "-Zsplit-dwarf-out-dir=")
+
+    # Verify that the fission directory is in the action outputs.
+    outputs = action.outputs.to_list()
+    fission_dir_prefix = target.label.name + "_fission"
+    found_fission_dir = False
+    for out in outputs:
+        if out.basename.startswith(fission_dir_prefix):
+            found_fission_dir = True
+            asserts.true(env, out.is_directory, "Expected fission output to be a directory")
+            break
+    asserts.true(env, found_fission_dir, "Expected to find fission directory in action outputs")
+
+    # Verify CcInfo contains the debug_context with the dwo files (if CcInfo is provided).
+    if CcInfo in target:
+        cc_info = target[CcInfo]
+        asserts.true(env, hasattr(cc_info, "_debug_context"), "Expected CcInfo to have _debug_context")
+        debug_context = cc_info._debug_context
+        asserts.true(env, debug_context != None, "Expected _debug_context to be not None")
+
+        dwo_files = debug_context.files.to_list()
+        asserts.equals(env, 1, len(dwo_files))
+        asserts.true(
+            env,
+            dwo_files[0].basename.startswith(fission_dir_prefix),
+            "Expected dwo file basename to start with %s, got %s" % (fission_dir_prefix, dwo_files[0].basename),
+        )
+
+        pic_dwo_files = debug_context.pic_files.to_list()
+        asserts.equals(env, 1, len(pic_dwo_files))
+        asserts.true(
+            env,
+            pic_dwo_files[0].basename.startswith(fission_dir_prefix),
+            "Expected pic dwo file basename to start with %s, got %s" % (fission_dir_prefix, pic_dwo_files[0].basename),
+        )
+
+    return analysistest.end(env)
+
+fission_test = analysistest.make(
+    _fission_test_impl,
+    config_settings = {
+        "//command_line_option:features": ["per_object_debug_info"],
+        "//command_line_option:fission": ["yes"],
+    },
+)
+
+def _no_fission_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = None
+    for a in target.actions:
+        if a.mnemonic == "Rustc":
+            action = a
+            break
+    asserts.true(env, action != None, "Expected to find Rustc action")
+
+    assert_argv_contains_not(env, action, "--codegen=split-debuginfo=unpacked")
+    assert_argv_contains_not(env, action, "--codegen=debuginfo=full")
+    assert_argv_contains_prefix_not(env, action, "-Zsplit-dwarf-out-dir=")
+
+    # Verify no fission directory in outputs.
+    outputs = action.outputs.to_list()
+    fission_dir_name = target.label.name + "_fission"
+    for out in outputs:
+        asserts.true(env, out.basename != fission_dir_name, "Did not expect fission directory in outputs")
+
+    # CcInfo's debug_context should not contain dwo files.
+    if CcInfo in target:
+        cc_info = target[CcInfo]
+        if hasattr(cc_info, "debug_context") and cc_info.debug_context:
+            asserts.equals(env, 0, len(cc_info.debug_context.files.to_list()))
+            asserts.equals(env, 0, len(cc_info.debug_context.pic_files.to_list()))
+
+    return analysistest.end(env)
+
+no_fission_test = analysistest.make(
+    _no_fission_test_impl,
+    config_settings = {
+        "//command_line_option:fission": ["no"],
+    },
+)
 
 def debug_info_analysis_test_suite(name):
     """Analysis tests for debug info in cdylib and bin targets.
@@ -171,12 +275,49 @@ def debug_info_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:macos"],
     )
 
+    # Fission tests
+    fission_test(
+        name = "lib_fission_test",
+        target_under_test = ":mylib",
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    no_fission_test(
+        name = "lib_no_fission_test",
+        target_under_test = ":mylib",
+    )
+
+    fission_test(
+        name = "bin_fission_test",
+        target_under_test = ":myrustbin",
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    no_fission_test(
+        name = "bin_no_fission_test",
+        target_under_test = ":myrustbin",
+    )
+
+    fission_test(
+        name = "test_fission_test",
+        target_under_test = ":myrusttest",
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    no_fission_test(
+        name = "test_no_fission_test",
+        target_under_test = ":myrusttest",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":lib_dsym_test",
             ":bin_dsym_test",
             ":test_dsym_test",
+            ":lib_fission_test",
+            ":lib_no_fission_test",
+            ":bin_fission_test",
+            ":bin_no_fission_test",
+            ":test_fission_test",
+            ":test_no_fission_test",
         ] + [
             ":lib_pdb_test_{}".format(compilation_mode)
             for compilation_mode in pdb_file_tests
