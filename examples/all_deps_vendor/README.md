@@ -26,7 +26,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.71.1")
+bazel_dep(name = "rules_rust", version = "0.71.2")
 
 ###############################################################################
 # T O O L C H A I N S
