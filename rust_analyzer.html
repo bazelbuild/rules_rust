@@ -236,6 +236,12 @@ stale entries — that's what the manual <code>rm -rf</code> is for.</p>
 <h3 id="diagnostics-stopped-appearing"><a class="header" href="#diagnostics-stopped-appearing">Diagnostics stopped appearing</a></h3>
 <p>Check <code>&lt;workspace&gt;/.rules_rust_analyzer/flycheck.log</code> — the on-save
 wrapper appends one line per internal failure.</p>
+<h3 id="after-bazel-clean---expunge-or-toolchain-changes"><a class="header" href="#after-bazel-clean---expunge-or-toolchain-changes">After <code>bazel clean --expunge</code> or toolchain changes</a></h3>
+<p>Re-run <code>setup</code>. The launcher scripts reference the rust-analyzer /
+rustfmt / proc-macro-srv binaries by absolute path baked at install
+time. Those binaries live in Bazel's output_base; <code>--expunge</code> clears
+that, and toolchain changes move them to new paths. Re-running setup
+resolves the new paths and refreshes the launchers.</p>
 <h2 id="workspace-splitting"><a class="header" href="#workspace-splitting">Workspace splitting</a></h2>
 <p>By default the whole project is treated as a single workspace.</p>
 <p>For monorepos where indexing the whole graph is too slow, pass
