@@ -163,7 +163,7 @@
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
 <p>The rules are released, and releases can be found on <a href="https://github.com/bazelbuild/rules_rust/releases">the GitHub Releases page</a>. We recommend using the latest release from that page.</p>
 <p>To use <code>rules_rust</code> in a project, add the following to your <code>MODULE.bazel</code> file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.71.1")
+<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.71.2")
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number.</p>
 <h2 id="specifying-rust-version"><a class="header" href="#specifying-rust-version">Specifying Rust version</a></h2>
@@ -2248,7 +2248,7 @@ rust_host_tools.host_tools(<a href="rust_bzlmod.html#rust_host_tools.host_tools-
 </ol>
 <h2 id="setup-3"><a class="header" href="#setup-3">Setup</a></h2>
 <p>To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.71.1")
+<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.71.2")
 </code></pre>
 <p>You find the latest version on the <a href="https://github.com/bazelbuild/rules_rust/releases">release page</a>.</p>
 <p>After adding <code>rules_rust</code> in your <code>MODULE.bazel</code>, set the following to begin using <code>crate_universe</code>:</p>
@@ -2421,7 +2421,7 @@ You find a complete example in the in the <a href="https://github.com/bazelbuild
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.71.1")
+bazel_dep(name = "rules_rust", version = "0.71.2")
 
 ###############################################################################
 # T O O L C H A I N S
