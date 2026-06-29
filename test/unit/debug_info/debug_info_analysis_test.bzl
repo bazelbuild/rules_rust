@@ -174,6 +174,16 @@ no_fission_test = analysistest.make(
     },
 )
 
+# Fission requires `-Zsplit-dwarf-out-dir` which is a nightly-only flag.
+# Even though these are analysis tests (which normally don't execute actions),
+# `bazel coverage` forces compilation of the `target_under_test`. To prevent
+# compilation failures on the stable channel during coverage runs, we restrict
+# Fission tests to the nightly channel.
+_FISSION_COMPATIBILITY = ["@platforms//os:linux"] + select({
+    "//rust/toolchain/channel:nightly": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
 def debug_info_analysis_test_suite(name):
     """Analysis tests for debug info in cdylib and bin targets.
 
@@ -279,7 +289,7 @@ def debug_info_analysis_test_suite(name):
     fission_test(
         name = "lib_fission_test",
         target_under_test = ":mylib",
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     no_fission_test(
         name = "lib_no_fission_test",
@@ -289,7 +299,7 @@ def debug_info_analysis_test_suite(name):
     fission_test(
         name = "bin_fission_test",
         target_under_test = ":myrustbin",
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     no_fission_test(
         name = "bin_no_fission_test",
@@ -299,7 +309,7 @@ def debug_info_analysis_test_suite(name):
     fission_test(
         name = "test_fission_test",
         target_under_test = ":myrusttest",
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     no_fission_test(
         name = "test_no_fission_test",
