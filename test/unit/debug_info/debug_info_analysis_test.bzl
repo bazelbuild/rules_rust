@@ -161,9 +161,9 @@ def _no_fission_test_impl(ctx):
     # CcInfo's debug_context should not contain dwo files.
     if CcInfo in target:
         cc_info = target[CcInfo]
-        if hasattr(cc_info, "debug_context") and cc_info.debug_context:
-            asserts.equals(env, 0, len(cc_info.debug_context.files.to_list()))
-            asserts.equals(env, 0, len(cc_info.debug_context.pic_files.to_list()))
+        if hasattr(cc_info, "_debug_context") and cc_info._debug_context:
+            asserts.equals(env, 0, len(cc_info._debug_context.files.to_list()))
+            asserts.equals(env, 0, len(cc_info._debug_context.pic_files.to_list()))
 
     return analysistest.end(env)
 
