@@ -1446,12 +1446,17 @@ def construct_arguments(
     all_args = [process_wrapper_flags, rustc_path, rustc_flags]
     if rust_flags_args != None:
         all_args.append(rust_flags_args)
+    has_location_expansion = _has_location_expansion(authored_rustc_flags)
+    rustc_env_attr = getattr(crate_info, "rustc_env", None)
+    if not has_location_expansion and rustc_env_attr:
+        has_location_expansion = _has_location_expansion(rustc_env_attr.values())
+
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
         extra_rustc_flags = rust_flags_args,
-        supports_path_mapping = not _has_location_expansion(authored_rustc_flags),
+        supports_path_mapping = not has_location_expansion,
         all = all_args,
     )
 
