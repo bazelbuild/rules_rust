@@ -890,10 +890,19 @@ def _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstab
             other_flags.append(flag)
     return other_flags
 
-def _has_location_expansion(flags):
-    for flag in flags:
+def has_location_expansion(values):
+    """Return True if any string in `values` contains a Bazel location-expansion directive.
+
+    Args:
+        values: Iterable of strings (e.g. `rustc_flags`, or `rustc_env.values()`).
+
+    Returns:
+        bool: True if any value contains `$(location ...)`, `$(locations ...)`,
+        `$(execpath ...)`, or `$(execpaths ...)`.
+    """
+    for value in values:
         for directive in ("$(location ", "$(locations ", "$(execpath ", "$(execpaths "):
-            if directive in flag:
+            if directive in value:
                 return True
     return False
 
@@ -1446,17 +1455,27 @@ def construct_arguments(
     all_args = [process_wrapper_flags, rustc_path, rustc_flags]
     if rust_flags_args != None:
         all_args.append(rust_flags_args)
-    has_location_expansion = _has_location_expansion(authored_rustc_flags)
-    rustc_env_attr = getattr(crate_info, "rustc_env", None)
-    if not has_location_expansion and rustc_env_attr:
-        has_location_expansion = _has_location_expansion(rustc_env_attr.values())
+
+    # Path mapping must be disabled whenever any input string carries a
+    # `$(location ...)` / `$(execpath ...)` macro: location expansion
+    # runs outside path mapping and would produce configuration-specific
+    # paths inside env values that the sandbox layout no longer matches.
+    # Check both `authored_rustc_flags` and `attr.rustc_env` (raw). We
+    # cannot rely on `crate_info.rustc_env`: `rust_test` pre-expands its
+    # own `rustc_env` inside the rule impl (see `rust.bzl`), so the
+    # markers are gone by the time they reach `crate_info`.
+    target_has_location_expansion = has_location_expansion(authored_rustc_flags)
+    if not target_has_location_expansion:
+        rustc_env_attr = getattr(attr, "rustc_env", None)
+        if rustc_env_attr:
+            target_has_location_expansion = has_location_expansion(rustc_env_attr.values())
 
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
         extra_rustc_flags = rust_flags_args,
-        supports_path_mapping = not has_location_expansion,
+        supports_path_mapping = not target_has_location_expansion,
         all = all_args,
     )
 
