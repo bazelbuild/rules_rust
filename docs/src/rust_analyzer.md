@@ -23,6 +23,55 @@ Existing user keys in `.vscode/settings.json` are preserved on re-runs.
 Pass `--dry-run` to preview the JSON without writing it; `--replace` to
 overwrite all managed keys (destroys user keys).
 
+#### Committable settings
+
+Managed `rust-analyzer.*` paths use VSCode's `${workspaceFolder}`
+variable and point at small launcher shims under
+`<workspace>/.rules_rust_analyzer/`, e.g.:
+
+```jsonc
+"rust-analyzer.server.path":
+    "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer.exe"
+```
+
+The shims are byte-identical copies of a tiny dispatcher binary;
+they read a sibling `launcher_paths.json` (also in the launcher dir)
+and `exec` the absolute toolchain binary in the Bazel cache. **The
+settings file is safe to commit** — it contains no per-developer or
+per-platform paths. Each developer just runs `setup` once on their
+machine to populate the launcher dir.
+
+Add the launcher dir to `.gitignore`:
+
+```
+.rules_rust_analyzer/
+```
+
+Re-run `setup` after a toolchain bump (rustup update, `MODULE.bazel`
+change, `bazel clean --expunge`) to refresh the launcher dir's
+`launcher_paths.json`. The committed settings file is untouched.
+
+The `.exe` extension on every platform is deliberate: it's the only
+extension Node's `child_process.spawn` handles on Windows without
+`shell: true`, and POSIX kernels ignore file extensions for `execve`
+(a Linux ELF or macOS Mach-O binary named `foo.exe` runs fine).
+That's what lets the same committed path work across Linux, macOS,
+and Windows.
+
+#### `.code-workspace` files
+
+Projects opened via a `.code-workspace` file need the rust-analyzer
+keys inside the workspace file's `settings` object — VSCode answers
+rust-analyzer's window-scoped config requests from there, **not** from
+any folder's `.vscode/settings.json`. `setup vscode` handles this
+automatically: if exactly one `*.code-workspace` exists at the
+workspace root, it targets that file and nests under `settings`. Pass
+`--output <file>.code-workspace` to disambiguate when multiple exist,
+or `--settings-key <key>` to nest under a custom key. With
+`--settings-key`, `--replace` overwrites only that nested object —
+sibling top-level keys (`folders`, `tasks`, `extensions`) survive
+intact.
+
 ### Neovim
 
 ```
@@ -58,18 +107,23 @@ same keys via plugin-specific config files.
 
 ## Flags
 
-Re-runnable at any time. All flags work on any subcommand.
+Re-runnable at any time. Global flags work on any subcommand.
 
 | Flag | Effect |
 |---|---|
+| `--workspace <path>` | Workspace root. Defaults to `$BUILD_WORKSPACE_DIRECTORY` (set by `bazel run`). |
 | `--skip-proc-macro-server` | Don't manage the proc-macro key. |
 | `--skip-rustfmt` | Don't manage the formatter key (use host rustfmt). |
-| `--output-user-root <abs-path>` | `--output_user_root` for flycheck's dedicated Bazel server. Required on Windows for non-trivial workspaces (MAX_PATH). |
-| `--cache-dir <abs-path>` | Where discover writes its merged-JSON cache. |
 | `--per-package-workspaces` | Opt in to per-package workspace splitting (see below). |
 
-VSCode subcommand also accepts `--dry-run` (preview JSON without writing) and
-`--replace` (overwrite all managed keys, destroying user keys).
+The `vscode` subcommand adds:
+
+| Flag | Effect |
+|---|---|
+| `--output <path>` | Settings file to write. Defaults to the unique `*.code-workspace` at the workspace root, falling back to `.vscode/settings.json`. |
+| `--settings-key <key>` | Nest the managed `rust-analyzer.*` keys under this top-level key. Auto-defaults to `settings` for `.code-workspace` outputs. |
+| `--dry-run` | Preview the JSON without writing. |
+| `--replace` | Replace the managed keys instead of merging. With `--settings-key`, only that nested object is replaced — sibling keys (`folders`, `tasks`, `extensions`) survive. |
 
 ## What you get
 
@@ -97,9 +151,6 @@ rm -rf <workspace>/<editor-dir>/.rules_rust_analyzer/cache
 Where `<editor-dir>` is `.vscode` for VSCode, `.helix` for Helix, or
 empty for Neovim / `print` (cache sits at `<workspace>/.rules_rust_analyzer/cache`).
 
-If you passed `--cache-dir` at setup time, the cache is wherever you
-pointed it instead.
-
 The cache survives `bazel clean` by design (it lives in the workspace,
 not the Bazel output base) so a full Bazel rebuild won't invalidate
 stale entries — that's what the manual `rm -rf` is for.
@@ -111,11 +162,12 @@ wrapper appends one line per internal failure.
 
 ### After `bazel clean --expunge` or toolchain changes
 
-Re-run `setup`. The launcher scripts reference the rust-analyzer /
-rustfmt / proc-macro-srv binaries by absolute path baked at install
+Re-run `setup`. The launcher shims dispatch through
+`<launcher_dir>/launcher_paths.json`, which records absolute paths to
+the rust-analyzer / rustfmt / proc-macro-srv binaries at install
 time. Those binaries live in Bazel's output_base; `--expunge` clears
 that, and toolchain changes move them to new paths. Re-running setup
-resolves the new paths and refreshes the launchers.
+re-resolves and rewrites the JSON.
 
 ## Workspace splitting
 
