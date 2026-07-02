@@ -75,7 +75,11 @@ Re-runnable at any time. Global flags work on any subcommand.
 | `--workspace <path>` | Workspace root. Defaults to `$BUILD_WORKSPACE_DIRECTORY` (set by `bazel run`). |
 | `--skip-proc-macro-server` | Don't manage the proc-macro key. |
 | `--skip-rustfmt` | Don't manage the formatter key (use host rustfmt). |
-| `--per-package-workspaces` | Opt in to per-package workspace splitting (see below). |
+| `--per-package-workspaces` / `--no-per-package-workspaces` | Opt this developer in/out of per-package workspace splitting (see below). |
+| `--clippy` / `--no-clippy` | Opt this developer in/out of running clippy on save and streaming its diagnostics alongside rustc's. |
+| `--clean` | Delete `<launcher-dir>/cache/` before running the rest of setup. See Troubleshooting. |
+
+The `--clippy` and `--per-package-workspaces` toggles are **per-user**: they mutate `<launcher-dir>/user_config.json` (gitignored) instead of the shared committed settings file. Two developers on the same workspace can hold different preferences without touching the checked-in configuration. Editing `user_config.json` by hand works too.
 
 The `vscode` subcommand adds:
 
@@ -102,14 +106,13 @@ The `vscode` subcommand adds:
 ### Symbols / deps look wrong
 
 Restart rust-analyzer (or save a `BUILD` file). If that doesn't fix
-it, clear the discovery cache and try again:
+it, re-run setup with `--clean` to nuke the discovery cache:
 
 ```
-rm -rf <workspace>/<editor-dir>/.rules_rust_analyzer/cache
+bazel run @rules_rust//tools/rust_analyzer:setup -- --clean vscode
 ```
 
-`<editor-dir>` is `.vscode` for VSCode, `.helix` for Helix, or empty
-for Neovim / `print`.
+Works with any subcommand (`vscode` / `neovim` / `helix` / `print`).
 
 ### Diagnostics stopped appearing
 
@@ -118,6 +121,25 @@ Check `<workspace>/.rules_rust_analyzer/flycheck.log`.
 ### After `bazel clean --expunge` or toolchain changes
 
 Re-run `setup`.
+
+### Noisy `cargo metadata` errors on startup
+
+`setup` does not manage `rust-analyzer.files.excludeDirs`. If your
+workspace has stub `Cargo.toml` files that aren't meant to be
+auto-loaded (common in `rules_rust` itself under `examples/`,
+`crate_universe/`, etc.), rust-analyzer still finds them and logs
+errors. Silence them by adding the directory names to `settings.json`
+yourself — your entries survive future `setup` runs:
+
+```
+"rust-analyzer.files.excludeDirs": ["examples", "some_other_dir"]
+```
+
+Trade-off: `files.excludeDirs` also hides those sources from
+rust-analyzer's virtual filesystem, so files under those directories
+won't get IDE features even if they're part of a Bazel-discovered
+crate. Only exclude directories whose sources you're willing to lose
+IDE support on.
 
 ## Workspace splitting
 

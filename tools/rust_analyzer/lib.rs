@@ -2,6 +2,7 @@ mod aquery;
 pub mod bep;
 mod cache;
 mod rust_project;
+pub mod user_config;
 
 use std::{collections::BTreeMap, fs, process::Command};
 
@@ -15,6 +16,7 @@ pub use rust_project::{
 use serde::{de::DeserializeOwned, Deserialize};
 
 pub use aquery::{consolidate_crate_specs, CrateSpec};
+pub use cache::CACHE_SUBDIR;
 
 pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
@@ -67,6 +69,7 @@ pub fn generate_rust_project(
     bazel_args: &[String],
     rules_rust_name: &str,
     targets: &[String],
+    clippy: bool,
 ) -> anyhow::Result<RustProject> {
     // Materialize per-crate spec files via the aspect, with Bazel emitting BEP
     // so we can discover them as a side-effect of the build. This replaces a
@@ -123,6 +126,7 @@ pub fn generate_rust_project(
         workspace,
         execution_root,
         &launcher_dir,
+        clippy,
     );
     if let Some(bytes) = cache::get(workspace, &cache_key)? {
         match serde_json::from_slice::<RustProject>(&bytes) {
@@ -147,8 +151,13 @@ pub fn generate_rust_project(
     let crate_specs =
         parse_and_consolidate(&spec_contents, output_base, workspace, execution_root)?;
 
-    let project =
-        rust_project::assemble_rust_project(bazel, workspace, toolchain_info, &crate_specs)?;
+    let project = rust_project::assemble_rust_project(
+        bazel,
+        workspace,
+        toolchain_info,
+        &crate_specs,
+        clippy,
+    )?;
 
     // Surface dep-graph problems the assembler had to paper over (missing
     // deps, cycles). Each becomes a log::warn (visible as a progress event

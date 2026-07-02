@@ -30,6 +30,7 @@ fn write_rust_project() -> anyhow::Result<()> {
         &bazel_args,
         rules_rust_name,
         &targets,
+        false,
     )?;
 
     let rust_project_path = &workspace.join("rust-project.json");

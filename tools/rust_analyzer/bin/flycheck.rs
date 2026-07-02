@@ -27,7 +27,7 @@ use std::{
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use gen_rust_project_lib::bep;
+use gen_rust_project_lib::{bep, install_dir, user_config};
 use serde_json::Value;
 
 #[derive(Parser, Debug)]
@@ -87,8 +87,16 @@ fn run() -> Result<u8> {
     std::fs::create_dir_all(&output_user_root)
         .with_context(|| format!("creating output_user_root {output_user_root}"))?;
 
-    let status = Command::new(args.bazel.as_str())
-        .current_dir(&workspace)
+    // Per-user preferences live in `<launcher_dir>/user_config.json`.
+    // Clippy mode is a per-user opt-in there — the shared discover
+    // command doesn't decide it — so we consult the config on every
+    // save rather than baking the choice into flycheck's argv.
+    let user = user_config::load(&install_dir()?);
+
+    // Assemble the bazel command. Clippy mode adds the aspect and
+    // its diagnostics output group on top of the base build flags.
+    let mut cmd = Command::new(args.bazel.as_str());
+    cmd.current_dir(&workspace)
         // BUILD_WORKSPACE_DIRECTORY / BUILD_WORKING_DIRECTORY leak in from
         // the outer `bazel run` invocation and would confuse the nested
         // bazel client; clear them so the nested call rediscovers the
@@ -109,19 +117,46 @@ fn run() -> Result<u8> {
         .arg("--@rules_rust//rust/settings:rustc_output_diagnostics=true")
         .arg(format!("--output_groups=+{}", bep::RUSTC_OUTPUT_GROUP))
         .arg("--keep_going")
-        .arg(format!("--build_event_json_file={bep_path}"))
+        .arg(format!("--build_event_json_file={bep_path}"));
+    if user.clippy {
+        cmd.arg("--aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect")
+            // Diagnostics go to a declared `.clippy.diagnostics` file per
+            // crate, exposed via the `clippy_output` output group. Without
+            // this flag the aspect only emits a marker file, so we'd have
+            // nowhere to read clippy JSON from.
+            .arg("--@rules_rust//rust/settings:clippy_output_diagnostics=true")
+            .arg(format!("--output_groups=+{}", bep::CLIPPY_OUTPUT_GROUP));
+    }
+    let status = cmd
         .status()
         .with_context(|| format!("invoking {}", args.bazel))?;
 
-    let stderr_files = match bep::parse_action_stderr_paths(&bep_path) {
+    let mut diagnostic_files = match bep::parse_action_stderr_paths(&bep_path) {
         Ok(paths) => paths,
         Err(e) => {
             eprintln!("flycheck: parsing BEP failed: {e:#}");
             Vec::new()
         }
     };
+    if user.clippy {
+        // Additive: the `clippy_output` group holds `.clippy.diagnostics`
+        // files that action-stderr harvesting doesn't cover (clippy's JSON
+        // goes to the declared file, not stderr, when
+        // `clippy_output_diagnostics=true`).
+        //
+        // `parse_output_group_paths` needs the exec root to resolve BEP-
+        // relative paths (per rules_rust#4130). Fetching inline via
+        // `bazel info` — we already run bazel in this process, so one
+        // extra info call adds negligible latency to a save.
+        match bazel_info_execution_root(&args.bazel, &output_user_root)
+            .and_then(|er| bep::parse_output_group_paths(&bep_path, bep::CLIPPY_OUTPUT_GROUP, &er))
+        {
+            Ok(paths) => diagnostic_files.extend(paths),
+            Err(e) => eprintln!("flycheck: parsing clippy_output group failed: {e:#}"),
+        }
+    }
 
-    emit_diagnostics(&stderr_files, &workspace)?;
+    emit_diagnostics(&diagnostic_files, &workspace)?;
 
     // Forward Bazel's exit code so rust-analyzer can tell apart "build
     // succeeded with diagnostics" from "build tool itself broke".
@@ -217,6 +252,27 @@ fn workspace_dir() -> Result<Utf8PathBuf> {
     }
     let cwd = env::current_dir().context("current_dir")?;
     Utf8PathBuf::try_from(cwd).context("current_dir was not valid UTF-8")
+}
+
+/// Query `bazel info execution_root` against the flycheck server (same
+/// `--output_user_root` we used for the build). Only invoked on save
+/// when clippy is enabled — see the call site.
+fn bazel_info_execution_root(bazel: &Utf8Path, output_user_root: &Utf8Path) -> Result<Utf8PathBuf> {
+    let output = Command::new(bazel.as_str())
+        .arg(format!("--output_user_root={output_user_root}"))
+        .arg("info")
+        .arg("execution_root")
+        .output()
+        .with_context(|| format!("invoking {bazel} info execution_root"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("bazel info execution_root failed: {stderr}");
+    }
+    let root = String::from_utf8(output.stdout)
+        .context("bazel info execution_root output not UTF-8")?
+        .trim()
+        .to_owned();
+    Ok(Utf8PathBuf::from(root))
 }
 
 /// Best-effort cleanup of the temporary BEP file.

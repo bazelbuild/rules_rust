@@ -24,7 +24,7 @@
 //! requires it on Windows, and POSIX `execve` ignores file extensions
 //! — same filename works everywhere.
 
-use std::{fs, path::Path};
+use std::{fs, io, path::Path};
 
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -50,21 +50,6 @@ const FILES_WATCHER_EXCLUDE_KEY: &str = "files.watcherExclude";
 const FILES_EXCLUDE_KEY: &str = "files.exclude";
 const SEARCH_EXCLUDE_KEY: &str = "search.exclude";
 
-/// `rust-analyzer.files.excludeDirs` — the list of workspace-relative dirs
-/// rust-analyzer's filesystem scan should skip. Critical for Bazel-first
-/// workspaces because rust-analyzer auto-discovers any `Cargo.toml` it
-/// finds in immediate subdirectories of the workspace root and loads each
-/// as a separate cargo workspace (in ADDITION to the discoverConfig
-/// project). Those extra cargo workspaces:
-///   1. Exhaust the inotify watch limit on large repos.
-///   2. Slow down indexing of the actual Bazel-project files.
-///   3. Can cause cross-workspace file-id confusion that hides codelens
-///      / runnables on files the user actually opens.
-///
-/// We populate this with every `<workspace>/<dir>/Cargo.toml` we find at
-/// install time. See [`find_cargo_dirs_to_exclude`].
-const FILES_EXCLUDE_DIRS_KEY: &str = "rust-analyzer.files.excludeDirs";
-
 /// Glob that matches Bazel's four convenience symlinks at the workspace
 /// root: `bazel-bin/`, `bazel-out/`, `bazel-testlogs/`, and
 /// `bazel-<workspace-name>/`. Skipping them is the difference between a
@@ -88,7 +73,9 @@ const LAUNCHER_SUBDIR: &str = ".rules_rust_analyzer";
 // side and the consumer side (rust_project.rs's flycheck-runnable
 // path emitter) agree on extension handling — including the `.exe`
 // suffix on Windows.
-use gen_rust_project_lib::{DISCOVER_BINARY_FILENAME, FLYCHECK_BINARY_FILENAME};
+use gen_rust_project_lib::{
+    user_config, CACHE_SUBDIR, DISCOVER_BINARY_FILENAME, FLYCHECK_BINARY_FILENAME,
+};
 
 // Runfiles paths setup looks up via `Runfiles::create()` at install
 // time. The `_opt` suffix points at the `opt_executable` wrapper in
@@ -136,16 +123,48 @@ struct Cli {
     #[arg(long, global = true)]
     skip_rustfmt: bool,
 
-    /// Pass `{arg}` to the discover command so rust-analyzer switches
-    /// workspaces to the per-file package. Off by default — the whole
-    /// workspace gets indexed as one project, which is simpler and what
-    /// most users want. Turn this on for monorepos where indexing the
-    /// whole graph hurts LSP responsiveness; the trade-off is that
-    /// rust-analyzer reloads (and re-runs discover) every time you jump
-    /// to a file in a different package, AND that dependents of the
-    /// package you're working on aren't indexed.
-    #[arg(long, global = true)]
+    /// Opt this developer into per-package workspace switching. Writes
+    /// `{"per_package_workspaces": true}` into the local
+    /// `<launcher_dir>/user_config.json` — the shared committed
+    /// settings file is unaffected. `--no-per-package-workspaces` flips
+    /// it back off. Without either flag the file is left alone.
+    ///
+    /// When on, discover scopes each save to the file's owning
+    /// package instead of re-emitting the whole workspace. Turn this
+    /// on for monorepos where indexing the whole graph hurts LSP
+    /// responsiveness; the trade-off is that rust-analyzer reloads
+    /// (and re-runs discover) every time you jump to a file in a
+    /// different package, AND that dependents of the package you're
+    /// working on aren't indexed.
+    #[arg(long, conflicts_with = "no_per_package_workspaces", global = true)]
     per_package_workspaces: bool,
+
+    /// Opt this developer OUT of per-package workspace switching. See
+    /// `--per-package-workspaces`.
+    #[arg(long, conflicts_with = "per_package_workspaces", global = true)]
+    no_per_package_workspaces: bool,
+
+    /// Opt this developer into running clippy on save and streaming
+    /// its diagnostics alongside rustc's. Writes
+    /// `{"clippy": true}` into the local
+    /// `<launcher_dir>/user_config.json` — the shared committed
+    /// settings file is unaffected. `--no-clippy` flips it back off.
+    /// Without either flag the file is left alone.
+    #[arg(long, conflicts_with = "no_clippy", global = true)]
+    clippy: bool,
+
+    /// Opt this developer OUT of running clippy on save. See `--clippy`.
+    #[arg(long, conflicts_with = "clippy", global = true)]
+    no_clippy: bool,
+
+    /// Delete the discover cache (`<launcher-dir>/cache/`) before
+    /// running the rest of setup. Use when rust-analyzer is serving
+    /// stale symbols after a toolchain change or `bazel clean
+    /// --expunge` — the next discover invocation re-populates the
+    /// cache from scratch. Does not touch `user_config.json` or
+    /// flycheck's `output_user_root/`.
+    #[arg(long, global = true)]
+    clean: bool,
 
     #[command(subcommand)]
     ide: IdeCmd,
@@ -218,6 +237,47 @@ struct VscodeArgs {
 // Entry point + per-IDE dispatch
 // ---------------------------------------------------------------------------
 
+/// Resolve a `--foo` / `--no-foo` flag pair (mutually exclusive via
+/// `clap::conflicts_with`) to a tri-state: `Some(true)` for `--foo`,
+/// `Some(false)` for `--no-foo`, `None` when neither was given
+/// (leave existing state alone).
+fn pick_toggle(on: bool, off: bool) -> Option<bool> {
+    if on {
+        Some(true)
+    } else if off {
+        Some(false)
+    } else {
+        None
+    }
+}
+
+/// Merge the CLI-provided toggles into `<launcher_dir>/user_config.json`.
+/// Only the fields the user actually named are touched; anything else
+/// in the file is preserved so future keys added by other flags don't
+/// get clobbered by an unrelated `setup --clippy` run.
+fn apply_user_config_edits(
+    launcher_dir: &Utf8Path,
+    clippy: Option<bool>,
+    per_package_workspaces: Option<bool>,
+) -> Result<()> {
+    if clippy.is_none() && per_package_workspaces.is_none() {
+        return Ok(());
+    }
+    let mut config = user_config::load(launcher_dir);
+    if let Some(v) = clippy {
+        config.clippy = v;
+    }
+    if let Some(v) = per_package_workspaces {
+        config.per_package_workspaces = v;
+    }
+    user_config::save(launcher_dir, &config)?;
+    info!(
+        "user_config: clippy={} per_package_workspaces={}",
+        config.clippy, config.per_package_workspaces
+    );
+    Ok(())
+}
+
 fn main() -> Result<()> {
     env_logger::init();
     let Cli {
@@ -225,16 +285,30 @@ fn main() -> Result<()> {
         skip_proc_macro_server,
         skip_rustfmt,
         per_package_workspaces,
+        no_per_package_workspaces,
+        clippy,
+        no_clippy,
+        clean,
         ide,
     } = Cli::parse();
 
     let workspace = workspace.unwrap_or_else(|| Utf8PathBuf::from("."));
+
+    // Tri-state resolution of the per-user opt-ins: explicit flag wins,
+    // otherwise the file is left as-is. `clap`'s `conflicts_with` above
+    // guarantees the (true, true) case can't happen.
+    let pending_clippy = pick_toggle(clippy, no_clippy);
+    let pending_ppw = pick_toggle(per_package_workspaces, no_per_package_workspaces);
 
     let vscode_targets = match &ide {
         IdeCmd::Vscode(args) => Some(resolve_vscode_targets(&workspace, args)?),
         IdeCmd::Neovim | IdeCmd::Helix | IdeCmd::Print => None,
     };
     let launcher_dir = launcher_dir_for(&workspace, &ide);
+
+    if clean {
+        clean_cache(&launcher_dir)?;
+    }
 
     let runfiles = Runfiles::create().context("creating Runfiles for setup")?;
     let toolchain = ToolchainBinaries {
@@ -254,12 +328,17 @@ fn main() -> Result<()> {
         install_toolchain_launchers(&launcher_dir, &runfiles, &toolchain)?;
     }
 
+    // Apply any pending user_config edits before dispatching to the
+    // per-IDE runner — that way tests / --dry-run flows (future work)
+    // and the per-IDE runners themselves see a consistent on-disk
+    // state, and running `setup --clippy` with no IDE change still
+    // takes effect.
+    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw)?;
+
     let ctx = SetupCtx {
-        workspace,
         launcher_dir,
         skip_proc_macro_server,
         skip_rustfmt,
-        per_package_workspaces,
         toolchain,
     };
 
@@ -274,7 +353,6 @@ fn main() -> Result<()> {
 /// Shared state computed once at startup and threaded through every
 /// per-IDE runner.
 struct SetupCtx {
-    workspace: Utf8PathBuf,
     /// Editor-specific dir setup copies source binaries into. The
     /// discover/flycheck binaries self-locate their cache + output dirs
     /// as siblings of themselves (`<launcher_dir>/cache` and
@@ -282,7 +360,6 @@ struct SetupCtx {
     launcher_dir: Utf8PathBuf,
     skip_proc_macro_server: bool,
     skip_rustfmt: bool,
-    per_package_workspaces: bool,
     /// Canonical absolute paths of the three toolchain binaries,
     /// written into `launcher_paths.json` for the launcher shims to
     /// read at LSP startup. See [`ToolchainBinaries`] for how they're
@@ -507,6 +584,23 @@ fn run_print(ctx: &SetupCtx) -> Result<()> {
 // Source-binary install
 // ---------------------------------------------------------------------------
 
+/// Delete the discover-output cache under `launcher_dir`. Called on
+/// `--clean`. Leaves everything else in `launcher_dir` alone
+/// (`user_config.json` is per-user prefs; `output_user_root/` is
+/// flycheck's Bazel build tree, expensive to rebuild). Missing dir is
+/// not an error — clean is idempotent.
+fn clean_cache(launcher_dir: &Utf8Path) -> Result<()> {
+    let cache = launcher_dir.join(CACHE_SUBDIR);
+    match fs::remove_dir_all(&cache) {
+        Ok(()) => {
+            eprintln!("cleared discover cache at {cache}");
+            Ok(())
+        }
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e).with_context(|| format!("removing discover cache at {cache}")),
+    }
+}
+
 /// Copy discover + flycheck into `dir`. They live in `bazel-out`
 /// originally and would be wiped by `bazel clean`; the copy survives
 /// until the next `bazel clean --expunge` (which also nukes the
@@ -635,54 +729,6 @@ fn launcher_dir_for(workspace: &Utf8Path, ide: &IdeCmd) -> Utf8PathBuf {
 }
 
 // ---------------------------------------------------------------------------
-// Cargo.toml scan (for files.excludeDirs auto-population)
-// ---------------------------------------------------------------------------
-
-/// Scan the workspace root one level deep for `<dir>/Cargo.toml` and
-/// return the subdirectory names. These match exactly the files that
-/// rust-analyzer's `ProjectManifest::discover` finds via
-/// `find_cargo_toml_in_child_dir` — which only goes one level down to
-/// avoid runaway scans (see rust-analyzer's `crates/project-model/src/
-/// lib.rs::find_cargo_toml_in_child_dir`). Feeding these to
-/// `rust-analyzer.files.excludeDirs` is the load-bearing piece that
-/// keeps the cargo workspaces from being auto-loaded alongside the
-/// discoverConfig project.
-///
-/// Skip `bazel-*` symlinks — those point into the Bazel output tree
-/// and any Cargo.toml found there is an artifact, not a real source
-/// manifest the user cares about.
-///
-/// Returns dir names sorted for deterministic snippet / settings.json
-/// output.
-fn find_cargo_dirs_to_exclude(workspace_root: &Utf8Path) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    let read = match fs::read_dir(workspace_root) {
-        Ok(r) => r,
-        Err(_) => return out,
-    };
-    for entry in read.flatten() {
-        let Ok(file_type) = entry.file_type() else {
-            continue;
-        };
-        if !file_type.is_dir() {
-            continue;
-        }
-        let Ok(name) = entry.file_name().into_string() else {
-            continue;
-        };
-        if name.starts_with("bazel-") || name.starts_with('.') {
-            continue;
-        }
-        let cargo_toml = entry.path().join("Cargo.toml");
-        if cargo_toml.is_file() {
-            out.push(name);
-        }
-    }
-    out.sort();
-    out
-}
-
-// ---------------------------------------------------------------------------
 // VSCode settings.json merge
 // ---------------------------------------------------------------------------
 
@@ -699,11 +745,6 @@ enum ManagedValue {
     /// so they can opt out of any individual exclude by setting it to
     /// `false` rather than deleting the entry (which we'd just add back).
     InsertEntries(Vec<(String, Value)>),
-    /// List-union: ensure the key is an array containing the listed
-    /// values. User entries are preserved; ours are appended only if not
-    /// already present (string equality). Removed user entries stay
-    /// removed across re-runs — we only ADD, never DELETE.
-    InsertListEntries(Vec<Value>),
 }
 
 /// VS Code expands `${workspaceFolder}` for rust-analyzer's path
@@ -720,12 +761,13 @@ fn vscode_managed_keys(ctx: &SetupCtx) -> Vec<(String, ManagedValue)> {
     let rustfmt_path = workspace_relative("rustfmt.exe");
     let discover_path = workspace_relative(DISCOVER_BINARY_FILENAME);
     let bazel_outputs = || vec![(BAZEL_OUTPUTS_GLOB.to_string(), Value::Bool(true))];
-    // `{arg}` opts into per-package workspace switching. See `--per-package-workspaces`.
-    let discover_command = if ctx.per_package_workspaces {
-        json!([discover_path, "{arg}"])
-    } else {
-        json!([discover_path])
-    };
+    // Rendered discover command is intentionally identical for every
+    // developer — per-user knobs (clippy, per-package-workspaces) live
+    // in `<launcher_dir>/user_config.json`, not here. `{arg}` is
+    // always present so rust-analyzer will pass the per-file arg on
+    // demand; discover ignores it when the user opted out of
+    // per-package-workspaces.
+    let discover_command = json!([discover_path, "{arg}"]);
     let mut out = vec![
         (
             DISCOVER_CONFIG_KEY.to_string(),
@@ -776,16 +818,6 @@ fn vscode_managed_keys(ctx: &SetupCtx) -> Vec<(String, ManagedValue)> {
         SEARCH_EXCLUDE_KEY.to_string(),
         ManagedValue::InsertEntries(bazel_outputs()),
     ));
-    // rust-analyzer.files.excludeDirs: list-union with the names of every
-    // immediate subdirectory that contains a Cargo.toml. See the key's
-    // doc comment for why this matters.
-    let cargo_dirs = find_cargo_dirs_to_exclude(&ctx.workspace);
-    if !cargo_dirs.is_empty() {
-        out.push((
-            FILES_EXCLUDE_DIRS_KEY.to_string(),
-            ManagedValue::InsertListEntries(cargo_dirs.into_iter().map(Value::String).collect()),
-        ));
-    }
     out
 }
 
@@ -885,10 +917,6 @@ fn replace_managed_file(
 /// * `InsertEntries` — dict-merge: add sub-entries that aren't
 ///   already present. If the existing value isn't an object, it's
 ///   overwritten (VSCode wouldn't accept a non-object here anyway).
-/// * `InsertListEntries` — list-union: append entries that aren't
-///   already present (comparison via `serde_json::Value` equality,
-///   obtained by roundtripping each element's source text through
-///   `jsonc_parser::parse_to_serde_value`).
 fn apply_managed_cst(target: &CstObject, key: &str, value: &ManagedValue) {
     match value {
         ManagedValue::Replace(v) => {
@@ -908,23 +936,6 @@ fn apply_managed_cst(target: &CstObject, key: &str, value: &ManagedValue) {
                 }
             }
         }
-        ManagedValue::InsertListEntries(entries) => {
-            let arr = target.array_value_or_set(key);
-            let existing: Vec<Value> = arr
-                .elements()
-                .iter()
-                .filter_map(|e| {
-                    jsonc_parser::parse_to_serde_value(&e.to_string(), &Default::default())
-                        .ok()
-                        .flatten()
-                })
-                .collect();
-            for entry in entries {
-                if !existing.iter().any(|x| x == entry) {
-                    arr.append(to_cst_input(entry));
-                }
-            }
-        }
     }
 }
 
@@ -940,9 +951,6 @@ fn realize_managed_cst(value: &ManagedValue) -> CstInputValue {
                 .map(|(k, v)| (k.clone(), to_cst_input(v)))
                 .collect(),
         ),
-        ManagedValue::InsertListEntries(entries) => {
-            CstInputValue::Array(entries.iter().map(to_cst_input).collect())
-        }
     }
 }
 
@@ -976,11 +984,11 @@ fn write_text(path: &Path, text: &str) -> Result<()> {
 // ---------------------------------------------------------------------------
 // Snippet generators for non-VSCode IDEs
 //
-// Each format has one main template constant and three optional sub-block
-// constants (proc-macro / rustfmt / files.excludeDirs). The generator
-// resolves each sub-block to a string (substituted-or-empty) and then does
-// a final pass on the main template. Reads top-to-bottom in the format
-// it's emitting — `cargo expand` or `cat`-friendly during review.
+// Each format has one main template constant and two optional sub-block
+// constants (proc-macro / rustfmt). The generator resolves each sub-block
+// to a string (substituted-or-empty) and then does a final pass on the
+// main template. Reads top-to-bottom in the format it's emitting —
+// `cargo expand` or `cat`-friendly during review.
 //
 // Placeholders are `__SHOUTING_SNAKE__` everywhere. The substitution is a
 // literal string replace, so paths must not contain the placeholder
@@ -992,20 +1000,15 @@ const TPL_RA_LAUNCHER: &str = "__RA_LAUNCHER__";
 const TPL_DISCOVER_LAUNCHER: &str = "__DISCOVER_LAUNCHER__";
 const TPL_PMS_LAUNCHER: &str = "__PMS_LAUNCHER__";
 const TPL_RUSTFMT_LAUNCHER: &str = "__RUSTFMT_LAUNCHER__";
-// `__EXCLUDE_ENTRIES__` is filled with the format-appropriate comma-
-// separated string list (`"a", "b"` for Lua/TOML/JSON — same syntax in
-// all three since they all quote with `"`).
-const TPL_EXCLUDE_ENTRIES: &str = "__EXCLUDE_ENTRIES__";
-// `__DISCOVER_PER_PACKAGE_ARG__` is filled with either `, "{arg}"` (when
-// `--per-package-workspaces` is set) or the empty string. Same syntax
-// across Lua/TOML/JSON since `"{arg}"` is a quoted string literal in all
-// three formats.
-const TPL_DISCOVER_PER_PACKAGE_ARG: &str = "__DISCOVER_PER_PACKAGE_ARG__";
-const PER_PACKAGE_ARG_SUFFIX: &str = ", \"{arg}\"";
 // Optional-block slots in the main templates.
 const TPL_OPT_PROC_MACRO: &str = "__OPT_PROC_MACRO__";
 const TPL_OPT_RUSTFMT: &str = "__OPT_RUSTFMT__";
-const TPL_OPT_EXCLUDES: &str = "__OPT_EXCLUDES__";
+// The `, "{arg}"` after `__DISCOVER_LAUNCHER__` in each template is
+// literal, not a placeholder. Per-package-workspaces is per-user
+// (`<launcher_dir>/user_config.json`), so the shared snippet always
+// includes the arg slot — discover honors the user's preference at
+// runtime. Same syntax works in Lua/TOML/JSON since all three quote
+// strings with `"`.
 
 // -- Neovim (nvim-lspconfig) Lua --
 
@@ -1015,12 +1018,12 @@ const NEOVIM_LUA_TEMPLATE: &str = r#"require("lspconfig").rust_analyzer.setup({
     ["rust-analyzer"] = {
       workspace = {
         discoverConfig = {
-          command = { "__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__ },
+          command = { "__DISCOVER_LAUNCHER__", "{arg}" },
           progressLabel = "rules_rust",
           filesToWatch = { "BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel" },
         },
       },
-__OPT_PROC_MACRO____OPT_RUSTFMT____OPT_EXCLUDES__      lens = { enable = true },
+__OPT_PROC_MACRO____OPT_RUSTFMT__      lens = { enable = true },
     },
   },
 })
@@ -1036,21 +1039,16 @@ const NEOVIM_LUA_RUSTFMT: &str = r#"      rustfmt = {
       },
 "#;
 
-const NEOVIM_LUA_EXCLUDES: &str = r#"      files = {
-        excludeDirs = { __EXCLUDE_ENTRIES__ },
-      },
-"#;
-
 // -- Helix languages.toml --
 
 const HELIX_TOML_TEMPLATE: &str = r#"[language-server.rust-analyzer]
 command = "__RA_LAUNCHER__"
 
 [language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]
-command = ["__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__]
+command = ["__DISCOVER_LAUNCHER__", "{arg}"]
 progressLabel = "rules_rust"
 filesToWatch = ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
-__OPT_PROC_MACRO____OPT_RUSTFMT____OPT_EXCLUDES__
+__OPT_PROC_MACRO____OPT_RUSTFMT__
 [language-server.rust-analyzer.config.rust-analyzer.lens]
 enable = true
 "#;
@@ -1065,11 +1063,6 @@ const HELIX_TOML_RUSTFMT: &str = r#"
 overrideCommand = ["__RUSTFMT_LAUNCHER__"]
 "#;
 
-const HELIX_TOML_EXCLUDES: &str = r#"
-[language-server.rust-analyzer.config.rust-analyzer.files]
-excludeDirs = [__EXCLUDE_ENTRIES__]
-"#;
-
 // -- Editor-agnostic JSON (coc.nvim, vim-lsp, ALE, ...) --
 //
 // JSON's trailing-comma intolerance is the awkward part: each optional
@@ -1081,11 +1074,11 @@ excludeDirs = [__EXCLUDE_ENTRIES__]
 const SETTINGS_JSON_TEMPLATE: &str = r#"{
   "rust-analyzer.server.path": "__RA_LAUNCHER__",
   "rust-analyzer.workspace.discoverConfig": {
-    "command": ["__DISCOVER_LAUNCHER__"__DISCOVER_PER_PACKAGE_ARG__],
+    "command": ["__DISCOVER_LAUNCHER__", "{arg}"],
     "progressLabel": "rules_rust",
     "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
   },
-  __OPT_PROC_MACRO____OPT_RUSTFMT____OPT_EXCLUDES__"rust-analyzer.lens.enable": true
+  __OPT_PROC_MACRO____OPT_RUSTFMT__"rust-analyzer.lens.enable": true
 }
 "#;
 
@@ -1093,9 +1086,6 @@ const SETTINGS_JSON_PROC_MACRO: &str = r#""rust-analyzer.procMacro.server": "__P
   "#;
 
 const SETTINGS_JSON_RUSTFMT: &str = r#""rust-analyzer.rustfmt.overrideCommand": ["__RUSTFMT_LAUNCHER__"],
-  "#;
-
-const SETTINGS_JSON_EXCLUDES: &str = r#""rust-analyzer.files.excludeDirs": [__EXCLUDE_ENTRIES__],
   "#;
 
 // -- Helpers shared by all three generators --
@@ -1108,25 +1098,6 @@ fn print_snippet_with_banner(banner: &str, snippet: &str) {
     eprintln!("========== end ==========\n");
 }
 
-/// Format the cargo-excludes list for the `__EXCLUDE_ENTRIES__`
-/// placeholder. All three target formats (Lua / TOML / JSON) quote
-/// strings with `"` and separate with `, ` — same output works
-/// everywhere.
-fn cargo_excludes_as_quoted_list(ctx: &SetupCtx) -> Option<String> {
-    let excludes = find_cargo_dirs_to_exclude(&ctx.workspace);
-    if excludes.is_empty() {
-        None
-    } else {
-        Some(
-            excludes
-                .iter()
-                .map(|d| format!("{d:?}"))
-                .collect::<Vec<_>>()
-                .join(", "),
-        )
-    }
-}
-
 /// Resolve one of the three optional blocks. If `enabled`, run
 /// `substitute` on the block template; otherwise return empty.
 fn opt_block(enabled: bool, block: &str, substitute: impl FnOnce(&str) -> String) -> String {
@@ -1134,17 +1105,6 @@ fn opt_block(enabled: bool, block: &str, substitute: impl FnOnce(&str) -> String
         substitute(block)
     } else {
         String::new()
-    }
-}
-
-/// Resolve the `__DISCOVER_PER_PACKAGE_ARG__` placeholder content. Returns
-/// `, "{arg}"` (suffix to the discover-command array) when per-package
-/// workspaces are on, empty string otherwise.
-fn per_package_suffix(ctx: &SetupCtx) -> &'static str {
-    if ctx.per_package_workspaces {
-        PER_PACKAGE_ARG_SUFFIX
-    } else {
-        ""
     }
 }
 
@@ -1176,17 +1136,16 @@ impl SnippetPaths {
     }
 }
 
-/// Render a snippet `main_template` plus three optional sub-templates
-/// (proc-macro, rustfmt, excludes) under their `TPL_OPT_*`
-/// placeholders. Shared by the three per-editor generators — they
-/// differ only in their template constants.
+/// Render a snippet `main_template` plus two optional sub-templates
+/// (proc-macro, rustfmt) under their `TPL_OPT_*` placeholders. Shared
+/// by the three per-editor generators — they differ only in their
+/// template constants.
 fn render_snippet(
     ctx: &SetupCtx,
     paths: &SnippetPaths,
     main_template: &str,
     proc_macro_template: &str,
     rustfmt_template: &str,
-    excludes_template: &str,
 ) -> String {
     let proc_macro = opt_block(!ctx.skip_proc_macro_server, proc_macro_template, |t| {
         t.replace(TPL_PMS_LAUNCHER, &paths.pms)
@@ -1194,17 +1153,11 @@ fn render_snippet(
     let rustfmt = opt_block(!ctx.skip_rustfmt, rustfmt_template, |t| {
         t.replace(TPL_RUSTFMT_LAUNCHER, &paths.rustfmt)
     });
-    let excludes = match cargo_excludes_as_quoted_list(ctx) {
-        Some(entries) => excludes_template.replace(TPL_EXCLUDE_ENTRIES, &entries),
-        None => String::new(),
-    };
     main_template
         .replace(TPL_RA_LAUNCHER, &paths.ra)
         .replace(TPL_DISCOVER_LAUNCHER, &paths.discover)
-        .replace(TPL_DISCOVER_PER_PACKAGE_ARG, per_package_suffix(ctx))
         .replace(TPL_OPT_PROC_MACRO, &proc_macro)
         .replace(TPL_OPT_RUSTFMT, &rustfmt)
-        .replace(TPL_OPT_EXCLUDES, &excludes)
 }
 
 /// `nvim-lspconfig` Lua snippet. The user pastes this into their
@@ -1218,7 +1171,6 @@ fn generate_neovim_lua(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
         NEOVIM_LUA_TEMPLATE,
         NEOVIM_LUA_PROC_MACRO,
         NEOVIM_LUA_RUSTFMT,
-        NEOVIM_LUA_EXCLUDES,
     )
 }
 
@@ -1233,7 +1185,6 @@ fn generate_helix_toml(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
         HELIX_TOML_TEMPLATE,
         HELIX_TOML_PROC_MACRO,
         HELIX_TOML_RUSTFMT,
-        HELIX_TOML_EXCLUDES,
     )
 }
 
@@ -1249,7 +1200,6 @@ fn generate_settings_json(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
         SETTINGS_JSON_TEMPLATE,
         SETTINGS_JSON_PROC_MACRO,
         SETTINGS_JSON_RUSTFMT,
-        SETTINGS_JSON_EXCLUDES,
     )
 }
 
@@ -1269,15 +1219,19 @@ mod tests {
         }
     }
 
+    /// Fake workspace root used to derive per-editor launcher dirs in
+    /// tests. Not stored on `SetupCtx`; test callers `.join(...)` this
+    /// directly for the launcher_dir they want to test against.
+    const DUMMY_WORKSPACE: &str = "/ws";
+
     fn dummy_ctx() -> (SetupCtx, Utf8PathBuf) {
-        let workspace = Utf8PathBuf::from("/ws");
-        let launcher_dir = workspace.join(".vscode").join(LAUNCHER_SUBDIR);
+        let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE)
+            .join(VSCODE_LAUNCHER_REL)
+            .join(LAUNCHER_SUBDIR);
         let ctx = SetupCtx {
-            workspace,
             launcher_dir: launcher_dir.clone(),
             skip_proc_macro_server: false,
             skip_rustfmt: false,
-            per_package_workspaces: false,
             toolchain: dummy_toolchain(),
         };
         (ctx, launcher_dir)
@@ -1293,7 +1247,7 @@ mod tests {
             .unwrap_or_else(|| panic!("missing managed key {key}"));
         match &entry.1 {
             ManagedValue::Replace(v) => v,
-            ManagedValue::InsertEntries(_) | ManagedValue::InsertListEntries(_) => {
+            ManagedValue::InsertEntries(_) => {
                 panic!("expected Replace strategy for {key}")
             }
         }
@@ -1416,6 +1370,77 @@ mod tests {
     }
 
     #[test]
+    fn discover_command_is_identical_regardless_of_user_preferences() {
+        // The whole point of user_config.json is that the shared,
+        // committed settings file must be byte-identical for every
+        // developer. So the rendered discover command must never
+        // contain per-user opt-ins like `--clippy`, and `{arg}` must
+        // always be present so discover can serve either scope on
+        // demand — see the comment in `vscode_managed_keys`.
+        let (ctx, _launcher_dir) = dummy_ctx();
+        let keys = vscode_managed_keys(&ctx);
+        let discover_cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
+            .get("command")
+            .and_then(|v| v.as_array())
+            .expect("command must be an array");
+        assert!(
+            !discover_cmd.iter().any(|v| v == "--clippy"),
+            "shared discover command must not encode --clippy: {discover_cmd:?}",
+        );
+        assert!(
+            discover_cmd.iter().any(|v| v == "{arg}"),
+            "shared discover command must always template {{arg}}: {discover_cmd:?}",
+        );
+    }
+
+    #[test]
+    fn apply_user_config_edits_writes_only_named_fields() {
+        // `setup --clippy` (no other toggle) must NOT reset
+        // per_package_workspaces — the file is a merge target, not a
+        // reset target.
+        let dir = std::env::temp_dir().join(format!("setup_uc_partial_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
+        user_config::save(
+            &launcher_dir,
+            &user_config::UserConfig {
+                clippy: false,
+                per_package_workspaces: true,
+            },
+        )
+        .unwrap();
+
+        apply_user_config_edits(&launcher_dir, Some(true), None).unwrap();
+
+        let loaded = user_config::load(&launcher_dir);
+        assert!(loaded.clippy, "--clippy must land in the file");
+        assert!(
+            loaded.per_package_workspaces,
+            "unnamed fields must be preserved: got {loaded:?}",
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn apply_user_config_edits_is_a_noop_when_nothing_pending() {
+        // Bare `setup` (no toggles) must not create the file — no
+        // point committing an all-defaults marker to the launcher
+        // dir just because someone re-ran discovery.
+        let dir = std::env::temp_dir().join(format!("setup_uc_noop_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
+
+        apply_user_config_edits(&launcher_dir, None, None).unwrap();
+
+        assert!(!launcher_dir
+            .join(user_config::USER_CONFIG_FILENAME)
+            .exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn watcher_exclude_dict_merges_with_user_entries() {
         let (ctx, _launcher_dir) = dummy_ctx();
         let tmp = std::env::temp_dir().join(format!("setup_excludes_test_{}", std::process::id()));
@@ -1451,69 +1476,27 @@ mod tests {
     }
 
     #[test]
-    fn find_cargo_dirs_finds_immediate_subdirs_with_cargo_toml() {
-        // Mock workspace: rules_rust-ish layout with two cargo dirs to
-        // exclude, one Bazel dir to ignore, one dot-dir to ignore, and
-        // one ordinary dir without Cargo.toml that should be left alone.
-        let tmp = std::env::temp_dir().join(format!("setup_cargo_dirs_{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&tmp);
-        std::fs::create_dir_all(&tmp).unwrap();
-        for d in ["cargo", "crate_universe", "bazel-bin", ".git", "util"] {
-            std::fs::create_dir_all(tmp.join(d)).unwrap();
-        }
-        for d in ["cargo", "crate_universe", "bazel-bin"] {
-            std::fs::write(tmp.join(d).join("Cargo.toml"), "[package]\nname=\"x\"\n").unwrap();
-        }
-        // `rust/runfiles/Cargo.toml` exists in rules_rust but `rust/`
-        // itself has no Cargo.toml at one level — verify we DON'T add
-        // `rust` (since rust-analyzer's one-level scan won't find it
-        // either, no point excluding it).
-        std::fs::create_dir_all(tmp.join("rust").join("runfiles")).unwrap();
-        std::fs::write(
-            tmp.join("rust").join("runfiles").join("Cargo.toml"),
-            "[package]\nname=\"runfiles\"\n",
-        )
-        .unwrap();
-
-        let dirs = find_cargo_dirs_to_exclude(&Utf8PathBuf::try_from(tmp.clone()).unwrap());
-        assert_eq!(
-            dirs,
-            vec!["cargo".to_string(), "crate_universe".to_string()]
-        );
-        let _ = std::fs::remove_dir_all(&tmp);
-    }
-
-    #[test]
-    fn insert_list_entries_preserves_user_values_and_dedupes() {
-        // End-to-end via merge_file: user has an array containing
-        // "user_dir" + "cargo"; managed adds "cargo" + "crate_universe";
-        // result preserves user_dir, doesn't duplicate cargo, adds
-        // crate_universe.
+    fn clean_cache_removes_cache_dir_and_leaves_siblings_alone() {
         let ws = make_workspace(
-            "list_dedupe",
-            &[(
-                "settings.json",
-                r#"{"rust-analyzer.files.excludeDirs": ["user_dir", "cargo"]}"#,
-            )],
+            "clean_cache",
+            &[
+                ("user_config.json", r#"{"clippy":true}"#),
+                ("rust_analyzer.exe", ""),
+            ],
         );
-        let path = ws.join("settings.json");
-        let managed = vec![(
-            "rust-analyzer.files.excludeDirs".to_string(),
-            ManagedValue::InsertListEntries(vec![json!("cargo"), json!("crate_universe")]),
-        )];
-        let merged = merge_file(&path, &managed, None).unwrap();
-        let parsed = parse_merged(&merged);
-        let arr = parsed
-            .as_object()
-            .unwrap()
-            .get("rust-analyzer.files.excludeDirs")
-            .unwrap()
-            .as_array()
-            .unwrap();
-        assert_eq!(
-            arr,
-            &vec![json!("user_dir"), json!("cargo"), json!("crate_universe")]
+        std::fs::create_dir_all(ws.join("cache")).unwrap();
+        std::fs::write(ws.join("cache").join("entry.json"), "{}").unwrap();
+
+        clean_cache(&ws).unwrap();
+        assert!(!ws.join("cache").exists(), "cache dir should be gone");
+        assert!(
+            ws.join("user_config.json").exists(),
+            "user_config preserved"
         );
+        assert!(ws.join("rust_analyzer.exe").exists(), "launcher preserved");
+
+        // Idempotent: second call on now-missing dir is fine.
+        clean_cache(&ws).unwrap();
         let _ = std::fs::remove_dir_all(&ws);
     }
 
@@ -1568,7 +1551,7 @@ mod tests {
     #[test]
     fn neovim_snippet_contains_toolchain_and_discover_paths_and_lens_enable() {
         let (ctx, _) = dummy_ctx();
-        let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
+        let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE).join(LAUNCHER_SUBDIR);
         let snippet = generate_neovim_lua(&ctx, &launcher_dir);
         assert!(snippet.contains("require(\"lspconfig\").rust_analyzer.setup"));
         // rust-analyzer LSP from the toolchain.
@@ -1581,7 +1564,9 @@ mod tests {
     #[test]
     fn helix_snippet_uses_toml_section_headers() {
         let (ctx, _) = dummy_ctx();
-        let launcher_dir = ctx.workspace.join(".helix").join(LAUNCHER_SUBDIR);
+        let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE)
+            .join(".helix")
+            .join(LAUNCHER_SUBDIR);
         let snippet = generate_helix_toml(&ctx, &launcher_dir);
         assert!(snippet.contains("[language-server.rust-analyzer]"));
         assert!(snippet.contains(
@@ -1596,7 +1581,7 @@ mod tests {
     #[test]
     fn print_snippet_is_valid_json() {
         let (ctx, _) = dummy_ctx();
-        let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
+        let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE).join(LAUNCHER_SUBDIR);
         let snippet = generate_settings_json(&ctx, &launcher_dir);
         let parsed: Value = serde_json::from_str(&snippet).expect("snippet must be valid JSON");
         let obj = parsed.as_object().unwrap();
@@ -1624,7 +1609,7 @@ mod tests {
             let (mut ctx, _) = dummy_ctx();
             ctx.skip_proc_macro_server = skip_pms;
             ctx.skip_rustfmt = skip_fmt;
-            let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
+            let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE).join(LAUNCHER_SUBDIR);
             let snippet = generate_settings_json(&ctx, &launcher_dir);
             serde_json::from_str::<Value>(&snippet).unwrap_or_else(|e| {
                 panic!(
@@ -1644,7 +1629,7 @@ mod tests {
         let (mut ctx, _) = dummy_ctx();
         ctx.skip_proc_macro_server = true;
         ctx.skip_rustfmt = true;
-        let launcher_dir = ctx.workspace.join(LAUNCHER_SUBDIR);
+        let launcher_dir = Utf8PathBuf::from(DUMMY_WORKSPACE).join(LAUNCHER_SUBDIR);
 
         let lua = generate_neovim_lua(&ctx, &launcher_dir);
         assert!(
@@ -1680,24 +1665,13 @@ mod tests {
 
     /// Default (per-package off) → discover command has only the binary
     /// path. Opt-in (per-package on) → discover command also has `"{arg}"`,
-    /// the rust-analyzer placeholder for the file the user opened.
+    /// The rendered discover command is per-user-preference agnostic
+    /// now: `{arg}` is always present so rust-analyzer can serve the
+    /// per-file arg on demand, and discover decides whether to honor it
+    /// by consulting `user_config.json`.
     #[test]
-    fn discover_command_includes_per_package_arg_only_when_opted_in() {
-        let (mut ctx, _launcher_dir) = dummy_ctx();
-        // Default: per_package_workspaces = false.
-        let keys = vscode_managed_keys(&ctx);
-        let cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
-            .get("command")
-            .and_then(|v| v.as_array())
-            .expect("command must be an array");
-        assert_eq!(
-            cmd.len(),
-            1,
-            "default: discover command should be [binary]; got {cmd:?}"
-        );
-
-        // Opt-in.
-        ctx.per_package_workspaces = true;
+    fn discover_command_always_includes_per_package_arg_template() {
+        let (ctx, _launcher_dir) = dummy_ctx();
         let keys = vscode_managed_keys(&ctx);
         let cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
             .get("command")
@@ -1706,55 +1680,24 @@ mod tests {
         assert_eq!(
             cmd.len(),
             2,
-            "per-package on: discover command should be [binary, \"{{arg}}\"]; got {cmd:?}"
+            "discover command should always be [binary, \"{{arg}}\"]; got {cmd:?}"
         );
         assert_eq!(cmd[1].as_str(), Some("{arg}"));
     }
 
-    /// Same default-vs-opt-in coverage but for the Lua/TOML/JSON snippets,
-    /// since those go through a totally different substitution path.
+    /// Same coverage but for the Lua/TOML/JSON snippets, since those
+    /// go through a totally different substitution path.
     #[test]
-    fn snippets_include_per_package_arg_only_when_opted_in() {
-        let (mut ctx, launcher_dir) = dummy_ctx();
-        // Default off.
+    fn snippets_always_include_per_package_arg_template() {
+        let (ctx, launcher_dir) = dummy_ctx();
         let lua = generate_neovim_lua(&ctx, &launcher_dir);
         let toml = generate_helix_toml(&ctx, &launcher_dir);
         let json = generate_settings_json(&ctx, &launcher_dir);
-        assert!(
-            !lua.contains("\"{arg}\""),
-            "lua leaks {{arg}} when per-package off:\n{lua}"
-        );
-        assert!(
-            !toml.contains("\"{arg}\""),
-            "toml leaks {{arg}} when per-package off:\n{toml}"
-        );
-        assert!(
-            !json.contains("\"{arg}\""),
-            "json leaks {{arg}} when per-package off:\n{json}"
-        );
-        // No leftover placeholder either way.
-        for body in [&lua, &toml, &json] {
-            assert!(!body.contains(TPL_DISCOVER_PER_PACKAGE_ARG));
-        }
-        // Opt-in.
-        ctx.per_package_workspaces = true;
-        let lua = generate_neovim_lua(&ctx, &launcher_dir);
-        let toml = generate_helix_toml(&ctx, &launcher_dir);
-        let json = generate_settings_json(&ctx, &launcher_dir);
-        assert!(
-            lua.contains("\"{arg}\""),
-            "lua missing {{arg}} when per-package on:\n{lua}"
-        );
-        assert!(
-            toml.contains("\"{arg}\""),
-            "toml missing {{arg}} when per-package on:\n{toml}"
-        );
-        assert!(
-            json.contains("\"{arg}\""),
-            "json missing {{arg}} when per-package on:\n{json}"
-        );
+        assert!(lua.contains("\"{arg}\""), "lua missing {{arg}}:\n{lua}");
+        assert!(toml.contains("\"{arg}\""), "toml missing {{arg}}:\n{toml}");
+        assert!(json.contains("\"{arg}\""), "json missing {{arg}}:\n{json}");
         // JSON must still parse.
-        serde_json::from_str::<Value>(&json).expect("json snippet stays valid with per-package on");
+        serde_json::from_str::<Value>(&json).expect("json snippet stays valid");
     }
 
     #[test]
@@ -1767,10 +1710,8 @@ mod tests {
             for ph in [
                 TPL_RA_LAUNCHER,
                 TPL_DISCOVER_LAUNCHER,
-                TPL_DISCOVER_PER_PACKAGE_ARG,
                 TPL_OPT_PROC_MACRO,
                 TPL_OPT_RUSTFMT,
-                TPL_OPT_EXCLUDES,
             ] {
                 assert!(body.contains(ph), "{name} missing {ph}");
             }
@@ -1793,16 +1734,6 @@ mod tests {
             assert!(
                 body.contains(TPL_RUSTFMT_LAUNCHER),
                 "{name} missing {TPL_RUSTFMT_LAUNCHER}"
-            );
-        }
-        for (name, body) in [
-            ("neovim excludes", NEOVIM_LUA_EXCLUDES),
-            ("helix excludes", HELIX_TOML_EXCLUDES),
-            ("json excludes", SETTINGS_JSON_EXCLUDES),
-        ] {
-            assert!(
-                body.contains(TPL_EXCLUDE_ENTRIES),
-                "{name} missing {TPL_EXCLUDE_ENTRIES}"
             );
         }
     }
