@@ -831,6 +831,7 @@ def collect_inputs(
     build_script_compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(
         build_info = build_info,
         dep_info = dep_info,
+        crate_type = crate_info.type,
         include_link_flags = include_link_flags,
         include_transitive_data = not toolchain._incompatible_do_not_include_transitive_data_in_compile_inputs,
     )
@@ -2304,6 +2305,7 @@ def add_edition_flags(args, crate):
 def _process_build_scripts(
         build_info,
         dep_info,
+        crate_type,
         include_link_flags = True,
         include_transitive_data = False):
     """Gathers the outputs from a target's `cargo_build_script` action.
@@ -2348,6 +2350,12 @@ def _process_build_scripts(
             build_flags_files.append(build_info.linker_flags)
             direct_inputs.append(build_info.linker_flags)
 
+        # `cargo::rustc-link-arg-bins` applies only to binary targets, and (like
+        # cargo) only from the crate's own build script — not transitively.
+        if crate_type == "bin" and getattr(build_info, "bin_link_flags", None):
+            build_flags_files.append(build_info.bin_link_flags)
+            direct_inputs.append(build_info.bin_link_flags)
+
         transitive_inputs.append(build_info.compile_data)
 
     # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
@@ -2356,6 +2364,13 @@ def _process_build_scripts(
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
         transitive_inputs.append(dep_build_info.compile_data)
+
+        # `cargo::rustc-cdylib-link-arg` applies only to cdylib targets, and (like
+        # cargo, see rust-lang/cargo#9562) propagates transitively to them. The
+        # crate's own build script is included here via `transitive_build_infos`.
+        if crate_type == "cdylib" and getattr(dep_build_info, "cdylib_link_flags", None):
+            build_flags_files.append(dep_build_info.cdylib_link_flags)
+            direct_inputs.append(dep_build_info.cdylib_link_flags)
 
     out_dir_compile_inputs = depset(
         direct_inputs,

@@ -26,6 +26,13 @@ pub struct CompileAndLinkFlags {
     pub compile_flags: String,
     pub link_flags: String,
     pub link_search_paths: String,
+    /// `-Clink-arg`s that apply only when the crate is built as a cdylib
+    /// (`cargo::rustc-cdylib-link-arg`). The consuming rule gates these on the
+    /// crate type, and propagates them transitively to cdylibs (matching cargo).
+    pub cdylib_link_flags: String,
+    /// `-Clink-arg`s that apply only when the crate is built as a binary
+    /// (`cargo::rustc-link-arg-bins`). Gated on the crate type by the rule.
+    pub bin_link_flags: String,
 }
 
 /// Enum containing all the considered return value from the script
@@ -41,6 +48,10 @@ pub enum BuildScriptOutput {
     Flags(String),
     /// cargo::rustc-link-arg
     LinkArg(String),
+    /// cargo::rustc-cdylib-link-arg
+    CdylibLinkArg(String),
+    /// cargo::rustc-link-arg-bins
+    BinLinkArg(String),
     /// cargo::rustc-env
     Env(String),
     /// cargo::VAR=VALUE
@@ -98,14 +109,18 @@ impl BuildScriptOutput {
                     Some(BuildScriptOutput::DepEnv(format!("METADATA={}", param)))
                 }
             }
-            "rustc-cdylib-link-arg" | "rustc-link-arg-bin" | "rustc-link-arg-bins" => {
-                // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
+            // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
+            "rustc-cdylib-link-arg" => Some(BuildScriptOutput::CdylibLinkArg(param)),
+            // cargo::rustc-link-arg-bins=FLAG – Passes custom flags to a linker for binaries.
+            "rustc-link-arg-bins" => Some(BuildScriptOutput::BinLinkArg(param)),
+            "rustc-link-arg-bin" => {
                 // cargo::rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
-                // cargo::rustc-link-arg-bins=FLAG – Passes custom flags to a linker for binaries.
-                eprint!(
-                    "Warning: build script returned unsupported directive `{}`",
-                    split[0]
-                );
+                if emit_warnings {
+                    eprint!(
+                        "Warning: build script returned unsupported directive `{}`",
+                        split[0]
+                    );
+                }
                 None
             }
             _ => {
@@ -210,12 +225,18 @@ impl BuildScriptOutput {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
         let mut link_search_paths = Vec::new();
+        let mut cdylib_link_flags = Vec::new();
+        let mut bin_link_flags = Vec::new();
 
         for flag in outputs {
             match flag {
                 BuildScriptOutput::Cfg(e) => compile_flags.push(format!("--cfg={e}")),
                 BuildScriptOutput::Flags(e) => compile_flags.push(e.to_owned()),
                 BuildScriptOutput::LinkArg(e) => compile_flags.push(format!("-Clink-arg={e}")),
+                BuildScriptOutput::CdylibLinkArg(e) => {
+                    cdylib_link_flags.push(format!("-Clink-arg={e}"))
+                }
+                BuildScriptOutput::BinLinkArg(e) => bin_link_flags.push(format!("-Clink-arg={e}")),
                 BuildScriptOutput::LinkLib(e) => link_flags.push(format!("-l{e}")),
                 BuildScriptOutput::LinkSearch(e) => link_search_paths.push(format!("-L{e}")),
                 _ => {}
@@ -230,6 +251,12 @@ impl BuildScriptOutput {
                 exec_root,
                 out_dir,
             ),
+            cdylib_link_flags: Self::redact_flags(
+                &cdylib_link_flags.join("\n"),
+                exec_root,
+                out_dir,
+            ),
+            bin_link_flags: Self::redact_flags(&bin_link_flags.join("\n"), exec_root, out_dir),
         }
     }
 
@@ -338,6 +365,8 @@ mod tests {
                         .to_owned(),
                 link_flags: "-lsdfsdf".to_owned(),
                 link_search_paths: "-L${pwd}/bleh".to_owned(),
+                cdylib_link_flags: "".to_owned(),
+                bin_link_flags: "".to_owned(),
             }
         );
     }
@@ -364,6 +393,33 @@ non-cargo-prefixes::are-ignored=true
 non-assignment-instructions-are-ignored",
         );
         from_read_buffer_to_env_and_flags_test_impl(buff);
+    }
+
+    #[test]
+    fn test_cdylib_and_bin_link_args() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-cdylib-link-arg=-undefined
+cargo::rustc-link-arg-bins=-Wl,--whole-archive
+cargo::rustc-link-arg-bin=mybin=-Wl,--per-bin",
+        );
+        let result = BuildScriptOutput::outputs_from_reader(BufReader::new(buff), false);
+
+        // `rustc-link-arg-bin` (the per-binary form) is unsupported and dropped.
+        assert_eq!(
+            result,
+            vec![
+                BuildScriptOutput::CdylibLinkArg("-undefined".to_owned()),
+                BuildScriptOutput::BinLinkArg("-Wl,--whole-archive".to_owned()),
+            ]
+        );
+
+        let flags = BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", "");
+        assert_eq!(flags.cdylib_link_flags, "-Clink-arg=-undefined".to_owned());
+        assert_eq!(
+            flags.bin_link_flags,
+            "-Clink-arg=-Wl,--whole-archive".to_owned()
+        );
     }
 
     /// Demonstrate that the old style single colon flags are all parsable
@@ -503,6 +559,8 @@ cargo::rustc-link-search=/abs/exec_root/other/path
                 link_flags: "".to_owned(),
                 link_search_paths:
                     "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+                cdylib_link_flags: "".to_owned(),
+                bin_link_flags: "".to_owned(),
             }
         );
     }
