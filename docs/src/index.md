@@ -16,7 +16,7 @@ The rules are released, and releases can be found on [the GitHub Releases page](
 To use `rules_rust` in a project, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.71.2")
+bazel_dep(name = "rules_rust", version = "0.71.3")
 ```
 
 Don't forget to substitute in your desired release's version number.

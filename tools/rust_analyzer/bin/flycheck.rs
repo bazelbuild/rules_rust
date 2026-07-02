@@ -75,17 +75,11 @@ fn run() -> Result<u8> {
     let bep_path = temp_dir.join(format!("flycheck_bep_{}.json", std::process::id()));
     let _bep_cleanup = scopeguard(bep_path.clone());
 
-    // flycheck spawns `bazel build` internally. That inner build runs
-    // against a DEDICATED `--output_user_root` so its
-    // `--error_format=json` / `--rustc_output_diagnostics=true` flags
+    // Dedicated `--output_user_root` for the inner `bazel build` so
+    // its `--error_format=json` / `--rustc_output_diagnostics=true`
     // don't thrash the user's primary Bazel server's analysis cache.
-    //
-    // The flycheck binary lives at `<install_dir>/flycheck` (setup
-    // copies it there); the dedicated output_user_root sits alongside
-    // as `<install_dir>/output_user_root`. `install_dir()` resolves
-    // `current_exe`'s parent — see its docstring for why current_exe
-    // over argv[0]. CLI flag override is honored for paths that don't
-    // fit the default (Windows MAX_PATH).
+    // CLI override exists for Windows MAX_PATH cases where the
+    // sibling default is too long.
     let output_user_root = match args.output_user_root.clone() {
         Some(p) => p,
         None => gen_rust_project_lib::install_dir()?.join("output_user_root"),

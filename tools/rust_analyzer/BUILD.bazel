@@ -62,12 +62,6 @@ rust_binary(
     ],
 )
 
-# On-save flycheck wrapper. The assembled rust-project.json wires its
-# `flycheck` runnable to `bazel run` this target with `{label}` and
-# `{saved_file}` after rust-analyzer substitutes them. It runs
-# `bazel build` with rustc diagnostics enabled, harvests the resulting
-# `.rustc-output` files via BEP, and streams rustc JSON to stdout for
-# rust-analyzer to render as inline squiggles.
 rust_binary(
     name = "flycheck",
     srcs = ["bin/flycheck.rs"],
@@ -89,11 +83,6 @@ rust_test(
     crate = ":flycheck",
 )
 
-# Opt-mode re-exposures of the two source binaries setup copies into
-# the user's launcher dir. discover/flycheck run on every save /
-# discovery and pay the fastbuild→opt gap repeatedly; forcing `-c opt`
-# here means setup always installs the fastest available build,
-# independent of the parent build's `--compilation_mode`.
 opt_executable(
     name = "discover_bazel_rust_project_opt",
     src = ":discover_bazel_rust_project",
@@ -106,35 +95,40 @@ opt_executable(
     visibility = ["//visibility:private"],
 )
 
-# One-command bootstrap that wires VSCode, Neovim, Helix, or any other
-# rust-analyzer-capable editor at the Bazel rust-analyzer toolchain. Copies
-# the discover/flycheck binaries to editor-appropriate locations and
-# (where the editor's config format is mergeable JSON) writes/merges the
-# relevant settings. Re-runnable; preserves user keys.
-#
-# Invoke with a subcommand per IDE: `vscode`, `neovim`, `helix`, `print`.
+rust_binary(
+    name = "launcher",
+    srcs = ["bin/launcher.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)
+
+rust_test(
+    name = "launcher_test",
+    crate = ":launcher",
+)
+
+opt_executable(
+    name = "launcher_opt",
+    src = ":launcher",
+    visibility = ["//visibility:private"],
+)
+
 rust_binary(
     name = "setup",
     srcs = ["bin/setup.rs"],
-    # setup resolves these via runfiles at install time:
-    #   * The three toolchain binaries get baked as absolute
-    #     `output_base/external/...` paths into the editor's
-    #     rust-analyzer settings (they survive `bazel clean`; only
-    #     `--expunge` invalidates them).
-    #   * The two source binaries (discover, flycheck) get copied into
-    #     the launcher dir so the editor's commands stay valid across
-    #     `bazel clean`. The binaries self-locate their config from
-    #     `current_exe()` — no launcher scripts. The toolchain-info
-    #     JSON used to be copied here too; it's now embedded into
-    #     `gen_rust_project_lib` at compile time via `include_str!`.
     data = [
         ":discover_bazel_rust_project_opt",
         ":flycheck_opt",
+        ":launcher_opt",
         "//rust/toolchain:current_rust_analyzer_toolchain",
         "//rust/toolchain:current_rustfmt_toolchain",
     ],
     edition = "2021",
     rustc_env = {
+        "LAUNCHER_RLOCATIONPATH": "$(rlocationpath :launcher_opt)",
         "RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
         "RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH": "$(RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH)",
         "RUST_ANALYZER_RLOCATIONPATH": "$(RUST_ANALYZER_RLOCATIONPATH)",
@@ -145,10 +139,6 @@ rust_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        # Source of truth for the on-disk filenames setup copies into
-        # the launcher dir (`{DISCOVER,FLYCHECK}_BINARY_FILENAME`).
-        # Sharing them keeps the install side and the consumer side
-        # (rust_project.rs's flycheck-runnable path emitter) in sync.
         ":gen_rust_project_lib",
         "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
@@ -165,15 +155,6 @@ rust_test(
     crate = ":setup",
 )
 
-# Pairs with the `compile_data` entry below: the env_file emits
-# `RUST_ANALYZER_TOOLCHAIN_JSON=<src.path>` through a `map_each`
-# callback so Bazel's path mapping rewrites the path before the action
-# runs. `process_wrapper` reads the env file and sets the env var, then
-# lib.rs's `include_str!(env!("RUST_ANALYZER_TOOLCHAIN_JSON"))` opens
-# the same path-mapped JSON sibling. Going through `rustc_env =`
-# directly would bake the analysis-time path that path mapping never
-# rewrites — the compile-time read then fails to find the file under
-# `--experimental_output_paths=strip`.
 env_file(
     name = "toolchain_info_env",
     src = "//rust/private:rust_analyzer_detect_sysroot",
@@ -186,8 +167,6 @@ rust_library(
         ["**/*.rs"],
         exclude = ["bin"],
     ),
-    # The JSON file itself must be available to rustc — `:toolchain_info_env`
-    # only emits the env-var wrapper pointing at this path.
     compile_data = [
         "//rust/private:rust_analyzer_detect_sysroot",
     ],
