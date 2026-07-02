@@ -613,6 +613,28 @@ def include_mixed_test(name):
         }),
     )
 
+def imacros_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-imacros", "test/relative/redacted_dates.h"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-imacros", "${pwd}/test/relative/redacted_dates.h"],
+    )
+
+def imacros_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-imacros", "/test/absolute/redacted_dates.h"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-imacros", "/test/absolute/redacted_dates.h"],
+    )
+
 def direct_libs_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
