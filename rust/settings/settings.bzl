@@ -16,7 +16,9 @@ load(
     _clippy_flags = "clippy_flags",
     _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
+load("//rust/private:debug_info.bzl", "rust_debug_info_flag")
 load("//rust/private:lto.bzl", "rust_lto_flag")
+load("//rust/private:opt_level.bzl", "rust_opt_level_flag")
 load(
     "//rust/private:rustc.bzl",
     _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
@@ -32,6 +34,7 @@ load(
     _rustc_output_diagnostics = "rustc_output_diagnostics",
     _zself_profile_events = "zself_profile_events",
 )
+load("//rust/private:strip_level.bzl", "rust_strip_level_flag")
 load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
@@ -65,6 +68,124 @@ def lto():
     rust_lto_flag(
         name = "lto",
         build_setting_default = "unspecified",
+    )
+
+# buildifier: disable=unnamed-macro
+def opt_level():
+    """Build settings to control the rustc optimization level per compilation mode.
+
+    Three flags are defined, one per Bazel compilation mode. Accepted values are
+    documented at https://doc.rust-lang.org/rustc/codegen-options/index.html#opt-level.
+    The value sets the default for all toolchains that do not explicitly override
+    it via the `opt_level` attribute on `rust_toolchain`.
+
+    | Flag                                              | Compilation mode | Default |
+    |---------------------------------------------------|------------------|---------|
+    | `@rules_rust//rust/settings:opt_level_dbg`        | `dbg`            | `"0"`   |
+    | `@rules_rust//rust/settings:opt_level_fastbuild`  | `fastbuild`      | `"0"`   |
+    | `@rules_rust//rust/settings:opt_level_opt`        | `opt`            | `"3"`   |
+
+    Example:
+
+    Enable size optimization in `opt` mode and light optimization in `fastbuild`:
+
+    ```
+    build --@rules_rust//rust/settings:opt_level_opt=s
+    build --@rules_rust//rust/settings:opt_level_fastbuild=1
+    ```
+    """
+    string_flag(
+        name = "opt_level_dbg",
+        build_setting_default = "0",
+    )
+    string_flag(
+        name = "opt_level_opt",
+        build_setting_default = "3",
+    )
+    string_flag(
+        name = "opt_level_fastbuild",
+        build_setting_default = "0",
+    )
+    rust_opt_level_flag(
+        name = "opt_level",
+    )
+
+# buildifier: disable=unnamed-macro
+def debug_info():
+    """Build settings to control the rustc debug info level per compilation mode.
+
+    Three flags are defined, one per Bazel compilation mode. Accepted values are
+    documented at https://doc.rust-lang.org/rustc/codegen-options/index.html#debuginfo.
+    The value sets the default for all toolchains that do not explicitly override
+    it via the `debug_info` attribute on `rust_toolchain`.
+
+    | Flag                                                | Compilation mode | Default |
+    |-----------------------------------------------------|------------------|---------|
+    | `@rules_rust//rust/settings:debug_info_dbg`         | `dbg`            | `"2"`   |
+    | `@rules_rust//rust/settings:debug_info_fastbuild`   | `fastbuild`      | `"0"`   |
+    | `@rules_rust//rust/settings:debug_info_opt`         | `opt`            | `"0"`   |
+
+    Example:
+
+    Emit line tables in `fastbuild` mode for profiling without full debug info:
+
+    ```
+    build --@rules_rust//rust/settings:debug_info_fastbuild=1
+    ```
+    """
+    string_flag(
+        name = "debug_info_dbg",
+        build_setting_default = "2",
+    )
+    string_flag(
+        name = "debug_info_opt",
+        build_setting_default = "0",
+    )
+    string_flag(
+        name = "debug_info_fastbuild",
+        build_setting_default = "0",
+    )
+    rust_debug_info_flag(
+        name = "debug_info",
+    )
+
+# buildifier: disable=unnamed-macro
+def strip_level():
+    """Build settings to control the rustc strip level per compilation mode.
+
+    Three flags are defined, one per Bazel compilation mode. Accepted values are
+    documented at https://doc.rust-lang.org/rustc/codegen-options/index.html#strip.
+    The value sets the default for all toolchains that do not explicitly override
+    it via the `strip_level` attribute on `rust_toolchain`.
+
+    | Flag                                                | Compilation mode | Default        |
+    |-----------------------------------------------------|------------------|----------------|
+    | `@rules_rust//rust/settings:strip_level_dbg`        | `dbg`            | `"none"`       |
+    | `@rules_rust//rust/settings:strip_level_fastbuild`  | `fastbuild`      | `"none"`       |
+    | `@rules_rust//rust/settings:strip_level_opt`        | `opt`            | `"debuginfo"`  |
+
+    Example:
+
+    Strip all symbols in `opt` mode to minimize binary size:
+
+    ```
+    build --@rules_rust//rust/settings:strip_level_opt=symbols
+    ```
+    """
+    string_flag(
+        name = "strip_level_dbg",
+        build_setting_default = "none",
+    )
+    string_flag(
+        name = "strip_level_opt",
+        build_setting_default = "debuginfo",
+    )
+    string_flag(
+        name = "strip_level_fastbuild",
+        build_setting_default = "none",
+    )
+    rust_strip_level_flag(
+        name = "strip_level",
     )
 
 def rename_first_party_crates():

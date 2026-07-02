@@ -367,6 +367,7 @@ rust_toolchain(
     extra_rustc_flags = {extra_rustc_flags},
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
     opt_level = {opt_level},
+    debug_info = {debug_info},
     strip_level = {strip_level},
     version = "{version}",
     channel = "{channel}",
@@ -393,6 +394,7 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        debug_info = None,
         strip_level = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
@@ -418,6 +420,7 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Optimization level config for this toolchain.
+        debug_info (dict, optional): Debug info level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
 
     Returns:
@@ -480,6 +483,7 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
+        debug_info = debug_info,
         strip_level = strip_level,
         version = version,
         channel = channel,

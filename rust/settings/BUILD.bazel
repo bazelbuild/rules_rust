@@ -10,6 +10,7 @@ load(
     "clippy_toml",
     "codegen_units",
     "collect_cfgs",
+    "debug_info",
     "default_allocator_library",
     "error_format",
     "experimental_compile_rustdoc_tests",
@@ -31,11 +32,13 @@ load(
     "incompatible_do_not_include_transitive_data_in_compile_inputs",
     "lto",
     "no_std",
+    "opt_level",
     "pipelined_compilation",
     "rename_first_party_crates",
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
     "rustfmt_toml",
+    "strip_level",
     "third_party_dir",
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
@@ -117,9 +120,13 @@ incompatible_do_not_include_data_in_compile_data()
 
 incompatible_do_not_include_transitive_data_in_compile_inputs()
 
+debug_info()
+
 lto()
 
 no_std()
+
+opt_level()
 
 pipelined_compilation()
 
@@ -130,6 +137,8 @@ require_explicit_unstable_features()
 rustc_output_diagnostics()
 
 rustfmt_toml()
+
+strip_level()
 
 third_party_dir()
 
