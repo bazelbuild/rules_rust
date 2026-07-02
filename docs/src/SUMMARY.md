@@ -23,6 +23,7 @@
 - [IDE Integrations](./ide_integrations.md)
 - [Extensions](./extensions.md)
     - [bindgen](./rust_bindgen.md)
+    - [cbindgen](./rust_cbindgen.md)
     - [mdbook](./rust_mdbook.md)
     - [prost](./rust_prost.md)
     - [pyo3](./rust_pyo3.md)

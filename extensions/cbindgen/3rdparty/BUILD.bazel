@@ -1,0 +1,38 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//:extensions.bzl", "CBINDGEN_VERSION")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "cbindgen": [crate.annotation(
+            gen_binaries = ["cbindgen"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = True,
+    mode = "remote",
+    packages = {
+        "cbindgen": crate.spec(
+            version = CBINDGEN_VERSION,
+        ),
+    },
+    repository_name = "rules_rust_cbindgen_deps",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cbindgen",
+    actual = "@rules_rust_cbindgen_deps__cbindgen-{}//:cbindgen__bin".format(CBINDGEN_VERSION),
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//:__pkg__"],
+)

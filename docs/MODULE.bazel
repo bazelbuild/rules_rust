@@ -17,6 +17,12 @@ local_path_override(
     path = "../extensions/bindgen",
 )
 
+bazel_dep(name = "rules_rust_cbindgen", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust_cbindgen",
+    path = "../extensions/cbindgen",
+)
+
 bazel_dep(name = "rules_rust_mdbook", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust_mdbook",

@@ -777,6 +777,14 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  example_cbindgen_toolchain:
+    name: Example custom cbindgen toolchain registration
+    platform: ubuntu2204
+    working_directory: examples/cbindgen_toolchain
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_ubuntu2204:
     name: Build via cc_common.link
     platform: ubuntu2204
@@ -1175,6 +1183,36 @@ tasks:
   #   test_targets:
   #     - "--"
   #     - "//..."
+  extensions_cbindgen_linux:
+    platform: ubuntu2204
+    name: Extensions Cbindgen
+    working_directory: extensions/cbindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_cbindgen_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions Cbindgen
+    working_directory: extensions/cbindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_cbindgen_macos:
+    platform: macos_arm64
+    name: Extensions Cbindgen
+    working_directory: extensions/cbindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   extensions_mdbook_linux:
     platform: ubuntu2204
     name: Extensions MdBook
