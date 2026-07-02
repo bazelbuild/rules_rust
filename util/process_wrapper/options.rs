@@ -51,6 +51,24 @@ pub(crate) struct Options {
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
 }
 
+/// Normalise a filesystem path for safe embedding in compiler arguments.
+///
+/// On Windows `std::fs::canonicalize` returns extended-length paths
+/// (`\\?\C:\…`) where forward slashes are **literal** characters, not
+/// separators.  Mixing such a prefix with `/` in `format!` calls
+/// produces paths that the Windows API cannot resolve.  This helper
+/// strips the prefix and converts all backslashes to forward slashes
+/// so the result can be safely concatenated with `/`-separated path
+/// fragments — Windows APIs accept forward slashes everywhere outside
+/// the `\\?\` family of calls.
+///
+/// On non-Windows platforms paths never carry the prefix and never
+/// contain backslashes, so the function is effectively a no-op.
+fn normalize_path(path: String) -> String {
+    let stripped = path.strip_prefix(r"\\?\").unwrap_or(&path);
+    stripped.replace('\\', "/")
+}
+
 pub(crate) fn options() -> Result<Options, OptionError> {
     // Process argument list until -- is encountered.
     // Everything after is sent to the child process.
@@ -143,12 +161,14 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         }
         ParseOutcome::Parsed(p) => p,
     };
-    let current_dir = std::env::current_dir()
-        .map_err(|e| OptionError::Generic(format!("failed to get current directory: {e}")))?
-        .to_str()
-        .ok_or_else(|| OptionError::Generic("current directory not utf-8".to_owned()))?
-        .to_owned();
-    let output_base = {
+    let current_dir = normalize_path(
+        std::env::current_dir()
+            .map_err(|e| OptionError::Generic(format!("failed to get current directory: {e}")))?
+            .to_str()
+            .ok_or_else(|| OptionError::Generic("current directory not utf-8".to_owned()))?
+            .to_owned(),
+    );
+    let output_base = normalize_path({
         let external = std::path::Path::new(&current_dir).join("external");
         match std::fs::canonicalize(external) {
             Ok(canonical) => canonical
@@ -166,7 +186,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
                 Err(_) => current_dir.clone(),
             },
         }
-    };
+    });
 
     let exec_root = {
         let workspace_name = std::path::Path::new(&current_dir)
@@ -549,5 +569,42 @@ mod test {
                 "-Zallow-features=whitespace_instead_of_curly_braces".to_string()
             )])
         );
+    }
+
+    #[test]
+    fn test_normalize_path_strips_extended_prefix_and_backslashes() {
+        assert_eq!(
+            normalize_path(r"\\?\C:\Users\runner\_bazel\abc".to_string()),
+            "C:/Users/runner/_bazel/abc"
+        );
+    }
+
+    #[test]
+    fn test_normalize_path_converts_backslashes() {
+        assert_eq!(
+            normalize_path(r"C:\Users\runner\_bazel\abc\execroot\_main".to_string()),
+            "C:/Users/runner/_bazel/abc/execroot/_main"
+        );
+    }
+
+    #[test]
+    fn test_normalize_path_forward_slash_noop() {
+        assert_eq!(
+            normalize_path("/home/user/.bazel".to_string()),
+            "/home/user/.bazel"
+        );
+    }
+
+    #[test]
+    fn test_normalize_path_produces_valid_exec_root() {
+        // On Windows, canonicalize returns \\?\-prefixed paths.  Before
+        // normalize_path the exec_root format! call would produce a
+        // broken mixed-separator path like
+        //   \\?\C:\Users\runner\output/execroot/_main
+        // After normalisation every component uses forward slashes.
+        let output_base = normalize_path(r"\\?\C:\Users\runner\output".to_string());
+        let exec_root = format!("{}/execroot/{}", output_base, "_main");
+        assert_eq!(exec_root, "C:/Users/runner/output/execroot/_main");
+        assert!(!exec_root.contains('\\'));
     }
 }
