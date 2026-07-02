@@ -189,6 +189,26 @@ stardoc(
     deps = [":bindgen_lib"],
 )
 
+# This target exists to avoid this issue:
+# https://github.com/bazelbuild/rules_cc/issues/279
+bzl_library(
+    name = "cbindgen_lib",
+    srcs = [
+        "@rules_cc//cc:bzl_srcs",
+    ],
+    deps = [
+        "@rules_cc//cc/common",
+        "@rules_rust_cbindgen//:bzl_lib",
+    ],
+)
+
+stardoc(
+    name = "rust_cbindgen",
+    out = "src/rust_cbindgen.md",
+    input = "@rules_rust_cbindgen//:defs.bzl",
+    deps = [":cbindgen_lib"],
+)
+
 stardoc(
     name = "rust_mdbook",
     out = "src/rust_mdbook.md",
@@ -244,6 +264,7 @@ mdbook(
         ":rust",
         ":rust_bindgen",
         ":rust_bzlmod",
+        ":rust_cbindgen",
         ":rust_clippy",
         ":rust_doc",
         ":rust_fmt",

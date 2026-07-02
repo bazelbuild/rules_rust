@@ -1,0 +1,71 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_shared_library", "rust_static_library")
+load("//:defs.bzl", "rust_cbindgen_library")
+
+rust_library(
+    name = "dep",
+    srcs = ["dep.rs"],
+    edition = "2021",
+)
+
+rust_static_library(
+    name = "simple_static",
+    srcs = ["simple.rs"],
+    edition = "2021",
+    deps = [":dep"],
+)
+
+rust_shared_library(
+    name = "simple_shared",
+    srcs = ["simple.rs"],
+    edition = "2021",
+    deps = [":dep"],
+)
+
+rust_cbindgen_library(
+    name = "simple_c",
+    lang = "c",
+    lib = ":simple_static",
+)
+
+cc_test(
+    name = "simple_c_test",
+    size = "small",
+    srcs = ["simple_c_test.c"],
+    deps = [":simple_c"],
+)
+
+rust_cbindgen_library(
+    name = "simple_cc",
+    lib = ":simple_static",
+)
+
+cc_test(
+    name = "simple_cc_test",
+    size = "small",
+    srcs = ["simple_cc_test.cc"],
+    deps = [":simple_cc"],
+)
+
+rust_cbindgen_library(
+    name = "simple_shared_c",
+    lang = "c",
+    lib = ":simple_shared",
+)
+
+rust_cbindgen_library(
+    name = "simple_config",
+    config = "cbindgen.toml.template",
+    header_name = "simple_config_custom.h",
+    lib = ":simple_static",
+    substitutions = {
+        "{guard}": "TEST_SIMPLE_CONFIG_H",
+    },
+)
+
+cc_test(
+    name = "simple_config_test",
+    size = "small",
+    srcs = ["simple_config_test.c"],
+    deps = [":simple_config"],
+)
