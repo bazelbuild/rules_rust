@@ -150,6 +150,7 @@ def _get_rustc_env(attr, toolchain, crate_name):
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
+        "CARGO_PKG_LICENSE": "",
     }
     return result
 
