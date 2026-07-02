@@ -83,17 +83,10 @@ where
     writeln!(writer, "")
 }
 
-/// Self-locate the editor-specific install dir from `current_exe()`
-/// and publish the two env vars the library reads for per-install
-/// state (`RULES_RUST_RA_LAUNCHER_DIR`, `RULES_RUST_RA_CACHE_DIR`).
-/// `setup` copies this binary into `<launcher_dir>/discover_bazel_rust_project`;
-/// the parent directory of the binary IS the launcher dir.
-///
-/// Already-set env vars are left alone so users / tests can override.
-/// The toolchain-info JSON is NOT plumbed here — its content is baked
-/// into the binary at compile time via `env!()` (see
-/// `gen_rust_project_lib::TOOLCHAIN_INFO_RAW`), so there's nothing to
-/// locate at runtime.
+/// Publish per-install state via env vars the library reads.
+/// `setup` copies this binary into the launcher dir, so
+/// `dirname(current_exe())` IS that dir. Pre-set values win so users
+/// and tests can override.
 fn self_locate_config() -> anyhow::Result<()> {
     let launcher_dir = gen_rust_project_lib::install_dir()?;
     for (name, path) in [

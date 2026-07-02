@@ -21,53 +21,33 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
 
-/// On-disk filenames `setup` uses for the source binaries it copies
-/// into the editor's launcher dir. Shared with `rust_project.rs`'s
-/// flycheck-runnable path emitter and the discover-launcher key in
-/// the editor configs setup writes, so the install side and the
-/// reference side can't disagree on extension handling.
+/// Shared between the setup-side install and the
+/// `rust_project.rs` flycheck-runnable emitter so the two can't
+/// drift on extension handling.
 ///
-/// Windows binaries carry `.exe` (Bazel emits them with the extension
-/// in the runfiles tree; the install copy preserves it; rust-analyzer
-/// resolves the absolute path with extension intact). POSIX binaries
-/// have no extension.
-#[cfg(windows)]
+/// `.exe` on every platform is deliberate: Node spawn (the
+/// rust-analyzer VS Code extension's spawner) can't execute
+/// extensionless files on Windows without `shell: true`, and POSIX
+/// `execve` ignores file extensions — same filename works everywhere.
 pub const FLYCHECK_BINARY_FILENAME: &str = "flycheck.exe";
-#[cfg(not(windows))]
-pub const FLYCHECK_BINARY_FILENAME: &str = "flycheck";
 
-#[cfg(windows)]
 pub const DISCOVER_BINARY_FILENAME: &str = "discover_bazel_rust_project.exe";
-#[cfg(not(windows))]
-pub const DISCOVER_BINARY_FILENAME: &str = "discover_bazel_rust_project";
 
-/// Embedded toolchain-info JSON. `:toolchain_info_env` (an `env_file`
-/// rule in `BUILD.bazel`) wraps `rust_analyzer_detect_sysroot`'s JSON
-/// output as `RUST_ANALYZER_TOOLCHAIN_JSON=<file.path>`, generated
-/// through an `Args.add_all` `map_each` callback so Bazel's path
-/// mapping rewrites the path. `process_wrapper` reads the env file and
-/// sets the env var, then rustc resolves `env!(...)` at compile time
-/// and `include_str!` reads the JSON sibling that `compile_data`
-/// supplied to the action — both files in the same path-mapped
-/// sandbox layout, no mismatch. Baking the path via
-/// `rustc_env = {"K": "$(execpath …)"}` would skip path mapping
-/// entirely (env values aren't path-mapped) and miss the file.
-///
-/// The content uses `__OUTPUT_BASE__` / `__WORKSPACE__` / `__EXEC_ROOT__`
-/// placeholder tokens substituted at runtime from `bazel info` values
-/// (see `deserialize_with_substitution`), so the compile-time constant
-/// is location-independent.
+/// JSON embedded at compile time. The `:toolchain_info_env` rule
+/// (BUILD.bazel) emits the env var through Bazel's path-mapping-aware
+/// `Args` machinery; routing the same path through a plain
+/// `rustc_env = {"K": "$(execpath …)"}` would miss the path-mapping
+/// rewrite under `--experimental_output_paths=strip` and fail to
+/// locate the file. Content uses `__OUTPUT_BASE__` / `__WORKSPACE__` /
+/// `__EXEC_ROOT__` placeholder tokens substituted at runtime (see
+/// `deserialize_with_substitution`).
 const TOOLCHAIN_INFO_RAW: &str = include_str!(env!("RUST_ANALYZER_TOOLCHAIN_JSON"));
 
-/// The directory the binary that called this function was invoked from
-/// — i.e. `dirname(current_exe())`. `setup` copies the source binaries
-/// (`discover_bazel_rust_project`, `flycheck`) into the editor's
-/// launcher dir as real files (not symlinks), so `current_exe()`
-/// returns the install path on every platform. Used by both source
-/// binaries to self-locate their config-sibling files (toolchain JSON,
-/// cache dir, output_user_root). `current_exe` rather than `argv[0]`
-/// because the install is a real `fs::copy`, not a runfiles symlink
-/// (the runfiles crate's argv[0]-first policy doesn't apply post-install).
+/// `dirname(current_exe())` — used by discover/flycheck to find their
+/// per-install sibling files (cache dir, output_user_root). Uses
+/// `current_exe` rather than `argv[0]` because the install is a real
+/// `fs::copy`: the runfiles crate's argv[0]-first policy doesn't
+/// apply post-install.
 pub fn install_dir() -> anyhow::Result<Utf8PathBuf> {
     let exe = std::env::current_exe().context("locating current_exe")?;
     let parent = exe

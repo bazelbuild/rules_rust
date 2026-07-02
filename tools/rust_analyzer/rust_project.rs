@@ -294,23 +294,12 @@ fn supports_test_mod(version: &str) -> bool {
     matches!((parts.next(), parts.next()), (Some(major), Some(minor)) if (major, minor) >= (1, 96))
 }
 
-/// Absolute path of the flycheck launcher script that `setup` writes.
-///
-/// `setup` bakes the editor-specific launcher dir into the discover
-/// launcher as `$RULES_RUST_RA_LAUNCHER_DIR`; we read it here so the
-/// flycheck runnable embedded in `rust-project.json` points at the
-/// flycheck binary `setup` copied to the editor-specific launcher dir
-/// (`.vscode/.rules_rust_analyzer/`, `.helix/.rules_rust_analyzer/`,
-/// or `<workspace>/.rules_rust_analyzer/`). The filename comes from
-/// `crate::FLYCHECK_BINARY_FILENAME` so it stays in lockstep with the
-/// setup-side copy (including the `.exe` on Windows).
-///
-/// When the env var is unset (discover invoked outside a setup
-/// install — direct exec for debugging) we fall back to
-/// `<workspace>/.rules_rust_analyzer/`, the editor-agnostic default.
-/// The fallback is only "right" for neovim/print users; vscode/helix
-/// users who bypass setup will get a stale path, which matches every
-/// other fallback in this code.
+/// `$RULES_RUST_RA_LAUNCHER_DIR` is published by discover's
+/// `self_locate_config`. When unset (discover ran outside a setup
+/// install — direct exec for debugging) we fall back to the
+/// editor-agnostic `<workspace>/.rules_rust_analyzer/`; vscode/helix
+/// users who bypass setup get a stale path, same as every other
+/// fallback in this file.
 fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
     let launcher_dir = std::env::var("RULES_RUST_RA_LAUNCHER_DIR")
         .ok()
