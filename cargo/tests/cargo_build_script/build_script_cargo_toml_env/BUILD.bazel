@@ -1,0 +1,32 @@
+load("//cargo:defs.bzl", "cargo_build_script", "cargo_toml_env_vars")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+# Test that cargo_toml_env_vars works with build_script_env_files to provide
+# CARGO_PKG_* variables to build scripts at runtime. This is the fix for
+# crates like rav1e whose build scripts (via the `built` crate) read
+# CARGO_PKG_AUTHORS at runtime with std::env::var().
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
+
+cargo_build_script(
+    name = "cargo_build_script",
+    srcs = ["build.rs"],
+    build_script_env_files = [":cargo_toml_env_vars"],
+    edition = "2021",
+)
+
+rust_library(
+    name = "test_lib",
+    srcs = ["test_lib.rs"],
+    edition = "2021",
+    deps = [":cargo_build_script"],
+)
+
+rust_test(
+    name = "consume_build_script",
+    crate = ":test_lib",
+    size = "small",
+)
