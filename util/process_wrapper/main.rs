@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fs::{copy, OpenOptions};
 use std::io;
+use std::io::Write;
 use std::process::{exit, Command, ExitStatus, Stdio};
 
 use tinyjson::JsonValue;
@@ -215,7 +216,7 @@ fn main() -> Result<(), ProcessWrapperError> {
                 .create(true)
                 .truncate(true)
                 .write(true)
-                .open(tf)
+                .open(&tf)
                 .map_err(|e| ProcessWrapperError(format!("failed to create touch file: {}", e)))?;
         }
         if let Some((copy_source, copy_dest)) = opts.copy_output {
@@ -228,7 +229,23 @@ fn main() -> Result<(), ProcessWrapperError> {
         }
     }
 
-    exit(code)
+    if let Some(ecf) = opts.exit_code_file {
+        let exit_code_file = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&ecf)
+            .map_err(|e| ProcessWrapperError(format!("failed to create exit code file: {}", e)))?;
+        let mut writer = io::LineWriter::new(exit_code_file);
+        writeln!(writer, "{}", code)
+            .map_err(|e| ProcessWrapperError(format!("failed to write exit code to file: {}", e)))?;
+    }
+
+    if opts.forward_exit_code {
+        exit(code)
+    } else {
+        exit(0)
+    }
 }
 
 #[cfg(test)]
