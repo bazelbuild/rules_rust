@@ -181,7 +181,6 @@ impl BuildScriptOutput {
         outputs: &[BuildScriptOutput],
         crate_links: &str,
         exec_root: &str,
-        out_dir: &str,
     ) -> String {
         let prefix = format!("DEP_{}_", crate_links.replace('-', "_").to_uppercase());
         outputs
@@ -191,7 +190,14 @@ impl BuildScriptOutput {
                     Some(format!(
                         "{}{}",
                         prefix,
-                        Self::escape_for_serializing(Self::redact_paths(env, exec_root, out_dir))
+                        // Do NOT redact the producer's out_dir to the generic
+                        // `${out_dir}` token here: DEP_* env vars are consumed
+                        // by *downstream* crates' build scripts, whose runner
+                        // only substitutes `${pwd}` and whose own out_dir
+                        // points to a different directory, so the token would
+                        // resolve incorrectly (or not at all). Only the exec
+                        // root is safe to substitute.
+                        Self::escape_for_serializing(Self::redact_exec_root(env, exec_root))
                     ))
                 } else {
                     None
@@ -321,7 +327,7 @@ mod tests {
             BuildScriptOutput::Env("no_trailing_newline=true".to_owned())
         );
         assert_eq!(
-            BuildScriptOutput::outputs_to_dep_env(&result, "ssh2", "/some/absolute/path", ""),
+            BuildScriptOutput::outputs_to_dep_env(&result, "ssh2", "/some/absolute/path"),
             "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
@@ -475,6 +481,27 @@ cargo::rustc-env=BAR=/abs/exec_root/elsewhere/file.rs
                 "bazel-out/cfg/bin/_bs.out_dir",
             ),
             "FOO=${pwd}/${out_dir}/op.rs\nBAR=${pwd}/elsewhere/file.rs"
+        );
+    }
+
+    /// Verify that `DEP_*` values referencing the producer's `out_dir` keep
+    /// the real path (with only the exec root substituted). Dep env files are
+    /// consumed by *downstream* crates' build scripts, whose runner only
+    /// substitutes `${pwd}` and whose own `out_dir` points to a different
+    /// directory, so a `${out_dir}` token would be left unresolved (e.g.
+    /// libssh2-sys failing to find `zlib.h` from libz-sys's `DEP_Z_INCLUDE`).
+    #[test]
+    fn out_dir_in_dep_env_value_is_not_redacted_to_substitution_token() {
+        let buff = Cursor::new(
+            "
+cargo::include=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_dep_env(&result, "z", "/abs/exec_root"),
+            "DEP_Z_INCLUDE=${pwd}/bazel-out/cfg/bin/pkg/_bs.out_dir/include"
         );
     }
 
