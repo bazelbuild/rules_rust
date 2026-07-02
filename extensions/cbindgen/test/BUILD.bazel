@@ -69,3 +69,42 @@ cc_test(
     srcs = ["simple_config_test.c"],
     deps = [":simple_config"],
 )
+
+# Verify the default config derives valid C/C++ identifiers (include guard
+# and namespace) from target names containing characters like `-`.
+rust_cbindgen_library(
+    name = "simple-hyphenated",
+    lib = ":simple_static",
+)
+
+cc_test(
+    name = "hyphenated_test",
+    size = "small",
+    srcs = ["hyphenated_test.cc"],
+    deps = [":simple-hyphenated"],
+)
+
+# Verify the generated Cargo manifests remain valid when multiple
+# dependencies share the same Bazel target name.
+rust_static_library(
+    name = "collide_static",
+    srcs = ["collide.rs"],
+    edition = "2021",
+    deps = [
+        "//test/collide_a:dep",
+        "//test/collide_b:dep",
+    ],
+)
+
+rust_cbindgen_library(
+    name = "collide_c",
+    lang = "c",
+    lib = ":collide_static",
+)
+
+cc_test(
+    name = "collide_test",
+    size = "small",
+    srcs = ["collide_test.c"],
+    deps = [":collide_c"],
+)

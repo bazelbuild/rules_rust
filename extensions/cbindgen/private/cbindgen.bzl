@@ -5,6 +5,26 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_rust//rust:rust_common.bzl", "CrateInfo", "DepInfo", "TestCrateInfo")
 load("//private:cargo_manifest.bzl", "CargoManifestInfo", "cargo_manifest_aspect")
 
+def _c_identifier(name):
+    """Convert a string into a valid C/C++ identifier.
+
+    Bazel target names allow characters (e.g. `-` or `.`) which are not legal
+    in C/C++ identifiers such as include guards and namespaces.
+
+    Args:
+        name (str): The string to convert.
+
+    Returns:
+        str: `name` with all illegal characters replaced by `_`.
+    """
+    identifier = "".join([
+        char if char.isalnum() else "_"
+        for char in name.elems()
+    ])
+    if identifier[0].isdigit():
+        identifier = "_" + identifier
+    return identifier
+
 def _rust_cbindgen_library_impl(ctx):
     rust_lib = ctx.attr.lib
 
@@ -51,11 +71,12 @@ def _rust_cbindgen_library_impl(ctx):
 
         template_config = ctx.file._config_default_template
 
+        identifier = _c_identifier(ctx.label.name)
         substitutions = {
-            "{include_guard}": "INCLUDE_{}_H".format(ctx.label.name.upper()),
+            "{include_guard}": "INCLUDE_{}_H".format(identifier.upper()),
             "{label}": str(ctx.label),
             "{language}": "C" if use_c else "C++",
-            "{namespace}": "" if use_c else "namespace = \"{}\"".format(ctx.label.name),
+            "{namespace}": "" if use_c else "namespace = \"{}\"".format(identifier),
         }
 
     # Generate the `cbindgen.toml` config file

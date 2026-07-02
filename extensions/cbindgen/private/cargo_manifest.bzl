@@ -15,9 +15,33 @@ CargoManifestInfo = provider(
     doc = "A provider containing information about a Crate's cargo metadata.",
     fields = {
         "deps": "The Cargo.toml files the current crate depends on.",
+        "name": "The Cargo package name written to the manifest.",
         "toml": "The current crate's Cargo.toml file.",
     },
 )
+
+def _package_name(label):
+    """Derive a unique and valid Cargo package name for a Bazel label.
+
+    The label's repository and package are included so that two targets which
+    share a name in different packages don't collide in the `[dependencies]`
+    table of a manifest depending on both. Characters not allowed in Cargo
+    package names are replaced by `_`.
+
+    Args:
+        label (Label): The label of the target the manifest is generated for.
+
+    Returns:
+        str: A Cargo package name unique to `label`.
+    """
+    raw = "/".join([part for part in [label.workspace_name, label.package, label.name] if part])
+    package_name = "".join([
+        char if char.isalnum() or char in "-_" else "_"
+        for char in raw.elems()
+    ])
+    if package_name[0].isdigit():
+        package_name = "_" + package_name
+    return package_name
 
 def _path_parts(path):
     """Takes a path and returns a list of its parts with all "." elements removed.
@@ -236,13 +260,15 @@ def _cargo_manifest_aspect_impl(target, ctx):
     else:
         crate_type_section = "[[bin]]"
 
+    package_name = _package_name(target.label)
+
     ctx.actions.write(
         output = manifest,
         content = _CARGO_MANIFEST_TEMPLATE.format(
             target_label = target.label,
             build_file_path = ctx.build_file_path,
             crate_type = crate_type_section,
-            name = target.label.name,
+            name = package_name,
             # Cargo allows hyphens in package names but not in lib/bin target
             # names. Use the actual crate name when available, otherwise
             # sanitize the label name.
@@ -250,9 +276,13 @@ def _cargo_manifest_aspect_impl(target, ctx):
             version = getattr(rule.attr, "version", None) or "0.0.0",
             edition = edition,
             path = _relativize(root_src.path, manifest.dirname),
+            # The dependency keys must match the `[package]` names of the
+            # manifests the paths lead to. The name a dependency is referred
+            # to by in Rust code is its `[lib]` name which is set separately
+            # in each dependency's own manifest.
             dependencies = "\n".join([
                 "{} = {{ path = \"{}\" }}".format(
-                    dep.label.name,
+                    dep[CargoManifestInfo].name,
                     _relativize(
                         dep[CargoManifestInfo].toml.dirname,
                         manifest.dirname,
@@ -268,6 +298,7 @@ def _cargo_manifest_aspect_impl(target, ctx):
     return [
         CargoManifestInfo(
             toml = manifest,
+            name = package_name,
             deps = depset(transitive = deps),
         ),
         OutputGroupInfo(
