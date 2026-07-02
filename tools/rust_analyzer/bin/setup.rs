@@ -29,9 +29,13 @@ use std::{fs, path::Path};
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Args, Parser, Subcommand};
+use jsonc_parser::{
+    cst::{CstInputValue, CstObject, CstRootNode},
+    ParseOptions,
+};
 use log::info;
 use runfiles::{rlocation, Runfiles};
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 // ---------------------------------------------------------------------------
 // Settings-file keys (VSCode JSON)
@@ -171,33 +175,41 @@ enum IdeCmd {
 
 #[derive(Args)]
 struct VscodeArgs {
-    /// Settings file to write. Relative paths are resolved under
-    /// `--workspace`. When unset, defaults to the unique
-    /// `*.code-workspace` at the workspace root if one exists,
-    /// otherwise `.vscode/settings.json`. Multiple `.code-workspace`
-    /// files at the root are ambiguous — pass `--output` explicitly.
-    #[arg(short, long)]
-    output: Option<Utf8PathBuf>,
+    /// `.vscode/settings.json` file to write. Relative paths are
+    /// resolved under `--workspace`. Defaults to
+    /// `<workspace>/.vscode/settings.json` — always written.
+    #[arg(long)]
+    settings_json: Option<Utf8PathBuf>,
 
-    /// Nest the managed `rust-analyzer.*` keys under this top-level
-    /// key. Defaults to `"settings"` when the resolved output ends
-    /// in `.code-workspace` (which requires settings inside a
-    /// `settings` object — folder-scoped writes don't satisfy
-    /// rust-analyzer's window-scoped config requests), otherwise
-    /// the managed keys go at the document root.
+    /// `.code-workspace` file to also update (in addition to
+    /// `settings.json`). When unset, autodetects a unique
+    /// `*.code-workspace` at the workspace root; multiple candidates
+    /// require this flag to disambiguate. Pass a path to force-target
+    /// a specific file even if it doesn't currently exist.
+    #[arg(long)]
+    code_workspace: Option<Utf8PathBuf>,
+
+    /// Skip the `.code-workspace` write entirely (bypasses autodetect
+    /// and any `--code-workspace` value).
+    #[arg(long)]
+    no_code_workspace: bool,
+
+    /// Key to nest managed `rust-analyzer.*` keys under when writing
+    /// to a `.code-workspace`. Defaults to `settings` — the block
+    /// VS Code reads window-scoped rust-analyzer configuration from
+    /// when the project is opened via the workspace file.
     #[arg(long)]
     settings_key: Option<String>,
 
-    /// Print the would-be-written JSON to stdout instead of writing it.
+    /// Print each would-be-written file to stdout instead of writing.
     #[arg(long)]
     dry_run: bool,
 
-    /// Overwrite the managed keys instead of merging them with whatever
-    /// the file already has. With `--settings-key` set, only that
-    /// nested object is replaced — sibling top-level keys (e.g.
-    /// `folders`, `tasks`, `extensions` on a `.code-workspace` file)
-    /// stay intact. Without `--settings-key`, the entire file is
-    /// overwritten with just the managed keys.
+    /// Replace the managed portion of each target file instead of
+    /// merging. In `.vscode/settings.json` this overwrites the root;
+    /// in `.code-workspace` this overwrites the nested `settings`
+    /// object only (sibling `folders` / `tasks` / `extensions` stay
+    /// intact — the workspace file wouldn't be usable otherwise).
     #[arg(long)]
     replace: bool,
 }
@@ -218,15 +230,11 @@ fn main() -> Result<()> {
 
     let workspace = workspace.unwrap_or_else(|| Utf8PathBuf::from("."));
 
-    // Resolve the Vscode output path eagerly so `launcher_dir_for`
-    // sees the autodetected `.code-workspace` (or default
-    // `.vscode/settings.json`) — its parent dir is the launcher_dir
-    // basis, and we don't want to compute it twice.
     let vscode_targets = match &ide {
         IdeCmd::Vscode(args) => Some(resolve_vscode_targets(&workspace, args)?),
         IdeCmd::Neovim | IdeCmd::Helix | IdeCmd::Print => None,
     };
-    let launcher_dir = launcher_dir_for(&workspace, &ide, vscode_targets.as_ref());
+    let launcher_dir = launcher_dir_for(&workspace, &ide);
 
     let runfiles = Runfiles::create().context("creating Runfiles for setup")?;
     let toolchain = ToolchainBinaries {
@@ -315,58 +323,89 @@ fn lookup_canonical(runfiles: &Runfiles, env_path: &str) -> Result<Utf8PathBuf> 
 // VSCode subcommand
 // ---------------------------------------------------------------------------
 
-/// Output ending in this MUST nest the managed `rust-analyzer.*` keys
-/// under `settings` — those keys are window-scoped and VS Code
-/// answers `workspace/configuration` from the workspace file's
-/// `settings` block, not from any folder's `.vscode/settings.json`.
+/// VS Code multi-root workspace file extension; used by
+/// [`autodetect_code_workspace`] to find a workspace file at the
+/// project root.
 const CODE_WORKSPACE_EXT: &str = ".code-workspace";
 
 const DEFAULT_VSCODE_OUTPUT: &str = ".vscode/settings.json";
 
-/// Resolved once before `launcher_dir_for` (which needs the output's
-/// parent dir) so the same values flow into both that and `run_vscode`.
+/// `settings_json` is always written; `code_workspace` is optional
+/// (autodetected when a unique `.code-workspace` exists at the
+/// workspace root, forced by `--code-workspace`, or skipped by
+/// `--no-code-workspace`). Resolved before install work so
+/// ambiguous-`.code-workspace` errors fail fast.
 #[derive(Debug)]
 struct ResolvedVscodeTargets {
-    output: Utf8PathBuf,
-    /// `None` writes managed keys at the document root
-    /// (`.vscode/settings.json`); `Some("settings")` nests them
-    /// (`.code-workspace`). See [`CODE_WORKSPACE_EXT`] for why.
-    settings_key: Option<String>,
+    settings_json: Utf8PathBuf,
+    /// When set, the managed keys ALSO get merged into this file
+    /// under [`CodeWorkspaceTarget::settings_key`] (default
+    /// `"settings"` — the block VS Code reads window-scoped
+    /// rust-analyzer config from when opening via the workspace file).
+    code_workspace: Option<CodeWorkspaceTarget>,
+}
+
+#[derive(Debug)]
+struct CodeWorkspaceTarget {
+    path: Utf8PathBuf,
+    settings_key: String,
 }
 
 fn resolve_vscode_targets(
     workspace: &Utf8Path,
     args: &VscodeArgs,
 ) -> Result<ResolvedVscodeTargets> {
-    let output = match args.output.as_ref() {
-        Some(p) if p.is_absolute() => p.clone(),
-        Some(p) => workspace.join(p),
-        None => autodetect_code_workspace(workspace)?
-            .unwrap_or_else(|| workspace.join(DEFAULT_VSCODE_OUTPUT)),
-    };
-    let settings_key = args
-        .settings_key
-        .clone()
-        .or_else(|| is_code_workspace(&output).then(|| "settings".to_owned()));
+    let settings_json = args
+        .settings_json
+        .as_deref()
+        .map(|p| abs_or_under(workspace, p))
+        .unwrap_or_else(|| workspace.join(DEFAULT_VSCODE_OUTPUT));
+    let code_workspace = resolve_code_workspace_target(workspace, args)?;
     Ok(ResolvedVscodeTargets {
-        output,
-        settings_key,
+        settings_json,
+        code_workspace,
     })
 }
 
-fn is_code_workspace(path: &Utf8Path) -> bool {
-    path.file_name()
-        .is_some_and(|n| n.ends_with(CODE_WORKSPACE_EXT))
+fn resolve_code_workspace_target(
+    workspace: &Utf8Path,
+    args: &VscodeArgs,
+) -> Result<Option<CodeWorkspaceTarget>> {
+    if args.no_code_workspace {
+        return Ok(None);
+    }
+    let path = match args.code_workspace.as_deref() {
+        Some(p) => Some(abs_or_under(workspace, p)),
+        None => autodetect_code_workspace(workspace)?,
+    };
+    Ok(path.map(|path| CodeWorkspaceTarget {
+        path,
+        settings_key: args
+            .settings_key
+            .clone()
+            .unwrap_or_else(|| "settings".to_owned()),
+    }))
 }
 
-/// Zero matches → `Ok(None)` (caller falls back to the default
-/// `.vscode/settings.json`); one → `Ok(Some)`; two or more → `Err`,
-/// since auto-targeting is ambiguous (the user must pass `--output`).
+/// Resolve a CLI-supplied path against `workspace`: absolute paths
+/// pass through, relative ones join under the workspace root.
+fn abs_or_under(workspace: &Utf8Path, path: &Utf8Path) -> Utf8PathBuf {
+    if path.is_absolute() {
+        path.to_owned()
+    } else {
+        workspace.join(path)
+    }
+}
+
+/// Zero matches → `Ok(None)` (`settings.json` gets written alone);
+/// one → `Ok(Some)`; two or more → `Err`, since auto-targeting is
+/// ambiguous (user must pass `--code-workspace` to pick, or
+/// `--no-code-workspace` to skip).
 fn autodetect_code_workspace(workspace: &Utf8Path) -> Result<Option<Utf8PathBuf>> {
     let read = match fs::read_dir(workspace) {
         Ok(r) => r,
         // Workspace path missing or unreadable is fine for autodetect —
-        // the caller will fall back to the .vscode/ default.
+        // no code-workspace to write.
         Err(_) => return Ok(None),
     };
     let mut matches: Vec<Utf8PathBuf> = Vec::new();
@@ -383,7 +422,7 @@ fn autodetect_code_workspace(workspace: &Utf8Path) -> Result<Option<Utf8PathBuf>
         0 => Ok(None),
         1 => Ok(matches.pop()),
         _ => anyhow::bail!(
-            "multiple `*{CODE_WORKSPACE_EXT}` files at {workspace}: {}. Pass `--output` to disambiguate.",
+            "multiple `*{CODE_WORKSPACE_EXT}` files at {workspace}: {}. Pass `--code-workspace <path>` to pick one, or `--no-code-workspace` to skip.",
             matches
                 .iter()
                 .map(|p| p.file_name().unwrap_or(""))
@@ -395,31 +434,36 @@ fn autodetect_code_workspace(workspace: &Utf8Path) -> Result<Option<Utf8PathBuf>
 
 fn run_vscode(ctx: &SetupCtx, args: VscodeArgs, targets: ResolvedVscodeTargets) -> Result<()> {
     let ResolvedVscodeTargets {
-        output: output_path,
-        settings_key,
+        settings_json,
+        code_workspace,
     } = targets;
-
     let managed = vscode_managed_keys(ctx);
-    let key_count = managed.len();
 
-    let merged = if args.replace {
-        replace_managed(&output_path, managed, settings_key.as_deref())?
-    } else {
-        merge_into_existing(&output_path, managed, settings_key.as_deref())?
-    };
+    // Always settings.json (managed keys at root); then optionally
+    // the .code-workspace (managed keys nested under `settings_key`
+    // so sibling folders / tasks / extensions / user comments
+    // survive).
+    let writes = std::iter::once((settings_json, None))
+        .chain(code_workspace.map(|cw| (cw.path, Some(cw.settings_key))));
 
-    if args.dry_run {
-        println!("=== {output_path} ===");
-        println!("{}", serde_json::to_string_pretty(&merged)?);
-        return Ok(());
+    for (path, settings_key) in writes {
+        let merged = if args.replace {
+            replace_managed_file(&path, &managed, settings_key.as_deref())?
+        } else {
+            merge_file(&path, &managed, settings_key.as_deref())?
+        };
+        if args.dry_run {
+            println!("=== {path} ===");
+            println!("{merged}");
+        } else {
+            write_text(path.as_std_path(), &merged)?;
+            info!(
+                "{} {} in {path}",
+                if args.replace { "Wrote" } else { "Merged" },
+                managed.len(),
+            );
+        }
     }
-
-    write_settings(output_path.as_std_path(), &merged)?;
-    info!(
-        "{} {} key(s) in {output_path}",
-        if args.replace { "Wrote" } else { "Merged" },
-        key_count,
-    );
     Ok(())
 }
 
@@ -499,6 +543,9 @@ fn install_toolchain_launchers(
 }
 
 fn write_launcher_paths_json(path: &Utf8Path, toolchain: &ToolchainBinaries) -> Result<()> {
+    // Entirely generated file — no trivia to preserve, so plain
+    // serde_json is fine (unlike the .vscode/settings.json /
+    // .code-workspace merges that go through the CST).
     let map = Value::Object(
         LAUNCHER_LOGICAL_NAMES
             .iter()
@@ -511,7 +558,9 @@ fn write_launcher_paths_json(path: &Utf8Path, toolchain: &ToolchainBinaries) -> 
             })
             .collect(),
     );
-    write_settings(path.as_std_path(), &map)
+    let mut json = serde_json::to_string_pretty(&map)?;
+    json.push('\n');
+    write_text(path.as_std_path(), &json)
 }
 
 fn toolchain_target_for<'a>(logical: &str, toolchain: &'a ToolchainBinaries) -> &'a Utf8PathBuf {
@@ -565,26 +614,18 @@ fn to_forward_slashes(path: &str) -> String {
 // Editor-relative defaults
 // ---------------------------------------------------------------------------
 
-/// Resolve the launcher directory for a given IDE subcommand. Setup is
-/// authoritative over the binary install dir / cache / output_user_root
-/// placement; every downstream default is computed by appending to
-/// whatever this returns. For Vscode the launcher_dir sits alongside
-/// the resolved settings file (defaults to `.vscode/.rules_rust_analyzer/`
-/// when writing to `.vscode/settings.json`, sits at workspace root when
-/// targeting a `.code-workspace` there).
-fn launcher_dir_for(
-    workspace: &Utf8Path,
-    ide: &IdeCmd,
-    vscode_targets: Option<&ResolvedVscodeTargets>,
-) -> Utf8PathBuf {
+/// Workspace-relative launcher dir for the Vscode subcommand. Pinned
+/// to `.vscode/` regardless of where the settings file lives (default
+/// `.vscode/settings.json`, or a `.code-workspace` at the workspace
+/// root, or a custom `--output` path): `.vscode/` is universally
+/// recognized as VSCode-scoped, and the committed settings file
+/// references `${workspaceFolder}/.vscode/.rules_rust_analyzer/<name>.exe`
+/// so it stays the same no matter what output path the user picked.
+const VSCODE_LAUNCHER_REL: &str = ".vscode";
+
+fn launcher_dir_for(workspace: &Utf8Path, ide: &IdeCmd) -> Utf8PathBuf {
     match ide {
-        IdeCmd::Vscode(_) => vscode_targets
-            .expect("vscode_targets must be resolved for IdeCmd::Vscode")
-            .output
-            .parent()
-            .map(|p| p.to_owned())
-            .unwrap_or_else(|| workspace.join(".vscode"))
-            .join(LAUNCHER_SUBDIR),
+        IdeCmd::Vscode(_) => workspace.join(VSCODE_LAUNCHER_REL).join(LAUNCHER_SUBDIR),
         IdeCmd::Helix => workspace.join(".helix").join(LAUNCHER_SUBDIR),
         // Neovim has no canonical per-project dotdir; print covers
         // editor-agnostic JSON-config LSP clients. Both land at the
@@ -667,8 +708,10 @@ enum ManagedValue {
 
 /// VS Code expands `${workspaceFolder}` for rust-analyzer's path
 /// settings — that's what keeps the committed settings file portable.
+/// Kept in sync with [`launcher_dir_for`]'s VSCode arm via
+/// [`VSCODE_LAUNCHER_REL`].
 fn workspace_relative(filename: &str) -> String {
-    format!("${{workspaceFolder}}/{LAUNCHER_SUBDIR}/{filename}")
+    format!("${{workspaceFolder}}/{VSCODE_LAUNCHER_REL}/{LAUNCHER_SUBDIR}/{filename}")
 }
 
 fn vscode_managed_keys(ctx: &SetupCtx) -> Vec<(String, ManagedValue)> {
@@ -746,170 +789,187 @@ fn vscode_managed_keys(ctx: &SetupCtx) -> Vec<(String, ManagedValue)> {
     out
 }
 
-/// Strict JSON only — JSONC features (comments, trailing commas) that
-/// VS Code tolerates will error here with a hint at `--replace`.
-/// Missing / empty files yield an empty map.
-fn read_root_object(path: &Utf8Path) -> Result<Map<String, Value>> {
-    match fs::read_to_string(path) {
-        Ok(content) if content.trim().is_empty() => Ok(Map::new()),
-        Ok(content) => match serde_json::from_str::<Value>(&content) {
-            Ok(Value::Object(map)) => Ok(map),
-            Ok(other) => anyhow::bail!(
-                "{} is not a JSON object (found {}); refusing to merge. Use --replace to overwrite.",
-                path,
-                describe_value(&other),
-            ),
-            Err(e) => anyhow::bail!(
-                "{} is not valid strict JSON ({}). VSCode tolerates comments and trailing commas, but this tool does not. Either remove the JSONC features or pass --replace.",
-                path,
-                e,
-            ),
-        },
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Map::new()),
-        Err(e) => Err(e).with_context(|| format!("reading {path}")),
-    }
-}
-
-fn describe_value(value: &Value) -> &'static str {
-    match value {
-        Value::Null => "null",
-        Value::Bool(_) => "bool",
-        Value::Number(_) => "number",
-        Value::String(_) => "string",
-        Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
-}
-
-/// `Some(key)` creates `root[key] = {}` if missing; rejects a
-/// non-object so we don't silently clobber user-typed values.
-fn merge_target_mut<'a>(
-    path: &Utf8Path,
-    root: &'a mut Map<String, Value>,
-    settings_key: Option<&str>,
-) -> Result<&'a mut Map<String, Value>> {
-    let Some(key) = settings_key else {
-        return Ok(root);
+/// Parse `path` as JSONC via `jsonc-parser`'s CST — which preserves
+/// comments, whitespace, and trailing commas so mutations round-trip
+/// without stripping trivia. Missing / empty files return a fresh empty
+/// root object.
+///
+/// The returned `CstRootNode` MUST NOT be dropped while any of its
+/// descendants are in use — the CST uses weak parent pointers and
+/// dropping the root panics its children.
+fn parse_root(path: &Utf8Path) -> Result<CstRootNode> {
+    let text = match fs::read_to_string(path) {
+        Ok(t) if t.trim().is_empty() => "{}\n".to_owned(),
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => "{}\n".to_owned(),
+        Err(e) => return Err(e).with_context(|| format!("reading {path}")),
     };
-    let entry = root
-        .entry(key.to_owned())
-        .or_insert_with(|| Value::Object(Map::new()));
-    match entry {
-        Value::Object(map) => Ok(map),
-        other => anyhow::bail!(
-            "{} has `{key}` set to a {}, expected an object — refusing to merge into a non-object container.",
-            path,
-            describe_value(other),
-        ),
-    }
+    CstRootNode::parse(&text, &ParseOptions::default())
+        .map_err(|e| anyhow::anyhow!("{path} is not valid JSON ({e})"))
 }
 
-fn merge_into_existing(
+fn root_object(path: &Utf8Path, root: &CstRootNode) -> Result<CstObject> {
+    root.object_value().ok_or_else(|| {
+        anyhow::anyhow!(
+            "{path}'s root is not a JSON object; refusing to merge. Use --replace to overwrite."
+        )
+    })
+}
+
+/// Merge `managed` into the JSONC file at `path`, preserving all
+/// existing comments and formatting. Returns the merged file content
+/// as a string ready to write. See [`apply_managed_cst`] for the
+/// per-strategy semantics.
+fn merge_file(
     path: &Utf8Path,
-    managed: Vec<(String, ManagedValue)>,
+    managed: &[(String, ManagedValue)],
     settings_key: Option<&str>,
-) -> Result<Value> {
-    let mut root = read_root_object(path)?;
-    {
-        let target = merge_target_mut(path, &mut root, settings_key)?;
-        for (k, v) in managed {
-            apply_managed(target, k, v);
-        }
+) -> Result<String> {
+    let root = parse_root(path)?;
+    let root_obj = root_object(path, &root)?;
+    let target = match settings_key {
+        None => root_obj,
+        Some(k) => root_obj.object_value_or_create(k).ok_or_else(|| {
+            anyhow::anyhow!(
+                "{path}'s `{k}` is not an object; refusing to merge. Use --replace to overwrite."
+            )
+        })?,
+    };
+    for (key, value) in managed {
+        apply_managed_cst(&target, key, value);
     }
-    Ok(Value::Object(root))
+    Ok(root.to_string())
 }
 
 /// `--replace` path. With `settings_key = Some` we only replace
-/// `root[key]` — `folders` / `tasks` / `extensions` on a
-/// `.code-workspace` must survive, since the user can't
-/// usefully `--replace` the whole workspace file.
-fn replace_managed(
+/// `root[key]` — sibling keys (`folders` / `tasks` / `extensions` on
+/// a `.code-workspace`) survive, since the user can't usefully
+/// `--replace` the whole workspace file. Without a `settings_key`
+/// the entire root document is replaced with just the managed keys.
+fn replace_managed_file(
     path: &Utf8Path,
-    managed: Vec<(String, ManagedValue)>,
+    managed: &[(String, ManagedValue)],
     settings_key: Option<&str>,
-) -> Result<Value> {
-    let mut fresh = Map::new();
-    for (k, v) in managed {
-        fresh.insert(k, realize_managed(v));
-    }
-    let Some(key) = settings_key else {
-        return Ok(Value::Object(fresh));
+) -> Result<String> {
+    let props: Vec<(String, CstInputValue)> = managed
+        .iter()
+        .map(|(k, v)| (k.clone(), realize_managed_cst(v)))
+        .collect();
+    // Without a settings_key we're wholesale-replacing the document;
+    // no need to parse (and no need to inherit corruption from the
+    // existing file). Only the settings_key branch has to preserve
+    // siblings and therefore has to read what's there.
+    let root = if settings_key.is_some() {
+        parse_root(path)?
+    } else {
+        CstRootNode::parse("{}\n", &ParseOptions::default()).expect("empty object is valid JSON")
     };
-    let mut root = read_root_object(path)?;
-    root.insert(key.to_owned(), Value::Object(fresh));
-    Ok(Value::Object(root))
+    match settings_key {
+        None => {
+            root.set_value(CstInputValue::Object(props));
+        }
+        Some(k) => {
+            let root_obj = root_object(path, &root)?;
+            if let Some(existing) = root_obj.get(k) {
+                existing.remove();
+            }
+            root_obj.append(k, CstInputValue::Object(props));
+        }
+    }
+    Ok(root.to_string())
 }
 
-fn apply_managed(object: &mut Map<String, Value>, key: String, value: ManagedValue) {
+/// Mutate `target` per the [`ManagedValue`] strategy:
+///
+/// * `Replace` — overwrite (creates the property if missing).
+/// * `InsertEntries` — dict-merge: add sub-entries that aren't
+///   already present. If the existing value isn't an object, it's
+///   overwritten (VSCode wouldn't accept a non-object here anyway).
+/// * `InsertListEntries` — list-union: append entries that aren't
+///   already present (comparison via `serde_json::Value` equality,
+///   obtained by roundtripping each element's source text through
+///   `jsonc_parser::parse_to_serde_value`).
+fn apply_managed_cst(target: &CstObject, key: &str, value: &ManagedValue) {
     match value {
         ManagedValue::Replace(v) => {
-            object.insert(key, v);
+            let cst_v = to_cst_input(v);
+            match target.get(key) {
+                Some(prop) => prop.set_value(cst_v),
+                None => {
+                    target.append(key, cst_v);
+                }
+            }
         }
         ManagedValue::InsertEntries(entries) => {
-            // Coerce the existing entry to an object. If a user managed to
-            // set, say, `files.exclude` to a non-object value, we replace
-            // it — VSCode wouldn't accept that anyway.
-            let existing = object
-                .entry(key)
-                .or_insert_with(|| Value::Object(Map::new()));
-            if !matches!(existing, Value::Object(_)) {
-                *existing = Value::Object(Map::new());
-            }
-            let Value::Object(map) = existing else {
-                unreachable!("just assigned to Value::Object above")
-            };
+            let obj = target.object_value_or_set(key);
             for (sub_k, sub_v) in entries {
-                // `or_insert` preserves any pre-existing entry under the
-                // same glob, including explicit `false` overrides — that's
-                // how users opt out of an individual exclude without us
-                // re-adding it on the next run.
-                map.entry(sub_k).or_insert(sub_v);
+                if obj.get(sub_k).is_none() {
+                    obj.append(sub_k, to_cst_input(sub_v));
+                }
             }
         }
         ManagedValue::InsertListEntries(entries) => {
-            // Same shape-coercion as InsertEntries but for arrays.
-            let existing = object
-                .entry(key)
-                .or_insert_with(|| Value::Array(Vec::new()));
-            if !matches!(existing, Value::Array(_)) {
-                *existing = Value::Array(Vec::new());
-            }
-            let Value::Array(arr) = existing else {
-                unreachable!("just assigned to Value::Array above")
-            };
+            let arr = target.array_value_or_set(key);
+            let existing: Vec<Value> = arr
+                .elements()
+                .iter()
+                .filter_map(|e| {
+                    jsonc_parser::parse_to_serde_value(&e.to_string(), &Default::default())
+                        .ok()
+                        .flatten()
+                })
+                .collect();
             for entry in entries {
-                if !arr.iter().any(|existing| existing == &entry) {
-                    arr.push(entry);
+                if !existing.iter().any(|x| x == entry) {
+                    arr.append(to_cst_input(entry));
                 }
             }
         }
     }
 }
 
-/// Materialize a managed value into a fresh object — used by `--replace`,
-/// which writes only our keys with no pre-existing context to merge into.
-fn realize_managed(value: ManagedValue) -> Value {
+/// Materialize a managed value as a fresh CST input — used by the
+/// `--replace` path where there's no pre-existing structure to
+/// preserve.
+fn realize_managed_cst(value: &ManagedValue) -> CstInputValue {
     match value {
-        ManagedValue::Replace(v) => v,
-        ManagedValue::InsertEntries(entries) => {
-            let mut m = Map::new();
-            for (k, v) in entries {
-                m.insert(k, v);
-            }
-            Value::Object(m)
+        ManagedValue::Replace(v) => to_cst_input(v),
+        ManagedValue::InsertEntries(entries) => CstInputValue::Object(
+            entries
+                .iter()
+                .map(|(k, v)| (k.clone(), to_cst_input(v)))
+                .collect(),
+        ),
+        ManagedValue::InsertListEntries(entries) => {
+            CstInputValue::Array(entries.iter().map(to_cst_input).collect())
         }
-        ManagedValue::InsertListEntries(entries) => Value::Array(entries),
     }
 }
 
-fn write_settings(path: &Path, value: &Value) -> Result<()> {
+fn to_cst_input(v: &Value) -> CstInputValue {
+    match v {
+        Value::Null => CstInputValue::Null,
+        Value::Bool(b) => CstInputValue::Bool(*b),
+        // `jsonc-parser` takes numbers as their source text — reusing
+        // serde_json's canonical formatting round-trips cleanly since
+        // both agree on the numeric grammar.
+        Value::Number(n) => CstInputValue::Number(n.to_string()),
+        Value::String(s) => CstInputValue::String(s.clone()),
+        Value::Array(arr) => CstInputValue::Array(arr.iter().map(to_cst_input).collect()),
+        Value::Object(obj) => CstInputValue::Object(
+            obj.iter()
+                .map(|(k, v)| (k.clone(), to_cst_input(v)))
+                .collect(),
+        ),
+    }
+}
+
+fn write_text(path: &Path, text: &str) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
             .with_context(|| format!("creating directory {}", parent.display()))?;
     }
-    let mut json = serde_json::to_string_pretty(value)?;
-    json.push('\n');
-    fs::write(path, json).with_context(|| format!("writing {}", path.display()))?;
+    fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
     Ok(())
 }
 
@@ -1239,6 +1299,15 @@ mod tests {
         }
     }
 
+    /// Parse the merged-text output of `merge_file` / `replace_managed_file`
+    /// back into a `serde_json::Value` for assertion. Uses `jsonc_parser`'s
+    /// serde_json bridge so JSONC output (comments / trailing commas) round-trips.
+    fn parse_merged(merged: &str) -> Value {
+        jsonc_parser::parse_to_serde_value(merged, &Default::default())
+            .expect("output must be valid JSON")
+            .expect("non-empty JSON")
+    }
+
     #[test]
     fn merge_preserves_user_keys() {
         let (ctx, _launcher_dir) = dummy_ctx();
@@ -1250,14 +1319,15 @@ mod tests {
             r#"{"editor.tabSize": 4, "rust-analyzer.server.path": "old"}"#,
         )
         .unwrap();
-        let merged = merge_into_existing(&path, vscode_managed_keys(&ctx), None).unwrap();
-        let obj = merged.as_object().unwrap();
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), None).unwrap();
+        let parsed = parse_merged(&merged);
+        let obj = parsed.as_object().unwrap();
         // User key preserved
         assert_eq!(obj.get("editor.tabSize"), Some(&json!(4)));
         // Managed key overwritten and points at the launcher shim.
         assert_eq!(
             obj.get(SERVER_PATH_KEY).unwrap().as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rust_analyzer.exe"
         );
         // discoverConfig present
         assert!(obj.get(DISCOVER_CONFIG_KEY).is_some());
@@ -1270,8 +1340,9 @@ mod tests {
         let tmp = std::env::temp_dir().join(format!("setup_test2_{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
         let path = Utf8PathBuf::try_from(tmp.join("settings.json")).unwrap();
-        let merged = merge_into_existing(&path, vscode_managed_keys(&ctx), None).unwrap();
-        let obj = merged.as_object().unwrap();
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), None).unwrap();
+        let parsed = parse_merged(&merged);
+        let obj = parsed.as_object().unwrap();
         assert!(obj.contains_key(DISCOVER_CONFIG_KEY));
         assert!(obj.contains_key(SERVER_PATH_KEY));
         assert!(obj.contains_key(PROC_MACRO_SRV_KEY));
@@ -1315,7 +1386,7 @@ mod tests {
         assert_eq!(arr.len(), 1);
         assert_eq!(
             arr[0].as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/rustfmt.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rustfmt.exe"
         );
     }
 
@@ -1328,11 +1399,11 @@ mod tests {
         // portable across developers and platforms.
         assert_eq!(
             replace_value(&keys, SERVER_PATH_KEY).as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rust_analyzer.exe"
         );
         assert_eq!(
             replace_value(&keys, PROC_MACRO_SRV_KEY).as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer_proc_macro_srv.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rust_analyzer_proc_macro_srv.exe"
         );
         let discover_cmd = replace_value(&keys, DISCOVER_CONFIG_KEY)
             .get("command")
@@ -1340,7 +1411,7 @@ mod tests {
             .expect("command must be an array");
         assert_eq!(
             discover_cmd[0].as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/discover_bazel_rust_project.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/discover_bazel_rust_project.exe"
         );
     }
 
@@ -1362,8 +1433,9 @@ mod tests {
             }"#,
         )
         .unwrap();
-        let merged = merge_into_existing(&path, vscode_managed_keys(&ctx), None).unwrap();
-        let watchers = merged
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), None).unwrap();
+        let parsed = parse_merged(&merged);
+        let watchers = parsed
             .as_object()
             .unwrap()
             .get(FILES_WATCHER_EXCLUDE_KEY)
@@ -1413,42 +1485,43 @@ mod tests {
 
     #[test]
     fn insert_list_entries_preserves_user_values_and_dedupes() {
-        let mut obj = Map::new();
-        obj.insert(
-            "rust-analyzer.files.excludeDirs".to_string(),
-            json!(["user_dir", "cargo"]),
+        // End-to-end via merge_file: user has an array containing
+        // "user_dir" + "cargo"; managed adds "cargo" + "crate_universe";
+        // result preserves user_dir, doesn't duplicate cargo, adds
+        // crate_universe.
+        let ws = make_workspace(
+            "list_dedupe",
+            &[(
+                "settings.json",
+                r#"{"rust-analyzer.files.excludeDirs": ["user_dir", "cargo"]}"#,
+            )],
         );
-        apply_managed(
-            &mut obj,
+        let path = ws.join("settings.json");
+        let managed = vec![(
             "rust-analyzer.files.excludeDirs".to_string(),
             ManagedValue::InsertListEntries(vec![json!("cargo"), json!("crate_universe")]),
-        );
-        let arr = obj
+        )];
+        let merged = merge_file(&path, &managed, None).unwrap();
+        let parsed = parse_merged(&merged);
+        let arr = parsed
+            .as_object()
+            .unwrap()
             .get("rust-analyzer.files.excludeDirs")
             .unwrap()
             .as_array()
             .unwrap();
-        // user_dir preserved, cargo not duplicated, crate_universe added.
         assert_eq!(
             arr,
             &vec![json!("user_dir"), json!("cargo"), json!("crate_universe")]
         );
-    }
-
-    /// Build a `VscodeArgs` for tests that exercises a specific output
-    /// path / settings_key combo. Production code goes through
-    /// `resolve_vscode_targets`; tests of `launcher_dir_for` care only
-    /// about the post-resolution `ResolvedVscodeTargets`.
-    fn vscode_targets(output: &str, settings_key: Option<&str>) -> ResolvedVscodeTargets {
-        ResolvedVscodeTargets {
-            output: Utf8PathBuf::from(output),
-            settings_key: settings_key.map(str::to_owned),
-        }
+        let _ = std::fs::remove_dir_all(&ws);
     }
 
     fn empty_vscode_args() -> VscodeArgs {
         VscodeArgs {
-            output: None,
+            settings_json: None,
+            code_workspace: None,
+            no_code_workspace: false,
             settings_key: None,
             dry_run: false,
             replace: false,
@@ -1459,48 +1532,36 @@ mod tests {
     fn launcher_dir_for_picks_editor_specific_subdir() {
         let ws = Utf8PathBuf::from("/workspace");
         let vscode = IdeCmd::Vscode(empty_vscode_args());
-        let vscode_resolved = vscode_targets("/workspace/.vscode/settings.json", None);
         assert_eq!(
-            launcher_dir_for(&ws, &vscode, Some(&vscode_resolved)),
+            launcher_dir_for(&ws, &vscode),
             Utf8PathBuf::from("/workspace/.vscode/.rules_rust_analyzer"),
         );
         assert_eq!(
-            launcher_dir_for(&ws, &IdeCmd::Helix, None),
+            launcher_dir_for(&ws, &IdeCmd::Helix),
             Utf8PathBuf::from("/workspace/.helix/.rules_rust_analyzer"),
         );
         assert_eq!(
-            launcher_dir_for(&ws, &IdeCmd::Neovim, None),
+            launcher_dir_for(&ws, &IdeCmd::Neovim),
             Utf8PathBuf::from("/workspace/.rules_rust_analyzer"),
         );
         assert_eq!(
-            launcher_dir_for(&ws, &IdeCmd::Print, None),
+            launcher_dir_for(&ws, &IdeCmd::Print),
             Utf8PathBuf::from("/workspace/.rules_rust_analyzer"),
         );
     }
 
     #[test]
-    fn launcher_dir_for_vscode_honors_custom_output() {
+    fn launcher_dir_for_vscode_is_pinned_regardless_of_output() {
+        // Whether the user targets `.vscode/settings.json`, a custom
+        // path, or a `.code-workspace` at the workspace root, the
+        // Vscode launcher dir is always `.vscode/.rules_rust_analyzer/`
+        // — the committed settings file references it via
+        // `${workspaceFolder}` so all three outputs use the same path.
         let ws = Utf8PathBuf::from("/workspace");
-        // Custom output path → launcher dir sits alongside it.
-        let vscode = IdeCmd::Vscode(empty_vscode_args());
-        let resolved = vscode_targets("/workspace/.custom/conf.json", None);
+        let expected = Utf8PathBuf::from("/workspace/.vscode/.rules_rust_analyzer");
         assert_eq!(
-            launcher_dir_for(&ws, &vscode, Some(&resolved)),
-            Utf8PathBuf::from("/workspace/.custom/.rules_rust_analyzer"),
-        );
-    }
-
-    #[test]
-    fn launcher_dir_for_vscode_with_code_workspace_targets_workspace_root() {
-        // A `.code-workspace` at the workspace root means the launcher
-        // dir sits at the workspace root too (same shape as Neovim /
-        // Print), not under `.vscode/`.
-        let ws = Utf8PathBuf::from("/workspace");
-        let vscode = IdeCmd::Vscode(empty_vscode_args());
-        let resolved = vscode_targets("/workspace/myproj.code-workspace", Some("settings"));
-        assert_eq!(
-            launcher_dir_for(&ws, &vscode, Some(&resolved)),
-            Utf8PathBuf::from("/workspace/.rules_rust_analyzer"),
+            launcher_dir_for(&ws, &IdeCmd::Vscode(empty_vscode_args())),
+            expected,
         );
     }
 
@@ -1779,9 +1840,9 @@ mod tests {
             )],
         );
         let path = ws.join("proj.code-workspace");
-        let merged =
-            merge_into_existing(&path, vscode_managed_keys(&ctx), Some("settings")).unwrap();
-        let root = merged.as_object().unwrap();
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), Some("settings")).unwrap();
+        let parsed = parse_merged(&merged);
+        let root = parsed.as_object().unwrap();
 
         // Top-level sibling keys survived intact.
         assert_eq!(
@@ -1800,7 +1861,7 @@ mod tests {
         let settings = root.get("settings").unwrap().as_object().unwrap();
         assert_eq!(
             settings.get(SERVER_PATH_KEY).unwrap().as_str().unwrap(),
-            "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer.exe"
+            "${workspaceFolder}/.vscode/.rules_rust_analyzer/rust_analyzer.exe"
         );
         // Pre-existing user setting inside `settings` survived.
         assert_eq!(settings.get("editor.tabSize"), Some(&json!(4)));
@@ -1816,9 +1877,9 @@ mod tests {
             &[("proj.code-workspace", r#"{"folders": [{"path": "."}]}"#)],
         );
         let path = ws.join("proj.code-workspace");
-        let merged =
-            merge_into_existing(&path, vscode_managed_keys(&ctx), Some("settings")).unwrap();
-        let settings = merged
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), Some("settings")).unwrap();
+        let parsed = parse_merged(&merged);
+        let settings = parsed
             .as_object()
             .unwrap()
             .get("settings")
@@ -1837,12 +1898,12 @@ mod tests {
             &[("proj.code-workspace", r#"{"settings": "not an object"}"#)],
         );
         let path = ws.join("proj.code-workspace");
-        let err = merge_into_existing(&path, vscode_managed_keys(&ctx), Some("settings"))
+        let err = merge_file(&path, &vscode_managed_keys(&ctx), Some("settings"))
             .unwrap_err()
             .to_string();
         assert!(
-            err.contains("`settings`") && err.contains("string"),
-            "error should name the bad key and its type, got: {err}"
+            err.contains("`settings`") && err.contains("not an object"),
+            "error should name the bad key and its shape, got: {err}"
         );
         let _ = std::fs::remove_dir_all(&ws);
     }
@@ -1862,8 +1923,10 @@ mod tests {
             )],
         );
         let path = ws.join("proj.code-workspace");
-        let replaced = replace_managed(&path, vscode_managed_keys(&ctx), Some("settings")).unwrap();
-        let root = replaced.as_object().unwrap();
+        let replaced =
+            replace_managed_file(&path, &vscode_managed_keys(&ctx), Some("settings")).unwrap();
+        let parsed = parse_merged(&replaced);
+        let root = parsed.as_object().unwrap();
 
         // Siblings survived.
         assert_eq!(root.get("folders").unwrap(), &json!([{"path": "."}]));
@@ -1888,8 +1951,9 @@ mod tests {
         let (ctx, _launcher_dir) = dummy_ctx();
         let ws = make_workspace("replace_root", &[]);
         let path = ws.join("settings.json");
-        let replaced = replace_managed(&path, vscode_managed_keys(&ctx), None).unwrap();
-        let root = replaced.as_object().unwrap();
+        let replaced = replace_managed_file(&path, &vscode_managed_keys(&ctx), None).unwrap();
+        let parsed = parse_merged(&replaced);
+        let root = parsed.as_object().unwrap();
         assert!(root.contains_key(SERVER_PATH_KEY));
         assert!(root.contains_key(DISCOVER_CONFIG_KEY));
         // No leftover sibling keys (nothing existed to start with).
@@ -1897,13 +1961,25 @@ mod tests {
     }
 
     #[test]
-    fn autodetect_picks_unique_code_workspace() {
+    fn settings_json_always_resolved_to_default_when_unset() {
+        let ws = make_workspace("resolve_default", &[]);
+        let resolved = resolve_vscode_targets(&ws, &empty_vscode_args()).unwrap();
+        assert_eq!(resolved.settings_json, ws.join(".vscode/settings.json"));
+        assert!(resolved.code_workspace.is_none());
+        let _ = std::fs::remove_dir_all(&ws);
+    }
+
+    #[test]
+    fn autodetect_picks_unique_code_workspace_alongside_settings_json() {
         let ws = make_workspace("autodetect_one", &[("myproj.code-workspace", "{}")]);
-        let args = empty_vscode_args();
-        let resolved = resolve_vscode_targets(&ws, &args).unwrap();
-        assert_eq!(resolved.output, ws.join("myproj.code-workspace"));
-        // Extension drives the default settings_key.
-        assert_eq!(resolved.settings_key.as_deref(), Some("settings"));
+        let resolved = resolve_vscode_targets(&ws, &empty_vscode_args()).unwrap();
+        assert_eq!(resolved.settings_json, ws.join(".vscode/settings.json"));
+        let cw = resolved
+            .code_workspace
+            .expect("autodetect should pick up the .code-workspace");
+        assert_eq!(cw.path, ws.join("myproj.code-workspace"));
+        // Default nesting key for .code-workspace.
+        assert_eq!(cw.settings_key, "settings");
         let _ = std::fs::remove_dir_all(&ws);
     }
 
@@ -1920,47 +1996,44 @@ mod tests {
             err.contains("a.code-workspace") && err.contains("b.code-workspace"),
             "error should list both candidates, got: {err}"
         );
+        // The message must point at BOTH escape hatches.
+        assert!(err.contains("--code-workspace"));
+        assert!(err.contains("--no-code-workspace"));
         let _ = std::fs::remove_dir_all(&ws);
     }
 
     #[test]
-    fn autodetect_falls_back_to_dot_vscode_settings() {
-        let ws = make_workspace("autodetect_none", &[]);
-        let resolved = resolve_vscode_targets(&ws, &empty_vscode_args()).unwrap();
-        assert_eq!(resolved.output, ws.join(".vscode/settings.json"));
-        assert!(resolved.settings_key.is_none());
+    fn no_code_workspace_skips_even_if_one_is_present() {
+        let ws = make_workspace("skip_flag", &[("myproj.code-workspace", "{}")]);
+        let mut args = empty_vscode_args();
+        args.no_code_workspace = true;
+        let resolved = resolve_vscode_targets(&ws, &args).unwrap();
+        assert!(resolved.code_workspace.is_none());
         let _ = std::fs::remove_dir_all(&ws);
     }
 
     #[test]
-    fn explicit_output_code_workspace_sets_settings_key_from_extension() {
-        // User passes `--output foo.code-workspace` but forgets
-        // `--settings-key`. The extension wins and nests under
-        // `settings` automatically — otherwise we'd corrupt their
-        // workspace file by writing managed keys at the root.
+    fn explicit_code_workspace_flag_forces_target() {
+        // `--code-workspace` accepts a path that doesn't exist yet
+        // (setup will create the file on write).
         let ws = Utf8PathBuf::from("/ws");
-        let args = VscodeArgs {
-            output: Some(Utf8PathBuf::from("/ws/foo.code-workspace")),
-            settings_key: None,
-            dry_run: false,
-            replace: false,
-        };
+        let mut args = empty_vscode_args();
+        args.code_workspace = Some(Utf8PathBuf::from("/ws/new.code-workspace"));
         let resolved = resolve_vscode_targets(&ws, &args).unwrap();
-        assert_eq!(resolved.output, Utf8PathBuf::from("/ws/foo.code-workspace"));
-        assert_eq!(resolved.settings_key.as_deref(), Some("settings"));
+        let cw = resolved.code_workspace.unwrap();
+        assert_eq!(cw.path, Utf8PathBuf::from("/ws/new.code-workspace"));
+        assert_eq!(cw.settings_key, "settings");
     }
 
     #[test]
-    fn explicit_settings_key_overrides_extension_default() {
+    fn explicit_settings_key_overrides_default() {
         let ws = Utf8PathBuf::from("/ws");
-        let args = VscodeArgs {
-            output: Some(Utf8PathBuf::from("/ws/foo.code-workspace")),
-            settings_key: Some("my_settings".to_owned()),
-            dry_run: false,
-            replace: false,
-        };
+        let mut args = empty_vscode_args();
+        args.code_workspace = Some(Utf8PathBuf::from("/ws/foo.code-workspace"));
+        args.settings_key = Some("my_settings".to_owned());
         let resolved = resolve_vscode_targets(&ws, &args).unwrap();
-        assert_eq!(resolved.settings_key.as_deref(), Some("my_settings"));
+        let cw = resolved.code_workspace.unwrap();
+        assert_eq!(cw.settings_key, "my_settings");
     }
 
     #[test]
@@ -1971,8 +2044,9 @@ mod tests {
         let (ctx, _launcher_dir) = dummy_ctx();
         let ws = make_workspace("nest_custom", &[("settings.json", "{}")]);
         let path = ws.join("settings.json");
-        let merged = merge_into_existing(&path, vscode_managed_keys(&ctx), Some("rust")).unwrap();
-        let nested = merged
+        let merged = merge_file(&path, &vscode_managed_keys(&ctx), Some("rust")).unwrap();
+        let parsed = parse_merged(&merged);
+        let nested = parsed
             .as_object()
             .unwrap()
             .get("rust")
@@ -2011,6 +2085,45 @@ mod tests {
             obj.get("rustfmt").unwrap().as_str().unwrap(),
             "/obase/external/rfmt/rustfmt"
         );
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    // -----------------------------------------------------------------
+    // JSONC support (via `serde_jsonrc`)
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn read_root_object_accepts_jsonc_file() {
+        // End-to-end: a real `.vscode/settings.json`-flavored file
+        // with comments + trailing commas parses cleanly through
+        // read_root_object, no `--replace` fallback needed.
+        let tmp = std::env::temp_dir().join(format!("setup_jsonc_root_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).unwrap();
+        let path = Utf8PathBuf::try_from(tmp.join("settings.json")).unwrap();
+        fs::write(
+            &path,
+            r#"{
+  // team-wide indent
+  "editor.tabSize": 4,
+  "rust-analyzer.checkOnSave": true,
+}
+"#,
+        )
+        .unwrap();
+        // Trivia-preserving round-trip: merging into a file with
+        // comments and trailing commas keeps them intact.
+        let managed: Vec<(String, ManagedValue)> = vec![];
+        let merged = merge_file(&path, &managed, None).unwrap();
+        assert!(
+            merged.contains("// team-wide indent"),
+            "line comment must survive: {merged}"
+        );
+        // Existing keys still there.
+        let parsed = parse_merged(&merged);
+        let obj = parsed.as_object().unwrap();
+        assert_eq!(obj.get("editor.tabSize"), Some(&json!(4)));
+        assert_eq!(obj.get("rust-analyzer.checkOnSave"), Some(&json!(true)));
         let _ = std::fs::remove_dir_all(&tmp);
     }
 }
