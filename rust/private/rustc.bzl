@@ -884,9 +884,14 @@ def _should_add_oso_prefix(toolchain):
 def _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
     other_flags = []
     for flag in rust_flags:
-        if flag.startswith("-Zallow-features="):
-            all_allowed_unstable_features.extend(flag.removeprefix("-Zallow-features=").split(","))
+        if type(flag) == "string":
+            if flag.startswith("-Zallow-features="):
+                all_allowed_unstable_features.extend(flag.removeprefix("-Zallow-features=").split(","))
+            else:
+                other_flags.append(flag)
         else:
+            # It's a tuple/list (format_string, File), or at least not a string.
+            # We assume it's not a -Zallow-features flag.
             other_flags.append(flag)
     return other_flags
 
@@ -961,21 +966,22 @@ def construct_arguments(
         ambiguous_libs (dict): Ambiguous libs, see `_disambiguate_libs`
         output_hash (str): The hashed path of the crate root
         rust_flags (list or Args): Additional flags to pass to rustc. Accepts
-            either a plain `list[str]` (folded into the main `rustc_flags`
-            `Args` so flags intermix with the rest of the command line,
-            with any `-Zallow-features=` entries extracted and merged
-            with `unstable_rust_features_config`) or a `ctx.actions.args()`
-            `Args` object (returned on the `args` struct as
-            `extra_rustc_flags` and appended to `args.all` as a separate
+            either a plain `list[str | (str, File)]` (folded into the main
+            `rustc_flags` `Args` so flags intermix with the rest of the
+            command line, with any `-Zallow-features=` entries extracted and
+            merged with `unstable_rust_features_config`) or a
+            `ctx.actions.args()` `Args` object (returned on the `args` struct
+            as `extra_rustc_flags` and appended to `args.all` as a separate
             entry, since `Args` cannot be merged with one another). The
             `Args` form is opaque at analysis time, so any
             `-Zallow-features=` it carries passes through to rustc
             unchanged — callers that need it merged with
-            `unstable_rust_features_config` should keep using the
-            `list[str]` form. Use the `Args` form when the caller needs
-            `Args.add_all` features such as `map_each` (e.g. for
-            `File`-derived flags that must be rewritten by Bazel path
-            mapping).
+            `unstable_rust_features_config` should keep using the list form.
+            Use the `Args` form when the caller needs `Args.add_all` features
+            such as `map_each`. For individual `File`-derived flags that must
+            be rewritten by Bazel path mapping, they can be passed as
+            `(format_string, File)` tuples within the list form (e.g.
+            `("-Zsplit-dwarf-out-dir=%s", dwo_outputs)`).
         out_dir (File, optional): The build script's output directory.
             When provided, the directory is handed to `process_wrapper`
             via an explicit `--out-dir <path>` arg sourced from a
@@ -1237,27 +1243,37 @@ def construct_arguments(
         uniquify = True,
     )
 
-    # `rust_flags` is either a plain `list[str]` or a `ctx.actions.args()`
-    # `Args` object. Lists are folded into the main `rustc_flags` `Args`
-    # here, with any `-Zallow-features=` entries extracted into
-    # `all_allowed_unstable_features` so they can be merged with
-    # `unstable_rust_features_config` and re-emitted as a single arg
-    # below. `Args` inputs cannot be merged with another `Args` and are
-    # opaque at analysis time, so we capture the caller's `Args` here
-    # and append it as a separate entry in `args.all` (after the
-    # main `rustc_flags` `Args`, consistent with the existing "later
-    # flags win" semantics). Any `-Zallow-features=` baked into an
-    # `Args` value passes through to rustc unchanged — callers that
-    # need it merged with `unstable_rust_features_config` should keep
-    # using the `list[str]` form.
+    # `rust_flags` is either a plain `list[str | (format_string, File)]` or a
+    # `ctx.actions.args()` `Args` object.
+    #
+    # - Lists are folded into the main `rustc_flags` `Args` here, with any
+    #   `-Zallow-features=` entries extracted into
+    #   `all_allowed_unstable_features` so they can be merged with
+    #   `unstable_rust_features_config` and re-emitted as a single arg below.
+    #
+    # - `Args` inputs cannot be merged with another `Args` and are opaque at
+    #   analysis time, so we capture the caller's `Args` here and append it as a
+    #   separate entry in `args.all` (after the main `rustc_flags` `Args`,
+    #   consistent with the existing "later flags win" semantics). Any
+    #   `-Zallow-features=` baked into an `Args` value passes through to rustc
+    #   unchanged — callers that need it merged with
+    #   `unstable_rust_features_config` should keep using the list form.
     rust_flags_args = None
     if type(rust_flags) == "Args":
         rust_flags_args = rust_flags
     elif rust_flags:
-        rustc_flags.add_all(
-            _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features),
-            map_each = map_flag,
-        )
+        for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
+            if type(flag) in ["tuple", "list"] and len(flag) == 2:
+                rustc_flags.add_all(
+                    [flag[1]],
+                    format_each = flag[0],
+                    expand_directories = False,
+                )
+            else:
+                if map_flag:
+                    flag = map_flag(flag)
+                if flag != None:
+                    rustc_flags.add(flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1706,6 +1722,22 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
+    use_split_debuginfo = (
+        feature_configuration and
+        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and
+        ctx.fragments.cpp.fission_active_for_current_compilation_mode()
+    )
+    if use_split_debuginfo:
+        rust_flags = rust_flags + [
+            "--codegen=split-debuginfo=unpacked",
+            "--codegen=debuginfo=full",
+        ]
+        fission_directory = crate_info.name + "_fission"
+        if output_hash:
+            fission_directory = fission_directory + "-" + output_hash
+        dwo_outputs = ctx.actions.declare_directory(fission_directory, sibling = crate_info.output)
+        rust_flags.append(("-Zsplit-dwarf-out-dir=%s", dwo_outputs))
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1801,6 +1833,9 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
+    if use_split_debuginfo:
+        action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -1864,15 +1899,19 @@ def rustc_compile_action(
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
 
+    cco_args = {}
     if experimental_use_cc_common_link:
         # Wrap the main `.o` file into a compilation output suitable for
         # cc_common.link. The main `.o` file is useful in both PIC and non-PIC
         # modes.
-        compilation_outputs = cc_common.create_compilation_outputs(
-            objects = depset([output_o]),
-            pic_objects = depset([output_o]),
-        )
-
+        cco_args["objects"] = depset([output_o])
+        cco_args["pic_objects"] = depset([output_o])
+    if use_split_debuginfo:
+        cco_args["dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
+        cco_args["pic_dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
+    compilation_outputs = cc_common.create_compilation_outputs(**cco_args)
+    debug_context = cc_common.create_debug_context(compilation_outputs)
+    if experimental_use_cc_common_link:
         malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
 
         # Collect the linking contexts of the standard library and dependencies.
@@ -2045,7 +2084,7 @@ def rustc_compile_action(
     else:
         providers.extend([crate_info, dep_info])
 
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context)
 
     output_group_info = {}
 
@@ -2179,7 +2218,7 @@ def _add_codegen_units_flags(toolchain, emit, args):
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
-def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
+def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context = None):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
@@ -2190,6 +2229,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         interface_library (File): Optional interface library for cdylib crates on Windows.
+        debug_context (CcDebugContextInfo): The current debug context.
 
     Returns:
         list: A list containing the `CcInfo` provider and optionally `AllocatorLibrariesImplInfo`
@@ -2258,7 +2298,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     )
 
     cc_infos = [
-        CcInfo(linking_context = linking_context),
+        CcInfo(
+            linking_context = linking_context,
+            debug_context = debug_context,
+        ),
         toolchain.stdlib_linkflags,
     ]
 
