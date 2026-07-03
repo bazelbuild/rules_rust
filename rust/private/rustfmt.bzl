@@ -98,6 +98,7 @@ def _perform_check(edition, srcs, ctx):
         arguments = [args],
         mnemonic = "Rustfmt",
         progress_message = "Rustfmt %{label}",
+        toolchain = Label("//rust/rustfmt:toolchain_type"),
     )
 
     return marker
