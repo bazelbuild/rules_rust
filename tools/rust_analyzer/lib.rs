@@ -76,7 +76,7 @@ pub fn generate_rust_project(
     let bep_file = output_base.join(format!("rules_rust_ra_bep_{}.json", std::process::id()));
     let _bep_cleanup = BepCleanup(bep_file.clone());
 
-    generate_crate_info(
+    let build = generate_crate_info(
         bazel,
         output_base,
         workspace,
@@ -87,8 +87,24 @@ pub fn generate_rust_project(
         &bep_file,
     )?;
 
-    let spec_paths =
-        bep::parse_spec_paths(&bep_file).with_context(|| format!("parsing BEP file {bep_file}"))?;
+    let spec_paths = match bep::parse_spec_paths(&bep_file) {
+        Ok(paths) => paths,
+        // A failed build often means a missing or partial BEP file; surface
+        // the build error rather than the downstream parse error.
+        Err(_) if !build.success => {
+            bail!(
+                "bazel build failed and produced no usable output:\n{}",
+                build.stderr
+            )
+        }
+        Err(e) => return Err(e).with_context(|| format!("parsing BEP file {bep_file}")),
+    };
+    if assess_discovery(build.success, spec_paths.len(), &build.stderr)? {
+        log::warn!(
+            "some targets failed to build; the rust-analyzer project may be \
+             incomplete. Run `bazel build //...` to see the errors."
+        );
+    }
     log::info!("discovered {} crate spec files via BEP", spec_paths.len());
 
     // Toolchain-info JSON is embedded at compile time — see
@@ -244,6 +260,13 @@ pub fn bazel_info(
     Ok(info_map)
 }
 
+/// Result of the discovery build. With `--keep_going` a non-`success` exit
+/// isn't fatal — the caller proceeds if the BEP still yielded specs.
+struct DiscoveryBuild {
+    success: bool,
+    stderr: String,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn generate_crate_info(
     bazel: &Utf8Path,
@@ -254,7 +277,7 @@ fn generate_crate_info(
     rules_rust: &str,
     targets: &[String],
     bep_file: &Utf8Path,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<DiscoveryBuild> {
     log::info!("running bazel build with BEP discovery...");
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
@@ -262,6 +285,9 @@ fn generate_crate_info(
         .args(bazel_startup_options)
         .arg("build")
         .args(bazel_args)
+        // Don't let one broken target abort discovery for the whole
+        // workspace; the caller decides if the partial result is usable.
+        .arg("--keep_going")
         .arg("--norun_validations")
         .arg("--remote_download_all")
         .arg(format!(
@@ -275,15 +301,25 @@ fn generate_crate_info(
         .args(targets)
         .output()?;
 
-    if !output.status.success() {
-        let status = output.status;
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("bazel build failed: ({status})\n{stderr}");
+    let success = output.status.success();
+    if success {
+        log::info!("bazel build finished");
     }
 
-    log::info!("bazel build finished");
+    Ok(DiscoveryBuild {
+        success,
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
+}
 
-    Ok(())
+/// `Ok(true)` = usable but some targets failed (caller warns); `Ok(false)` =
+/// clean; `Err` = nothing usable was produced.
+fn assess_discovery(success: bool, spec_count: usize, stderr: &str) -> anyhow::Result<bool> {
+    match (success, spec_count) {
+        (true, _) => Ok(false),
+        (false, 0) => bail!("bazel build failed and produced no crate specs:\n{stderr}"),
+        (false, _) => Ok(true),
+    }
 }
 
 fn bazel_command(
@@ -389,5 +425,29 @@ mod tests {
         assert_eq!(dir_to_bazel_package(""), "");
         // Mixed (defense in depth).
         assert_eq!(dir_to_bazel_package(r"a/b\c/d"), "a/b/c/d");
+    }
+
+    #[test]
+    fn assess_discovery_clean_build_is_complete() {
+        // Success → never incomplete, regardless of spec count.
+        assert_eq!(assess_discovery(true, 0, "").unwrap(), false);
+        assert_eq!(assess_discovery(true, 42, "").unwrap(), false);
+    }
+
+    #[test]
+    fn assess_discovery_partial_failure_is_usable_but_incomplete() {
+        // Some targets failed but specs were produced (e.g. an unrelated
+        // broken target in a large monorepo) → proceed, but flag incomplete.
+        assert_eq!(assess_discovery(false, 2712, "boom").unwrap(), true);
+    }
+
+    #[test]
+    fn assess_discovery_total_failure_errors() {
+        // Failed build with nothing usable → fatal, and the message carries
+        // the captured stderr so the user sees the real cause.
+        let err = assess_discovery(false, 0, "the real bazel error")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("the real bazel error"), "got: {err}");
     }
 }

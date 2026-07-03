@@ -5,3 +5,8 @@ sh_binary(
     srcs = ["rust_analyzer_test_runner.sh"],
     args = [package_name()],
 )
+
+sh_binary(
+    name = "partial_failure_test",
+    srcs = ["partial_failure_test_runner.sh"],
+)
