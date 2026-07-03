@@ -1,7 +1,39 @@
-"""Analysis tests for debug info in cdylib and bin targets."""
+"""Analysis tests for debug info: output files (PDB, dSYM) and global flag defaults."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary", "rust_shared_library", "rust_test")
+load("//rust/private:debug_info.bzl", "RustDebugInfoInfo")
+load("//rust/private:opt_level.bzl", "RustOptLevelInfo")
+load("//rust/private:strip_level.bzl", "RustStripLevelInfo")
+load(
+    "//test/unit:common.bzl",
+    "assert_action_mnemonic",
+    "assert_argv_contains",
+)
+
+def _debug_info_modes_match_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    debug_modes = sorted(analysistest.target_under_test(env)[RustDebugInfoInfo].levels.keys())
+    opt_modes = sorted(ctx.attr._opt_level[RustOptLevelInfo].levels.keys())
+    strip_modes = sorted(ctx.attr._strip_level[RustStripLevelInfo].levels.keys())
+    asserts.equals(env, debug_modes, opt_modes, "debug_info and opt_level compilation modes must match")
+    asserts.equals(env, debug_modes, strip_modes, "debug_info and strip_level compilation modes must match")
+    return analysistest.end(env)
+
+_debug_info_modes_match_test = analysistest.make(
+    _debug_info_modes_match_test_impl,
+    attrs = {
+        "_opt_level": attr.label(
+            default = "//rust/settings:opt_level",
+            providers = [RustOptLevelInfo],
+        ),
+        "_strip_level": attr.label(
+            default = "//rust/settings:strip_level",
+            providers = [RustStripLevelInfo],
+        ),
+    },
+)
 
 def _pdb_file_test_impl(ctx, expect_pdb_file):
     env = analysistest.begin(ctx)
@@ -69,6 +101,77 @@ def _dsym_folder_test_impl(ctx):
     return analysistest.end(env)
 
 dsym_folder_test = analysistest.make(_dsym_folder_test_impl)
+
+def _debug_info_flag_test_impl(ctx, expected_level):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    action = target.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+    assert_argv_contains(env, action, "--codegen=debuginfo={}".format(expected_level))
+    return analysistest.end(env)
+
+def _debug_info_for_dbg_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "2")
+
+_debug_info_for_dbg_test = analysistest.make(
+    _debug_info_for_dbg_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "dbg",
+    },
+)
+
+def _debug_info_for_fastbuild_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "0")
+
+_debug_info_for_fastbuild_test = analysistest.make(
+    _debug_info_for_fastbuild_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "fastbuild",
+    },
+)
+
+def _debug_info_for_opt_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "0")
+
+_debug_info_for_opt_test = analysistest.make(
+    _debug_info_for_opt_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+    },
+)
+
+def _debug_info_dbg_setting_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "1")
+
+_debug_info_dbg_setting_test = analysistest.make(
+    _debug_info_dbg_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "dbg",
+        str(Label("//rust/settings:debug_info_dbg")): "1",
+    },
+)
+
+def _debug_info_opt_setting_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "1")
+
+_debug_info_opt_setting_test = analysistest.make(
+    _debug_info_opt_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        str(Label("//rust/settings:debug_info_opt")): "1",
+    },
+)
+
+def _debug_info_fastbuild_setting_test_impl(ctx):
+    return _debug_info_flag_test_impl(ctx, "2")
+
+_debug_info_fastbuild_setting_test = analysistest.make(
+    _debug_info_fastbuild_setting_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "fastbuild",
+        str(Label("//rust/settings:debug_info_fastbuild")): "2",
+    },
+)
 
 def debug_info_analysis_test_suite(name):
     """Analysis tests for debug info in cdylib and bin targets.
@@ -171,12 +274,69 @@ def debug_info_analysis_test_suite(name):
         target_compatible_with = ["@platforms//os:macos"],
     )
 
+    _debug_info_modes_match_test(
+        name = "debug_info_modes_match_test",
+        target_under_test = "//rust/settings:debug_info",
+    )
+
+    write_file(
+        name = "flag_bin_main",
+        out = "flag_main.rs",
+        content = [
+            "fn main() {}",
+            "",
+        ],
+    )
+
+    rust_binary(
+        name = "flag_bin",
+        srcs = [":flag_main.rs"],
+        edition = "2021",
+    )
+
+    _debug_info_for_dbg_test(
+        name = "debug_info_for_dbg_test",
+        target_under_test = ":flag_bin",
+    )
+
+    _debug_info_for_fastbuild_test(
+        name = "debug_info_for_fastbuild_test",
+        target_under_test = ":flag_bin",
+    )
+
+    _debug_info_for_opt_test(
+        name = "debug_info_for_opt_test",
+        target_under_test = ":flag_bin",
+    )
+
+    _debug_info_dbg_setting_test(
+        name = "debug_info_dbg_setting_test",
+        target_under_test = ":flag_bin",
+    )
+
+    _debug_info_opt_setting_test(
+        name = "debug_info_opt_setting_test",
+        target_under_test = ":flag_bin",
+    )
+
+    _debug_info_fastbuild_setting_test(
+        name = "debug_info_fastbuild_setting_test",
+        target_under_test = ":flag_bin",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":lib_dsym_test",
             ":bin_dsym_test",
             ":test_dsym_test",
+            ":debug_info_modes_match_test",
+            ":debug_info_for_dbg_test",
+            ":debug_info_for_fastbuild_test",
+            ":debug_info_for_opt_test",
+            ":debug_info_dbg_setting_test",
+            ":debug_info_opt_setting_test",
+            ":debug_info_fastbuild_setting_test",
         ] + [
             ":lib_pdb_test_{}".format(compilation_mode)
             for compilation_mode in pdb_file_tests
