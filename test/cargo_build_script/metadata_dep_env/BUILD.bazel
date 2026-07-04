@@ -35,3 +35,10 @@ rust_test(
     edition = "2021",
     deps = [":consumer_build_rs"],
 )
+
+rust_test(
+    name = "metadata_dep_env_include_test",
+    srcs = ["include_test.rs"],
+    edition = "2021",
+    deps = [":consumer_build_rs"],
+)

@@ -183,6 +183,26 @@ impl BuildScriptOutput {
         exec_root: &str,
         out_dir: &str,
     ) -> String {
+        // `out_dir` is intentionally NOT rewritten to the generic `${out_dir}`
+        // token here (unlike the env file produced by `outputs_to_env`).
+        //
+        // A dep-env file is consumed by a *dependent* crate's build-script
+        // runner (`bin.rs`), which only substitutes `${pwd}` and has no notion
+        // of *this* crate's `out_dir`. A `${out_dir}` token would therefore
+        // survive unresolved in the dependent's environment (e.g. leaving
+        // `DEP_LZ4_INCLUDE=${pwd}/${out_dir}/include`), breaking C/C++ includes
+        // that consume `DEP_<LINKS>_INCLUDE`. This is the same transitive-
+        // consumption case that `redact_flags` handles with per-build-script
+        // tokens plus `--subst` entries; the dep-env path has no such resolution
+        // on the consuming side, so emit the real path instead.
+        //
+        // The producing crate's `out_dir` tree is provided to the dependent
+        // build-script action as an input at this same exec-root-relative path,
+        // so emitting the real path with only the exec root tokenized
+        // (`${pwd}/<out_dir>/…`) resolves correctly there. Build-script actions
+        // do not advertise `supports-path-mapping`, so `--experimental_output_paths=strip`
+        // never rewrites that path out from under the literal value.
+        let _ = out_dir;
         let prefix = format!("DEP_{}_", crate_links.replace('-', "_").to_uppercase());
         outputs
             .iter()
@@ -191,7 +211,7 @@ impl BuildScriptOutput {
                     Some(format!(
                         "{}{}",
                         prefix,
-                        Self::escape_for_serializing(Self::redact_paths(env, exec_root, out_dir))
+                        Self::escape_for_serializing(Self::redact_exec_root(env, exec_root))
                     ))
                 } else {
                     None
@@ -475,6 +495,56 @@ cargo::rustc-env=BAR=/abs/exec_root/elsewhere/file.rs
                 "bazel-out/cfg/bin/_bs.out_dir",
             ),
             "FOO=${pwd}/${out_dir}/op.rs\nBAR=${pwd}/elsewhere/file.rs"
+        );
+    }
+
+    /// Counterpart to [`out_dir_in_env_value_is_redacted_to_substitution_token`]:
+    /// a `links` crate's `cargo::metadata` (or legacy `cargo:<key>`) value that
+    /// points into its own `OUT_DIR` must be written to the cross-crate dep-env
+    /// file using the real exec-root-relative `out_dir` path, with only the exec
+    /// root tokenized as `${pwd}`. It must NOT be rewritten to the generic
+    /// `${out_dir}` token: a dep-env file is consumed by a *dependent* crate's
+    /// build-script runner, which only resolves `${pwd}` and would otherwise
+    /// leave `${out_dir}` unresolved — breaking, for example, `DEP_LZ4_INCLUDE`
+    /// for a crate like `librocksdb-sys`.
+    #[test]
+    fn dep_env_out_dir_is_preserved_not_tokenized() {
+        let buff = Cursor::new(
+            "cargo::metadata=include=/abs/exec_root/bazel-out/cfg/bin/ext/lz4-sys_bs.out_dir/include\n",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_dep_env(
+                &result,
+                "lz4",
+                "/abs/exec_root",
+                "bazel-out/cfg/bin/ext/lz4-sys_bs.out_dir",
+            ),
+            "DEP_LZ4_INCLUDE=${pwd}/bazel-out/cfg/bin/ext/lz4-sys_bs.out_dir/include".to_owned()
+        );
+    }
+
+    /// Windows variant of [`dep_env_out_dir_is_preserved_not_tokenized`].
+    /// `redact_exec_root` rewrites a backslash-separated exec root to `${pwd}`
+    /// and preserves the rest of the (backslashed) out_dir-relative path
+    /// verbatim — no `${out_dir}` token.
+    #[test]
+    fn dep_env_out_dir_is_preserved_not_tokenized_windows() {
+        let buff = Cursor::new(
+            "cargo::metadata=include=C:\\exec_root\\bazel-out\\x64_windows-fastbuild\\bin\\ext\\lz4-sys_bs.out_dir\\include\n",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_dep_env(
+                &result,
+                "lz4",
+                "C:\\exec_root",
+                "bazel-out\\x64_windows-fastbuild\\bin\\ext\\lz4-sys_bs.out_dir",
+            ),
+            "DEP_LZ4_INCLUDE=${pwd}\\bazel-out\\x64_windows-fastbuild\\bin\\ext\\lz4-sys_bs.out_dir\\include"
+                .to_owned()
         );
     }
 
