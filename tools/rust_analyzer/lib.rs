@@ -430,15 +430,15 @@ mod tests {
     #[test]
     fn assess_discovery_clean_build_is_complete() {
         // Success → never incomplete, regardless of spec count.
-        assert_eq!(assess_discovery(true, 0, "").unwrap(), false);
-        assert_eq!(assess_discovery(true, 42, "").unwrap(), false);
+        assert!(!assess_discovery(true, 0, "").unwrap());
+        assert!(!assess_discovery(true, 42, "").unwrap());
     }
 
     #[test]
     fn assess_discovery_partial_failure_is_usable_but_incomplete() {
         // Some targets failed but specs were produced (e.g. an unrelated
         // broken target in a large monorepo) → proceed, but flag incomplete.
-        assert_eq!(assess_discovery(false, 2712, "boom").unwrap(), true);
+        assert!(assess_discovery(false, 2712, "boom").unwrap());
     }
 
     #[test]
@@ -448,6 +448,6 @@ mod tests {
         let err = assess_discovery(false, 0, "the real bazel error")
             .unwrap_err()
             .to_string();
-        assert!(err.contains("the real bazel error"), "got: {err}");
+        assert!(err.contains("the real bazel error"), "got: {}", err);
     }
 }
