@@ -2184,7 +2184,7 @@ def rustc_compile(
         cco_args["dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
         cco_args["pic_dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
     compilation_outputs = cc_common.create_compilation_outputs(**cco_args)
-    debug_context = cc_common.create_debug_context(compilation_outputs)
+    debug_context = cc_helper.merge_cc_debug_contexts(compilation_outputs, [])
     if use_cc_common_link:
         malloc_library = attr._custom_malloc or attr.malloc
 
