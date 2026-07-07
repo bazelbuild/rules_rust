@@ -320,15 +320,15 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "cargo/private/cargo_toml_info": {
         _COMMON_CONDITION: {
-            "cargo_toml": Label("//cargo_toml-0.22.3"),
+            "cargo_toml": Label("@rrc//cargo_toml-0.22.3"),
         },
     },
     "cargo/private/cargo_toml_variable_extractor": {
         _COMMON_CONDITION: {
-            "cargo-util-schemas": Label("//cargo-util-schemas-0.3.1"),
-            "pathdiff": Label("//pathdiff-0.1.0"),
-            "semver": Label("//semver-1.0.25"),
-            "toml": Label("//toml-0.8.20"),
+            "cargo-util-schemas": Label("@rrc//cargo-util-schemas-0.3.1"),
+            "pathdiff": Label("@rrc//pathdiff-0.1.0"),
+            "semver": Label("@rrc//semver-1.0.25"),
+            "toml": Label("@rrc//toml-0.8.20"),
         },
     },
 }

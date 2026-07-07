@@ -1543,12 +1543,12 @@ can be found below where the supported keys for each template can be found in th
             doc = (
                 "The base template to use for crate aliases. The available format keys are " +
                 "[`{repository}`, `{name}`, `{version}`, `{target}`]. Defaults to the per-alias " +
-                "subpackage layout (`//{name}-{version}`); set to `//:{name}-{version}` if " +
-                "you intentionally want `aliases()` / `all_crate_deps()` to point at the " +
-                "legacy root-package aliases (only valid while " +
+                "subpackage layout (`@{repository}//{name}-{version}`); set to " +
+                "`@{repository}//:{name}-{version}` to point `aliases()` / `all_crate_deps()` at " +
+                "the legacy root-package aliases (only valid while " +
                 "`incompatible_no_root_alias_targets` is off)."
             ),
-            default = "//{name}-{version}",
+            default = "@{repository}//{name}-{version}",
         ),
         "crate_label_template": attr.string(
             doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
