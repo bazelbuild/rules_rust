@@ -260,6 +260,7 @@ def _rust_library_common(ctx, crate_type):
             name = crate_name,
             type = crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -327,6 +328,7 @@ def _rust_binary_impl(ctx):
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -451,6 +453,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate.root,
+            root_path = crate.root_path,
             srcs = srcs,
             deps = depset(deps, transitive = [crate.deps]).to_list(),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
@@ -508,6 +511,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -730,6 +734,9 @@ _COMMON_ATTRS = {
             or the single file in `srcs` if `srcs` contains only one file.
         """),
         allow_single_file = [".rs"],
+    ),
+    "root_path": attr.string(
+        doc = "If the crate root is a directory, path under it to the crate root.",
     ),
     "data": attr.label_list(
         doc = dedent("""\
