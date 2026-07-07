@@ -1,121 +1,5 @@
 {
-  "checksum": "3e3fcf66309b79dd862d024b401189924392392563e6e2c26b86cb87e8629b09",
-  "crates": {
-    "direct-cargo-bazel-deps 0.0.1": {
-      "name": "direct-cargo-bazel-deps",
-      "version": "0.0.1",
-      "package_url": null,
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "direct_cargo_bazel_deps",
-            "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "direct_cargo_bazel_deps",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "test_data_passing_crate 0.1.0",
-              "target": "test_data_passing_crate"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.0.1"
-      },
-      "license": null,
-      "license_ids": [],
-      "license_file": null
-    },
-    "test_data_passing_crate 0.1.0": {
-      "name": "test_data_passing_crate",
-      "version": "0.1.0",
-      "package_url": "https://github.com/bazelbuild/rules_rust",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download",
-          "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "test_data_passing_crate",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "test_data_passing_crate",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "test_data_passing_crate 0.1.0",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "build_script_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "compile_data_glob_excludes": [
-          "**/*.rs"
-        ],
-        "data_glob": [
-          "**"
-        ]
-      },
-      "license": "Apache-2.0",
-      "license_ids": [
-        "Apache-2.0"
-      ],
-      "license_file": null
-    }
-  },
-  "binary_crates": [],
-  "workspace_members": {
-    "direct-cargo-bazel-deps 0.0.1": ""
-  },
+  "checksum": "66c76bfa889b8e0eb53622508804b4e6f8f053f079effe92ee16e20cd7d6b56b",
   "conditions": {
     "aarch64-apple-darwin": [
       "aarch64-apple-darwin"
@@ -139,9 +23,76 @@
       "x86_64-unknown-nixos-gnu"
     ]
   },
+  "crates": {
+    "direct-cargo-bazel-deps 0.0.1": {
+      "common_attrs": {
+        "deps": [
+          {
+            "id": "test_data_passing_crate 0.1.0",
+            "target": "test_data_passing_crate"
+          }
+        ],
+        "edition": "2018"
+      },
+      "library_target_name": "direct_cargo_bazel_deps",
+      "name": "direct-cargo-bazel-deps",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "direct_cargo_bazel_deps",
+            "crate_root": ".direct_cargo_bazel_deps.rs"
+          }
+        }
+      ],
+      "version": "0.0.1"
+    },
+    "test_data_passing_crate 0.1.0": {
+      "build_script_attrs": {},
+      "common_attrs": {
+        "deps": [
+          {
+            "id": "test_data_passing_crate 0.1.0",
+            "target": "build_script_build"
+          }
+        ],
+        "edition": "2021"
+      },
+      "library_target_name": "test_data_passing_crate",
+      "license": "Apache-2.0",
+      "license_ids": [
+        "Apache-2.0"
+      ],
+      "name": "test_data_passing_crate",
+      "package_url": "https://github.com/bazelbuild/rules_rust",
+      "repository": {
+        "Http": {
+          "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286",
+          "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "test_data_passing_crate",
+            "crate_root": "src/lib.rs"
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs"
+          }
+        }
+      ],
+      "version": "0.1.0"
+    }
+  },
   "direct_deps": [
     "test_data_passing_crate 0.1.0"
   ],
   "direct_dev_deps": [],
-  "unused_patches": []
+  "workspace_members": {
+    "direct-cargo-bazel-deps 0.0.1": ""
+  }
 }

@@ -1,92 +1,5 @@
 {
-  "checksum": "27e8a62ec5c3802bbbe9cea0e6e5402b6adcdb34b2231252ec863b06c45ae27d",
-  "crates": {
-    "direct-cargo-bazel-deps 0.0.1": {
-      "name": "direct-cargo-bazel-deps",
-      "version": "0.0.1",
-      "package_url": null,
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "direct_cargo_bazel_deps",
-            "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "direct_cargo_bazel_deps",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "foo 0.0.0",
-              "target": "foo"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.0.1"
-      },
-      "license": null,
-      "license_ids": [],
-      "license_file": null
-    },
-    "foo 0.0.0": {
-      "name": "foo",
-      "version": "0.0.0",
-      "package_url": null,
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/foo/0.0.0/download",
-          "sha256": "f7dbb6acfeff1d490fba693a402456f76b344fea77a5e7cae43b5970c3332b8f"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "foo",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "foo",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2015",
-        "version": "0.0.0"
-      },
-      "license": "CC0-1.0",
-      "license_ids": [
-        "CC0-1.0"
-      ],
-      "license_file": null,
-      "override_targets": {
-        "lib": "@@//:foo"
-      }
-    }
-  },
-  "binary_crates": [],
-  "workspace_members": {
-    "direct-cargo-bazel-deps 0.0.1": ""
-  },
+  "checksum": "1507acdd7abb641f21c43b0ab1aafa7f939ebef5cba559db04dde1a94c44d139",
   "conditions": {
     "aarch64-apple-darwin": [
       "aarch64-apple-darwin"
@@ -110,9 +23,65 @@
       "x86_64-unknown-nixos-gnu"
     ]
   },
+  "crates": {
+    "direct-cargo-bazel-deps 0.0.1": {
+      "common_attrs": {
+        "deps": [
+          {
+            "id": "foo 0.0.0",
+            "target": "foo"
+          }
+        ],
+        "edition": "2018"
+      },
+      "library_target_name": "direct_cargo_bazel_deps",
+      "name": "direct-cargo-bazel-deps",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "direct_cargo_bazel_deps",
+            "crate_root": ".direct_cargo_bazel_deps.rs"
+          }
+        }
+      ],
+      "version": "0.0.1"
+    },
+    "foo 0.0.0": {
+      "common_attrs": {
+        "edition": "2015"
+      },
+      "library_target_name": "foo",
+      "license": "CC0-1.0",
+      "license_ids": [
+        "CC0-1.0"
+      ],
+      "name": "foo",
+      "override_targets": {
+        "lib": "@@//:foo"
+      },
+      "repository": {
+        "Http": {
+          "sha256": "f7dbb6acfeff1d490fba693a402456f76b344fea77a5e7cae43b5970c3332b8f",
+          "url": "https://static.crates.io/crates/foo/0.0.0/download"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "foo",
+            "crate_root": "src/lib.rs"
+          }
+        }
+      ],
+      "version": "0.0.0"
+    }
+  },
   "direct_deps": [
     "foo 0.0.0"
   ],
   "direct_dev_deps": [],
-  "unused_patches": []
+  "workspace_members": {
+    "direct-cargo-bazel-deps 0.0.1": ""
+  }
 }

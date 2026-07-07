@@ -806,7 +806,7 @@ impl Renderer {
                 platforms,
             ),
             toolchains: attrs.map_or_else(BTreeSet::new, |attrs| attrs.toolchains.clone()),
-            version: krate.common_attrs.version.clone(),
+            version: krate.version.to_string(),
             visibility: BTreeSet::from(["//visibility:private".to_owned()]),
         })
     }
@@ -967,7 +967,7 @@ impl Renderer {
                         .collect(),
                 )
             }),
-            version: krate.common_attrs.version.clone(),
+            version: krate.version.to_string(),
         })
     }
 
