@@ -87,7 +87,7 @@ pub fn generate_rust_project(
         &bep_file,
     )?;
 
-    let spec_paths = match bep::parse_spec_paths(&bep_file) {
+    let spec_paths = match bep::parse_spec_paths(&bep_file, execution_root) {
         Ok(paths) => paths,
         // A failed build often means a missing or partial BEP file; surface
         // the build error rather than the downstream parse error.

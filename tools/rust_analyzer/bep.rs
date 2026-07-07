@@ -110,6 +110,7 @@ struct OutputGroup {
 pub fn parse_output_group_paths(
     bep_path: &Utf8Path,
     output_group: &str,
+    execution_root: &Utf8Path,
 ) -> Result<Vec<Utf8PathBuf>> {
     let file = File::open(bep_path).with_context(|| format!("opening BEP file {bep_path}"))?;
     let reader = BufReader::new(file);
@@ -162,7 +163,12 @@ pub fn parse_output_group_paths(
         };
         for file in &set.files {
             if let Some(path) = file_to_path(file) {
-                paths.push(path);
+                let mut absolute_path = path;
+                if !absolute_path.is_absolute() {
+                    absolute_path = execution_root.join(absolute_path);
+                }
+
+                paths.push(absolute_path);
             }
         }
         for child in &set.file_sets {
@@ -177,8 +183,11 @@ pub fn parse_output_group_paths(
 
 /// Convenience wrapper for the `rust_analyzer_crate_spec` output group used
 /// during project discovery.
-pub fn parse_spec_paths(bep_path: &Utf8Path) -> Result<Vec<Utf8PathBuf>> {
-    parse_output_group_paths(bep_path, SPEC_OUTPUT_GROUP)
+pub fn parse_spec_paths(
+    bep_path: &Utf8Path,
+    execution_root: &Utf8Path,
+) -> Result<Vec<Utf8PathBuf>> {
+    parse_output_group_paths(bep_path, SPEC_OUTPUT_GROUP, execution_root)
 }
 
 /// Return the stderr file path captured for every completed Bazel action
@@ -347,13 +356,33 @@ mod tests {
 "#,
         )
         .unwrap();
-        let paths = parse_spec_paths(&bep_path).unwrap();
+        let paths = parse_spec_paths(&bep_path, Utf8Path::new("/execroot")).unwrap();
         assert_eq!(
             paths,
             vec![
                 Utf8PathBuf::from("/abs/bar.rust_analyzer_crate_spec.json"),
                 Utf8PathBuf::from("/abs/foo.rust_analyzer_crate_spec.json"),
             ]
+        );
+    }
+
+    #[test]
+    fn parse_spec_paths_handles_relative_paths() {
+        let dir = tempdir();
+        let bep_path = dir.join("bep.json");
+        std::fs::write(
+            &bep_path,
+            r#"{"id":{"namedSet":{"id":"0"}},"namedSetOfFiles":{"files":[{"uri":"bytestream://remote/blob","pathPrefix":["bazel-out","k8-fastbuild","bin"],"name":"pkg/lib.rust_analyzer_crate_spec.json"}]}}
+{"id":{"targetCompleted":{"label":"//pkg:lib"}},"completed":{"outputGroup":[{"name":"rust_analyzer_crate_spec","fileSets":[{"id":"0"}]}]}}
+"#,
+        )
+        .unwrap();
+        let paths = parse_spec_paths(&bep_path, Utf8Path::new("/execroot")).unwrap();
+        assert_eq!(
+            paths,
+            vec![Utf8PathBuf::from(
+                "/execroot/bazel-out/k8-fastbuild/bin/pkg/lib.rust_analyzer_crate_spec.json",
+            )]
         );
     }
 
@@ -369,9 +398,16 @@ mod tests {
 "#,
         )
         .unwrap();
-        let rustc = parse_output_group_paths(&bep_path, RUSTC_OUTPUT_GROUP).unwrap();
+        let rustc =
+            parse_output_group_paths(&bep_path, RUSTC_OUTPUT_GROUP, Utf8Path::new("/execroot"))
+                .unwrap();
         assert_eq!(rustc, vec![Utf8PathBuf::from("/abs/lib.rustc-output")]);
-        let specs = parse_output_group_paths(&bep_path, "rust_analyzer_crate_spec").unwrap();
+        let specs = parse_output_group_paths(
+            &bep_path,
+            "rust_analyzer_crate_spec",
+            Utf8Path::new("/execroot"),
+        )
+        .unwrap();
         assert_eq!(specs, vec![Utf8PathBuf::from("/abs/lib.spec.json")]);
     }
 
