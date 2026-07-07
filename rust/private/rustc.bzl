@@ -2084,7 +2084,14 @@ def rustc_compile_action(
     else:
         providers.extend([crate_info, dep_info])
 
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context)
+    use_pic = should_use_pic(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        crate_type = crate_info.type,
+        compilation_mode = compilation_mode,
+        toolchain = toolchain,
+    )
+    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, use_pic, debug_context)
 
     output_group_info = {}
 
@@ -2218,7 +2225,7 @@ def _add_codegen_units_flags(toolchain, emit, args):
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
-def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, debug_context = None):
+def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, use_pic, debug_context = None):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
     Args:
@@ -2229,6 +2236,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         interface_library (File): Optional interface library for cdylib crates on Windows.
+        use_pic: (boolean): Whether the build should use PIC.
         debug_context (CcDebugContextInfo): The current debug context.
 
     Returns:
@@ -2249,14 +2257,18 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     if crate_info.type == "staticlib":
         if cc_toolchain:
+            kwargs = {}
+            if use_pic:
+                kwargs["pic_static_library"] = crate_info.output
+            else:
+                kwargs["static_library"] = crate_info.output
+
             library_to_link = cc_common.create_library_to_link(
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 cc_toolchain = cc_toolchain,
-                static_library = crate_info.output,
-                # TODO(hlopko): handle PIC/NOPIC correctly
-                pic_static_library = crate_info.output,
                 alwayslink = getattr(attr, "alwayslink", False),
+                **kwargs
             )
     elif crate_info.type in ("rlib", "lib"):
         # bazel hard-codes a check for endswith((".a", ".pic.a",
@@ -2265,15 +2277,18 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         dot_a = make_static_lib_symlink(ctx.label.package, ctx.actions, crate_info.output)
 
         if cc_toolchain:
-            # TODO(hlopko): handle PIC/NOPIC correctly
+            kwargs = {}
+            if use_pic:
+                kwargs["pic_static_library"] = dot_a
+            else:
+                kwargs["static_library"] = dot_a
+
             library_to_link = cc_common.create_library_to_link(
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 cc_toolchain = cc_toolchain,
-                static_library = dot_a,
-                # TODO(hlopko): handle PIC/NOPIC correctly
-                pic_static_library = dot_a,
                 alwayslink = getattr(attr, "alwayslink", False),
+                **kwargs
             )
     elif crate_info.type == "cdylib":
         if cc_toolchain:
