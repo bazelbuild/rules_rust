@@ -1388,46 +1388,15 @@ subcommand — <code>setup</code> is re-runnable any time.</p>
 </li>
 <li>Reload the VSCode window.</li>
 </ol>
-<p>Existing user keys in <code>.vscode/settings.json</code> are preserved on re-runs.
-Pass <code>--dry-run</code> to preview the JSON without writing it; <code>--replace</code> to
-overwrite all managed keys (destroys user keys).</p>
-<h4 id="committable-settings"><a class="header" href="#committable-settings">Committable settings</a></h4>
-<p>Managed <code>rust-analyzer.*</code> paths use VSCode's <code>${workspaceFolder}</code>
-variable and point at small launcher shims under
-<code>&lt;workspace&gt;/.rules_rust_analyzer/</code>, e.g.:</p>
-<pre><code class="language-jsonc">"rust-analyzer.server.path":
-    "${workspaceFolder}/.rules_rust_analyzer/rust_analyzer.exe"
-</code></pre>
-<p>The shims are byte-identical copies of a tiny dispatcher binary;
-they read a sibling <code>launcher_paths.json</code> (also in the launcher dir)
-and <code>exec</code> the absolute toolchain binary in the Bazel cache. <strong>The
-settings file is safe to commit</strong> — it contains no per-developer or
-per-platform paths. Each developer just runs <code>setup</code> once on their
-machine to populate the launcher dir.</p>
+<p><code>.vscode/settings.json</code> is always written; a <code>*.code-workspace</code> at
+the workspace root is picked up too. Existing user keys and comments
+survive re-runs, so <code>.vscode/settings.json</code> and <code>.code-workspace</code> are
+safe to commit.</p>
 <p>Add the launcher dir to <code>.gitignore</code>:</p>
-<pre><code>.rules_rust_analyzer/
+<pre><code>.vscode/.rules_rust_analyzer/
 </code></pre>
-<p>Re-run <code>setup</code> after a toolchain bump (rustup update, <code>MODULE.bazel</code>
-change, <code>bazel clean --expunge</code>) to refresh the launcher dir's
-<code>launcher_paths.json</code>. The committed settings file is untouched.</p>
-<p>The <code>.exe</code> extension on every platform is deliberate: it's the only
-extension Node's <code>child_process.spawn</code> handles on Windows without
-<code>shell: true</code>, and POSIX kernels ignore file extensions for <code>execve</code>
-(a Linux ELF or macOS Mach-O binary named <code>foo.exe</code> runs fine).
-That's what lets the same committed path work across Linux, macOS,
-and Windows.</p>
-<h4 id="code-workspace-files"><a class="header" href="#code-workspace-files"><code>.code-workspace</code> files</a></h4>
-<p>Projects opened via a <code>.code-workspace</code> file need the rust-analyzer
-keys inside the workspace file's <code>settings</code> object — VSCode answers
-rust-analyzer's window-scoped config requests from there, <strong>not</strong> from
-any folder's <code>.vscode/settings.json</code>. <code>setup vscode</code> handles this
-automatically: if exactly one <code>*.code-workspace</code> exists at the
-workspace root, it targets that file and nests under <code>settings</code>. Pass
-<code>--output &lt;file&gt;.code-workspace</code> to disambiguate when multiple exist,
-or <code>--settings-key &lt;key&gt;</code> to nest under a custom key. With
-<code>--settings-key</code>, <code>--replace</code> overwrites only that nested object —
-sibling top-level keys (<code>folders</code>, <code>tasks</code>, <code>extensions</code>) survive
-intact.</p>
+<p>Re-run <code>setup</code> after a toolchain change (rustup update, <code>MODULE.bazel</code>
+edit, <code>bazel clean --expunge</code>).</p>
 <h3 id="neovim"><a class="header" href="#neovim">Neovim</a></h3>
 <pre><code>bazel run @rules_rust//tools/rust_analyzer:setup -- neovim
 </code></pre>
@@ -1454,15 +1423,20 @@ same keys via plugin-specific config files.</p>
 <tr><td><code>--workspace &lt;path&gt;</code></td><td>Workspace root. Defaults to <code>$BUILD_WORKSPACE_DIRECTORY</code> (set by <code>bazel run</code>).</td></tr>
 <tr><td><code>--skip-proc-macro-server</code></td><td>Don't manage the proc-macro key.</td></tr>
 <tr><td><code>--skip-rustfmt</code></td><td>Don't manage the formatter key (use host rustfmt).</td></tr>
-<tr><td><code>--per-package-workspaces</code></td><td>Opt in to per-package workspace splitting (see below).</td></tr>
+<tr><td><code>--per-package-workspaces</code> / <code>--no-per-package-workspaces</code></td><td>Opt this developer in/out of per-package workspace splitting (see below).</td></tr>
+<tr><td><code>--clippy</code> / <code>--no-clippy</code></td><td>Opt this developer in/out of running clippy on save and streaming its diagnostics alongside rustc's.</td></tr>
+<tr><td><code>--clean</code></td><td>Delete <code>&lt;launcher-dir&gt;/cache/</code> before running the rest of setup. See Troubleshooting.</td></tr>
 </tbody></table>
 </div>
+<p>The <code>--clippy</code> and <code>--per-package-workspaces</code> toggles are <strong>per-user</strong>: they mutate <code>&lt;launcher-dir&gt;/user_config.json</code> (gitignored) instead of the shared committed settings file. Two developers on the same workspace can hold different preferences without touching the checked-in configuration. Editing <code>user_config.json</code> by hand works too.</p>
 <p>The <code>vscode</code> subcommand adds:</p>
 <div class="table-wrapper"><table><thead><tr><th>Flag</th><th>Effect</th></tr></thead><tbody>
-<tr><td><code>--output &lt;path&gt;</code></td><td>Settings file to write. Defaults to the unique <code>*.code-workspace</code> at the workspace root, falling back to <code>.vscode/settings.json</code>.</td></tr>
-<tr><td><code>--settings-key &lt;key&gt;</code></td><td>Nest the managed <code>rust-analyzer.*</code> keys under this top-level key. Auto-defaults to <code>settings</code> for <code>.code-workspace</code> outputs.</td></tr>
-<tr><td><code>--dry-run</code></td><td>Preview the JSON without writing.</td></tr>
-<tr><td><code>--replace</code></td><td>Replace the managed keys instead of merging. With <code>--settings-key</code>, only that nested object is replaced — sibling keys (<code>folders</code>, <code>tasks</code>, <code>extensions</code>) survive.</td></tr>
+<tr><td><code>--settings-json &lt;path&gt;</code></td><td>Override the settings.json output. Defaults to <code>&lt;workspace&gt;/.vscode/settings.json</code>.</td></tr>
+<tr><td><code>--code-workspace &lt;path&gt;</code></td><td><code>.code-workspace</code> file to also update. Required when the workspace root has more than one.</td></tr>
+<tr><td><code>--no-code-workspace</code></td><td>Skip the <code>.code-workspace</code> write.</td></tr>
+<tr><td><code>--settings-key &lt;key&gt;</code></td><td>Nest managed keys under this key inside the <code>.code-workspace</code> (default: <code>settings</code>).</td></tr>
+<tr><td><code>--dry-run</code></td><td>Print each would-be-written file to stdout.</td></tr>
+<tr><td><code>--replace</code></td><td>Overwrite managed keys instead of merging. Sibling <code>folders</code> / <code>tasks</code> / <code>extensions</code> in a <code>.code-workspace</code> survive.</td></tr>
 </tbody></table>
 </div>
 <h2 id="what-you-get"><a class="header" href="#what-you-get">What you get</a></h2>
@@ -1475,29 +1449,30 @@ errors anywhere in the dep graph surface at their actual file paths.</li>
 <li><strong>Workspace reload</strong> on watched <code>BUILD</code> / <code>MODULE.bazel</code> changes.</li>
 </ul>
 <h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
-<h3 id="stale-or-wrong-project-model"><a class="header" href="#stale-or-wrong-project-model">Stale or wrong project model</a></h3>
-<p>Discovery memoizes the assembled <code>rust-project.json</code> in a local cache
-keyed on every input. If the IDE shows symbols / deps that don't match
-what <code>bazel build</code> actually produces — and re-running discovery
-(restart rust-analyzer, or save a <code>BUILD</code> file) doesn't fix it — nuke
-the cache and try again:</p>
-<pre><code>rm -rf &lt;workspace&gt;/&lt;editor-dir&gt;/.rules_rust_analyzer/cache
+<h3 id="symbols--deps-look-wrong"><a class="header" href="#symbols--deps-look-wrong">Symbols / deps look wrong</a></h3>
+<p>Restart rust-analyzer (or save a <code>BUILD</code> file). If that doesn't fix
+it, re-run setup with <code>--clean</code> to nuke the discovery cache:</p>
+<pre><code>bazel run @rules_rust//tools/rust_analyzer:setup -- --clean vscode
 </code></pre>
-<p>Where <code>&lt;editor-dir&gt;</code> is <code>.vscode</code> for VSCode, <code>.helix</code> for Helix, or
-empty for Neovim / <code>print</code> (cache sits at <code>&lt;workspace&gt;/.rules_rust_analyzer/cache</code>).</p>
-<p>The cache survives <code>bazel clean</code> by design (it lives in the workspace,
-not the Bazel output base) so a full Bazel rebuild won't invalidate
-stale entries — that's what the manual <code>rm -rf</code> is for.</p>
+<p>Works with any subcommand (<code>vscode</code> / <code>neovim</code> / <code>helix</code> / <code>print</code>).</p>
 <h3 id="diagnostics-stopped-appearing"><a class="header" href="#diagnostics-stopped-appearing">Diagnostics stopped appearing</a></h3>
-<p>Check <code>&lt;workspace&gt;/.rules_rust_analyzer/flycheck.log</code> — the on-save
-wrapper appends one line per internal failure.</p>
+<p>Check <code>&lt;workspace&gt;/.rules_rust_analyzer/flycheck.log</code>.</p>
 <h3 id="after-bazel-clean---expunge-or-toolchain-changes"><a class="header" href="#after-bazel-clean---expunge-or-toolchain-changes">After <code>bazel clean --expunge</code> or toolchain changes</a></h3>
-<p>Re-run <code>setup</code>. The launcher shims dispatch through
-<code>&lt;launcher_dir&gt;/launcher_paths.json</code>, which records absolute paths to
-the rust-analyzer / rustfmt / proc-macro-srv binaries at install
-time. Those binaries live in Bazel's output_base; <code>--expunge</code> clears
-that, and toolchain changes move them to new paths. Re-running setup
-re-resolves and rewrites the JSON.</p>
+<p>Re-run <code>setup</code>.</p>
+<h3 id="noisy-cargo-metadata-errors-on-startup"><a class="header" href="#noisy-cargo-metadata-errors-on-startup">Noisy <code>cargo metadata</code> errors on startup</a></h3>
+<p><code>setup</code> does not manage <code>rust-analyzer.files.excludeDirs</code>. If your
+workspace has stub <code>Cargo.toml</code> files that aren't meant to be
+auto-loaded (common in <code>rules_rust</code> itself under <code>examples/</code>,
+<code>crate_universe/</code>, etc.), rust-analyzer still finds them and logs
+errors. Silence them by adding the directory names to <code>settings.json</code>
+yourself — your entries survive future <code>setup</code> runs:</p>
+<pre><code>"rust-analyzer.files.excludeDirs": ["examples", "some_other_dir"]
+</code></pre>
+<p>Trade-off: <code>files.excludeDirs</code> also hides those sources from
+rust-analyzer's virtual filesystem, so files under those directories
+won't get IDE features even if they're part of a Bazel-discovered
+crate. Only exclude directories whose sources you're willing to lose
+IDE support on.</p>
 <h2 id="workspace-splitting"><a class="header" href="#workspace-splitting">Workspace splitting</a></h2>
 <p>By default the whole project is treated as a single workspace.</p>
 <p>For monorepos where indexing the whole graph is too slow, pass
@@ -1508,18 +1483,14 @@ indexed, so "find usages" can miss callers in other packages.</p>
 <p>Switch any time by re-running <code>setup</code> with or without the flag.</p>
 <h2 id="debugging"><a class="header" href="#debugging">Debugging</a></h2>
 <p>The <code>▶ Debug</code> codelens VSCode renders next to <code>#[test]</code> functions
-<strong>does not work</strong> — the VSCode rust-analyzer extension's debug handler
-only supports cargo-shaped runnables, and Bazel projects emit shell
-runnables. Lifting this needs an upstream PR.</p>
-<p>The supported debug path is <code>.vscode/launch.json</code> + F5:</p>
+<strong>does not work</strong> for Bazel projects. Use <code>.vscode/launch.json</code> + F5
+instead:</p>
 <pre><code>bazel run @rules_rust//tools/vscode:gen_launch_json
 </code></pre>
-<p>Writes a per-target launch config that uses CodeLLDB's
-<code>targetCreateCommands</code> to build with <code>--compilation_mode=dbg --strip=never</code> and attach LLDB. Install
+<p>Install
 <a href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb">CodeLLDB</a>
-first. Set a breakpoint inside the test you care about and re-run the
-target — libtest selects tests inside the binary, so one launch config
-covers every test in the target.</p>
+first. Set a breakpoint inside the test and run the target — one
+launch config covers every test in that binary.</p>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <p>Public entry point to all Rust rules and supported APIs.</p>
 <h2 id="rules-6"><a class="header" href="#rules-6">Rules</a></h2>
