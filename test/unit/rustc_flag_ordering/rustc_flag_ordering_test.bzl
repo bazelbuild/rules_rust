@@ -3,9 +3,18 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_test")
 
-# Checks that the flags in `expected_flags` are in the command line arguments
-# for `action` in the given order (possibly with other arguments in between).
 def assert_argv_order(env, action, expected_flags):
+    """Checks that a set of flags appear in the given order.
+
+    Checks that the flags in `expected_flags` are in the command line
+    arguments for `action` in the given order (possibly with other arguments
+    in between).
+
+    Args:
+      env: env from analysistest.begin(ctx).
+      action: The action whose command line will be checked.
+      expected_flags: The expected set of flags, in the expected order.
+    """
     argv = action.argv
     last_idx = -1
     for flag in expected_flags:
