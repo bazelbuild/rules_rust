@@ -188,6 +188,27 @@ def _rust_proc_macro_impl(ctx):
     """
     return _rust_library_common(ctx, "proc-macro")
 
+def _validate_root_path(ctx):
+    """Validates that root_path is used iff there is no explicit crate_root and srcs is a single-element directory artifact."""
+    if getattr(ctx.attr, "crate", None):
+        if getattr(ctx.attr, "root_path", ""):
+            fail("rust_test.crate and rust_test.root_path are mutually exclusive.")
+        return
+
+    explicit_crate_root = getattr(ctx.file, "crate_root", None) != None
+    if explicit_crate_root and ctx.file.crate_root.is_directory:
+        fail("`crate_root` must be a file, not a directory. If you want to use a directory artifact as source, use `srcs` and `root_path` instead.")
+
+    srcs = ctx.files.srcs
+    is_single_dir = len(srcs) == 1 and srcs[0].is_directory
+    should_use_root_path = (not explicit_crate_root) and is_single_dir
+    has_root_path = bool(getattr(ctx.attr, "root_path", ""))
+
+    if should_use_root_path and not has_root_path:
+        fail("`root_path` must be specified when `srcs` is a single directory artifact and `crate_root` is not set.")
+    elif not should_use_root_path and has_root_path:
+        fail("`root_path` can only be used when `crate_root` is not set and `srcs` is a single directory artifact.")
+
 def _rust_library_common(ctx, crate_type):
     """The common implementation of the library-like rules.
 
@@ -198,6 +219,7 @@ def _rust_library_common(ctx, crate_type):
     Returns:
         list: A list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
@@ -291,6 +313,7 @@ def _rust_binary_impl(ctx):
     Returns:
         list: A list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
@@ -385,6 +408,7 @@ def _rust_test_impl(ctx):
     Returns:
         list: The list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
