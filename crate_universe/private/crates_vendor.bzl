@@ -745,6 +745,9 @@ def _crates_vendor_remote_repository_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 crates_vendor_remote_repository = repository_rule(
     doc = (
