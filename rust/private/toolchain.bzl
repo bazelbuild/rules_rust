@@ -55,7 +55,23 @@ def _rust_stdlib_filegroup_impl(ctx):
         #
         # alloc depends on the allocator_library if it's configured, but we
         # do that later.
-        dot_a_files = [make_static_lib_symlink(ctx.label.package, ctx.actions, f) for f in std_rlibs]
+        cc_toolchain = None
+        remove_metadata = ctx.attr._remove_metadata_from_staticlib[BuildSettingInfo].value
+        if remove_metadata:
+            cc_toolchain, _ = find_cc_toolchain(ctx)
+            if not cc_toolchain:
+                remove_metadata = False
+
+        dot_a_files = [
+            make_static_lib_symlink(
+                ctx_package = ctx.label.package,
+                actions = ctx.actions,
+                rlib_file = f,
+                remove_metadata = remove_metadata,
+                cc_toolchain = cc_toolchain,
+            )
+            for f in std_rlibs
+        ]
 
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
@@ -117,7 +133,14 @@ rust_stdlib_filegroup = rule(
             doc = "The list of targets/files that are components of the rust-stdlib file group",
             mandatory = True,
         ),
+        "_remove_metadata_from_staticlib": attr.label(
+            default = Label("//rust/settings:remove_metadata_from_staticlib"),
+        ),
     },
+    toolchains = [
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+    fragments = ["cpp"],
 )
 
 def _experimental_link_std_dylib(ctx):
@@ -407,6 +430,7 @@ def _rust_toolchain_impl(ctx):
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
+    remove_metadata_from_staticlib = ctx.attr._remove_metadata_from_staticlib[BuildSettingInfo].value
     no_std = ctx.attr._no_std[BuildSettingInfo].value
     lto = ctx.attr.lto[RustLtoInfo]
 
@@ -643,6 +667,7 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
+        _remove_metadata_from_staticlib = remove_metadata_from_staticlib,
         _experimental_link_std_dylib = _experimental_link_std_dylib(ctx),
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
@@ -921,6 +946,9 @@ rust_toolchain = rule(
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),
+        ),
+        "_remove_metadata_from_staticlib": attr.label(
+            default = Label("//rust/settings:remove_metadata_from_staticlib"),
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),
