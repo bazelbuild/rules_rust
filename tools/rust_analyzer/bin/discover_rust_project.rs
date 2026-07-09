@@ -46,10 +46,11 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
     // `discoverConfig.command` is intentionally identical for every
     // developer — clippy and per-package-workspaces toggles live in
     // `<launcher_dir>/user_config.json` (see `user_config.rs`).
+    // Clippy is consulted per-save inside `bin/flycheck.rs` and does
+    // not need to be threaded through discovery.
     let user = user_config::load(&install_dir()?);
     log::info!(
-        "user config: clippy={} per_package_workspaces={}",
-        user.clippy,
+        "user config: per_package_workspaces={}",
         user.per_package_workspaces
     );
 
@@ -89,7 +90,6 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &bazel_args,
         rules_rust_name,
         &[targets],
-        user.clippy,
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })

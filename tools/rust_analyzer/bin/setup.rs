@@ -166,6 +166,16 @@ struct Cli {
     #[arg(long, global = true)]
     clean: bool,
 
+    /// Persist a per-user override for flycheck's inner Bazel
+    /// `--output_user_root`. Writes the path into
+    /// `<launcher_dir>/user_config.json` so it survives future setup
+    /// runs without touching the shared committed settings file.
+    /// The `--output_user_root` flag on the flycheck binary still
+    /// wins over this. To clear, delete the `output_user_root` key
+    /// from `user_config.json` by hand.
+    #[arg(long, global = true, value_name = "PATH")]
+    output_user_root: Option<Utf8PathBuf>,
+
     #[command(subcommand)]
     ide: IdeCmd,
 }
@@ -259,8 +269,9 @@ fn apply_user_config_edits(
     launcher_dir: &Utf8Path,
     clippy: Option<bool>,
     per_package_workspaces: Option<bool>,
+    output_user_root: Option<Utf8PathBuf>,
 ) -> Result<()> {
-    if clippy.is_none() && per_package_workspaces.is_none() {
+    if clippy.is_none() && per_package_workspaces.is_none() && output_user_root.is_none() {
         return Ok(());
     }
     let mut config = user_config::load(launcher_dir);
@@ -270,10 +281,13 @@ fn apply_user_config_edits(
     if let Some(v) = per_package_workspaces {
         config.per_package_workspaces = v;
     }
+    if let Some(v) = output_user_root {
+        config.output_user_root = Some(v);
+    }
     user_config::save(launcher_dir, &config)?;
     info!(
-        "user_config: clippy={} per_package_workspaces={}",
-        config.clippy, config.per_package_workspaces
+        "user_config: clippy={} per_package_workspaces={} output_user_root={:?}",
+        config.clippy, config.per_package_workspaces, config.output_user_root
     );
     Ok(())
 }
@@ -289,6 +303,7 @@ fn main() -> Result<()> {
         clippy,
         no_clippy,
         clean,
+        output_user_root,
         ide,
     } = Cli::parse();
 
@@ -333,7 +348,7 @@ fn main() -> Result<()> {
     // and the per-IDE runners themselves see a consistent on-disk
     // state, and running `setup --clippy` with no IDE change still
     // takes effect.
-    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw)?;
+    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw, output_user_root)?;
 
     let ctx = SetupCtx {
         launcher_dir,
@@ -1407,11 +1422,12 @@ mod tests {
             &user_config::UserConfig {
                 clippy: false,
                 per_package_workspaces: true,
+                output_user_root: Some(Utf8PathBuf::from("/existing/root")),
             },
         )
         .unwrap();
 
-        apply_user_config_edits(&launcher_dir, Some(true), None).unwrap();
+        apply_user_config_edits(&launcher_dir, Some(true), None, None).unwrap();
 
         let loaded = user_config::load(&launcher_dir);
         assert!(loaded.clippy, "--clippy must land in the file");
@@ -1419,6 +1435,30 @@ mod tests {
             loaded.per_package_workspaces,
             "unnamed fields must be preserved: got {loaded:?}",
         );
+        assert_eq!(
+            loaded.output_user_root,
+            Some(Utf8PathBuf::from("/existing/root")),
+            "unnamed fields must be preserved: got {loaded:?}",
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn apply_user_config_edits_persists_output_user_root() {
+        // `setup --output-user-root /some/path` writes the path into
+        // the launcher-dir user_config, so flycheck picks it up on
+        // future saves without any committed-file change.
+        let dir = std::env::temp_dir().join(format!("setup_uc_our_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
+        let path = Utf8PathBuf::from("/custom/flycheck/root");
+
+        apply_user_config_edits(&launcher_dir, None, None, Some(path.clone())).unwrap();
+
+        let loaded = user_config::load(&launcher_dir);
+        assert_eq!(loaded.output_user_root, Some(path));
+        assert!(!loaded.clippy, "unrelated fields must stay default");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1432,7 +1472,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
 
-        apply_user_config_edits(&launcher_dir, None, None).unwrap();
+        apply_user_config_edits(&launcher_dir, None, None, None).unwrap();
 
         assert!(!launcher_dir
             .join(user_config::USER_CONFIG_FILENAME)

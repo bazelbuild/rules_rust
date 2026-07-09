@@ -48,9 +48,7 @@ struct Args {
     bazel: Utf8PathBuf,
 
     /// Bazel `--output_user_root` for the flycheck server. Overrides
-    /// the default (`<install_dir>/output_user_root`, derived from
-    /// `current_exe()`). Useful on Windows where MAX_PATH limits make
-    /// the in-launcher-dir default impractical.
+    /// the default (see [`default_output_user_root`]).
     #[clap(long)]
     output_user_root: Option<Utf8PathBuf>,
 }
@@ -75,23 +73,28 @@ fn run() -> Result<u8> {
     let bep_path = temp_dir.join(format!("flycheck_bep_{}.json", std::process::id()));
     let _bep_cleanup = scopeguard(bep_path.clone());
 
-    // Dedicated `--output_user_root` for the inner `bazel build` so
-    // its `--error_format=json` / `--rustc_output_diagnostics=true`
-    // don't thrash the user's primary Bazel server's analysis cache.
-    // CLI override exists for Windows MAX_PATH cases where the
-    // sibling default is too long.
-    let output_user_root = match args.output_user_root.clone() {
-        Some(p) => p,
-        None => gen_rust_project_lib::install_dir()?.join("output_user_root"),
-    };
-    std::fs::create_dir_all(&output_user_root)
-        .with_context(|| format!("creating output_user_root {output_user_root}"))?;
-
     // Per-user preferences live in `<launcher_dir>/user_config.json`.
     // Clippy mode is a per-user opt-in there — the shared discover
     // command doesn't decide it — so we consult the config on every
     // save rather than baking the choice into flycheck's argv.
     let user = user_config::load(&install_dir()?);
+
+    // Dedicated `--output_user_root` for the inner `bazel build` so
+    // its `--error_format=json` / `--rustc_output_diagnostics=true`
+    // don't thrash the user's primary Bazel server's analysis cache.
+    // Precedence: CLI flag > user_config > platform default. The
+    // default lives next to Bazel's own output roots (~/.cache/bazel
+    // on Linux) — not inside the workspace, which Bazel 8+ rejects
+    // for repo_contents_cache.
+    let output_user_root = match args.output_user_root.clone() {
+        Some(p) => p,
+        None => match user.output_user_root.clone() {
+            Some(p) => p,
+            None => default_output_user_root(&workspace)?,
+        },
+    };
+    std::fs::create_dir_all(&output_user_root)
+        .with_context(|| format!("creating output_user_root {output_user_root}"))?;
 
     // Assemble the bazel command. Clippy mode adds the aspect and
     // its diagnostics output group on top of the base build flags.
@@ -252,6 +255,53 @@ fn workspace_dir() -> Result<Utf8PathBuf> {
     }
     let cwd = env::current_dir().context("current_dir")?;
     Utf8PathBuf::try_from(cwd).context("current_dir was not valid UTF-8")
+}
+
+/// Default location for flycheck's dedicated `--output_user_root`,
+/// sitting next to Bazel's own user cache root
+/// (`~/.cache/bazel/_bazel_<user>/…` on Linux, `~/Library/Caches/bazel/…`
+/// on macOS). Living outside the workspace matters on Bazel 8+, which
+/// errors when a repo_contents_cache falls inside the main repo — the
+/// old default (`<launcher_dir>/output_user_root`) always did.
+///
+/// A per-workspace subdirectory (hashed workspace path) keeps two
+/// projects from sharing a flycheck server.
+fn default_output_user_root(workspace: &Utf8Path) -> Result<Utf8PathBuf> {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    workspace.as_str().hash(&mut hasher);
+    let workspace_hash = format!("{:016x}", hasher.finish());
+
+    let cache_root = user_cache_dir()?.join("bazel").join("rules_rust_flycheck");
+    Ok(cache_root.join(workspace_hash))
+}
+
+/// Best-effort platform cache dir. Uses `$XDG_CACHE_HOME` when set;
+/// otherwise `~/.cache` on Linux, `~/Library/Caches` on macOS,
+/// `%LOCALAPPDATA%` on Windows.
+fn user_cache_dir() -> Result<Utf8PathBuf> {
+    if let Ok(dir) = env::var("XDG_CACHE_HOME") {
+        if !dir.is_empty() {
+            return Ok(Utf8PathBuf::from(dir));
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let home = env::var("HOME").context("HOME not set")?;
+        Ok(Utf8PathBuf::from(home).join("Library").join("Caches"))
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let dir = env::var("LOCALAPPDATA").context("LOCALAPPDATA not set")?;
+        Ok(Utf8PathBuf::from(dir))
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let home = env::var("HOME").context("HOME not set")?;
+        Ok(Utf8PathBuf::from(home).join(".cache"))
+    }
 }
 
 /// Query `bazel info execution_root` against the flycheck server (same
