@@ -145,6 +145,7 @@ rust_binary(
         "//tools/rust_analyzer/3rdparty/crates:camino",
         "//tools/rust_analyzer/3rdparty/crates:clap",
         "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:jsonc-parser",
         "//tools/rust_analyzer/3rdparty/crates:log",
         "//tools/rust_analyzer/3rdparty/crates:serde_json",
     ],

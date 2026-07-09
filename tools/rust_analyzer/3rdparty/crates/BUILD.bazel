@@ -92,6 +92,18 @@ alias(
 )
 
 alias(
+    name = "jsonc-parser-0.26.2",
+    actual = "@rrra__jsonc-parser-0.26.2//:jsonc_parser",
+    tags = ["manual"],
+)
+
+alias(
+    name = "jsonc-parser",
+    actual = "@rrra__jsonc-parser-0.26.2//:jsonc_parser",
+    tags = ["manual"],
+)
+
+alias(
     name = "log-0.4.29",
     actual = "@rrra__log-0.4.29//:log",
     tags = ["manual"],
