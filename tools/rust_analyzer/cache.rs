@@ -15,7 +15,14 @@ use std::{
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 
-/// Where cache entries live, relative to the workspace root.
+/// Cache subdir name, relative to the launcher dir. `setup --clean`
+/// deletes `<launcher_dir>/CACHE_SUBDIR/` — importing the constant
+/// keeps that path in sync if we ever rename.
+pub const CACHE_SUBDIR: &str = "cache";
+
+/// Where cache entries live, relative to the workspace root, when
+/// discover falls back (no `$RULES_RUST_RA_CACHE_DIR` set — see
+/// [`cache_dir`]).
 ///
 /// Editor-agnostic by design: the discover binary that produces these
 /// entries is invoked the same way regardless of which editor's launcher
@@ -27,7 +34,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 /// the cache visible to `ls`, easy to clear with `rm -rf`, and immune to
 /// `bazel clean`. Making Bazel manage it would require turning it into
 /// an action output, which has its own correctness headaches.
-const CACHE_DIR_REL: &str = ".rules_rust_analyzer/cache";
+const CACHE_DIR_REL_PREFIX: &str = ".rules_rust_analyzer";
 
 /// Schema version mixed into every cache key. Bump on any change to
 /// the assembled `rust-project.json` shape — old cache entries become
@@ -54,6 +61,7 @@ pub fn compute_key(
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
     launcher_dir: &str,
+    clippy: bool,
 ) -> String {
     let mut hasher = DefaultHasher::new();
     CACHE_SCHEMA_VERSION.hash(&mut hasher);
@@ -67,6 +75,11 @@ pub fn compute_key(
     // (vscode→neovim→helix) on the same workspace would silently serve
     // the previously-cached editor's launcher path.
     launcher_dir.hash(&mut hasher);
+    // The Flycheck Runnable's args differ between build-mode and clippy-mode
+    // (`--clippy` prepended). Without this bit in the key, a cached
+    // build-mode project would be served to a clippy-mode setup (or vice
+    // versa) and rust-analyzer would silently keep running the wrong flow.
+    clippy.hash(&mut hasher);
     for (path, content) in spec_contents {
         path.as_str().hash(&mut hasher);
         content.hash(&mut hasher);
@@ -101,7 +114,7 @@ pub fn cache_dir(workspace: &Utf8Path) -> Utf8PathBuf {
             return Utf8PathBuf::from(s);
         }
     }
-    workspace.join(CACHE_DIR_REL)
+    workspace.join(CACHE_DIR_REL_PREFIX).join(CACHE_SUBDIR)
 }
 
 fn cache_file(workspace: &Utf8Path, key: &str) -> Utf8PathBuf {
@@ -165,8 +178,8 @@ mod tests {
                 String::from("{\"id\":\"b\"}"),
             ),
         ];
-        let k1 = compute_key(&specs, toolchain, bazel, ws, er, "");
-        let k2 = compute_key(&specs, toolchain, bazel, ws, er, "");
+        let k1 = compute_key(&specs, toolchain, bazel, ws, er, "", false);
+        let k2 = compute_key(&specs, toolchain, bazel, ws, er, "", false);
         assert_eq!(k1, k2);
     }
 
@@ -179,8 +192,8 @@ mod tests {
         let base = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         let mutated = vec![(Utf8PathBuf::from("a.json"), "b".to_string())];
         assert_ne!(
-            compute_key(&base, toolchain, bazel, ws, er, ""),
-            compute_key(&mutated, toolchain, bazel, ws, er, "")
+            compute_key(&base, toolchain, bazel, ws, er, "", false),
+            compute_key(&mutated, toolchain, bazel, ws, er, "", false)
         );
     }
 
@@ -191,8 +204,8 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er, ""),
-            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er, ""),
+            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er, "", false),
+            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er, "", false),
         );
     }
 
@@ -202,8 +215,8 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er, ""),
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er, ""),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er, "", false),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er, "", false),
         );
     }
 
@@ -224,7 +237,8 @@ mod tests {
                 bazel,
                 ws,
                 er,
-                "/ws/.vscode/.rules_rust_analyzer"
+                "/ws/.vscode/.rules_rust_analyzer",
+                false,
             ),
             compute_key(
                 &specs,
@@ -232,8 +246,25 @@ mod tests {
                 bazel,
                 ws,
                 er,
-                "/ws/.helix/.rules_rust_analyzer"
+                "/ws/.helix/.rules_rust_analyzer",
+                false,
             ),
+        );
+    }
+
+    #[test]
+    fn compute_key_changes_with_clippy() {
+        // The flycheck runnable's args differ between clippy and
+        // non-clippy setups — the cache key must distinguish them so a
+        // build-mode cached project can't be served to a clippy-mode
+        // setup (or vice versa).
+        let bazel = Utf8Path::new("/usr/bin/bazel");
+        let ws = Utf8Path::new("/ws");
+        let er = Utf8Path::new("/er");
+        let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
+        assert_ne!(
+            compute_key(&specs, "{}", bazel, ws, er, "", false),
+            compute_key(&specs, "{}", bazel, ws, er, "", true),
         );
     }
 }

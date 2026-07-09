@@ -27,6 +27,12 @@ pub const SPEC_OUTPUT_GROUP: &str = "rust_analyzer_crate_spec";
 /// [`generate_output_diagnostics`] in `rust/private/utils.bzl`.
 pub const RUSTC_OUTPUT_GROUP: &str = "rustc_output";
 
+/// Output group clippy-emitted diagnostics land in when
+/// `--@rules_rust//rust/settings:clippy_output_diagnostics=true` is set,
+/// under the `rust_clippy_aspect`. Each entry is a per-crate
+/// `.clippy.diagnostics` file. See `rust/private/clippy.bzl`.
+pub const CLIPPY_OUTPUT_GROUP: &str = "clippy_output";
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct BuildEvent {

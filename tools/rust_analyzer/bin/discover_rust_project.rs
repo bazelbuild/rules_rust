@@ -12,8 +12,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{fmt::Formatter, Target, WriteStyle};
 use gen_rust_project_lib::{
-    bazel_info, generate_rust_project, DiscoverProject, RustAnalyzerArg, BUILD_FILE_NAMES,
-    WORKSPACE_ROOT_FILE_NAMES,
+    bazel_info, generate_rust_project, install_dir, user_config, DiscoverProject, RustAnalyzerArg,
+    BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::{LevelFilter, Record};
 
@@ -42,11 +42,32 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         rust_analyzer_argument,
     } = Config::parse()?;
 
+    // Per-user, per-workspace preferences. Rendered
+    // `discoverConfig.command` is intentionally identical for every
+    // developer — clippy and per-package-workspaces toggles live in
+    // `<launcher_dir>/user_config.json` (see `user_config.rs`).
+    let user = user_config::load(&install_dir()?);
+    log::info!(
+        "user config: clippy={} per_package_workspaces={}",
+        user.clippy,
+        user.per_package_workspaces
+    );
+
     log::info!("got rust-analyzer argument: {rust_analyzer_argument:?}");
 
-    let ra_arg = match rust_analyzer_argument {
-        Some(ra_arg) => ra_arg,
-        None => RustAnalyzerArg::Buildfile(find_workspace_root_file(&workspace)?),
+    // When per-package-workspaces is off, the rust-analyzer-provided
+    // arg is discarded and we always emit the whole-workspace project.
+    // The rendered `{arg}` template stays in the discover command
+    // regardless — this keeps the shared settings byte-identical, at
+    // the cost of an occasional cache-hit-only re-invocation of
+    // discover on file open.
+    let ra_arg = if user.per_package_workspaces {
+        match rust_analyzer_argument {
+            Some(ra_arg) => ra_arg,
+            None => RustAnalyzerArg::Buildfile(find_workspace_root_file(&workspace)?),
+        }
+    } else {
+        RustAnalyzerArg::Buildfile(find_workspace_root_file(&workspace)?)
     };
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
@@ -68,6 +89,7 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &bazel_args,
         rules_rust_name,
         &[targets],
+        user.clippy,
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })

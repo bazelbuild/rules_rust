@@ -478,8 +478,22 @@ pub fn assemble_rust_project(
     workspace: &Utf8Path,
     toolchain_info: ToolchainInfo,
     crate_specs: &BTreeSet<CrateSpec>,
+    clippy: bool,
 ) -> anyhow::Result<RustProject> {
     let emit_test_mod = supports_test_mod(&toolchain_info.version);
+
+    // The flycheck launcher forwards positional args verbatim to the
+    // flycheck binary. `--clippy` opts into concatenating clippy JSON
+    // alongside rustc's — see `bin/flycheck.rs`. Order matters: clap
+    // treats leading `--foo` before positionals as flags, and putting
+    // it before `{label}` keeps the `--` clean when the label needs
+    // shell-escaping.
+    let mut flycheck_args = Vec::new();
+    if clippy {
+        flycheck_args.push("--clippy".to_owned());
+    }
+    flycheck_args.push("{label}".to_owned());
+    flycheck_args.push("{saved_file}".to_owned());
 
     let mut runnables = vec![
         Runnable {
@@ -496,7 +510,7 @@ pub fn assemble_rust_project(
         // rust-analyzer to parse into squiggles.
         Runnable {
             program: flycheck_launcher_path(workspace).to_string(),
-            args: vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+            args: flycheck_args,
             cwd: workspace.to_owned(),
             kind: RunnableKind::Flycheck,
         },
@@ -691,6 +705,7 @@ mod tests {
                 is_test: false,
                 build: None,
             }]),
+            false,
         )
         .expect("expect success");
 
@@ -765,6 +780,7 @@ mod tests {
                     build: None,
                 },
             ]),
+            false,
         )
         .expect("expect success");
 
@@ -816,6 +832,7 @@ mod tests {
                 version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-b"]), spec("ID-b", &["ID-a"])]),
+            false,
         )
         .expect("cycle must not fail assembly");
 
@@ -849,11 +866,71 @@ mod tests {
                 version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-nonexistent"])]),
+            false,
         )
         .expect("missing dep must not fail assembly");
 
         assert_eq!(project.crates.len(), 1);
         assert_eq!(project.crates[0].deps.len(), 0);
+    }
+
+    #[test]
+    fn flycheck_runnable_gets_clippy_flag_when_enabled() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([spec("ID-a", &[])]),
+            true,
+        )
+        .expect("expect success");
+
+        // Under clippy mode the Flycheck runnable prepends `--clippy`
+        // ahead of the `{label}` / `{saved_file}` positional args so
+        // the flycheck binary switches to clippy-aspect mode.
+        let flycheck = project
+            .runnables
+            .iter()
+            .find(|r| matches!(r.kind, RunnableKind::Flycheck))
+            .expect("flycheck runnable must exist");
+        assert_eq!(
+            flycheck.args,
+            vec![
+                "--clippy".to_owned(),
+                "{label}".to_owned(),
+                "{saved_file}".to_owned()
+            ],
+        );
+    }
+
+    #[test]
+    fn flycheck_runnable_omits_clippy_flag_by_default() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([spec("ID-a", &[])]),
+            false,
+        )
+        .expect("expect success");
+
+        let flycheck = project
+            .runnables
+            .iter()
+            .find(|r| matches!(r.kind, RunnableKind::Flycheck))
+            .expect("flycheck runnable must exist");
+        assert_eq!(
+            flycheck.args,
+            vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+        );
     }
 
     // --- diagnose() suite ---
