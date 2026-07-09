@@ -732,11 +732,11 @@ _COMMON_ATTRS = {
 
             If `crate_root` is not set, then this rule will look for a `lib.rs` file (or `main.rs` for rust_binary)
             or the single file in `srcs` if `srcs` contains only one file.
+
+            If the `srcs` contains only one file and that file is a directory,
+            use `root_path` to specify the path to the crate root .rs file under that directory.
         """),
         allow_single_file = [".rs"],
-    ),
-    "root_path": attr.string(
-        doc = "If the crate root is a directory, path under it to the crate root.",
     ),
     "data": attr.label_list(
         doc = dedent("""\
@@ -790,6 +790,9 @@ _COMMON_ATTRS = {
         ),
         values = [-1, 0, 1],
         default = -1,
+    ),
+    "root_path": attr.string(
+        doc = """If the crate root (single member of the `srcs` list) is a directory, this is the path to the crate root `.rs` file under that directory.""",
     ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
