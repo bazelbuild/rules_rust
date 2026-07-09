@@ -19,7 +19,7 @@
 use std::fs;
 
 use anyhow::{Context, Result};
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
 /// Filename inside `<launcher_dir>` that holds the per-user config.
@@ -36,6 +36,15 @@ pub struct UserConfig {
     /// re-emitting the whole workspace. See the `--per-package-workspaces`
     /// docs in `bin/setup.rs`.
     pub per_package_workspaces: bool,
+
+    /// Override for flycheck's inner `--output_user_root`. Escape
+    /// hatch for platform-specific concerns (Windows MAX_PATH, atypical
+    /// cache layouts) — `None` lets `bin/flycheck.rs` pick a per-
+    /// workspace directory next to Bazel's normal cache. The
+    /// `--output_user_root` CLI flag on flycheck still wins over this
+    /// for one-off overrides.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_user_root: Option<Utf8PathBuf>,
 }
 
 /// Read `<launcher_dir>/user_config.json`. Missing → defaults;
@@ -112,10 +121,27 @@ mod tests {
         let original = UserConfig {
             clippy: true,
             per_package_workspaces: true,
+            output_user_root: Some(Utf8PathBuf::from("/tmp/custom_flycheck_root")),
         };
         save(&dir, &original).unwrap();
         let loaded = load(&dir);
         assert_eq!(loaded, original);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn absent_output_user_root_stays_none() {
+        // `skip_serializing_if` keeps the key out of the file so the
+        // default JSON stays minimal. Round-tripping a `None` produces
+        // a file with no `output_user_root` field.
+        let dir = tmp_dir("absent_output_user_root");
+        save(&dir, &UserConfig::default()).unwrap();
+        let text = fs::read_to_string(dir.join(USER_CONFIG_FILENAME)).unwrap();
+        assert!(
+            !text.contains("output_user_root"),
+            "unset field should be omitted, got:\n{}",
+            text,
+        );
         let _ = fs::remove_dir_all(&dir);
     }
 
