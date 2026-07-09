@@ -467,12 +467,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__memchr-2.8.2",
-        sha256 = "88904434abc2901f197fe8cc55f0445e7ded921dba5911dad2e2b39b48e663c4",
+        name = "rtra__memchr-2.8.3",
+        sha256 = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/memchr/2.8.2/download"],
-        strip_prefix = "memchr-2.8.2",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.memchr-2.8.2.bazel"),
+        urls = ["https://static.crates.io/crates/memchr/2.8.3/download"],
+        strip_prefix = "memchr-2.8.3",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.memchr-2.8.3.bazel"),
     )
 
     maybe(
