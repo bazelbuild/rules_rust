@@ -294,12 +294,9 @@ fn supports_test_mod(version: &str) -> bool {
     matches!((parts.next(), parts.next()), (Some(major), Some(minor)) if (major, minor) >= (1, 96))
 }
 
-/// `$RULES_RUST_RA_LAUNCHER_DIR` is published by discover's
-/// `self_locate_config`. When unset (discover ran outside a setup
-/// install — direct exec for debugging) we fall back to the
-/// editor-agnostic `<workspace>/.rules_rust_analyzer/`; vscode/helix
-/// users who bypass setup get a stale path, same as every other
-/// fallback in this file.
+/// Prefers `$RULES_RUST_RA_LAUNCHER_DIR` (published by discover's
+/// `self_locate_config`). Falls back to
+/// `<workspace>/.rules_rust_analyzer/` for direct-exec debugging.
 fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
     let launcher_dir = std::env::var("RULES_RUST_RA_LAUNCHER_DIR")
         .ok()
@@ -488,13 +485,8 @@ pub fn assemble_rust_project(
             cwd: workspace.to_owned(),
             kind: RunnableKind::Check,
         },
-        // On-save flycheck. rust-analyzer substitutes `{label}` with
-        // the saved file's owning crate and runs the binary; the
-        // binary spawns `bazel build` for that label with rustc
-        // diagnostics enabled, harvests the resulting .rustc-output
-        // files via BEP, and streams their JSON to stdout for
-        // rust-analyzer to parse into squiggles. Args stay user-
-        // agnostic; per-user preferences (clippy, ...) live in
+        // On-save flycheck. Args stay user-agnostic — per-user
+        // preferences (clippy, ...) live in
         // `<launcher_dir>/user_config.json` and are read by
         // `bin/flycheck.rs` on each save.
         Runnable {

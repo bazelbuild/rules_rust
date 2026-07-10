@@ -13,43 +13,49 @@ pub use rust_project::{
     assemble_rust_project, diagnose, format_diagnostics, AssemblyDiagnostics, DiscoverProject,
     RustAnalyzerArg,
 };
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub use aquery::{consolidate_crate_specs, CrateSpec};
 pub use cache::CACHE_SUBDIR;
+
+/// Written by discover, read by `bin/flycheck.rs`.
+pub const TOOLCHAIN_INFO_SIDECAR: &str = "toolchain_info.json";
+
+/// Every field is `Option` / `default` so a newer flycheck reading
+/// an older sidecar falls back to slow paths instead of failing.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ToolchainInfoSidecar {
+    pub sysroot_src: Utf8PathBuf,
+    #[serde(default)]
+    pub workspace: Option<Utf8PathBuf>,
+    /// Saved-file → label map for flycheck's `--saved-file` mode.
+    /// Missing entries fall back to `bazel query`.
+    #[serde(default)]
+    pub file_labels: BTreeMap<Utf8PathBuf, String>,
+}
 
 pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
 
-/// Shared between the setup-side install and the
-/// `rust_project.rs` flycheck-runnable emitter so the two can't
-/// drift on extension handling.
-///
-/// `.exe` on every platform is deliberate: Node spawn (the
-/// rust-analyzer VS Code extension's spawner) can't execute
-/// extensionless files on Windows without `shell: true`, and POSIX
-/// `execve` ignores file extensions — same filename works everywhere.
+/// `.exe` on every platform: Node spawn (the RA VS Code extension)
+/// can't execute extensionless files on Windows without `shell: true`;
+/// POSIX `execve` ignores extensions.
 pub const FLYCHECK_BINARY_FILENAME: &str = "flycheck.exe";
 
 pub const DISCOVER_BINARY_FILENAME: &str = "discover_bazel_rust_project.exe";
 
-/// JSON embedded at compile time. The `:toolchain_info_env` rule
-/// (BUILD.bazel) emits the env var through Bazel's path-mapping-aware
-/// `Args` machinery; routing the same path through a plain
-/// `rustc_env = {"K": "$(execpath …)"}` would miss the path-mapping
-/// rewrite under `--experimental_output_paths=strip` and fail to
-/// locate the file. Content uses `__OUTPUT_BASE__` / `__WORKSPACE__` /
-/// `__EXEC_ROOT__` placeholder tokens substituted at runtime (see
-/// `deserialize_with_substitution`).
+/// Env var wired via the `:toolchain_info_env` rule so the JSON path
+/// goes through Bazel's `Args` (path-mapping-aware); a plain
+/// `rustc_env` `$(execpath ...)` misses the rewrite under
+/// `--experimental_output_paths=strip`. Placeholders resolved by
+/// `deserialize_with_substitution`.
 const TOOLCHAIN_INFO_RAW: &str = include_str!(env!("RUST_ANALYZER_TOOLCHAIN_JSON"));
 
-/// `dirname(current_exe())` — used by discover/flycheck to find their
-/// per-install sibling files (cache dir, output_user_root). Uses
-/// `current_exe` rather than `argv[0]` because the install is a real
-/// `fs::copy`: the runfiles crate's argv[0]-first policy doesn't
-/// apply post-install.
+/// `dirname(current_exe())`. Uses `current_exe` not `argv[0]` because
+/// the install is a real `fs::copy` — the runfiles crate's
+/// argv[0]-first policy doesn't apply post-install.
 pub fn install_dir() -> anyhow::Result<Utf8PathBuf> {
     let exe = std::env::current_exe().context("locating current_exe")?;
     let parent = exe
@@ -70,11 +76,8 @@ pub fn generate_rust_project(
     rules_rust_name: &str,
     targets: &[String],
 ) -> anyhow::Result<RustProject> {
-    // Materialize per-crate spec files via the aspect, with Bazel emitting BEP
-    // so we can discover them as a side-effect of the build. This replaces a
-    // separate `bazel aquery` round-trip — that query is the dominant cost in
-    // a large monorepo (O(action graph) every invocation, never cached) and
-    // dropping it is the main perf win of this path.
+    // Discover specs as a build side-effect via BEP. Replaces a
+    // separate `bazel aquery` — the dominant cost in a large monorepo.
     let bep_file = output_base.join(format!("rules_rust_ra_bep_{}.json", std::process::id()));
     let _bep_cleanup = BepCleanup(bep_file.clone());
 
@@ -91,8 +94,8 @@ pub fn generate_rust_project(
 
     let spec_paths = match bep::parse_spec_paths(&bep_file, execution_root) {
         Ok(paths) => paths,
-        // A failed build often means a missing or partial BEP file; surface
-        // the build error rather than the downstream parse error.
+        // Missing/partial BEP usually means the build failed; surface
+        // that rather than the parse error.
         Err(_) if !build.success => {
             bail!(
                 "bazel build failed and produced no usable output:\n{}",
@@ -109,12 +112,8 @@ pub fn generate_rust_project(
     }
     log::info!("discovered {} crate spec files via BEP", spec_paths.len());
 
-    // Toolchain-info JSON is embedded at compile time — see
-    // `TOOLCHAIN_INFO_RAW` (above) for the wiring.
     let toolchain_info_raw = TOOLCHAIN_INFO_RAW;
 
-    // Read every spec file once; the contents feed both the cache key and the
-    // consolidate/assemble step on a miss.
     let spec_contents = read_specs(&spec_paths)?;
 
     let launcher_dir = std::env::var(cache::LAUNCHER_DIR_ENV_VAR).unwrap_or_default();
@@ -133,8 +132,6 @@ pub fn generate_rust_project(
                 return Ok(project);
             }
             Err(e) => {
-                // A corrupted entry shouldn't block discovery — log, evict, and
-                // fall through to recompute.
                 log::warn!("merge cache entry {cache_key} corrupted ({e}); recomputing");
             }
         }
@@ -149,17 +146,29 @@ pub fn generate_rust_project(
     let crate_specs =
         parse_and_consolidate(&spec_contents, output_base, workspace, execution_root)?;
 
+    // Publish sysroot_src + workspace + saved-file→label map to
+    // `<launcher_dir>/toolchain_info.json`. Flycheck reads this to
+    // un-remap rustc's `/rustc/<sha>/library/...` diagnostic paths,
+    // pick the right workspace root when rust-analyzer spawns it with
+    // cwd inside a package, and skip a `bazel query` when it already
+    // knows which target owns the saved file. Best-effort — a write
+    // failure just means flycheck falls back to the slow paths.
+    if !launcher_dir.is_empty() {
+        write_toolchain_info_sidecar(
+            Utf8Path::new(&launcher_dir),
+            &toolchain_info.sysroot_src,
+            workspace,
+            build_file_label_map(&crate_specs),
+        );
+    }
+
     let project =
         rust_project::assemble_rust_project(bazel, workspace, toolchain_info, &crate_specs)?;
 
-    // Surface dep-graph problems the assembler had to paper over (missing
-    // deps, cycles). Each becomes a log::warn (visible as a progress event
-    // in rust-analyzer's UI) AND lands in a persistent log file so users
-    // can grep after the fact — progress events scroll off the status bar
-    // before anyone notices them.
+    // Log warnings AND persist to disk — progress events scroll off
+    // the status bar before anyone reads them.
     report_diagnostics(workspace, &crate_specs);
 
-    // Best-effort cache write. Failures are logged but don't fail discovery.
     match serde_json::to_vec(&project) {
         Ok(bytes) => cache::put(workspace, &cache_key, &bytes),
         Err(e) => log::warn!("merge cache: serializing project failed ({e}); not caching"),
@@ -170,12 +179,52 @@ pub fn generate_rust_project(
 
 const WARNINGS_LOG_REL: &str = ".vscode/.rules_rust_analyzer/last_warnings.log";
 
+/// Publish sysroot_src, workspace, and the saved-file→label map to
+/// `<launcher_dir>/toolchain_info.json` for flycheck. Best-effort:
+/// a write failure just means flycheck falls back to slow per-save
+/// paths (bazel query, cwd guess).
+fn write_toolchain_info_sidecar(
+    launcher_dir: &Utf8Path,
+    sysroot_src: &Utf8Path,
+    workspace: &Utf8Path,
+    file_labels: BTreeMap<Utf8PathBuf, String>,
+) {
+    let sidecar = ToolchainInfoSidecar {
+        sysroot_src: sysroot_src.to_path_buf(),
+        workspace: Some(workspace.to_path_buf()),
+        file_labels,
+    };
+    let path = launcher_dir.join(TOOLCHAIN_INFO_SIDECAR);
+    match serde_json::to_vec(&sidecar) {
+        Ok(bytes) => {
+            if let Err(e) = fs::write(&path, &bytes) {
+                log::warn!("toolchain_info sidecar: writing {path}: {e}");
+            }
+        }
+        Err(e) => log::warn!("toolchain_info sidecar: serializing failed: {e}"),
+    }
+}
+
+/// Map each spec's `root_module` to its label. Multi-file siblings
+/// fall back to `bazel query`.
+fn build_file_label_map(
+    crate_specs: &std::collections::BTreeSet<CrateSpec>,
+) -> BTreeMap<Utf8PathBuf, String> {
+    let mut out = BTreeMap::new();
+    for spec in crate_specs {
+        let Some(build) = spec.build.as_ref() else {
+            continue;
+        };
+        out.insert(Utf8PathBuf::from(&spec.root_module), build.label.clone());
+    }
+    out
+}
+
 fn report_diagnostics(workspace: &Utf8Path, crate_specs: &std::collections::BTreeSet<CrateSpec>) {
     let diag = rust_project::diagnose(crate_specs);
     let log_path = workspace.join(WARNINGS_LOG_REL);
     if diag.is_empty() {
-        // Clear any leftover file from a previous run so absence-of-file is
-        // a meaningful "no diagnostics this round" signal.
+        // Absence-of-file signals "clean this round".
         let _ = fs::remove_file(&log_path);
         return;
     }
