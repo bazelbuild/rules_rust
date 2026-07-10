@@ -26,25 +26,34 @@ pub(crate) use self::crate_context::*;
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct Context {
     /// The collective checksum of all inputs to the context
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) checksum: Option<Digest>,
 
-    /// The collection of all crates that make up the dependency graph
+    /// The collection of all crates that make up the dependency graph.
+    // Always emitted; the rendering templates reference `context.crates` and
+    // expect the key to be present.
     pub(crate) crates: BTreeMap<CrateId, CrateContext>,
 
     /// A subset of only crates with binary targets
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) binary_crates: BTreeSet<CrateId>,
 
     /// A subset of workspace members mapping to their workspace
-    /// path relative to the workspace root
+    /// path relative to the workspace root.
+    // Always emitted; the rendering templates iterate `context.workspace_members`
+    // and expect the key to be present even when empty.
     pub(crate) workspace_members: BTreeMap<CrateId, String>,
 
     /// A mapping of `cfg` flags to platform triples supporting the configuration
+    #[serde(default)]
     pub(crate) conditions: BTreeMap<String, BTreeSet<TargetTriple>>,
 
     /// A list of crates visible to any bazel module.
+    // Always emitted; the rendering templates iterate `context.direct_deps`.
     pub(crate) direct_deps: BTreeSet<CrateId>,
 
     /// A list of crates visible to this bazel module.
+    // Always emitted; the rendering templates iterate `context.direct_dev_deps`.
     pub(crate) direct_dev_deps: BTreeSet<CrateId>,
 
     /// A list of `[patch]` entries from the Cargo.lock file which were not used in the resolve.
@@ -52,7 +61,7 @@ pub(crate) struct Context {
     // This prevents previous lockfiles (from before this field) from failing to parse with the current version of rules_rust.
     // After we've supported this (so serialised it in lockfiles) for a few versions,
     // we can remove the default fallback because existing lockfiles should have the key present.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
@@ -429,5 +438,83 @@ mod test {
 
         // The data should be identical
         assert_eq!(context, deserialized_context);
+    }
+
+    // Older cargo-bazel versions wrote every crate with the fully expanded
+    // form: `Select` as `{"common": [...], "selects": {}}`, `srcs` as a full
+    // `{"allow_empty": ..., "include": [...]}` object, explicit default
+    // `compile_data_glob: ["**"]`, `null` license/package_url, and a
+    // `common_attrs.version` copy of the parent version. New cargo-bazel
+    // versions must still read those verbose lockfiles losslessly (the extra
+    // fields that no longer exist in the schema are silently dropped by
+    // serde's default field handling).
+    #[test]
+    fn deserializes_legacy_verbose_lockfile() {
+        let legacy = r#"{
+            "checksum": "d94d3a74aa0e73ed1c9b8bd803bb6ecaaeaf258f7c3a937d4783aaf5891b31b0",
+            "crates": {
+                "anyhow 1.0.69": {
+                    "name": "anyhow",
+                    "version": "1.0.69",
+                    "package_url": null,
+                    "repository": null,
+                    "targets": [
+                        {
+                            "Library": {
+                                "crate_name": "anyhow",
+                                "crate_root": "src/lib.rs",
+                                "srcs": {
+                                    "allow_empty": false,
+                                    "include": ["**/*.rs"]
+                                }
+                            }
+                        }
+                    ],
+                    "library_target_name": "anyhow",
+                    "common_attrs": {
+                        "compile_data_glob": ["**"],
+                        "crate_features": {
+                            "common": ["default", "std"],
+                            "selects": {}
+                        },
+                        "deps": {
+                            "common": [],
+                            "selects": {}
+                        },
+                        "edition": "2018",
+                        "version": "1.0.69"
+                    },
+                    "license": null,
+                    "license_ids": [],
+                    "license_file": null
+                }
+            },
+            "binary_crates": [],
+            "workspace_members": {},
+            "conditions": {},
+            "direct_deps": [],
+            "direct_dev_deps": []
+        }"#;
+
+        let ctx: Context = serde_json::from_str(legacy).expect("legacy lockfile must parse");
+        let krate = ctx
+            .crates
+            .get(&CrateId::new("anyhow".to_owned(), Version::new(1, 0, 69)))
+            .expect("anyhow crate should be present");
+
+        assert_eq!(krate.name, "anyhow");
+        assert_eq!(krate.version, Version::new(1, 0, 69));
+        assert_eq!(krate.library_target_name.as_deref(), Some("anyhow"));
+        assert_eq!(krate.common_attrs.edition, "2018");
+        assert!(krate.common_attrs.compile_data_glob.contains("**"));
+        assert_eq!(
+            krate
+                .common_attrs
+                .crate_features
+                .values()
+                .into_iter()
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from(["default".to_owned(), "std".to_owned()]),
+        );
     }
 }

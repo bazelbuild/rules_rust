@@ -37,7 +37,9 @@ pub(crate) fn lock_context(
 
 /// Write a [crate::context::Context] to disk
 pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
-    let content = serde_json::to_string_pretty(&lockfile)?;
+    let mut value = serde_json::to_value(&lockfile)?;
+    compact_lockfile_value(&mut value);
+    let content = serde_json::to_string_pretty(&value)?;
 
     if dry_run {
         println!("{content:#?}");
@@ -51,6 +53,49 @@ pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> R
     }
 
     Ok(())
+}
+
+/// Recursively rewrite `{"common": X, "selects": {}}` patterns in a lockfile
+/// JSON value to just `X`.
+///
+/// [`crate::select::Select`] always serializes to the verbose two-field shape
+/// because the Tera-based rendering templates (see
+/// `src/rendering/templates/`) index `deps_set.common` / `deps_set.selects`
+/// directly on a `serde_json::Value` and would break if handed a bare array.
+/// The on-disk lockfile has no such consumer — its readers all go through
+/// `Select`'s own `Deserialize` impl, which accepts both shapes — so we
+/// collapse the empty-`selects` case here for a substantial size win. The
+/// verbose shape is preserved when `selects` is non-empty because that shape
+/// is meaningful (multiple platform-specific values).
+pub(crate) fn compact_lockfile_value(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            // Only collapse when the object is exactly `{"common": _, "selects": {}}`.
+            // Extra keys (or a missing key) mean this isn't a `Select` and we
+            // must leave it alone.
+            let is_empty_select = map.len() == 2
+                && map.contains_key("common")
+                && map
+                    .get("selects")
+                    .and_then(|s| s.as_object())
+                    .is_some_and(|s| s.is_empty());
+            if is_empty_select {
+                let mut common = map.remove("common").unwrap();
+                compact_lockfile_value(&mut common);
+                *value = common;
+            } else {
+                for v in map.values_mut() {
+                    compact_lockfile_value(v);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                compact_lockfile_value(item);
+            }
+        }
+        _ => {}
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -260,7 +305,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("caafd4eaa60b599509522968ce17d6ba07b8118b767b7dddb00bef8d5ddba7fa".to_owned()),
+            Digest("35fcd7714d7f78be0f9dd3342382bfe8607603fba569d0d6838170acbffb243a".to_owned()),
             digest,
         );
     }
@@ -305,7 +350,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("c395b0c5bed8470775b13399a6e8ec43af4abd4aa104ebc81297a286e449fc23".to_owned()),
+            Digest("e4a1a5a57826e5e57fb5bb6b5887033a45739027af7b53e2315575298be1a073".to_owned()),
             digest,
         );
     }
@@ -336,7 +381,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("3288cda3c2194f5ca7f1929b74bd13f36eb624e859d77b143d762c60631d700d".to_owned()),
+            Digest("ea05a81b08047c8e54bffb97226b0794d76b264c3bf3d9d7bf5f39185556fd6c".to_owned()),
             digest,
         );
     }
@@ -385,7 +430,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("ccc875599ade8873ba48496875d29f08772710651b9bf6d428a97f45a559aa2e".to_owned()),
+            Digest("9439a328b690942102d488db7a83c566c3e8b70e2b891f823e797e257a79c672".to_owned()),
             digest,
         );
     }
@@ -441,5 +486,63 @@ mod test {
             digest_crlf, digest_lf,
             "Digests should be identical regardless of CRLF vs LF line endings in cargo_config"
         );
+    }
+
+    #[test]
+    fn compact_collapses_empty_selects() {
+        let mut value = serde_json::json!({
+            "crates": {
+                "anyhow 1.0.69": {
+                    "common_attrs": {
+                        "crate_features": {
+                            "common": ["default", "std"],
+                            "selects": {}
+                        },
+                        "deps": {
+                            "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                            "selects": {
+                                "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        compact_lockfile_value(&mut value);
+
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "crates": {
+                    "anyhow 1.0.69": {
+                        "common_attrs": {
+                            // Empty `selects` collapsed to just the common list.
+                            "crate_features": ["default", "std"],
+                            // Non-empty `selects` preserved as-is.
+                            "deps": {
+                                "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                                "selects": {
+                                    "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+        );
+    }
+
+    // Guard against false positives: unrelated `{common, selects}`-shaped objects
+    // with extra keys (or a non-object `selects`) must not be collapsed.
+    #[test]
+    fn compact_leaves_non_select_objects_alone() {
+        let original = serde_json::json!({
+            "common": [1, 2],
+            "selects": {},
+            "extra_key": "value"
+        });
+        let mut value = original.clone();
+        compact_lockfile_value(&mut value);
+        assert_eq!(value, original);
     }
 }
