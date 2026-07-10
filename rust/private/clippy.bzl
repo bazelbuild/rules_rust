@@ -283,7 +283,7 @@ def _clippy_aspect_impl(target, ctx):
         crate_info = crate_info,
         config = ctx.file._config,
         output = clippy_out,
-        cap_at_warnings = clippy_out != None,  # If we're capturing output, we want the build to continue.
+        cap_at_warnings = clippy_out != None or clippy_diagnostics != None,  # Collecting output for a tool -> cap so the build continues.
         success_marker = clippy_success_marker,
         extra_clippy_flags = clippy_flags,
         error_format = error_format,

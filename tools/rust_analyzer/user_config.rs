@@ -20,7 +20,7 @@ impl Default for UserConfig {
             // Whole-workspace mode blew RA memory to 46 GB on a
             // 713-crate workspace; per-package keeps it cargo-scoped.
             per_package_workspaces: true,
-            output_user_root: None,
+            output_base: None,
         }
     }
 }
@@ -35,11 +35,13 @@ pub struct UserConfig {
     /// workspace. See `Default` for why this defaults to `true`.
     pub per_package_workspaces: bool,
 
-    /// Override for flycheck's `--output_user_root`. `None` picks a
-    /// per-workspace directory next to Bazel's normal cache. The
-    /// `--output_user_root` CLI flag wins for one-off overrides.
+    /// Override for flycheck's `--output_base`. `None` derives the
+    /// server location from the sidecar's `output_base` with an
+    /// `_rra` suffix, so flycheck's server sits next to the primary
+    /// one under the same `output_user_root`. The `--output_base` CLI
+    /// flag wins for one-off overrides.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_user_root: Option<Utf8PathBuf>,
+    pub output_base: Option<Utf8PathBuf>,
 }
 
 /// Read `<launcher_dir>/user_config.json`. Missing or malformed →
@@ -111,7 +113,7 @@ mod tests {
         let original = UserConfig {
             clippy: true,
             per_package_workspaces: true,
-            output_user_root: Some(Utf8PathBuf::from("/tmp/custom_flycheck_root")),
+            output_base: Some(Utf8PathBuf::from("/tmp/custom_flycheck_base")),
         };
         save(&dir, &original).unwrap();
         let loaded = load(&dir);
@@ -120,13 +122,13 @@ mod tests {
     }
 
     #[test]
-    fn absent_output_user_root_stays_none() {
+    fn absent_output_base_stays_none() {
         // `skip_serializing_if` keeps the key out of the default file.
-        let dir = tmp_dir("absent_output_user_root");
+        let dir = tmp_dir("absent_output_base");
         save(&dir, &UserConfig::default()).unwrap();
         let text = fs::read_to_string(dir.join(USER_CONFIG_FILENAME)).unwrap();
         assert!(
-            !text.contains("output_user_root"),
+            !text.contains("output_base"),
             "unset field should be omitted, got:\n{}",
             text,
         );

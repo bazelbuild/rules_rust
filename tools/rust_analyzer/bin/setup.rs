@@ -70,7 +70,8 @@ const LAUNCHER_SUBDIR: &str = ".rules_rust_analyzer";
 // Re-exported so install (setup) and consumer (rust_project.rs)
 // agree on the `.exe` filenames.
 use gen_rust_project_lib::{
-    user_config, CACHE_SUBDIR, DISCOVER_BINARY_FILENAME, FLYCHECK_BINARY_FILENAME,
+    bazel_command, bazel_info, flycheck_output_base, user_config, BazelInfo, ToolchainInfoSidecar,
+    CACHE_SUBDIR, DISCOVER_BINARY_FILENAME, FLYCHECK_BINARY_FILENAME, TOOLCHAIN_INFO_SIDECAR,
 };
 
 // `_opt` targets the `opt_executable` wrapper — these run on every
@@ -133,19 +134,20 @@ struct Cli {
     #[arg(long, conflicts_with = "clippy", global = true)]
     no_clippy: bool,
 
-    /// Delete the discover cache (`<launcher-dir>/cache/`) before
-    /// running the rest of setup. Use after a toolchain change or
-    /// `bazel clean --expunge`. Does not touch `user_config.json` or
-    /// flycheck's `output_user_root/`.
+    /// Delete the discover cache (`<launcher-dir>/cache/`) AND wipe
+    /// flycheck's dedicated `output_base` (via `bazel clean --expunge
+    /// --output_base=<...>`). Use after a toolchain change. Reads the
+    /// flycheck base from the sidecar; a no-op for it if no sidecar
+    /// exists yet. Does not touch `user_config.json`.
     #[arg(long, global = true)]
     clean: bool,
 
     /// Persist a per-user override for flycheck's inner
-    /// `--output_user_root`, into `<launcher_dir>/user_config.json`.
-    /// The flycheck CLI flag still wins for one-off overrides. Clear
-    /// by hand-deleting the key from `user_config.json`.
+    /// `--output_base`, into `<launcher_dir>/user_config.json`. The
+    /// flycheck CLI flag still wins for one-off overrides. Clear by
+    /// hand-deleting the key from `user_config.json`.
     #[arg(long, global = true, value_name = "PATH")]
-    output_user_root: Option<Utf8PathBuf>,
+    output_base: Option<Utf8PathBuf>,
 
     #[command(subcommand)]
     ide: IdeCmd,
@@ -236,9 +238,9 @@ fn apply_user_config_edits(
     launcher_dir: &Utf8Path,
     clippy: Option<bool>,
     per_package_workspaces: Option<bool>,
-    output_user_root: Option<Utf8PathBuf>,
+    output_base: Option<Utf8PathBuf>,
 ) -> Result<()> {
-    if clippy.is_none() && per_package_workspaces.is_none() && output_user_root.is_none() {
+    if clippy.is_none() && per_package_workspaces.is_none() && output_base.is_none() {
         return Ok(());
     }
     let mut config = user_config::load(launcher_dir);
@@ -248,13 +250,13 @@ fn apply_user_config_edits(
     if let Some(v) = per_package_workspaces {
         config.per_package_workspaces = v;
     }
-    if let Some(v) = output_user_root {
-        config.output_user_root = Some(v);
+    if let Some(v) = output_base {
+        config.output_base = Some(v);
     }
     user_config::save(launcher_dir, &config)?;
     info!(
-        "user_config: clippy={} per_package_workspaces={} output_user_root={:?}",
-        config.clippy, config.per_package_workspaces, config.output_user_root
+        "user_config: clippy={} per_package_workspaces={} output_base={:?}",
+        config.clippy, config.per_package_workspaces, config.output_base
     );
     Ok(())
 }
@@ -269,7 +271,7 @@ fn main() -> Result<()> {
         clippy,
         no_clippy,
         clean,
-        output_user_root,
+        output_base,
         ide,
     } = Cli::parse();
 
@@ -296,7 +298,7 @@ fn main() -> Result<()> {
     let launcher_dir = launcher_dir_for(&workspace, &ide);
 
     if clean {
-        clean_cache(&launcher_dir)?;
+        clean_cache(&launcher_dir, &workspace)?;
     }
 
     let runfiles = Runfiles::create().context("creating Runfiles for setup")?;
@@ -318,7 +320,13 @@ fn main() -> Result<()> {
 
     // Apply user_config edits before per-IDE dispatch so the runners
     // and any --dry-run flow see the same on-disk state.
-    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw, output_user_root)?;
+    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw, output_base)?;
+
+    // Pre-populate the flycheck server's bazel-info cache so the
+    // steady-state clippy path never invokes `bazel info` on save.
+    // Best-effort — a failure just means flycheck refreshes on first
+    // save (its normal fallback path). See [`prepopulate_bazel_info`].
+    prepopulate_bazel_info(&launcher_dir, &workspace);
 
     let ctx = SetupCtx {
         launcher_dir,
@@ -338,10 +346,9 @@ fn main() -> Result<()> {
 /// Shared state computed once at startup and threaded through every
 /// per-IDE runner.
 struct SetupCtx {
-    /// Editor-specific dir setup copies source binaries into. The
-    /// discover/flycheck binaries self-locate their cache + output dirs
-    /// as siblings of themselves (`<launcher_dir>/cache` and
-    /// `<launcher_dir>/output_user_root` respectively).
+    /// Editor-specific dir setup copies source binaries into. Discover
+    /// self-locates its cache at `<launcher_dir>/cache/`; flycheck
+    /// derives its `--output_base` from the sidecar written here.
     launcher_dir: Utf8PathBuf,
     skip_proc_macro_server: bool,
     skip_rustfmt: bool,
@@ -562,21 +569,125 @@ fn run_print(ctx: &SetupCtx) -> Result<()> {
 // Source-binary install
 // ---------------------------------------------------------------------------
 
-/// Delete the discover-output cache under `launcher_dir`. Called on
-/// `--clean`. Leaves everything else in `launcher_dir` alone
-/// (`user_config.json` is per-user prefs; `output_user_root/` is
-/// flycheck's Bazel build tree, expensive to rebuild). Missing dir is
-/// not an error — clean is idempotent.
-fn clean_cache(launcher_dir: &Utf8Path) -> Result<()> {
+/// Called on `--clean`. Deletes the discover-output cache under
+/// `launcher_dir`, the flycheck `bazel_info.json` cache (invalid
+/// once the flycheck server is expunged), AND expunges flycheck's
+/// dedicated `output_base` (`<sidecar.output_base>_rra`) via `bazel
+/// clean --expunge`. Leaves `user_config.json` alone (per-user prefs).
+/// All steps are idempotent: missing paths are fine, missing sidecar /
+/// missing bazel just skips the expunge with a warning.
+fn clean_cache(launcher_dir: &Utf8Path, workspace: &Utf8Path) -> Result<()> {
     let cache = launcher_dir.join(CACHE_SUBDIR);
     match fs::remove_dir_all(&cache) {
-        Ok(()) => {
-            eprintln!("cleared discover cache at {cache}");
-            Ok(())
-        }
-        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
-        Err(e) => Err(e).with_context(|| format!("removing discover cache at {cache}")),
+        Ok(()) => eprintln!("cleared discover cache at {cache}"),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+        Err(e) => return Err(e).with_context(|| format!("removing discover cache at {cache}")),
     }
+    // The stored `execution_root` becomes meaningless once its server
+    // is expunged below, so drop the cache first.
+    let _ = fs::remove_file(launcher_dir.join(gen_rust_project_lib::BAZEL_INFO_FILENAME));
+    expunge_flycheck_output_base(launcher_dir, workspace);
+    Ok(())
+}
+
+/// Best-effort `bazel --output_base=<...> clean --expunge` for
+/// flycheck's dedicated server. `--expunge` handles the server
+/// shutdown before removing the directory — no separate `bazel
+/// shutdown` step needed. Warns and continues on any failure: `--clean`
+/// is a nice-to-have wipe, not a load-bearing operation, and there's
+/// nothing to clean before discover has ever run.
+fn expunge_flycheck_output_base(launcher_dir: &Utf8Path, workspace: &Utf8Path) {
+    let sidecar_path = launcher_dir.join(TOOLCHAIN_INFO_SIDECAR);
+    let Some(outer) = fs::read(&sidecar_path)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<ToolchainInfoSidecar>(&b).ok())
+        .and_then(|s| s.output_base)
+    else {
+        eprintln!(
+            "no sidecar at {sidecar_path}; skipping flycheck output_base expunge (nothing to \
+             clean before rust-analyzer discovery has run)"
+        );
+        return;
+    };
+    let flycheck_base = flycheck_output_base(&outer);
+    if !flycheck_base.exists() {
+        return;
+    }
+    let status = bazel_command(
+        Utf8Path::new("bazel"),
+        Some(workspace),
+        Some(&flycheck_base),
+    )
+    .arg("clean")
+    .arg("--expunge")
+    .status();
+    match status {
+        Ok(s) if s.success() => eprintln!("expunged flycheck output_base at {flycheck_base}"),
+        Ok(s) => eprintln!(
+            "bazel clean --expunge on flycheck output_base {flycheck_base} exited with {s}; \
+             leaving the directory as-is"
+        ),
+        Err(e) => eprintln!(
+            "could not invoke `bazel` to expunge flycheck output_base at {flycheck_base}: {e}; \
+             delete it by hand if needed"
+        ),
+    }
+}
+
+/// Populate `<launcher_dir>/bazel_info.json` by invoking `bazel info`
+/// against flycheck's dedicated server. Setup runs before discover on
+/// a fresh checkout, so the sidecar may not exist yet — falls back to
+/// `bazel info output_base` against the outer server to derive the
+/// `_rra` sibling. Best-effort throughout: any failure logs and
+/// returns, and flycheck's first save will populate the cache instead.
+fn prepopulate_bazel_info(launcher_dir: &Utf8Path, workspace: &Utf8Path) {
+    let bazel = Utf8Path::new("bazel");
+    let user = user_config::load(launcher_dir);
+    let flycheck_base = match resolve_flycheck_output_base(bazel, workspace, launcher_dir, &user) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!(
+                "flycheck bazel_info prepopulate: could not resolve output_base ({e:#}); \
+                 flycheck will populate on first save"
+            );
+            return;
+        }
+    };
+    match BazelInfo::try_new(bazel, workspace, &flycheck_base) {
+        Ok(info) => {
+            info.save(launcher_dir);
+            eprintln!("populated flycheck bazel_info cache at {launcher_dir}");
+        }
+        Err(e) => eprintln!(
+            "flycheck bazel_info prepopulate: {e:#}; flycheck will populate on first save"
+        ),
+    }
+}
+
+/// Same precedence flycheck uses on save (user_config, then sidecar's
+/// `_rra`, then a `bazel info output_base` against the outer server),
+/// minus the CLI override (setup doesn't take one).
+fn resolve_flycheck_output_base(
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    launcher_dir: &Utf8Path,
+    user: &user_config::UserConfig,
+) -> Result<Utf8PathBuf> {
+    if let Some(p) = user.output_base.clone() {
+        return Ok(p);
+    }
+    let sidecar_path = launcher_dir.join(TOOLCHAIN_INFO_SIDECAR);
+    if let Some(outer) = fs::read(&sidecar_path)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<ToolchainInfoSidecar>(&b).ok())
+        .and_then(|s| s.output_base)
+    {
+        return Ok(flycheck_output_base(&outer));
+    }
+    let outer = bazel_info(bazel, Some(workspace), None, &[], &[])?
+        .remove("output_base")
+        .context("outer `bazel info` returned no `output_base` line")?;
+    Ok(flycheck_output_base(Utf8Path::new(&outer)))
 }
 
 /// Copy discover + flycheck into `dir`. The runfiles originals live
@@ -1366,7 +1477,7 @@ mod tests {
             &user_config::UserConfig {
                 clippy: false,
                 per_package_workspaces: true,
-                output_user_root: Some(Utf8PathBuf::from("/existing/root")),
+                output_base: Some(Utf8PathBuf::from("/existing/base")),
             },
         )
         .unwrap();
@@ -1380,25 +1491,25 @@ mod tests {
             "unnamed fields must be preserved: got {loaded:?}",
         );
         assert_eq!(
-            loaded.output_user_root,
-            Some(Utf8PathBuf::from("/existing/root")),
+            loaded.output_base,
+            Some(Utf8PathBuf::from("/existing/base")),
             "unnamed fields must be preserved: got {loaded:?}",
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn apply_user_config_edits_persists_output_user_root() {
-        let dir = std::env::temp_dir().join(format!("setup_uc_our_{}", std::process::id()));
+    fn apply_user_config_edits_persists_output_base() {
+        let dir = std::env::temp_dir().join(format!("setup_uc_ob_{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
-        let path = Utf8PathBuf::from("/custom/flycheck/root");
+        let path = Utf8PathBuf::from("/custom/flycheck/base");
 
         apply_user_config_edits(&launcher_dir, None, None, Some(path.clone())).unwrap();
 
         let loaded = user_config::load(&launcher_dir);
-        assert_eq!(loaded.output_user_root, Some(path));
+        assert_eq!(loaded.output_base, Some(path));
         assert!(!loaded.clippy, "unrelated fields must stay default");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1468,7 +1579,10 @@ mod tests {
         std::fs::create_dir_all(ws.join("cache")).unwrap();
         std::fs::write(ws.join("cache").join("entry.json"), "{}").unwrap();
 
-        clean_cache(&ws).unwrap();
+        // Second arg is workspace cwd for the bazel expunge step; with
+        // no sidecar in `ws`, that step is a no-op — the test only
+        // exercises the discover-cache half.
+        clean_cache(&ws, &ws).unwrap();
         assert!(!ws.join("cache").exists(), "cache dir should be gone");
         assert!(
             ws.join("user_config.json").exists(),
@@ -1477,7 +1591,7 @@ mod tests {
         assert!(ws.join("rust_analyzer.exe").exists(), "launcher preserved");
 
         // Idempotent: second call on now-missing dir is fine.
-        clean_cache(&ws).unwrap();
+        clean_cache(&ws, &ws).unwrap();
         let _ = std::fs::remove_dir_all(&ws);
     }
 

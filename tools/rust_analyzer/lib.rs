@@ -21,6 +21,21 @@ pub use cache::CACHE_SUBDIR;
 /// Written by discover, read by `bin/flycheck.rs`.
 pub const TOOLCHAIN_INFO_SIDECAR: &str = "toolchain_info.json";
 
+/// Suffix appended to the outer server's `output_base` to derive the
+/// flycheck server's own `--output_base` sibling. Kept as a shared
+/// constant so `flycheck.rs`'s derivation and `setup.rs`'s
+/// `--clean --expunge` target can never drift out of sync.
+pub const RRA_OUTPUT_BASE_SUFFIX: &str = "_rra";
+
+/// The `--output_base` flycheck should use given the outer server's
+/// `output_base`. Both bases live under the same `output_user_root`
+/// and share its `install/` extraction.
+pub fn flycheck_output_base(outer: &Utf8Path) -> Utf8PathBuf {
+    let mut sibling = outer.as_str().to_owned();
+    sibling.push_str(RRA_OUTPUT_BASE_SUFFIX);
+    Utf8PathBuf::from(sibling)
+}
+
 /// Every field is `Option` / `default` so a newer flycheck reading
 /// an older sidecar falls back to slow paths instead of failing.
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,10 +43,82 @@ pub struct ToolchainInfoSidecar {
     pub sysroot_src: Utf8PathBuf,
     #[serde(default)]
     pub workspace: Option<Utf8PathBuf>,
+    /// The outer Bazel server's `output_base` at the time discover
+    /// last ran. Flycheck uses `<output_base>_rra` as its own
+    /// `--output_base`, so the flycheck server sits next to the user's
+    /// primary server and shares its `install/` extraction while still
+    /// holding a distinct server lock.
+    #[serde(default)]
+    pub output_base: Option<Utf8PathBuf>,
     /// Saved-file → label map for flycheck's `--saved-file` mode.
     /// Missing entries fall back to `bazel query`.
     #[serde(default)]
     pub file_labels: BTreeMap<Utf8PathBuf, String>,
+}
+
+/// Cached `bazel info` snapshot against flycheck's dedicated server.
+/// Setup pre-populates on install (one `bazel info` per setup run);
+/// flycheck reads and refreshes only when the cache key (`output_base`)
+/// no longer matches the currently-derived flycheck output_base — so
+/// on the steady-state clippy path, saves cost zero bazel invocations.
+///
+/// Shape mirrors `tools/vscode/src/lib.rs::BazelInfo` (intentionally
+/// duplicated so the two tools stay decoupled), plus `execution_root`
+/// which flycheck needs to resolve BEP-relative clippy output paths
+/// (rules_rust#4130).
+pub const BAZEL_INFO_FILENAME: &str = "bazel_info.json";
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BazelInfo {
+    pub output_base: Utf8PathBuf,
+    pub workspace: Utf8PathBuf,
+    pub execution_root: Utf8PathBuf,
+}
+
+impl BazelInfo {
+    /// Populate by invoking `bazel info` once against the server at
+    /// `output_base` (typically flycheck's `_rra` base). Fails if
+    /// `bazel info` doesn't return all three expected fields — that
+    /// would leave `execution_root` unresolvable and the clippy path
+    /// silently broken.
+    pub fn try_new(
+        bazel: &Utf8Path,
+        workspace: &Utf8Path,
+        output_base: &Utf8Path,
+    ) -> anyhow::Result<Self> {
+        let mut info = bazel_info(bazel, Some(workspace), Some(output_base), &[], &[])
+            .context("bazel info for flycheck server cache")?;
+        Ok(Self {
+            output_base: info
+                .remove("output_base")
+                .context("`bazel info` returned no `output_base` line")?
+                .into(),
+            workspace: info
+                .remove("workspace")
+                .context("`bazel info` returned no `workspace` line")?
+                .into(),
+            execution_root: info
+                .remove("execution_root")
+                .context("`bazel info` returned no `execution_root` line")?
+                .into(),
+        })
+    }
+
+    /// Read the cache; missing / malformed → `None`.
+    pub fn load(launcher_dir: &Utf8Path) -> Option<Self> {
+        let path = launcher_dir.join(BAZEL_INFO_FILENAME);
+        let bytes = fs::read(&path).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
+
+    /// Best-effort persist; a write failure just means the next
+    /// consumer refreshes from `bazel info` again.
+    pub fn save(&self, launcher_dir: &Utf8Path) {
+        let path = launcher_dir.join(BAZEL_INFO_FILENAME);
+        if let Ok(bytes) = serde_json::to_vec(self) {
+            let _ = fs::write(&path, &bytes);
+        }
+    }
 }
 
 pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
@@ -146,18 +233,20 @@ pub fn generate_rust_project(
     let crate_specs =
         parse_and_consolidate(&spec_contents, output_base, workspace, execution_root)?;
 
-    // Publish sysroot_src + workspace + saved-file→label map to
-    // `<launcher_dir>/toolchain_info.json`. Flycheck reads this to
-    // un-remap rustc's `/rustc/<sha>/library/...` diagnostic paths,
+    // Publish sysroot_src + workspace + output_base + saved-file→label
+    // map to `<launcher_dir>/toolchain_info.json`. Flycheck reads this
+    // to un-remap rustc's `/rustc/<sha>/library/...` diagnostic paths,
     // pick the right workspace root when rust-analyzer spawns it with
-    // cwd inside a package, and skip a `bazel query` when it already
-    // knows which target owns the saved file. Best-effort — a write
-    // failure just means flycheck falls back to the slow paths.
+    // cwd inside a package, derive its `<output_base>_rra` server
+    // location, and skip a `bazel query` when it already knows which
+    // target owns the saved file. Best-effort — a write failure just
+    // means flycheck falls back to the slow paths.
     if !launcher_dir.is_empty() {
         write_toolchain_info_sidecar(
             Utf8Path::new(&launcher_dir),
             &toolchain_info.sysroot_src,
             workspace,
+            output_base,
             build_file_label_map(&crate_specs),
         );
     }
@@ -179,19 +268,21 @@ pub fn generate_rust_project(
 
 const WARNINGS_LOG_REL: &str = ".vscode/.rules_rust_analyzer/last_warnings.log";
 
-/// Publish sysroot_src, workspace, and the saved-file→label map to
-/// `<launcher_dir>/toolchain_info.json` for flycheck. Best-effort:
-/// a write failure just means flycheck falls back to slow per-save
-/// paths (bazel query, cwd guess).
+/// Publish sysroot_src, workspace, output_base, and the saved-file→
+/// label map to `<launcher_dir>/toolchain_info.json` for flycheck.
+/// Best-effort: a write failure just means flycheck falls back to
+/// slow per-save paths (bazel query, cwd guess, `bazel info output_base`).
 fn write_toolchain_info_sidecar(
     launcher_dir: &Utf8Path,
     sysroot_src: &Utf8Path,
     workspace: &Utf8Path,
+    output_base: &Utf8Path,
     file_labels: BTreeMap<Utf8PathBuf, String>,
 ) {
     let sidecar = ToolchainInfoSidecar {
         sysroot_src: sysroot_src.to_path_buf(),
         workspace: Some(workspace.to_path_buf()),
+        output_base: Some(output_base.to_path_buf()),
         file_labels,
     };
     let path = launcher_dir.join(TOOLCHAIN_INFO_SIDECAR);
@@ -373,7 +464,7 @@ fn assess_discovery(success: bool, spec_count: usize, stderr: &str) -> anyhow::R
     }
 }
 
-fn bazel_command(
+pub fn bazel_command(
     bazel: &Utf8Path,
     workspace: Option<&Utf8Path>,
     output_base: Option<&Utf8Path>,
@@ -476,6 +567,18 @@ mod tests {
         assert_eq!(dir_to_bazel_package(""), "");
         // Mixed (defense in depth).
         assert_eq!(dir_to_bazel_package(r"a/b\c/d"), "a/b/c/d");
+    }
+
+    #[test]
+    fn flycheck_output_base_appends_suffix_at_leaf() {
+        // Sibling must land under the same output_user_root parent so
+        // the two servers share `install/`. Appending to the leaf is
+        // the whole point — a trailing slash would push us into a
+        // subdirectory instead.
+        assert_eq!(
+            flycheck_output_base(Utf8Path::new("/home/u/.cache/bazel/_bazel_u/abc123")),
+            Utf8PathBuf::from("/home/u/.cache/bazel/_bazel_u/abc123_rra"),
+        );
     }
 
     #[test]

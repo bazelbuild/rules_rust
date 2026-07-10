@@ -28,7 +28,8 @@ use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use gen_rust_project_lib::{
-    bep, install_dir, user_config, ToolchainInfoSidecar, TOOLCHAIN_INFO_SIDECAR,
+    bazel_command, bazel_info, bep, flycheck_output_base, install_dir, user_config, BazelInfo,
+    ToolchainInfoSidecar, TOOLCHAIN_INFO_SIDECAR,
 };
 use serde_json::Value;
 
@@ -58,10 +59,10 @@ struct Args {
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
 
-    /// Bazel `--output_user_root` for the flycheck server. Overrides
-    /// the default (see [`default_output_user_root`]).
+    /// Bazel `--output_base` for the flycheck server. Overrides the
+    /// default derivation (see [`derive_output_base`]).
     #[clap(long)]
-    output_user_root: Option<Utf8PathBuf>,
+    output_base: Option<Utf8PathBuf>,
 }
 
 fn main() -> ExitCode {
@@ -100,29 +101,20 @@ fn run() -> Result<u8> {
 
     let user = user_config::load(&launcher_dir);
 
-    // Dedicated `--output_user_root` for the inner `bazel build` so
-    // its `--error_format=json` doesn't thrash the primary Bazel
-    // server's analysis cache. Precedence: CLI > user_config > default.
-    let output_user_root = match args.output_user_root.clone() {
+    // Dedicated `--output_base` for the inner `bazel build` so its
+    // `--error_format=json` doesn't thrash the primary Bazel server's
+    // analysis cache. Precedence: CLI > user_config > sidecar `_rra`
+    // > setup-populated `BazelInfo` cache > slow `bazel info` fallback
+    // against the outer server.
+    let output_base = match args.output_base.or(user.output_base) {
         Some(p) => p,
-        None => match user.output_user_root.clone() {
-            Some(p) => p,
-            None => default_output_user_root(&workspace)?,
-        },
+        None => derive_output_base(&launcher_dir, &args.bazel, &workspace, sidecar.as_ref())?,
     };
-    std::fs::create_dir_all(&output_user_root)
-        .with_context(|| format!("creating output_user_root {output_user_root}"))?;
+    std::fs::create_dir_all(&output_base)
+        .with_context(|| format!("creating output_base {output_base}"))?;
 
-    let mut cmd = Command::new(args.bazel.as_str());
-    cmd.current_dir(&workspace)
-        // Clear env vars leaked from the outer `bazel run` so the
-        // nested client rediscovers the workspace from cwd.
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
-        // `--output_user_root` is a STARTUP option, must precede `build`.
-        .arg(format!("--output_user_root={output_user_root}"))
-        .arg("build")
+    let mut cmd = bazel_command(&args.bazel, Some(&workspace), Some(&output_base));
+    cmd.arg("build")
         .arg(&label)
         // Flags below use the apparent `@rules_rust` name (not a
         // compile-time `ASPECT_REPOSITORY`) — `ASPECT_REPOSITORY`
@@ -139,10 +131,17 @@ fn run() -> Result<u8> {
         .arg("--keep_going")
         .arg(format!("--build_event_json_file={bep_path}"));
     if user.clippy {
+        // `clippy_error_format=json` is separate from `error_format`
+        // (which only covers rustc). Without it the aspect writes
+        // rendered ANSI to `.clippy.diagnostics`, our JSON parser
+        // skips every line, and RA sees zero diagnostics for
+        // clippy-flagged bugs.
+        //
         // `clippy_output_diagnostics=true` gates the aspect writing
-        // JSON to the declared `.clippy.diagnostics` file (vs a
-        // marker), exposed via the `clippy_output` group.
+        // to the declared `.clippy.diagnostics` file (vs a marker),
+        // exposed via the `clippy_output` group.
         cmd.arg("--aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect")
+            .arg("--@rules_rust//rust/settings:clippy_error_format=json")
             .arg("--@rules_rust//rust/settings:clippy_output_diagnostics=true")
             .arg(format!("--output_groups=+{}", bep::CLIPPY_OUTPUT_GROUP));
     }
@@ -163,8 +162,11 @@ fn run() -> Result<u8> {
         // not stderr, when `clippy_output_diagnostics=true`.
         //
         // `parse_output_group_paths` needs flycheck's OWN Bazel exec
-        // root to resolve BEP-relative paths (rules_rust#4130).
-        match bazel_info_execution_root(&args.bazel, &output_user_root)
+        // root to resolve BEP-relative paths (rules_rust#4130). Setup
+        // pre-populates the cache, so steady-state saves incur zero
+        // extra bazel calls; only a stale/missing cache pays the
+        // `bazel info` cost.
+        match cached_execution_root(&launcher_dir, &args.bazel, &workspace, &output_base)
             .and_then(|er| bep::parse_output_group_paths(&bep_path, bep::CLIPPY_OUTPUT_GROUP, &er))
         {
             Ok(paths) => diagnostic_files.extend(paths),
@@ -207,8 +209,14 @@ fn load_toolchain_info(launcher_dir: &Utf8Path) -> Option<ToolchainInfoSidecar> 
 /// (rustc emits them relative to the exec root; RA otherwise resolves
 /// them against the saved file's directory and produces nonsense).
 ///
-/// Non-JSON lines (sandbox warnings, env dumps) pass through so we
-/// don't silently swallow an unrecognized format.
+/// Only diagnostics with at least one primary span are forwarded.
+/// Artifact events, summary lines like "aborting due to N errors",
+/// and other non-actionable JSON are dropped — RA's flycheck actor
+/// flips `diagnostics_received` off `NotYet` for anything that parses
+/// as a `Diagnostic`, and once off `NotYet` the on-finish workspace
+/// clear no longer fires. Filtering to real add-worthy diagnostics
+/// keeps `NotYet` correct so a fix that removes ALL diagnostics
+/// clears the stale ones on the next save.
 fn emit_diagnostics(
     files: &[Utf8PathBuf],
     workspace: &Utf8Path,
@@ -229,24 +237,44 @@ fn emit_diagnostics(
             if !trimmed.starts_with('{') {
                 continue;
             }
-            match serde_json::from_str::<Value>(trimmed) {
-                Ok(mut value) => {
-                    rewrite_file_names(&mut value, workspace, sysroot_src);
-                    serde_json::to_writer(&mut out, &value)
-                        .context("writing rewritten rustc JSON to stdout")?;
-                    out.write_all(b"\n").context("writing newline to stdout")?;
-                }
-                Err(_) => {
-                    // Not JSON — pass through unmodified.
-                    out.write_all(line.as_bytes())
-                        .context("passing through non-JSON line to stdout")?;
-                    out.write_all(b"\n").context("writing newline to stdout")?;
-                }
+            let Ok(mut value) = serde_json::from_str::<Value>(trimmed) else {
+                continue;
+            };
+            if !is_actionable_diagnostic(&value) {
+                continue;
             }
+            rewrite_file_names(&mut value, workspace, sysroot_src);
+            serde_json::to_writer(&mut out, &value)
+                .context("writing rewritten rustc JSON to stdout")?;
+            out.write_all(b"\n").context("writing newline to stdout")?;
         }
     }
     out.flush().context("flushing stdout")?;
     Ok(())
+}
+
+/// A message is add-worthy iff it's a rustc `Diagnostic` (or the
+/// cargo `compiler-message` wrapper of one) AND has at least one
+/// primary span — the only shape RA renders as an editor squiggle.
+fn is_actionable_diagnostic(value: &Value) -> bool {
+    let diag = match value.get("$message_type").and_then(Value::as_str) {
+        Some("diagnostic") => value,
+        _ => match value.get("reason").and_then(Value::as_str) {
+            Some("compiler-message") => match value.get("message") {
+                Some(m) => m,
+                None => return false,
+            },
+            _ => return false,
+        },
+    };
+    diag.get("spans")
+        .and_then(Value::as_array)
+        .map(|spans| {
+            spans
+                .iter()
+                .any(|s| s.get("is_primary").and_then(Value::as_bool) == Some(true))
+        })
+        .unwrap_or(false)
 }
 
 /// Replace `/rustc/<40 hex>/library/` in `input` with `<sysroot_src>/`.
@@ -341,47 +369,75 @@ fn workspace_dir(sidecar_workspace: Option<&Utf8Path>) -> Result<Utf8PathBuf> {
     Utf8PathBuf::try_from(cwd).context("current_dir was not valid UTF-8")
 }
 
-/// Default location for flycheck's dedicated `--output_user_root`,
-/// next to Bazel's own user cache root. Must live outside the
-/// workspace — Bazel 8+ errors when a repo_contents_cache falls inside
-/// the main repo. Hashed by workspace path so two projects don't share
-/// a flycheck server.
-fn default_output_user_root(workspace: &Utf8Path) -> Result<Utf8PathBuf> {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
-    let mut hasher = DefaultHasher::new();
-    workspace.as_str().hash(&mut hasher);
-    let workspace_hash = format!("{:016x}", hasher.finish());
-
-    let cache_root = user_cache_dir()?.join("bazel").join("rules_rust_flycheck");
-    Ok(cache_root.join(workspace_hash))
+/// Default `--output_base` for flycheck's dedicated server: the
+/// outer server's `output_base` with an `_rra` suffix
+/// ([`flycheck_output_base`]). Both bases therefore live under the
+/// same `output_user_root` and share its `install/` extraction
+/// (~200 MB of JVM + Bazel binaries) while still holding distinct
+/// server locks.
+///
+/// Resolution order (each step avoids a `bazel info` on the outer
+/// server):
+///   1. Sidecar — written by discover on every RA discovery pass.
+///   2. Setup-populated `BazelInfo` cache — stores flycheck's own
+///      `output_base` directly, so a fresh checkout that ran setup
+///      but hasn't triggered discover yet still skips the fallback.
+///   3. `bazel info output_base` against the outer server — starts
+///      the outer server if it isn't already running.
+fn derive_output_base(
+    launcher_dir: &Utf8Path,
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    sidecar: Option<&ToolchainInfoSidecar>,
+) -> Result<Utf8PathBuf> {
+    if let Some(p) = sidecar.and_then(|s| s.output_base.as_deref()) {
+        return Ok(flycheck_output_base(p));
+    }
+    if let Some(cached) = BazelInfo::load(launcher_dir) {
+        return Ok(cached.output_base);
+    }
+    let outer = bazel_info_path(bazel, workspace, None, "output_base")
+        .context("deriving flycheck output_base from outer `bazel info output_base`")?;
+    Ok(flycheck_output_base(&outer))
 }
 
-/// Best-effort platform cache dir. Uses `$XDG_CACHE_HOME` when set;
-/// otherwise `~/.cache` on Linux, `~/Library/Caches` on macOS,
-/// `%LOCALAPPDATA%` on Windows.
-fn user_cache_dir() -> Result<Utf8PathBuf> {
-    if let Ok(dir) = env::var("XDG_CACHE_HOME") {
-        if !dir.is_empty() {
-            return Ok(Utf8PathBuf::from(dir));
+/// One-key `bazel info` lookup returned as a path. `output_base =
+/// None` targets the outer server; `Some(_)` targets flycheck's own
+/// server. Routes through the shared `bazel_info` helper so the
+/// env-scrub triple stays consolidated in `lib.rs`.
+fn bazel_info_path(
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    output_base: Option<&Utf8Path>,
+    key: &str,
+) -> Result<Utf8PathBuf> {
+    let value = bazel_info(bazel, Some(workspace), output_base, &[], &[])?
+        .remove(key)
+        .with_context(|| format!("`bazel info` returned no `{key}` line"))?;
+    Ok(Utf8PathBuf::from(value))
+}
+
+/// Return flycheck's server `execution_root`, hitting the
+/// setup-populated `BazelInfo` cache when its `output_base` still
+/// matches the current one and refreshing (one `bazel info` call,
+/// persisted for next time) otherwise. This keeps the steady-state
+/// clippy path off `bazel info` — critical because rust-analyzer
+/// spawns flycheck on every save.
+fn cached_execution_root(
+    launcher_dir: &Utf8Path,
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    output_base: &Utf8Path,
+) -> Result<Utf8PathBuf> {
+    if let Some(cached) = BazelInfo::load(launcher_dir) {
+        if cached.output_base == output_base {
+            return Ok(cached.execution_root);
         }
     }
-    #[cfg(target_os = "macos")]
-    {
-        let home = env::var("HOME").context("HOME not set")?;
-        Ok(Utf8PathBuf::from(home).join("Library").join("Caches"))
-    }
-    #[cfg(target_os = "windows")]
-    {
-        let dir = env::var("LOCALAPPDATA").context("LOCALAPPDATA not set")?;
-        Ok(Utf8PathBuf::from(dir))
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        let home = env::var("HOME").context("HOME not set")?;
-        Ok(Utf8PathBuf::from(home).join(".cache"))
-    }
+    let info = BazelInfo::try_new(bazel, workspace, output_base)?;
+    let er = info.execution_root.clone();
+    info.save(launcher_dir);
+    Ok(er)
 }
 
 /// Derive the Bazel label for a saved file (override mode). Fast
@@ -453,27 +509,6 @@ fn find_owning_package(workspace: &Utf8Path, file_rel: &Utf8Path) -> Option<Utf8
     }
 }
 
-/// `bazel info execution_root` against the flycheck server. Its exec
-/// root differs from discover's (different `--output_user_root`), so
-/// we can't reuse the sidecar's value.
-fn bazel_info_execution_root(bazel: &Utf8Path, output_user_root: &Utf8Path) -> Result<Utf8PathBuf> {
-    let output = Command::new(bazel.as_str())
-        .arg(format!("--output_user_root={output_user_root}"))
-        .arg("info")
-        .arg("execution_root")
-        .output()
-        .with_context(|| format!("invoking {bazel} info execution_root"))?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        anyhow::bail!("bazel info execution_root failed: {stderr}");
-    }
-    let root = String::from_utf8(output.stdout)
-        .context("bazel info execution_root output not UTF-8")?
-        .trim()
-        .to_owned();
-    Ok(Utf8PathBuf::from(root))
-}
-
 /// Best-effort cleanup of the temporary BEP file.
 fn scopeguard(path: Utf8PathBuf) -> impl Drop {
     struct Guard(Utf8PathBuf);
@@ -535,13 +570,52 @@ mod tests {
     }
 
     #[test]
+    fn is_actionable_diagnostic_keeps_real_diagnostics_only() {
+        // Real diagnostic — at least one primary span — kept.
+        assert!(is_actionable_diagnostic(&json!({
+            "$message_type": "diagnostic",
+            "message": "unnecessary parentheses",
+            "spans": [{"is_primary": true}],
+        })));
+        // Cargo-wrapped compiler-message.
+        assert!(is_actionable_diagnostic(&json!({
+            "reason": "compiler-message",
+            "message": {"spans": [{"is_primary": true}]},
+        })));
+        // Rustc artifact — dropped. Would otherwise get parsed as
+        // a partially-valid Diagnostic by RA if any field defaults
+        // matched.
+        assert!(!is_actionable_diagnostic(&json!({
+            "$message_type": "artifact",
+            "artifact": "foo.rlib",
+            "emit": "link",
+        })));
+        // "aborting due to N errors" summary — no spans → dropped.
+        // Otherwise it flips RA's `diagnostics_received` off `NotYet`
+        // without adding anything RA can display, which prevents the
+        // NotYet → workspace-clear path from firing when a fix leaves
+        // the run with only summaries.
+        assert!(!is_actionable_diagnostic(&json!({
+            "$message_type": "diagnostic",
+            "message": "aborting due to 1 previous error",
+            "spans": [],
+        })));
+        // Non-primary span only — dropped, same reason.
+        assert!(!is_actionable_diagnostic(&json!({
+            "$message_type": "diagnostic",
+            "message": "note",
+            "spans": [{"is_primary": false}],
+        })));
+    }
+
+    #[test]
     fn rustc_stdlib_remap_gets_replaced_with_sysroot_src() {
         let workspace = Utf8Path::new("/ws");
         let sysroot_src = Utf8Path::new("/toolchain/lib/rustlib/src/library");
         let mut v = json!({
             "spans": [
                 {"file_name": "/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/library/core/src/result.rs"},
-                {"file_name": "/rustc/notasha/library/x.rs"},
+                {"file_name": "/rustc/marika/library/x.rs"},
                 {"file_name": "/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/bin/rustc.rs"},
             ]
         });
@@ -553,7 +627,7 @@ mod tests {
             spans[0]["file_name"],
             json!(format!("{sysroot_src}/core/src/result.rs")),
         );
-        assert_eq!(spans[1]["file_name"], json!("/rustc/notasha/library/x.rs"));
+        assert_eq!(spans[1]["file_name"], json!("/rustc/marika/library/x.rs"));
         assert_eq!(
             spans[2]["file_name"],
             json!("/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/bin/rustc.rs"),
@@ -631,7 +705,7 @@ mod tests {
     fn substitute_rustc_stdlib_leaves_non_stdlib_prefixes_alone() {
         let sysroot_src = Utf8Path::new("/toolchain/src/library");
         for input in [
-            "/rustc/notasha/library/x.rs",
+            "/rustc/marika/library/x.rs",
             "/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/bin/rustc.rs",
             "/rustc/",
         ] {
