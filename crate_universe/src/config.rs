@@ -179,11 +179,11 @@ fn default_crate_label_template() -> String {
 }
 
 fn default_crate_alias_template() -> String {
-    // Points `aliases()` / `all_crate_deps()` at the per-alias subpackage
-    // layout (e.g. `Label("@crate_index//clap-1.0.0")`). Subpackage `BUILD.bazel`s
-    // are always emitted, so this default works whether or not the user
-    // sets `incompatible_no_root_alias_targets`.
-    "//{name}-{version}".to_owned()
+    // The `@{repository}` prefix ensures labels resolve through the hub even
+    // when `defs.bzl` is loaded from a workspace path (vendor mode).
+    // Subpackage `BUILD.bazel`s are always emitted, so this default works
+    // whether or not the user sets `incompatible_no_root_alias_targets`.
+    "@{repository}//{name}-{version}".to_owned()
 }
 
 fn default_crate_repository_template() -> String {

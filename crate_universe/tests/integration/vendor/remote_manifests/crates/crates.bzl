@@ -319,8 +319,8 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "remote_manifests": {
         _COMMON_CONDITION: {
-            "serde_yaml": Label("//serde_yaml-0.9.34+deprecated"),
-            "tokio": Label("//tokio-1.52.3"),
+            "serde_yaml": Label("@cvm//serde_yaml-0.9.34+deprecated"),
+            "tokio": Label("@cvm//tokio-1.52.3"),
         },
     },
 }
@@ -335,8 +335,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "remote_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("//tempfile-3.27.0"),
-            "tokio-test": Label("//tokio-test-0.4.5"),
+            "tempfile": Label("@cvm//tempfile-3.27.0"),
+            "tokio-test": Label("@cvm//tokio-test-0.4.5"),
         },
     },
 }

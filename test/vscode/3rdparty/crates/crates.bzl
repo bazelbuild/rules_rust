@@ -319,8 +319,8 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde": Label("//serde-1.0.228"),
-            "serde_json": Label("//serde_json-1.0.150"),
+            "serde": Label("@rtvsc//serde-1.0.228"),
+            "serde_json": Label("@rtvsc//serde_json-1.0.150"),
         },
     },
 }
