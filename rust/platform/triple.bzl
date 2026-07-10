@@ -137,7 +137,7 @@ def get_host_triple(repository_ctx, abi = {}):
     # Detect the host's cpu architecture
 
     supported_architectures = {
-        "linux": ["aarch64", "x86_64", "s390x", "powerpc64le"],
+        "linux": ["aarch64", "x86_64", "s390x", "powerpc64le", "loongarch64"],
         "macos": ["aarch64", "x86_64"],
         "windows": ["aarch64", "x86_64"],
     }
