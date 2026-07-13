@@ -27,6 +27,7 @@ load(
     _rust_clippy = "rust_clippy",
     _rust_clippy_action = "rust_clippy_action",
     _rust_clippy_aspect = "rust_clippy_aspect",
+    _rust_create_clippy_action = "rust_create_clippy_action",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
@@ -123,6 +124,7 @@ capture_clippy_output = _capture_clippy_output
 
 rust_clippy_action = struct(
     action = _rust_clippy_action,
+    create_action = _rust_create_clippy_action,
     get_clippy_ready_crate_info = _get_clippy_ready_crate_info,
 )
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
