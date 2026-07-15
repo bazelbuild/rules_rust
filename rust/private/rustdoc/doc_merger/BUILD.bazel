@@ -1,0 +1,8 @@
+load("//rust/private:rust.bzl", "rust_binary")
+
+rust_binary(
+    name = "doc_merger",
+    srcs = ["doc_merger.rs"],
+    edition = "2024",
+    visibility = ["//visibility:public"],
+)

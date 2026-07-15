@@ -68,6 +68,11 @@ load(
     _rust_doc_test = "rust_doc_test",
 )
 load(
+    "//rust/private:rustdoc_workspace.bzl",
+    _rust_workspace_doc = "rust_workspace_doc",
+    _rust_workspace_doc_aspect = "rust_workspace_doc_aspect",
+)
+load(
     "//rust/private:rustfmt.bzl",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
@@ -107,6 +112,12 @@ rust_doc = _rust_doc
 
 rust_doc_test = _rust_doc_test
 # See @rules_rust//rust/private:rustdoc_test.bzl for a complete description.
+
+rust_workspace_doc = _rust_workspace_doc
+# See @rules_rust//rust/private:rustdoc_workspace.bzl for a complete description.
+
+rust_workspace_doc_aspect = _rust_workspace_doc_aspect
+# See @rules_rust//rust/private:rustdoc_workspace.bzl for a complete description.
 
 clippy_flag = _clippy_flag
 clippy_flags = _clippy_flags

@@ -65,7 +65,10 @@ def rustdoc_compile_action(
         output = None,
         rustdoc_flags = [],
         is_test = False,
-        force_depend_on_objects = None):
+        force_depend_on_objects = None,
+        attr = None,
+        file = None,
+        files = None):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
     Args:
@@ -78,6 +81,12 @@ def rustdoc_compile_action(
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
         force_depend_on_objects (bool, optional): If set, overrides is_test for controlling whether
             to depend on .rlib files instead of .rmeta. Defaults to is_test.
+        attr (struct, optional): The attributes to read target info from. Defaults
+            to `ctx.attr`. Aspects should pass `ctx.rule.attr`.
+        file (struct, optional): The files struct to read single-file attributes
+            from. Defaults to `ctx.file`. Aspects should pass `ctx.rule.file`.
+        files (struct, optional): The files struct to read multi-file attributes
+            from. Defaults to `ctx.files`. Aspects should pass `ctx.rule.files`.
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
@@ -93,6 +102,13 @@ def rustdoc_compile_action(
             expand_directories = False,
         )
 
+    if attr == None:
+        attr = ctx.attr
+    if file == None:
+        file = ctx.file
+    if files == None:
+        files = ctx.files
+
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
@@ -101,14 +117,14 @@ def rustdoc_compile_action(
 
     # Collect HTML customization files
     html_input_files = []
-    if hasattr(ctx.file, "html_in_header") and ctx.file.html_in_header:
-        html_input_files.append(ctx.file.html_in_header)
-    if hasattr(ctx.file, "html_before_content") and ctx.file.html_before_content:
-        html_input_files.append(ctx.file.html_before_content)
-    if hasattr(ctx.file, "html_after_content") and ctx.file.html_after_content:
-        html_input_files.append(ctx.file.html_after_content)
-    if hasattr(ctx.files, "markdown_css"):
-        html_input_files.extend(ctx.files.markdown_css)
+    if hasattr(file, "html_in_header") and file.html_in_header:
+        html_input_files.append(file.html_in_header)
+    if hasattr(file, "html_before_content") and file.html_before_content:
+        html_input_files.append(file.html_before_content)
+    if hasattr(file, "html_after_content") and file.html_after_content:
+        html_input_files.append(file.html_after_content)
+    if hasattr(files, "markdown_css"):
+        html_input_files.extend(files.markdown_css)
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -120,8 +136,8 @@ def rustdoc_compile_action(
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
-        file = ctx.file,
-        files = ctx.files,
+        file = file,
+        files = files,
         linkstamps = depset([]),
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
@@ -169,8 +185,8 @@ def rustdoc_compile_action(
 
     args, env = construct_arguments(
         ctx = ctx,
-        attr = ctx.attr,
-        file = ctx.file,
+        attr = attr,
+        file = file,
         toolchain = toolchain,
         tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
         cc_toolchain = cc_toolchain,
@@ -201,8 +217,11 @@ def rustdoc_compile_action(
         if "OUT_DIR" in env:
             env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
 
-    # Create the combined inputs including HTML customization files
-    all_inputs = depset([crate_info.output], transitive = [compile_inputs, depset(html_input_files)])
+    # Create the combined inputs including HTML customization files. Synthetic
+    # crates (e.g. the merge-finalize stub of `rust_workspace_doc`) have no
+    # compiled output to depend on.
+    direct_inputs = [crate_info.output] if crate_info.output else []
+    all_inputs = depset(direct_inputs, transitive = [compile_inputs, depset(html_input_files)])
 
     return struct(
         executable = ctx.executable._process_wrapper,
@@ -213,7 +232,7 @@ def rustdoc_compile_action(
         tools = [toolchain.rust_doc],
     )
 
-def _zip_action(ctx, input_dir, output_zip, crate_label):
+def zip_action(ctx, input_dir, output_zip, crate_label):
     """Creates an archive of the generated documentation from `rustdoc`
 
     Args:
@@ -301,7 +320,7 @@ def _rust_doc_impl(ctx):
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
-    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip, crate.label)
+    zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip, crate.label)
 
     return [
         DefaultInfo(

@@ -32,6 +32,10 @@ load(
     _rustc_output_diagnostics = "rustc_output_diagnostics",
     _zself_profile_events = "zself_profile_events",
 )
+load(
+    "//rust/private:rustdoc_workspace.bzl",
+    _rustdoc_workspace_extra_flag = "rustdoc_workspace_extra_flag",
+)
 load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
@@ -255,6 +259,33 @@ def experimental_compile_rustdoc_tests():
     """
     bool_flag(
         name = "experimental_compile_rustdoc_tests",
+        build_setting_default = False,
+    )
+
+def rustdoc_workspace_extra_flag():
+    """A repeatable flag adding a rustdoc flag to every per-crate invocation of `rust_workspace_doc_aspect`.
+
+    Use it to apply documentation-wide options such as `--document-private-items` or \
+    lint levels like `-Dwarnings`, e.g. \
+    `--@rules_rust//rust/settings:rustdoc_workspace_extra_flag=-Dwarnings`. Multiple \
+    uses are accumulated. Flags for the finalizing invocation are set with the \
+    `rustdoc_flags` attribute of `rust_workspace_doc` instead.
+    """
+    _rustdoc_workspace_extra_flag(
+        name = "rustdoc_workspace_extra_flag",
+        build_setting_default = [],
+    )
+
+def rustdoc_workspace_include_external():
+    """A flag to control whether `rust_workspace_doc` documents crates from external repositories.
+
+    When disabled (the default), only crates from the current workspace are documented, \
+    matching `cargo doc --no-deps`. When enabled, external crates (e.g. `crate_universe` \
+    dependencies) reachable from the `deps` of `rust_workspace_doc` targets are documented \
+    and merged into the documentation tree as well.
+    """
+    bool_flag(
+        name = "rustdoc_workspace_include_external",
         build_setting_default = False,
     )
 

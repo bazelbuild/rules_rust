@@ -1,0 +1,3 @@
+load(":rustdoc_workspace_unit_test.bzl", "rustdoc_workspace_test_suite")
+
+rustdoc_workspace_test_suite(name = "rustdoc_workspace_test_suite")

@@ -35,6 +35,8 @@ load(
     "rename_first_party_crates",
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
+    "rustdoc_workspace_extra_flag",
+    "rustdoc_workspace_include_external",
     "rustfmt_toml",
     "third_party_dir",
     "toolchain_generated_sysroot",
@@ -128,6 +130,10 @@ rename_first_party_crates()
 require_explicit_unstable_features()
 
 rustc_output_diagnostics()
+
+rustdoc_workspace_extra_flag()
+
+rustdoc_workspace_include_external()
 
 rustfmt_toml()
 

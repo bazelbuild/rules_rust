@@ -1,0 +1,45 @@
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test", "rust_workspace_doc")
+
+rust_library(
+    name = "alpha",
+    srcs = ["alpha.rs"],
+    edition = "2021",
+)
+
+rust_library(
+    name = "beta",
+    srcs = ["beta.rs"],
+    edition = "2021",
+    deps = [":alpha"],
+)
+
+rust_binary(
+    name = "gamma",
+    srcs = ["gamma.rs"],
+    edition = "2021",
+    deps = [":beta"],
+)
+
+# `rust_workspace_doc` requires a nightly toolchain, so these targets are
+# skipped unless the toolchain channel is set to nightly.
+NIGHTLY_ONLY = select({
+    "//rust/toolchain/channel:nightly": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+# Documents `alpha`, `beta` and `gamma` transitively from the single top-level
+# target and merges the results into one documentation tree.
+rust_workspace_doc(
+    name = "workspace_docs",
+    target_compatible_with = NIGHTLY_ONLY,
+    deps = [":gamma"],
+)
+
+rust_test(
+    name = "workspace_docs_test",
+    srcs = ["workspace_docs_test.rs"],
+    data = [":workspace_docs"],
+    edition = "2021",
+    env = {"WORKSPACE_DOCS_DIR": "$(rootpath :workspace_docs)"},
+    target_compatible_with = NIGHTLY_ONLY,
+)

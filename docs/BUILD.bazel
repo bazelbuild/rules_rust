@@ -121,6 +121,8 @@ stardoc(
     symbol_names = [
         "rust_doc",
         "rust_doc_test",
+        "rust_workspace_doc",
+        "rust_workspace_doc_aspect",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],

@@ -120,6 +120,12 @@ fn process_line(
 fn main() -> Result<(), ProcessWrapperError> {
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
+    for dir in &opts.create_dirs {
+        std::fs::create_dir_all(dir).map_err(|e| {
+            ProcessWrapperError(format!("failed to create directory {}: {}", dir, e))
+        })?;
+    }
+
     let mut command = Command::new(opts.executable);
     command
         .args(opts.child_arguments)

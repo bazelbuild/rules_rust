@@ -1,0 +1,25 @@
+load("//rust:defs.bzl", "rust_binary")
+load("//tools/private:tool_utils.bzl", "aspect_repository")
+
+rust_binary(
+    name = "gen_workspace_docs",
+    srcs = ["bin/gen_workspace_docs.rs"],
+    data = [
+        "//rust/private/rustdoc/doc_merger",
+        "//rust/toolchain:current_rustdoc_files",
+    ],
+    edition = "2024",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+        "DOC_MERGER_RLOCATIONPATH": "$(rlocationpath //rust/private/rustdoc/doc_merger)",
+        "RUSTDOC_RLOCATIONPATH": "$(rlocationpath //rust/toolchain:current_rustdoc_files)",
+    },
+    toolchains = ["//rust/toolchain:current_rust_toolchain"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)

@@ -32,6 +32,9 @@ pub(crate) struct Options {
     pub(crate) child_arguments: Vec<String>,
     // Contains environment variables for the child process fetched from files.
     pub(crate) child_environment: HashMap<String, String>,
+    // If set, create the specified directories (and their parents) before
+    // spawning the child process.
+    pub(crate) create_dirs: Vec<String>,
     // If set, create the specified file after the child process successfully
     // terminated its execution.
     pub(crate) touch_file: Option<String>,
@@ -60,6 +63,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut env_file_raw = None;
     let mut out_dir_raw = None;
     let mut arg_file_raw = None;
+    let mut create_dirs_raw = None;
     let mut touch_file = None;
     let mut copy_output_raw = None;
     let mut stdout_file = None;
@@ -91,6 +95,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--arg-file",
         "File(s) containing command line arguments to pass to the child process.",
         &mut arg_file_raw,
+    );
+    flags.define_repeated_flag(
+        "--mkdir",
+        "Directory(s) to create (including parents) before spawning the child process.",
+        &mut create_dirs_raw,
     );
     flags.define_flag(
         "--touch-file",
@@ -294,6 +303,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         executable: exec_path.to_owned(),
         child_arguments: args.to_vec(),
         child_environment: vars,
+        create_dirs: create_dirs_raw.unwrap_or_default(),
         touch_file,
         copy_output,
         stdout_file,
