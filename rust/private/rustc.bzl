@@ -1077,10 +1077,23 @@ def construct_arguments(
         process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
         process_wrapper_flags.add("--stable-status-file", ctx.info_file)
 
-    # Both ctx.label.workspace_root and ctx.label.package are relative paths
-    # and either can be empty strings. Avoid trailing/double slashes in the path.
-    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
-    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    if crate_info.root.is_source:
+        # Both ctx.label.workspace_root and ctx.label.package are relative paths
+        # and either can be empty strings. Avoid trailing/double slashes in the path.
+        components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+        env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    else:
+        # transform_sources stages source inputs and compile_data under the binary
+        # output tree whenever the crate has a generated input. Keep the manifest
+        # directory next to those transformed inputs so proc macros can find them.
+        # Derive the directory from a File so Bazel can apply path mapping.
+        process_wrapper_flags.add_all(
+            [crate_info.output],
+            before_each = "--subst",
+            format_each = "cargo_manifest_dir=%s",
+            map_each = _get_dirname,
+        )
+        env["CARGO_MANIFEST_DIR"] = "${pwd}/${cargo_manifest_dir}"
 
     if out_dir != None:
         # Hand `OUT_DIR` to `process_wrapper` as an explicit
