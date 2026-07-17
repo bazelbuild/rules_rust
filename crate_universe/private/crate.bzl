@@ -107,6 +107,8 @@ def _annotation(
         compile_data_glob = None,
         compile_data_glob_excludes = None,
         crate_features = None,
+        disabled_features = None,
+        excluded_deps = None,
         data = None,
         data_glob = None,
         deps = None,
@@ -158,6 +160,14 @@ def _annotation(
             attribute.
         crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
+        disabled_features (optional): Features to remove from a crate's resolved `crate_features`. Accepts a
+            list (applies to all platforms) or a `crate.select()` keyed by target triple (applies per-platform,
+            preserving the feature on the other supported triples). Use to remove a feature that ends up
+            activated on a platform where it cannot be built (e.g. tokio's `net` on `wasm32-unknown-unknown`).
+        excluded_deps (optional): Dependencies (by crate name) to remove from a crate's resolved `deps`. Follows
+            the same list / `crate.select()` semantics as `disabled_features` and is typically paired with it to
+            also drop the optional dependencies a disabled feature would have activated (e.g. `mio` and `socket2`
+            alongside tokio's `net`).
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
@@ -221,6 +231,8 @@ def _annotation(
             compile_data_glob = compile_data_glob,
             compile_data_glob_excludes = compile_data_glob_excludes,
             crate_features = crate_features,
+            disabled_features = disabled_features,
+            excluded_deps = excluded_deps,
             data = _stringify_list(data),
             data_glob = data_glob,
             deps = _stringify_list(deps),

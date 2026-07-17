@@ -1,0 +1,632 @@
+{
+  "checksum": "4dd5b0b62aa4e8fd0eb08e069ef8611dd35a22b1effc608ee6dca84c4bcab951",
+  "crates": {
+    "app 0.1.0": {
+      "name": "app",
+      "version": "0.1.0",
+      "package_url": null,
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "app",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "app",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tokio 1.52.0",
+              "target": "tokio"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null,
+      "license_ids": [],
+      "license_file": null
+    },
+    "libc 0.2.186": {
+      "name": "libc",
+      "version": "0.2.186",
+      "package_url": "https://github.com/rust-lang/libc",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/libc/0.2.186/download",
+          "sha256": "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "libc",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "libc",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "libc 0.2.186",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.2.186"
+      },
+      "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "compile_data_glob_excludes": [
+          "**/*.rs"
+        ],
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "LICENSE-APACHE"
+    },
+    "mio 1.2.0": {
+      "name": "mio",
+      "version": "1.2.0",
+      "package_url": "https://github.com/tokio-rs/mio",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/mio/1.2.0/download",
+          "sha256": "50b7e5b27aa02a74bac8c3f23f448f8d87ff11f92d3aac1a6ed369ee08cc56c1"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "mio",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "mio",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "net",
+            "os-ext",
+            "os-poll"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [],
+          "selects": {
+            "cfg(any(unix, target_os = \"hermit\", target_os = \"wasi\"))": [
+              {
+                "id": "libc 0.2.186",
+                "target": "libc"
+              }
+            ],
+            "cfg(target_os = \"wasi\")": [
+              {
+                "id": "wasi 0.11.1+wasi-snapshot-preview1",
+                "target": "wasi"
+              }
+            ],
+            "cfg(windows)": [
+              {
+                "id": "windows-sys 0.61.2",
+                "target": "windows_sys"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "1.2.0"
+      },
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": "LICENSE"
+    },
+    "native_only 0.1.0": {
+      "name": "native_only",
+      "version": "0.1.0",
+      "package_url": null,
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "native_only",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "native_only",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [],
+          "selects": {
+            "cfg(not(target_family = \"wasm\"))": [
+              {
+                "id": "tokio 1.52.0",
+                "target": "tokio"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null,
+      "license_ids": [],
+      "license_file": null
+    },
+    "pin-project-lite 0.2.17": {
+      "name": "pin-project-lite",
+      "version": "0.2.17",
+      "package_url": "https://github.com/taiki-e/pin-project-lite",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/pin-project-lite/0.2.17/download",
+          "sha256": "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "pin_project_lite",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "pin_project_lite",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2018",
+        "version": "0.2.17"
+      },
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "LICENSE-APACHE"
+    },
+    "server 0.1.0": {
+      "name": "server",
+      "version": "0.1.0",
+      "package_url": null,
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "server",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "server",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tokio 1.52.0",
+              "target": "tokio"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.1.0"
+      },
+      "license": null,
+      "license_ids": [],
+      "license_file": null
+    },
+    "socket2 0.6.3": {
+      "name": "socket2",
+      "version": "0.6.3",
+      "package_url": "https://github.com/rust-lang/socket2",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/socket2/0.6.3/download",
+          "sha256": "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "socket2",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "socket2",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "all"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [],
+          "selects": {
+            "cfg(any(unix, target_os = \"wasi\"))": [
+              {
+                "id": "libc 0.2.186",
+                "target": "libc"
+              }
+            ],
+            "cfg(windows)": [
+              {
+                "id": "windows-sys 0.61.2",
+                "target": "windows_sys"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "0.6.3"
+      },
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "LICENSE-APACHE"
+    },
+    "tokio 1.52.0": {
+      "name": "tokio",
+      "version": "1.52.0",
+      "package_url": "https://github.com/tokio-rs/tokio",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/tokio/1.52.0/download",
+          "sha256": "a91135f59b1cbf38c91e73cf3386fca9bb77915c45ce2771460c9d92f0f3d776"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tokio",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "tokio",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "libc",
+            "sync"
+          ],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "mio",
+              "net",
+              "socket2"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "mio",
+              "net",
+              "socket2"
+            ]
+          }
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "pin-project-lite 0.2.17",
+              "target": "pin_project_lite"
+            }
+          ],
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "libc 0.2.186",
+                "target": "libc"
+              },
+              {
+                "id": "mio 1.2.0",
+                "target": "mio"
+              },
+              {
+                "id": "socket2 0.6.3",
+                "target": "socket2"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.186",
+                "target": "libc"
+              },
+              {
+                "id": "mio 1.2.0",
+                "target": "mio"
+              },
+              {
+                "id": "socket2 0.6.3",
+                "target": "socket2"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "1.52.0"
+      },
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": "LICENSE"
+    },
+    "wasi 0.11.1+wasi-snapshot-preview1": {
+      "name": "wasi",
+      "version": "0.11.1+wasi-snapshot-preview1",
+      "package_url": "https://github.com/bytecodealliance/wasi",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/wasi/0.11.1+wasi-snapshot-preview1/download",
+          "sha256": "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "wasi",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "wasi",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2018",
+        "version": "0.11.1+wasi-snapshot-preview1"
+      },
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "LICENSE-APACHE"
+    },
+    "windows-link 0.2.1": {
+      "name": "windows-link",
+      "version": "0.2.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/windows-link/0.2.1/download",
+          "sha256": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_link",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "windows_link",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2021",
+        "version": "0.2.1"
+      },
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "license-apache-2.0"
+    },
+    "windows-sys 0.61.2": {
+      "name": "windows-sys",
+      "version": "0.61.2",
+      "package_url": "https://github.com/microsoft/windows-rs",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/windows-sys/0.61.2/download",
+          "sha256": "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "windows_sys",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "allow_empty": true,
+              "include": [
+                "**/*.rs"
+              ]
+            }
+          }
+        }
+      ],
+      "library_target_name": "windows_sys",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "windows-link 0.2.1",
+              "target": "windows_link"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.61.2"
+      },
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": "license-apache-2.0"
+    }
+  },
+  "binary_crates": [],
+  "workspace_members": {
+    "app 0.1.0": "app",
+    "native_only 0.1.0": "native_only",
+    "server 0.1.0": "server"
+  },
+  "conditions": {
+    "aarch64-apple-darwin": [
+      "aarch64-apple-darwin"
+    ],
+    "cfg(any(unix, target_os = \"hermit\", target_os = \"wasi\"))": [
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "cfg(any(unix, target_os = \"wasi\"))": [
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "cfg(not(target_family = \"wasm\"))": [
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu"
+    ],
+    "cfg(target_os = \"wasi\")": [],
+    "cfg(windows)": [],
+    "wasm32-unknown-unknown": [
+      "wasm32-unknown-unknown"
+    ],
+    "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "direct_deps": [
+    "tokio 1.52.0"
+  ],
+  "direct_dev_deps": [],
+  "unused_patches": []
+}

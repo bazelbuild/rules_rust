@@ -64,7 +64,7 @@ impl Context {
 
     pub(crate) fn new(annotations: Annotations, sources_are_present: bool) -> anyhow::Result<Self> {
         // Build a map of crate contexts
-        let crates: BTreeMap<CrateId, CrateContext> = annotations
+        let mut crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
             .crates
             .values()
@@ -83,6 +83,21 @@ impl Context {
                 Ok::<_, anyhow::Error>((id, context))
             })
             .collect::<Result<_, _>>()?;
+
+        // Apply per-platform `disabled_features` / `excluded_deps` annotations.
+        // These trim the resolver's whole-workspace feature/dependency output
+        // for specific target triples (e.g. dropping tokio's `net` feature and
+        // its `mio`/`socket2` deps on `wasm32-unknown-unknown`). Done here, after
+        // every crate context exists, because the re-pinning of a formerly
+        // unconditional value needs the full set of supported platform triples.
+        for (crate_id, context) in crates.iter_mut() {
+            if let Some(paired_extras) = annotations.pairred_extras.get(crate_id) {
+                context.apply_exclusions(
+                    &paired_extras.crate_extra,
+                    &annotations.config.supported_platform_triples,
+                );
+            }
+        }
 
         // Filter for any crate that contains a binary
         let binary_crates: BTreeSet<CrateId> = crates

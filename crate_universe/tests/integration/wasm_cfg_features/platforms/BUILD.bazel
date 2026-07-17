@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+platform(
+    name = "wasm32-unknown-unknown",
+    constraint_values = [
+        "@platforms//os:none",
+        "@platforms//cpu:wasm32",
+    ],
+)
