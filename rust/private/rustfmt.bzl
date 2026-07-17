@@ -1,6 +1,14 @@
 """A module defining rustfmt rules"""
 
 load(":common.bzl", "rust_common")
+load(
+    ":lint_test.bzl",
+    "LINT_TEST_COMMON_ATTRS",
+    "lint_test_aspect_impl",
+    "lint_test_rule_impl",
+    "platform_transition",
+    "rlocationpath",
+)
 
 def _get_rustfmt_ready_crate_info(target):
     """Check that a target is suitable for rustfmt and extract the `CrateInfo` provider from it.
@@ -55,24 +63,6 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
     srcs = [src for src in crate_srcs.to_list() if src.is_source]
 
     return srcs
-
-def _generate_manifest(edition, srcs, ctx):
-    workspace = ctx.label.workspace_name or ctx.workspace_name
-
-    # Gather the source paths to non-generated files
-    content = ctx.actions.args()
-    content.set_param_file_format("multiline")
-    content.add_all(srcs, format_each = workspace + "/%s")
-    content.add(edition)
-
-    # Write the rustfmt manifest
-    manifest = ctx.actions.declare_file(ctx.label.name + ".rustfmt")
-    ctx.actions.write(
-        output = manifest,
-        content = content,
-    )
-
-    return manifest
 
 def _perform_check(edition, srcs, ctx):
     rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
@@ -201,120 +191,76 @@ generated source files are also ignored by this aspect.
     ],
 )
 
-_RustfmtTestManifestInfo = provider(
-    doc = "A container for rustfmt manifest info to use in `rustfmt_test`",
+RustfmtTestInfo = provider(
+    doc = "Rustfmt check outputs collected by `rustfmt_test` from the underlying `rustfmt_aspect`.",
     fields = {
-        "manifest": "File: The manifest of formattable sources.",
-        "srcs": "depset[File]: The formattable sources.",
+        "checks": "depset[File]: Rustfmt markers for the visited target plus every crate reached via `deps`, `proc_macro_deps`, and `crate`.",
+        "direct_markers": "list[File]: Rustfmt markers for the visited target only.",
     },
 )
 
-def _rustfmt_test_target_aspect_impl(target, ctx):
-    if RustfmtTargetInfo not in target:
-        return []
+_RUSTFMT_OUTPUT_GROUPS = ["rustfmt_checks"]
 
-    info = target[RustfmtTargetInfo]
-    manifest = _generate_manifest(info.edition, info.srcs, ctx)
+def _rustfmt_test_aspect_impl(target, ctx):
+    return lint_test_aspect_impl(target, ctx, RustfmtTestInfo, _RUSTFMT_OUTPUT_GROUPS)
 
-    return [
-        _RustfmtTestManifestInfo(
-            manifest = manifest,
-            srcs = depset(info.srcs),
-        ),
-    ]
-
-_rustfmt_test_target_aspect = aspect(
-    implementation = _rustfmt_test_target_aspect_impl,
-    doc = """This aspect is used to gather information about a crate for use in `rustfmt_test`""",
-    requires = [rustfmt_srcs_aspect],
-    fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust/rustfmt:toolchain_type")),
-    ],
+_rustfmt_test_aspect = aspect(
+    implementation = _rustfmt_test_aspect_impl,
+    attr_aspects = ["deps", "proc_macro_deps", "crate"],
+    requires = [rustfmt_aspect],
+    provides = [RustfmtTestInfo],
+    doc = "Walks `deps`/`proc_macro_deps`/`crate` and rolls up the markers produced by `rustfmt_aspect` into a transitive `RustfmtTestInfo`.",
 )
 
-def _rlocationpath(file, workspace_name):
-    if file.short_path.startswith("../"):
-        return file.short_path[len("../"):]
-
-    return "{}/{}".format(workspace_name, file.short_path)
-
 def _rustfmt_test_impl(ctx):
-    # The executable of a test target must be the output of an action in
-    # the rule implementation. This file is simply a symlink to the real
-    # rustfmt test runner.
-    is_windows = ctx.executable._runner.extension == ".exe"
-    runner = ctx.actions.declare_file("{}{}".format(
-        ctx.label.name,
-        ".exe" if is_windows else "",
-    ))
-
-    ctx.actions.symlink(
-        output = runner,
-        target_file = ctx.executable._runner,
-        is_executable = True,
-    )
-
-    srcs = []
-    manifests = []
-    for target in ctx.attr.targets:
-        if _RustfmtTestManifestInfo not in target:
-            continue
-        info = target[_RustfmtTestManifestInfo]
-        manifests.append(info.manifest)
-        srcs.append(info.srcs)
-
-    runfiles = ctx.runfiles(
-        transitive_files = depset(manifests, transitive = srcs),
-    )
-
-    runfiles = runfiles.merge(
-        ctx.attr._runner[DefaultInfo].default_runfiles,
-    )
-
-    return [
-        DefaultInfo(
-            files = depset([runner]),
-            runfiles = runfiles,
-            executable = runner,
-        ),
-        RunEnvironmentInfo(
-            environment = {
-                "RUSTFMT_MANIFESTS": ctx.configuration.host_path_separator.join([
-                    _rlocationpath(manifest, ctx.workspace_name)
-                    for manifest in manifests
-                ]),
-                "RUST_BACKTRACE": "1",
-            },
-        ),
-    ]
+    return lint_test_rule_impl(ctx, RustfmtTestInfo)
 
 rustfmt_test = rule(
     implementation = _rustfmt_test_impl,
-    doc = "A test rule for performing `rustfmt --check` on a set of targets",
-    attrs = {
+    attrs = dict(LINT_TEST_COMMON_ATTRS, **{
         "targets": attr.label_list(
             doc = "Rust targets to run `rustfmt --check` on.",
             providers = [
                 [rust_common.crate_info],
                 [rust_common.test_crate_info],
             ],
-            aspects = [_rustfmt_test_target_aspect],
+            aspects = [_rustfmt_test_aspect],
+            cfg = platform_transition,
         ),
-        "_runner": attr.label(
-            doc = "The rustfmt test runner",
-            cfg = "exec",
-            executable = True,
-            default = Label("//tools/rustfmt:rustfmt_test"),
-        ),
-    },
+    }),
     test = True,
+    doc = """\
+A test rule that runs `rustfmt --check` over a set of Rust targets.
+
+By default (`transitive = True`), the aspect walks `deps`, `proc_macro_deps`, and `crate`
+transitively so that listing a top-level target checks its whole crate graph. Set
+`transitive = False` to format only the exact targets listed. The `rustfmt` actions run
+during the build phase, so a formatting failure fails `bazel test` before the test
+executable is invoked.
+
+An optional `platform` attribute transitions `targets` to the given platform before running
+`rustfmt`.
+
+Example:
+
+```python
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rustfmt_test(name = "fmt_tree_test", targets = [":app"])
+rustfmt_test(name = "fmt_app_only_test", targets = [":app"], transitive = False)
+```
+
+Targets tagged `no_format`, `no_rustfmt`, or `norustfmt` are skipped.
+""",
 )
 
 def _rustfmt_toolchain_impl(ctx):
     make_variables = {
         "RUSTFMT": ctx.file.rustfmt.path,
-        "RUSTFMT_RLOCATIONPATH": _rlocationpath(ctx.file.rustfmt, ctx.workspace_name),
+        "RUSTFMT_RLOCATIONPATH": rlocationpath(ctx.file.rustfmt, ctx.workspace_name),
     }
 
     if ctx.attr.rustc:

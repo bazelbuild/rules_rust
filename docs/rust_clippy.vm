@@ -30,3 +30,27 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 ```text
 build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
 ```
+
+#[[
+### Running clippy over a tree of targets as a test
+]]#
+
+`rust_clippy_test` is a `test = True` rule that runs clippy over the targets you list and
+transitively across their `deps`, `proc_macro_deps`, and `crate`. The clippy actions run
+during the build phase, so any clippy failure fails `bazel test` before the test executable
+is invoked. The test itself simply prints the paths of the collected clippy marker files.
+
+This is the recommended way to enforce clippy in CI without wiring up `--aspects` /
+`--output_groups` flags.
+
+```python
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rust_clippy_test(
+    name = "clippy_tree_test",
+    targets = [":app"],
+)
+```
