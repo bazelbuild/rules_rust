@@ -96,82 +96,38 @@ _generated_main_srcs_excluded_test = _make_generated_srcs_excluded_test("main.rs
 
 # ---------- rustfmt_test rule tests ----------
 
-def _get_manifest_runfiles(tut):
-    """Get .rustfmt manifest files from a target's default runfiles."""
-    return [f for f in tut[DefaultInfo].default_runfiles.files.to_list() if f.extension == "rustfmt"]
+def _count_env_markers(tut, suffix):
+    run_env = tut[RunEnvironmentInfo].environment
+    raw = run_env.get("RUST_LINT_TEST_MARKERS", "")
+    if not raw:
+        return 0
+    count = 0
+    for part in raw.split(":"):
+        for sub in part.split(";"):
+            if sub.endswith(suffix):
+                count += 1
+    return count
 
-def _get_source_runfiles(tut):
-    """Get .rs source files from a target's default runfiles."""
-    return [f for f in tut[DefaultInfo].default_runfiles.files.to_list() if f.extension == "rs"]
+def _make_marker_count_test(expected_count):
+    def _impl(ctx):
+        env = analysistest.begin(ctx)
+        tut = analysistest.target_under_test(env)
+        n = _count_env_markers(tut, ".rustfmt.ok")
+        asserts.equals(
+            env,
+            expected_count,
+            n,
+            "Expected {} rustfmt marker(s) in RUST_LINT_TEST_MARKERS, got {}".format(expected_count, n),
+        )
+        return analysistest.end(env)
 
-def _rustfmt_test_single_target_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
+    return analysistest.make(_impl)
 
-    manifests = _get_manifest_runfiles(tut)
-    asserts.equals(env, 1, len(manifests), "Expected 1 manifest in runfiles, got {}".format(
-        [f.basename for f in manifests],
-    ))
-
-    rs_files = _get_source_runfiles(tut)
-    basenames = [f.basename for f in rs_files]
-    asserts.true(env, "lib.rs" in basenames, "Expected lib.rs in runfiles, got {}".format(basenames))
-
-    return analysistest.end(env)
-
-_rustfmt_test_single_target_test = analysistest.make(_rustfmt_test_single_target_test_impl)
-
-def _rustfmt_test_multi_target_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    manifests = _get_manifest_runfiles(tut)
-    asserts.equals(env, 2, len(manifests), "Expected 2 manifests in runfiles, got {}".format(
-        [f.basename for f in manifests],
-    ))
-
-    return analysistest.end(env)
-
-_rustfmt_test_multi_target_test = analysistest.make(_rustfmt_test_multi_target_test_impl)
-
-def _rustfmt_test_norustfmt_skipped_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    rs_files = _get_source_runfiles(tut)
-    asserts.equals(env, 0, len(rs_files), "Expected 0 source files for norustfmt target, got {}".format(
-        [f.basename for f in rs_files],
-    ))
-
-    return analysistest.end(env)
-
-_rustfmt_test_norustfmt_skipped_test = analysistest.make(_rustfmt_test_norustfmt_skipped_test_impl)
-
-def _rustfmt_test_mixed_tags_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    rs_files = _get_source_runfiles(tut)
-    basenames = [f.basename for f in rs_files]
-    asserts.equals(env, 1, len(rs_files), "Expected 1 source file (tagged target skipped), got {}".format(basenames))
-    asserts.true(env, "lib.rs" in basenames, "Expected lib.rs in runfiles, got {}".format(basenames))
-
-    return analysistest.end(env)
-
-_rustfmt_test_mixed_tags_test = analysistest.make(_rustfmt_test_mixed_tags_test_impl)
-
-def _rustfmt_test_tag_variant_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    rs_files = _get_source_runfiles(tut)
-    asserts.equals(env, 0, len(rs_files), "Expected 0 source files for format-skip tag variant, got {}".format(
-        [f.basename for f in rs_files],
-    ))
-
-    return analysistest.end(env)
-
-_rustfmt_test_tag_variant_test = analysistest.make(_rustfmt_test_tag_variant_test_impl)
+_rustfmt_test_single_target_test = _make_marker_count_test(1)
+_rustfmt_test_multi_target_test = _make_marker_count_test(2)
+_rustfmt_test_norustfmt_skipped_test = _make_marker_count_test(0)
+_rustfmt_test_mixed_tags_test = _make_marker_count_test(1)
+_rustfmt_test_tag_variant_test = _make_marker_count_test(0)
 
 def _define_targets():
     rust_library(
