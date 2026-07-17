@@ -933,9 +933,27 @@ the upstream implementation of clippy, this file must be named either <code>.cli
 <code>clippy.toml</code>. Using a custom config file requires Rust 1.34.0 or newer.</p>
 <pre><code class="language-text">build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
 </code></pre>
+<h3 id="running-clippy-over-a-tree-of-targets-as-a-test"><a class="header" href="#running-clippy-over-a-tree-of-targets-as-a-test">Running clippy over a tree of targets as a test</a></h3>
+<p><code>rust_clippy_test</code> is a <code>test = True</code> rule that runs clippy over the targets you list and
+transitively across their <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. The clippy actions run
+during the build phase, so any clippy failure fails <code>bazel test</code> before the test executable
+is invoked. The test itself simply prints the paths of the collected clippy marker files.</p>
+<p>This is the recommended way to enforce clippy in CI without wiring up <code>--aspects</code> /
+<code>--output_groups</code> flags.</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rust_clippy_test(
+    name = "clippy_tree_test",
+    targets = [":app"],
+)
+</code></pre>
 <h2 id="rules-2"><a class="header" href="#rules-2">Rules</a></h2>
 <ul>
 <li><a href="rust_clippy.html#rust_clippy">rust_clippy</a></li>
+<li><a href="rust_clippy.html#rust_clippy_test">rust_clippy_test</a></li>
 </ul>
 <h2 id="aspects-1"><a class="header" href="#aspects-1">Aspects</a></h2>
 <ul>
@@ -980,6 +998,41 @@ rust_clippy(
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="rust_clippy-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_clippy-deps"></a>deps</td><td style="text-align: left">Rust targets to run clippy on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_clippy_test"></a></p>
+<h2 id="rust_clippy_test"><a class="header" href="#rust_clippy_test">rust_clippy_test</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_clippy_test")
+
+rust_clippy_test(<a href="rust_clippy.html#rust_clippy_test-name">name</a>, <a href="rust_clippy.html#rust_clippy_test-platform">platform</a>, <a href="rust_clippy.html#rust_clippy_test-targets">targets</a>, <a href="rust_clippy.html#rust_clippy_test-transitive">transitive</a>)
+</pre>
+<p>A test rule that runs <code>clippy</code> over a set of Rust targets.</p>
+<p>By default (<code>transitive = True</code>), the aspect walks <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>
+transitively so that listing a top-level target checks its whole crate graph. Set
+<code>transitive = False</code> to run clippy only on the exact targets listed.</p>
+<p>The clippy actions run during the build phase, so a clippy failure fails <code>bazel test</code> before
+the test executable is invoked. When <code>capture_clippy_output</code> or <code>clippy_output_diagnostics</code> is
+set globally clippy exits 0 even on real issues; in that case the runner inspects the
+captured stderr / JSON diagnostics and reports the verdict.</p>
+<p>An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform before running
+clippy.</p>
+<p>Example:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rust_clippy_test(name = "clippy_tree_test", targets = [":app"])
+rust_clippy_test(name = "clippy_app_only_test", targets = [":app"], transitive = False)
+</code></pre>
+<p>Targets tagged <code>no_clippy</code>, <code>no_lint</code>, <code>nolint</code>, or <code>noclippy</code> are skipped.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_clippy_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_clippy_test-platform"></a>platform</td><td style="text-align: left">Optional platform to transition <code>targets</code> to before running the aspect. When set, <code>--platforms</code> is switched to this label for the duration of this rule's aspect actions.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_clippy_test-targets"></a>targets</td><td style="text-align: left">Rust targets to run clippy on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_clippy_test-transitive"></a>transitive</td><td style="text-align: left">If True (default), lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rust_clippy_aspect"></a></p>
@@ -1033,6 +1086,30 @@ impact user's ability to rapidly iterate on changes.</p>
 file is used whenever <code>rustfmt</code> is run:</p>
 <pre><code class="language-text">build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 </code></pre>
+<h3 id="running-rustfmt-over-a-tree-of-targets-as-a-test"><a class="header" href="#running-rustfmt-over-a-tree-of-targets-as-a-test">Running rustfmt over a tree of targets as a test</a></h3>
+<p><code>rustfmt_test</code> runs <code>rustfmt --check</code> over a set of Rust targets. By default it walks each
+listed target's <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code> transitively, so listing a top-level
+target formats its whole crate graph. Set <code>transitive = False</code> to check only the exact targets
+listed. An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform.</p>
+<p>The rustfmt actions run during the build phase, so any formatting failure fails <code>bazel test</code>
+before the test executable is invoked. The test itself simply prints the paths of the collected
+<code>.rustfmt.ok</code> marker files.</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rustfmt_test(
+    name = "fmt_tree_test",
+    targets = [":app"],
+)
+
+rustfmt_test(
+    name = "fmt_app_only_test",
+    targets = [":app"],
+    transitive = False,
+)
+</code></pre>
 <h2 id="rules-3"><a class="header" href="#rules-3">Rules</a></h2>
 <ul>
 <li><a href="rust_fmt.html#rustfmt_test">rustfmt_test</a></li>
@@ -1046,13 +1123,32 @@ file is used whenever <code>rustfmt</code> is run:</p>
 <pre>
 load("@rules_rust//rust:defs.bzl", "rustfmt_test")
 
-rustfmt_test(<a href="rust_fmt.html#rustfmt_test-name">name</a>, <a href="rust_fmt.html#rustfmt_test-targets">targets</a>)
+rustfmt_test(<a href="rust_fmt.html#rustfmt_test-name">name</a>, <a href="rust_fmt.html#rustfmt_test-platform">platform</a>, <a href="rust_fmt.html#rustfmt_test-targets">targets</a>, <a href="rust_fmt.html#rustfmt_test-transitive">transitive</a>)
 </pre>
-<p>A test rule for performing <code>rustfmt --check</code> on a set of targets</p>
+<p>A test rule that runs <code>rustfmt --check</code> over a set of Rust targets.</p>
+<p>By default (<code>transitive = True</code>), the aspect walks <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>
+transitively so that listing a top-level target checks its whole crate graph. Set
+<code>transitive = False</code> to format only the exact targets listed. The <code>rustfmt</code> actions run
+during the build phase, so a formatting failure fails <code>bazel test</code> before the test
+executable is invoked.</p>
+<p>An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform before running
+<code>rustfmt</code>.</p>
+<p>Example:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
+
+rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
+rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+
+rustfmt_test(name = "fmt_tree_test", targets = [":app"])
+rustfmt_test(name = "fmt_app_only_test", targets = [":app"], transitive = False)
+</code></pre>
+<p>Targets tagged <code>no_format</code>, <code>no_rustfmt</code>, or <code>norustfmt</code> are skipped.</p>
 <p><strong>ATTRIBUTES</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="rustfmt_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rustfmt_test-platform"></a>platform</td><td style="text-align: left">Optional platform to transition <code>targets</code> to before running the aspect. When set, <code>--platforms</code> is switched to this label for the duration of this rule's aspect actions.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rustfmt_test-targets"></a>targets</td><td style="text-align: left">Rust targets to run <code>rustfmt --check</code> on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rustfmt_test-transitive"></a>transitive</td><td style="text-align: left">If True (default), lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rustfmt_aspect"></a></p>
