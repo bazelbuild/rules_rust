@@ -27,6 +27,8 @@ load(
     _rust_clippy = "rust_clippy",
     _rust_clippy_action = "rust_clippy_action",
     _rust_clippy_aspect = "rust_clippy_aspect",
+    _rust_clippy_test = "rust_clippy_test",
+    _rust_clippy_test_aspect = "rust_clippy_test_aspect",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
@@ -71,6 +73,7 @@ load(
     "//rust/private:rustfmt.bzl",
     _rustfmt_aspect = "rustfmt_aspect",
     _rustfmt_test = "rustfmt_test",
+    _rustfmt_test_aspect = "rustfmt_test_aspect",
 )
 load(
     "//rust/private:unpretty.bzl",
@@ -116,6 +119,12 @@ rust_clippy_aspect = _rust_clippy_aspect
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 rust_clippy = _rust_clippy
+# See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+rust_clippy_test_aspect = _rust_clippy_test_aspect
+# See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+rust_clippy_test = _rust_clippy_test
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 capture_clippy_output = _capture_clippy_output
@@ -164,6 +173,9 @@ rustfmt_aspect = _rustfmt_aspect
 # See @rules_rust//rust/private:rustfmt.bzl for a complete description.
 
 rustfmt_test = _rustfmt_test
+# See @rules_rust//rust/private:rustfmt.bzl for a complete description.
+
+rustfmt_test_aspect = _rustfmt_test_aspect
 # See @rules_rust//rust/private:rustfmt.bzl for a complete description.
 
 rust_stdlib_filegroup = _rust_stdlib_filegroup
