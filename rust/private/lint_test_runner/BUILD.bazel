@@ -1,0 +1,11 @@
+load("//rust/private:rust.bzl", "rust_binary")
+
+rust_binary(
+    name = "lint_test_runner",
+    srcs = ["lint_test_runner.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+    ],
+)

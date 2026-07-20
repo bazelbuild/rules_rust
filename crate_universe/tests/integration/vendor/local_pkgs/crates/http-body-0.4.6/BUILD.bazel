@@ -108,7 +108,7 @@ rust_library(
     }),
     version = "0.4.6",
     deps = [
-        "//local_pkgs/crates/bytes-1.12.0:bytes",
+        "//local_pkgs/crates/bytes-1.12.1:bytes",
         "//local_pkgs/crates/http-0.2.12:http",
         "//local_pkgs/crates/pin-project-lite-0.2.17:pin_project_lite",
     ],
