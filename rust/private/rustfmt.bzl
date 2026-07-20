@@ -195,7 +195,7 @@ RustfmtTestInfo = provider(
     doc = "Rustfmt check outputs collected by `rustfmt_test` from the underlying `rustfmt_aspect`.",
     fields = {
         "checks": "depset[File]: Rustfmt markers for the visited target plus every crate reached via `deps`, `proc_macro_deps`, and `crate`.",
-        "direct_markers": "list[File]: Rustfmt markers for the visited target only.",
+        "direct": "depset[File]: Rustfmt markers for the visited target only.",
     },
 )
 
@@ -204,6 +204,9 @@ _RUSTFMT_OUTPUT_GROUPS = ["rustfmt_checks"]
 def _rustfmt_test_aspect_impl(target, ctx):
     return lint_test_aspect_impl(target, ctx, RustfmtTestInfo, _RUSTFMT_OUTPUT_GROUPS)
 
+def _rustfmt_test_impl(ctx):
+    return lint_test_rule_impl(ctx, RustfmtTestInfo, _RUSTFMT_OUTPUT_GROUPS)
+
 _rustfmt_test_aspect = aspect(
     implementation = _rustfmt_test_aspect_impl,
     attr_aspects = ["deps", "proc_macro_deps", "crate"],
@@ -211,9 +214,6 @@ _rustfmt_test_aspect = aspect(
     provides = [RustfmtTestInfo],
     doc = "Walks `deps`/`proc_macro_deps`/`crate` and rolls up the markers produced by `rustfmt_aspect` into a transitive `RustfmtTestInfo`.",
 )
-
-def _rustfmt_test_impl(ctx):
-    return lint_test_rule_impl(ctx, RustfmtTestInfo)
 
 rustfmt_test = rule(
     implementation = _rustfmt_test_impl,
@@ -232,11 +232,14 @@ rustfmt_test = rule(
     doc = """\
 A test rule that runs `rustfmt --check` over a set of Rust targets.
 
-By default (`transitive = True`), the aspect walks `deps`, `proc_macro_deps`, and `crate`
-transitively so that listing a top-level target checks its whole crate graph. Set
-`transitive = False` to format only the exact targets listed. The `rustfmt` actions run
-during the build phase, so a formatting failure fails `bazel test` before the test
-executable is invoked.
+By default (`transitive = False`), only the exact targets listed are checked. Set
+`transitive = True` to walk `deps`, `proc_macro_deps`, and `crate` so that listing a
+top-level target checks its whole crate graph.
+
+The `rustfmt` actions run during the build phase, so a formatting failure fails `bazel test`
+before the test executable is invoked. The rule also exposes the collected markers under the
+`rustfmt_checks` output group, so `bazel build //x:my_fmt_test --output_groups=rustfmt_checks`
+drives the rustfmt actions without running the test.
 
 An optional `platform` attribute transitions `targets` to the given platform before running
 `rustfmt`.
@@ -246,11 +249,29 @@ Example:
 ```python
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
 
-rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
-rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+rust_library(
+    name = "lib",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+)
 
-rustfmt_test(name = "fmt_tree_test", targets = [":app"])
-rustfmt_test(name = "fmt_app_only_test", targets = [":app"], transitive = False)
+rust_binary(
+    name = "app",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    deps = [":lib"],
+)
+
+rustfmt_test(
+    name = "fmt_app_only_test",
+    targets = [":app"]
+)
+
+rustfmt_test(
+    name = "fmt_tree_test",
+    targets = [":app"],
+    transitive = True,
+)
 ```
 
 Targets tagged `no_format`, `no_rustfmt`, or `norustfmt` are skipped.

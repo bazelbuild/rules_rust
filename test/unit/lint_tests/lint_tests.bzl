@@ -1,6 +1,6 @@
 """Unit tests for `rust_clippy_test` and `rustfmt_test`.
 
-One test per rule. Each verifies that with `transitive = True` (the default)
+One test per rule. Each verifies that with `transitive = True`
 the collected marker count matches the dep graph, and that a crate tagged
 for opt-out is skipped without breaking propagation to its own deps.
 """
@@ -26,10 +26,11 @@ def _markers(target):
     raw = target[RunEnvironmentInfo].environment.get("RUST_LINT_TEST_MARKERS", "")
     return [s for s in raw.replace(";", ":").split(":") if s]
 
-def _make_transitive_count_test(marker_suffix):
+def _make_transitive_count_test(marker_suffix, output_group_name):
     def _impl(ctx):
         env = analysistest.begin(ctx)
-        markers = _markers(analysistest.target_under_test(env))
+        tut = analysistest.target_under_test(env)
+        markers = _markers(tut)
 
         bin_marker = "bin" + marker_suffix
         leaf_marker = "leaf" + marker_suffix
@@ -57,12 +58,23 @@ def _make_transitive_count_test(marker_suffix):
                 tagged_marker in m,
                 "Tagged crate should not have produced marker {}".format(m),
             )
+
+        # The output group is what `bazel build --output_groups=<name>`
+        # drives; without it, only the runner symlink is a default output
+        # and the lint aspect never fires under a `build` invocation.
+        og_files = getattr(tut[OutputGroupInfo], output_group_name).to_list()
+        asserts.equals(
+            env,
+            sorted([m.split("/")[-1] for m in markers]),
+            sorted([f.basename for f in og_files]),
+            "`{}` output group must match RUST_LINT_TEST_MARKERS".format(output_group_name),
+        )
         return analysistest.end(env)
 
     return analysistest.make(_impl)
 
-clippy_transitive_test = _make_transitive_count_test(".clippy.ok")
-rustfmt_transitive_test = _make_transitive_count_test(".rustfmt.ok")
+clippy_transitive_test = _make_transitive_count_test(".clippy.ok", "clippy_checks")
+rustfmt_transitive_test = _make_transitive_count_test(".rustfmt.ok", "rustfmt_checks")
 
 def lint_tests_suite(name):
     """Wire up the fixture graph and the two analysistests.
@@ -101,11 +113,13 @@ def lint_tests_suite(name):
         name = "clippy_fixture",
         targets = [":bin"],
         tags = ["manual"],
+        transitive = True,
     )
     rustfmt_test(
         name = "rustfmt_fixture",
         targets = [":bin"],
         tags = ["manual"],
+        transitive = True,
     )
 
     clippy_transitive_test(

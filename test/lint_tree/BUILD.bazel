@@ -38,11 +38,13 @@ rust_binary(
 rust_clippy_test(
     name = "tree_clippy_test",
     targets = [":app"],
+    transitive = True,
 )
 
 rustfmt_test(
     name = "tree_fmt_test",
     targets = [":app"],
+    transitive = True,
 )
 
 # Leaf tagged `no_clippy`. The wrapper `deps` on it but does not `use` it —
@@ -69,6 +71,7 @@ rust_library(
 rust_clippy_test(
     name = "tree_clippy_test_with_skip",
     targets = [":wrapper_over_no_clippy"],
+    transitive = True,
 )
 
 # Leaf tagged `no_rustfmt`.
@@ -93,6 +96,7 @@ rust_library(
 rustfmt_test(
     name = "tree_fmt_test_with_skip",
     targets = [":wrapper_over_no_rustfmt"],
+    transitive = True,
 )
 
 # `transitive = False` variants: only the exact target listed is checked,
