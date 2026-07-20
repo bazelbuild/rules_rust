@@ -51,7 +51,7 @@ def _export_static_stdlibs_in_cc_info(target):
         for library in linker_input.libraries:
             if hasattr(library, "pic_static_library") and library.pic_static_library != None:
                 basename = library.pic_static_library.basename
-                if basename.startswith("libstd") and basename.endswith(".a"):
+                if basename.startswith("libstd") and (basename.endswith(".a") or basename.endswith(".lib")):
                     return True
     return False
 
