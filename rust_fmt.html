@@ -178,30 +178,6 @@ impact user's ability to rapidly iterate on changes.</p>
 file is used whenever <code>rustfmt</code> is run:</p>
 <pre><code class="language-text">build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 </code></pre>
-<h3 id="running-rustfmt-over-a-tree-of-targets-as-a-test"><a class="header" href="#running-rustfmt-over-a-tree-of-targets-as-a-test">Running rustfmt over a tree of targets as a test</a></h3>
-<p><code>rustfmt_test</code> runs <code>rustfmt --check</code> over a set of Rust targets. By default it walks each
-listed target's <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code> transitively, so listing a top-level
-target formats its whole crate graph. Set <code>transitive = False</code> to check only the exact targets
-listed. An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform.</p>
-<p>The rustfmt actions run during the build phase, so any formatting failure fails <code>bazel test</code>
-before the test executable is invoked. The test itself simply prints the paths of the collected
-<code>.rustfmt.ok</code> marker files.</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
-
-rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
-rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
-
-rustfmt_test(
-    name = "fmt_tree_test",
-    targets = [":app"],
-)
-
-rustfmt_test(
-    name = "fmt_app_only_test",
-    targets = [":app"],
-    transitive = False,
-)
-</code></pre>
 <h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
 <ul>
 <li><a href="#rustfmt_test">rustfmt_test</a></li>
@@ -218,21 +194,41 @@ load("@rules_rust//rust:defs.bzl", "rustfmt_test")
 rustfmt_test(<a href="#rustfmt_test-name">name</a>, <a href="#rustfmt_test-platform">platform</a>, <a href="#rustfmt_test-targets">targets</a>, <a href="#rustfmt_test-transitive">transitive</a>)
 </pre>
 <p>A test rule that runs <code>rustfmt --check</code> over a set of Rust targets.</p>
-<p>By default (<code>transitive = True</code>), the aspect walks <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>
-transitively so that listing a top-level target checks its whole crate graph. Set
-<code>transitive = False</code> to format only the exact targets listed. The <code>rustfmt</code> actions run
-during the build phase, so a formatting failure fails <code>bazel test</code> before the test
-executable is invoked.</p>
+<p>By default (<code>transitive = False</code>), only the exact targets listed are checked. Set
+<code>transitive = True</code> to walk <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code> so that listing a
+top-level target checks its whole crate graph.</p>
+<p>The <code>rustfmt</code> actions run during the build phase, so a formatting failure fails <code>bazel test</code>
+before the test executable is invoked. The rule also exposes the collected markers under the
+<code>rustfmt_checks</code> output group, so <code>bazel build //x:my_fmt_test --output_groups=rustfmt_checks</code>
+drives the rustfmt actions without running the test.</p>
 <p>An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform before running
 <code>rustfmt</code>.</p>
 <p>Example:</p>
 <pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
 
-rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
-rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+rust_library(
+    name = "lib",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+)
 
-rustfmt_test(name = "fmt_tree_test", targets = [":app"])
-rustfmt_test(name = "fmt_app_only_test", targets = [":app"], transitive = False)
+rust_binary(
+    name = "app",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    deps = [":lib"],
+)
+
+rustfmt_test(
+    name = "fmt_app_only_test",
+    targets = [":app"]
+)
+
+rustfmt_test(
+    name = "fmt_tree_test",
+    targets = [":app"],
+    transitive = True,
+)
 </code></pre>
 <p>Targets tagged <code>no_format</code>, <code>no_rustfmt</code>, or <code>norustfmt</code> are skipped.</p>
 <p><strong>ATTRIBUTES</strong></p>
@@ -240,7 +236,7 @@ rustfmt_test(name = "fmt_app_only_test", targets = [":app"], transitive = False)
 <tr><td style="text-align: left"><a id="rustfmt_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rustfmt_test-platform"></a>platform</td><td style="text-align: left">Optional platform to transition <code>targets</code> to before running the aspect. When set, <code>--platforms</code> is switched to this label for the duration of this rule's aspect actions.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rustfmt_test-targets"></a>targets</td><td style="text-align: left">Rust targets to run <code>rustfmt --check</code> on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rustfmt_test-transitive"></a>transitive</td><td style="text-align: left">If True (default), lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+<tr><td style="text-align: left"><a id="rustfmt_test-transitive"></a>transitive</td><td style="text-align: left">If True, lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rustfmt_aspect"></a></p>
