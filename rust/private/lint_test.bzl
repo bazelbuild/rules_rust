@@ -13,7 +13,15 @@ and the output-group names it collects).
 """
 
 def rlocationpath(file, workspace_name):
-    """Compute the runfile rlocationpath for a File."""
+    """Compute the runfile rlocationpath for a `File`.
+
+    Args:
+        file (File): The file to compute the rlocationpath for.
+        workspace_name (str): The name of the current workspace.
+
+    Returns:
+        str: The rlocationpath the runner should look up for `file`.
+    """
     if file.short_path.startswith("../"):
         return file.short_path[len("../"):]
     return "{}/{}".format(workspace_name, file.short_path)
@@ -39,8 +47,8 @@ LINT_TEST_COMMON_ATTRS = {
         doc = "Optional platform to transition `targets` to before running the aspect. When set, `--platforms` is switched to this label for the duration of this rule's aspect actions.",
     ),
     "transitive": attr.bool(
-        doc = "If True (default), lint `targets` and every crate reachable via `deps`, `proc_macro_deps`, and `crate`. If False, lint only the exact targets listed.",
-        default = True,
+        doc = "If True, lint `targets` and every crate reachable via `deps`, `proc_macro_deps`, and `crate`. If False, lint only the exact targets listed.",
+        default = False,
     ),
     "_allowlist_function_transition": attr.label(
         default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
@@ -57,17 +65,28 @@ def lint_test_aspect_impl(target, ctx, info_provider, output_group_names):
     """Thin collector: walk deps and roll up the markers the underlying aspect produced.
 
     Args:
-        target: Aspect target.
-        ctx: Aspect ctx.
-        info_provider: Provider type to read from deps and return.
-        output_group_names: List[str] of `OutputGroupInfo` field names to
-            collect from the current target (e.g. `["clippy_checks", "clippy_output"]`
-            or `["rustfmt_checks"]`).
+        target (Target): The target the aspect is running on.
+        ctx (ctx): The aspect's context object.
+        info_provider (provider): The provider type to read from deps and return
+            (e.g. `RustClippyTestInfo` or `RustfmtTestInfo`).
+        output_group_names (list): A `list` of `str` naming the `OutputGroupInfo`
+            fields to collect from the current target (e.g.
+            `["clippy_checks", "clippy_output"]` or `["rustfmt_checks"]`).
 
     Returns:
-        A single-element list with a `info_provider(direct_markers, checks)`.
+        list: A single-element list containing an `info_provider` with `direct`
+            (`depset[File]`) for `target` and `checks` (`depset[File]`) that
+            folds in every dep's `checks`.
     """
-    transitive = []
+    direct_depsets = []
+    if OutputGroupInfo in target:
+        og = target[OutputGroupInfo]
+        for name in output_group_names:
+            if hasattr(og, name):
+                direct_depsets.append(getattr(og, name))
+    direct = depset(transitive = direct_depsets)
+
+    transitive = [direct]
     for attr_name in ("deps", "proc_macro_deps"):
         for dep in getattr(ctx.rule.attr, attr_name, []):
             if info_provider in dep:
@@ -76,27 +95,26 @@ def lint_test_aspect_impl(target, ctx, info_provider, output_group_names):
     if crate_dep and info_provider in crate_dep:
         transitive.append(crate_dep[info_provider].checks)
 
-    direct = []
-    if OutputGroupInfo in target:
-        og = target[OutputGroupInfo]
-        for name in output_group_names:
-            if hasattr(og, name):
-                direct = direct + getattr(og, name).to_list()
-
     return [info_provider(
-        direct_markers = direct,
-        checks = depset(direct, transitive = transitive),
+        direct = direct,
+        checks = depset(transitive = transitive),
     )]
 
-def lint_test_rule_impl(ctx, info_provider):
+def lint_test_rule_impl(ctx, info_provider, output_group_names):
     """Symlink the shared runner and hand it the collected marker rlocationpaths.
 
     Args:
-        ctx: Rule ctx.
-        info_provider: Provider carrying `direct_markers` / `checks`.
+        ctx (ctx): The rule's context object.
+        info_provider (provider): The provider type produced by the rule's
+            aspect, carrying `direct` and `checks` depsets.
+        output_group_names (list): A `list` of `str` naming the
+            `OutputGroupInfo` fields to expose the collected markers under
+            (e.g. `["clippy_checks", "clippy_output"]` or
+            `["rustfmt_checks"]`). Each name maps to the same `checks` depset.
 
     Returns:
-        DefaultInfo + RunEnvironmentInfo for the test.
+        list: `[DefaultInfo, RunEnvironmentInfo, OutputGroupInfo]` for the
+            test target.
     """
     is_windows = ctx.executable._runner.extension == ".exe"
     runner = ctx.actions.declare_file("{}{}".format(
@@ -109,24 +127,21 @@ def lint_test_rule_impl(ctx, info_provider):
         is_executable = True,
     )
 
-    marker_files = []
     check_depsets = []
     for target in ctx.attr.targets:
         if info_provider not in target:
             continue
         info = target[info_provider]
-        if ctx.attr.transitive:
-            check_depsets.append(info.checks)
-        else:
-            marker_files.extend(info.direct_markers)
+        check_depsets.append(info.checks if ctx.attr.transitive else info.direct)
+    checks = depset(transitive = check_depsets)
 
-    checks = depset(marker_files, transitive = check_depsets)
     runfiles = ctx.runfiles(transitive_files = checks).merge(
         ctx.attr._runner[DefaultInfo].default_runfiles,
     )
 
+    workspace_name = ctx.workspace_name
     markers_env = ctx.configuration.host_path_separator.join([
-        rlocationpath(f, ctx.workspace_name)
+        rlocationpath(f, workspace_name)
         for f in checks.to_list()
     ])
 
@@ -140,4 +155,5 @@ def lint_test_rule_impl(ctx, info_provider):
             "RUST_BACKTRACE": "1",
             "RUST_LINT_TEST_MARKERS": markers_env,
         }),
+        OutputGroupInfo(**{name: checks for name in output_group_names}),
     ]

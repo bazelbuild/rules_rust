@@ -463,7 +463,7 @@ RustClippyTestInfo = provider(
     doc = "Clippy check outputs collected by `rust_clippy_test` from the underlying `rust_clippy_aspect`.",
     fields = {
         "checks": "depset[File]: Clippy markers for the visited target plus every crate reached via `deps`, `proc_macro_deps`, and `crate`.",
-        "direct_markers": "list[File]: Clippy markers for the visited target only.",
+        "direct": "depset[File]: Clippy markers for the visited target only.",
     },
 )
 
@@ -477,6 +477,9 @@ _CLIPPY_OUTPUT_GROUPS = ["clippy_checks", "clippy_output"]
 def _rust_clippy_test_aspect_impl(target, ctx):
     return lint_test_aspect_impl(target, ctx, RustClippyTestInfo, _CLIPPY_OUTPUT_GROUPS)
 
+def _rust_clippy_test_impl(ctx):
+    return lint_test_rule_impl(ctx, RustClippyTestInfo, _CLIPPY_OUTPUT_GROUPS)
+
 _rust_clippy_test_aspect = aspect(
     implementation = _rust_clippy_test_aspect_impl,
     attr_aspects = ["deps", "proc_macro_deps", "crate"],
@@ -484,9 +487,6 @@ _rust_clippy_test_aspect = aspect(
     provides = [RustClippyTestInfo],
     doc = "Walks `deps`/`proc_macro_deps`/`crate` and rolls up the markers produced by `rust_clippy_aspect` into a transitive `RustClippyTestInfo`.",
 )
-
-def _rust_clippy_test_impl(ctx):
-    return lint_test_rule_impl(ctx, RustClippyTestInfo)
 
 rust_clippy_test = rule(
     implementation = _rust_clippy_test_impl,
@@ -505,14 +505,18 @@ rust_clippy_test = rule(
     doc = """\
 A test rule that runs `clippy` over a set of Rust targets.
 
-By default (`transitive = True`), the aspect walks `deps`, `proc_macro_deps`, and `crate`
-transitively so that listing a top-level target checks its whole crate graph. Set
-`transitive = False` to run clippy only on the exact targets listed.
+By default (`transitive = False`), only the exact targets listed are checked. Set
+`transitive = True` to walk `deps`, `proc_macro_deps`, and `crate` so that listing a
+top-level target checks its whole crate graph.
 
 The clippy actions run during the build phase, so a clippy failure fails `bazel test` before
-the test executable is invoked. When `capture_clippy_output` or `clippy_output_diagnostics` is
-set globally clippy exits 0 even on real issues; in that case the runner inspects the
-captured stderr / JSON diagnostics and reports the verdict.
+the test executable is invoked. The rule also exposes the collected markers under the
+`clippy_checks` output group, so `bazel build //x:my_clippy_test --output_groups=clippy_checks`
+drives the clippy actions without running the test.
+
+When `capture_clippy_output` or `clippy_output_diagnostics` is set globally clippy exits 0
+even on real issues; in that case the runner inspects the captured stderr / JSON diagnostics
+and reports the verdict.
 
 An optional `platform` attribute transitions `targets` to the given platform before running
 clippy.
@@ -522,11 +526,29 @@ Example:
 ```python
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library")
 
-rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
-rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
+rust_library(
+    name = "lib",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+)
 
-rust_clippy_test(name = "clippy_tree_test", targets = [":app"])
-rust_clippy_test(name = "clippy_app_only_test", targets = [":app"], transitive = False)
+rust_binary(
+    name = "app",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    deps = [":lib"],
+)
+
+rust_clippy_test(
+    name = "clippy_app_only_test",
+    targets = [":app"],
+)
+
+rust_clippy_test(
+    name = "clippy_tree_test",
+    targets = [":app"],
+    transitive = True,
+)
 ```
 
 Targets tagged `no_clippy`, `no_lint`, `nolint`, or `noclippy` are skipped.

@@ -39,37 +39,6 @@ file is used whenever `rustfmt` is run:
 build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 ```
 
-#[[
-### Running rustfmt over a tree of targets as a test
-]]#
-
-`rustfmt_test` runs `rustfmt --check` over a set of Rust targets. By default it walks each
-listed target's `deps`, `proc_macro_deps`, and `crate` transitively, so listing a top-level
-target formats its whole crate graph. Set `transitive = False` to check only the exact targets
-listed. An optional `platform` attribute transitions `targets` to the given platform.
-
-The rustfmt actions run during the build phase, so any formatting failure fails `bazel test`
-before the test executable is invoked. The test itself simply prints the paths of the collected
-`.rustfmt.ok` marker files.
-
-```python
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
-
-rust_library(name = "lib", srcs = ["src/lib.rs"], edition = "2021")
-rust_binary(name = "app", srcs = ["src/main.rs"], edition = "2021", deps = [":lib"])
-
-rustfmt_test(
-    name = "fmt_tree_test",
-    targets = [":app"],
-)
-
-rustfmt_test(
-    name = "fmt_app_only_test",
-    targets = [":app"],
-    transitive = False,
-)
-```
-
 [rustfmt]: https://github.com/rust-lang/rustfmt#readme
 [rsg]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md
 [rfcp]: https://github.com/rust-lang-nursery/fmt-rfcs
