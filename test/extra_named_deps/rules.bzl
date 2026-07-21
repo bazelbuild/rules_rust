@@ -1,7 +1,20 @@
+"""
+Defines a test-only rule that lets us set rustc_compile_action.extra_named_deps.
+"""
+
+# buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:common.bzl", "COMMON_PROVIDERS")
+
+# buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:providers.bzl", "CrateInfo", "DepInfo")
+
+# buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS")
+
+# buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:rustc.bzl", "AliasableDepInfo", "rustc_compile_action")
+
+# buildifier: disable=bzl-visibility
 load(
     "@rules_rust//rust/private:utils.bzl",
     "compute_crate_name",
@@ -48,6 +61,7 @@ def _rust_library_with_extra_deps_impl(ctx):
         attr = ctx.attr,
         toolchain = toolchain,
         output_hash = output_hash,
+        # buildifier: disable=unsorted-dict-items
         crate_info_dict = dict(
             name = crate_name,
             type = "rlib",
