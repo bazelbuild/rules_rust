@@ -36,6 +36,7 @@ CrateInfo = provider(
         "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        "root_path": "str: If root is a directory, path to the source entrypoint under it.",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "rustc_output": "File: The output from rustc from producing the output file. It is optional.",

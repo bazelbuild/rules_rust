@@ -14,6 +14,7 @@
 
 """Functionality for constructing actions that invoke the Rust compiler"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -1156,7 +1157,7 @@ def construct_arguments(
     rustc_flags = ctx.actions.args()
     rustc_flags.set_param_file_format("multiline")
     rustc_flags.use_param_file("@%s", use_always = bool(ctx.executable._process_wrapper))
-    rustc_flags.add(crate_info.root)
+    rustc_flags.add_all([(crate_info.root, crate_info.root_path)], map_each = _get_crate_root_path)
     rustc_flags.add(crate_info.name, format = "--crate-name=%s")
     rustc_flags.add(crate_info.type, format = "--crate-type=%s")
 
@@ -2870,6 +2871,13 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_crate_root_path(args):
+    file, root_path = args
+    if file.is_directory:
+        return paths.join(file.path, root_path)
+    else:
+        return file.path
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.
