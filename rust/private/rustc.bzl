@@ -951,7 +951,8 @@ def construct_arguments(
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        emit_out_dir_flag = True):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1023,6 +1024,10 @@ def construct_arguments(
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
+        emit_out_dir_flag (bool): Whether to emit `--out-dir=<crate_info.output.dirname>`.
+            Defaults to True (the rustc case). Set to False for rustdoc actions that
+            emit `--output` themselves — rustdoc rejects `--out-dir` and `--output`
+            together with `error: cannot use both 'out-dir' and 'output' at once`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1037,7 +1042,7 @@ def construct_arguments(
     if build_metadata and not use_json_output:
         fail("build_metadata requires parse_json_output")
 
-    output_dir = getattr(crate_info.output, "dirname", None)
+    output_dir = crate_info.output.dirname
     linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
@@ -1088,11 +1093,15 @@ def construct_arguments(
         # output tree whenever the crate has a generated input. Keep the manifest
         # directory next to those transformed inputs so proc macros can find them.
         # Derive the directory from a File so Bazel can apply path mapping.
+        # `expand_directories = False` because rustdoc's `crate_info.output` is
+        # a declared directory (the HTML tree) — we want its dirname, not its
+        # contents.
         process_wrapper_flags.add_all(
             [crate_info.output],
             before_each = "--subst",
             format_each = "cargo_manifest_dir=%s",
             map_each = _get_dirname,
+            expand_directories = False,
         )
         env["CARGO_MANIFEST_DIR"] = "${pwd}/${cargo_manifest_dir}"
 
@@ -1204,11 +1213,18 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=metadata=-%s")
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
-    if output_dir:
+    if output_dir and emit_out_dir_flag:
         # Use add_all with the output File and a map_each callback that returns the
         # dirname so Bazel can apply path mapping (--experimental_output_paths=strip)
-        # to the directory portion of the path.
-        rustc_flags.add_all([crate_info.output], map_each = _get_dirname, format_each = "--out-dir=%s")
+        # to the directory portion of the path. `expand_directories = False`
+        # because rustdoc's `output` is a declared directory (the HTML tree);
+        # we want its dirname, not its contents.
+        rustc_flags.add_all(
+            [crate_info.output],
+            map_each = _get_dirname,
+            format_each = "--out-dir=%s",
+            expand_directories = False,
+        )
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1227,7 +1243,7 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and crate_info.type == "bin":
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         elif type(kind) in ["tuple", "list"] and len(kind) == 2:
             # 'kind' is a (string, File) tuple/list. Passing the File object directly to

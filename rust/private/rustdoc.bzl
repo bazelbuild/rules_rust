@@ -28,14 +28,25 @@ load(
     "get_preferred_artifact",
 )
 
-def _strip_crate_info_output(crate_info):
-    """Set the CrateInfo.output to None for a given CrateInfo provider.
+def _rustdoc_crate_info(crate_info, output):
+    """Clone a `CrateInfo` provider for use by a rustdoc action.
+
+    The `CrateInfo` provider documents `output` as a required `File`
+    ([rust/private/providers.bzl](../providers.bzl)) and every other
+    consumer of `crate_info.output` in the tree assumes it. rustdoc
+    actions don't produce the crate's compile output (`.rlib`/binary),
+    so we swap in a rustdoc-owned `File` — the rustdoc HTML directory
+    when the caller has one, or the crate's root source file as a
+    valid fallback for actions (like the legacy test-writer path) that
+    have no rustdoc-produced `File` at analysis time.
 
     Args:
-        crate_info (CrateInfo): A provider
+        crate_info (CrateInfo): The original provider.
+        output (File): A `File` to publish as the rustdoc `CrateInfo`'s
+            `output`. Must be non-`None`.
 
     Returns:
-        CrateInfo: A modified CrateInfo provider
+        CrateInfo: A modified CrateInfo provider.
     """
     return rust_common.create_crate_info(
         name = crate_info.name,
@@ -46,8 +57,7 @@ def _strip_crate_info_output(crate_info):
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
-        # This crate info should have no output
-        output = None,
+        output = output,
         metadata = None,
         edition = crate_info.edition,
         rustc_env = crate_info.rustc_env,
@@ -136,11 +146,11 @@ def rustdoc_compile_action(
         include_link_flags = False,
     )
 
-    # Since this crate is not actually producing the output described by the
-    # given CrateInfo, this attribute needs to be stripped to allow the rest
-    # of the rustc functionality in `construct_arguments` to avoid generating
-    # arguments expecting to do so.
-    rustdoc_crate_info = _strip_crate_info_output(crate_info)
+    # rustdoc actions don't produce the crate's compile output, so we swap in
+    # a rustdoc-owned `File` for the `CrateInfo` handed to `construct_arguments`.
+    # Prefer the caller-supplied rustdoc output when available; otherwise fall
+    # back to the crate root, which is always a `File` per the provider contract.
+    rustdoc_crate_info = _rustdoc_crate_info(crate_info, output if output != None else crate_info.root)
 
     # rustdoc does not understand linker flags like -lstatic that
     # `include_link_flags` generates. So we manually build flags that only apply
@@ -191,6 +201,9 @@ def rustdoc_compile_action(
         include_link_flags = False,
         force_depend_on_objects = force_depend_on_objects,
         skip_expanding_rustc_env = True,
+        # rustdoc rejects `--out-dir` and `--output` together; when the caller
+        # supplies an `output`, we already pass `--output <output>` above.
+        emit_out_dir_flag = output == None,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
