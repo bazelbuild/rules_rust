@@ -1138,6 +1138,10 @@ def _toolchain_repository_hub_impl(repository_ctx):
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
     ))
 
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
+
 toolchain_repository_hub = repository_rule(
     doc = (
         "Generates a toolchain-bearing repository that declares a set of other toolchains from other " +

@@ -42,6 +42,9 @@ def _empty_repository_impl(repository_ctx):
         repository_ctx.name,
     ))
     repository_ctx.file("BUILD.bazel", "")
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 _empty_repository = repository_rule(
     doc = "Declare an empty repository.",

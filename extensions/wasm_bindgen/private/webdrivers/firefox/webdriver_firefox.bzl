@@ -81,6 +81,9 @@ def _firefox_local_repository_impl(repository_ctx):
     )
 
     repository_ctx.file("BUILD.bazel", _FIREFOX_BUILD_CONTENT_WINDOWS if is_windows else _FIREFOX_BUILD_CONTENT_UNIX)
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 firefox_local_repository = repository_rule(
     doc = """\

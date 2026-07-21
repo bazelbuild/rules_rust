@@ -72,7 +72,6 @@ Re-runnable at any time. Global flags work on any subcommand.
 
 | Flag | Effect |
 |---|---|
-| `--workspace <path>` | Workspace root. Defaults to `$BUILD_WORKSPACE_DIRECTORY` (set by `bazel run`). |
 | `--skip-proc-macro-server` | Don't manage the proc-macro key. |
 | `--skip-rustfmt` | Don't manage the formatter key (use host rustfmt). |
 | `--per-package-workspaces` / `--no-per-package-workspaces` | Opt this developer in/out of per-package workspace splitting (see below). |

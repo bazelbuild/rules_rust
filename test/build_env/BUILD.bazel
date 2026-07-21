@@ -1,10 +1,29 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_library", "rust_test")
+
+write_file(
+    name = "generated_manifest_dir_source",
+    out = "tests/generated.rs",
+    content = ["pub fn value() -> i32 { 42 }"],
+)
 
 rust_test(
     name = "conflicting_deps_test",
     srcs = ["tests/manifest_dir.rs"],
     compile_data = ["src/manifest_dir_file.txt"],
     edition = "2018",
+)
+
+rust_test(
+    name = "generated_src_manifest_dir_test",
+    srcs = [
+        "tests/generated_manifest_dir.rs",
+        ":generated_manifest_dir_source",
+    ],
+    compile_data = ["src/manifest_dir_file.txt"],
+    crate_root = "tests/generated_manifest_dir.rs",
+    edition = "2018",
+    tags = ["norustfmt"],
 )
 
 rust_library(

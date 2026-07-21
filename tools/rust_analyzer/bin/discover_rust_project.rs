@@ -42,25 +42,20 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         rust_analyzer_argument,
     } = Config::parse()?;
 
-    // Per-user, per-workspace preferences. Rendered
-    // `discoverConfig.command` is intentionally identical for every
-    // developer — clippy and per-package-workspaces toggles live in
-    // `<launcher_dir>/user_config.json` (see `user_config.rs`).
+    // Per-user toggles live in `<launcher_dir>/user_config.json` so
+    // the rendered `discoverConfig.command` stays identical for every
+    // developer.
     let user = user_config::load(&install_dir()?);
     log::info!(
-        "user config: clippy={} per_package_workspaces={}",
-        user.clippy,
+        "user config: per_package_workspaces={}",
         user.per_package_workspaces
     );
 
     log::info!("got rust-analyzer argument: {rust_analyzer_argument:?}");
 
-    // When per-package-workspaces is off, the rust-analyzer-provided
-    // arg is discarded and we always emit the whole-workspace project.
-    // The rendered `{arg}` template stays in the discover command
-    // regardless — this keeps the shared settings byte-identical, at
-    // the cost of an occasional cache-hit-only re-invocation of
-    // discover on file open.
+    // Whole-workspace mode ignores the RA-provided arg — the `{arg}`
+    // template stays in the command for shape-parity with the
+    // per-package case.
     let ra_arg = if user.per_package_workspaces {
         match rust_analyzer_argument {
             Some(ra_arg) => ra_arg,
@@ -70,14 +65,31 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         RustAnalyzerArg::Buildfile(find_workspace_root_file(&workspace)?)
     };
 
-    let rules_rust_name = env!("ASPECT_REPOSITORY");
+    // `ASPECT_REPOSITORY` is empty when discover was built inside
+    // rules_rust itself — that produces `//rust:defs.bzl`, only valid
+    // when the outer bazel invocation is IN rules_rust. Fall back to
+    // the apparent `@rules_rust` name so a discover binary shipped to
+    // a downstream workspace still resolves the aspect.
+    let rules_rust_name = match env!("ASPECT_REPOSITORY") {
+        "" => "@rules_rust",
+        other => other,
+    };
 
     log::info!("resolved rust-analyzer argument: {ra_arg:?}");
 
-    let (buildfile, targets) = ra_arg.into_target_details(&workspace)?;
+    let (per_call_buildfile, targets) = ra_arg.into_target_details(&workspace)?;
 
-    log::debug!("got buildfile: {buildfile}");
-    log::debug!("got targets: {targets}");
+    // RA's `add_discovered_project_from_command` dedupes by
+    // buildfile — a match UPDATES, a new one PUSHES. Always report
+    // the workspace-root buildfile so per-package calls update the
+    // single Bazel-project entry instead of accumulating (each new
+    // workspace costs a proc-macro server, ~200-800 MB).
+    let buildfile = find_workspace_root_file(&workspace)?;
+
+    log::debug!(
+        "reporting workspace-root buildfile {buildfile} \
+         (per-call resolved to {per_call_buildfile}, targets {targets})"
+    );
 
     // Use the generated files to print the rust-project.json.
     let project = generate_rust_project(
@@ -89,7 +101,6 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &bazel_args,
         rules_rust_name,
         &[targets],
-        user.clippy,
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })
@@ -106,9 +117,8 @@ where
 }
 
 /// Publish per-install state via env vars the library reads.
-/// `setup` copies this binary into the launcher dir, so
-/// `dirname(current_exe())` IS that dir. Pre-set values win so users
-/// and tests can override.
+/// `dirname(current_exe())` is the launcher dir (setup copies this
+/// binary into it). Pre-set values win so users and tests can override.
 fn self_locate_config() -> anyhow::Result<()> {
     let launcher_dir = gen_rust_project_lib::install_dir()?;
     for (name, path) in [

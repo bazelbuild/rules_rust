@@ -1078,10 +1078,23 @@ def construct_arguments(
         process_wrapper_flags.add("--volatile-status-file", ctx.version_file)
         process_wrapper_flags.add("--stable-status-file", ctx.info_file)
 
-    # Both ctx.label.workspace_root and ctx.label.package are relative paths
-    # and either can be empty strings. Avoid trailing/double slashes in the path.
-    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
-    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    if crate_info.root.is_source:
+        # Both ctx.label.workspace_root and ctx.label.package are relative paths
+        # and either can be empty strings. Avoid trailing/double slashes in the path.
+        components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+        env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+    else:
+        # transform_sources stages source inputs and compile_data under the binary
+        # output tree whenever the crate has a generated input. Keep the manifest
+        # directory next to those transformed inputs so proc macros can find them.
+        # Derive the directory from a File so Bazel can apply path mapping.
+        process_wrapper_flags.add_all(
+            [crate_info.output],
+            before_each = "--subst",
+            format_each = "cargo_manifest_dir=%s",
+            map_each = _get_dirname,
+        )
+        env["CARGO_MANIFEST_DIR"] = "${pwd}/${cargo_manifest_dir}"
 
     if out_dir != None:
         # Hand `OUT_DIR` to `process_wrapper` as an explicit
@@ -1243,38 +1256,6 @@ def construct_arguments(
         map_each = _get_dirname,
         uniquify = True,
     )
-
-    # `rust_flags` is either a plain `list[str | (format_string, File)]` or a
-    # `ctx.actions.args()` `Args` object.
-    #
-    # - Lists are folded into the main `rustc_flags` `Args` here, with any
-    #   `-Zallow-features=` entries extracted into
-    #   `all_allowed_unstable_features` so they can be merged with
-    #   `unstable_rust_features_config` and re-emitted as a single arg below.
-    #
-    # - `Args` inputs cannot be merged with another `Args` and are opaque at
-    #   analysis time, so we capture the caller's `Args` here and append it as a
-    #   separate entry in `args.all` (after the main `rustc_flags` `Args`,
-    #   consistent with the existing "later flags win" semantics). Any
-    #   `-Zallow-features=` baked into an `Args` value passes through to rustc
-    #   unchanged — callers that need it merged with
-    #   `unstable_rust_features_config` should keep using the list form.
-    rust_flags_args = None
-    if type(rust_flags) == "Args":
-        rust_flags_args = rust_flags
-    elif rust_flags:
-        for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
-            if type(flag) in ["tuple", "list"] and len(flag) == 2:
-                rustc_flags.add_all(
-                    [flag[1]],
-                    format_each = flag[0],
-                    expand_directories = False,
-                )
-            else:
-                if map_flag:
-                    flag = map_flag(flag)
-                if flag != None:
-                    rustc_flags.add(flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1448,6 +1429,41 @@ def construct_arguments(
 
     if is_no_std(ctx, toolchain, crate_info.is_test):
         rustc_flags.add('--cfg=feature="no_std"')
+
+    # Add user-provided `rust_flags` last, so they can override the flags above,
+    # but before the target-provided authored_rustc_flags.
+    #
+    # `rust_flags` is either a plain `list[str | (format_string, File)]` or a
+    # `ctx.actions.args()` `Args` object.
+    #
+    # - Lists are folded into the main `rustc_flags` `Args` here, with any
+    #   `-Zallow-features=` entries extracted into
+    #   `all_allowed_unstable_features` so they can be merged with
+    #   `unstable_rust_features_config` and re-emitted as a single arg below.
+    #
+    # - `Args` inputs cannot be merged with another `Args` and are opaque at
+    #   analysis time, so we capture the caller's `Args` here and append it as a
+    #   separate entry in `args.all` (after the main `rustc_flags` `Args`,
+    #   consistent with the existing "later flags win" semantics). Any
+    #   `-Zallow-features=` baked into an `Args` value passes through to rustc
+    #   unchanged — callers that need it merged with
+    #   `unstable_rust_features_config` should keep using the list form.
+    rust_flags_args = None
+    if type(rust_flags) == "Args":
+        rust_flags_args = rust_flags
+    elif rust_flags:
+        for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
+            if type(flag) in ["tuple", "list"] and len(flag) == 2:
+                rustc_flags.add_all(
+                    [flag[1]],
+                    format_each = flag[0],
+                    expand_directories = False,
+                )
+            else:
+                if map_flag:
+                    flag = map_flag(flag)
+                if flag != None:
+                    rustc_flags.add(flag)
 
     # Add target specific flags last, so they can override previous flags
     authored_rustc_flags = getattr(attr, "rustc_flags", [])

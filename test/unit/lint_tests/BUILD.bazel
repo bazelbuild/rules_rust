@@ -1,0 +1,3 @@
+load(":lint_tests.bzl", "lint_tests_suite")
+
+lint_tests_suite(name = "lint_tests_suite")
