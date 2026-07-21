@@ -1,5 +1,7 @@
-load("@rules_rust//rust/private:rustc.bzl", "AliasableDepInfo", "rustc_compile_action")
+load("@rules_rust//rust/private:common.bzl", "COMMON_PROVIDERS")
 load("@rules_rust//rust/private:providers.bzl", "CrateInfo", "DepInfo")
+load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS")
+load("@rules_rust//rust/private:rustc.bzl", "AliasableDepInfo", "rustc_compile_action")
 load(
     "@rules_rust//rust/private:utils.bzl",
     "compute_crate_name",
@@ -10,8 +12,6 @@ load(
     "get_edition",
     "transform_deps",
 )
-load("@rules_rust//rust/private:common.bzl", "COMMON_PROVIDERS")
-load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS")
 
 def _rust_library_with_extra_deps_impl(ctx):
     toolchain = find_toolchain(ctx)

@@ -18,10 +18,10 @@ rust_library_with_extra_deps(
     name = "a",
     srcs = ["a.rs"],
     edition = "2021",
-    deps = [":b"],
     rename_indirect_deps = {
         ":c": "renamed_c",
     },
+    deps = [":b"],
 )
 
 rust_test(
