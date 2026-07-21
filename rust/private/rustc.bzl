@@ -951,8 +951,7 @@ def construct_arguments(
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None,
-        allowed_unstable_rust_features = None,
-        emit_out_dir_flag = True):
+        allowed_unstable_rust_features = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1024,10 +1023,6 @@ def construct_arguments(
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
-        emit_out_dir_flag (bool): Whether to emit `--out-dir=<crate_info.output.dirname>`.
-            Defaults to True (the rustc case). Set to False for rustdoc actions that
-            emit `--output` themselves — rustdoc rejects `--out-dir` and `--output`
-            together with `error: cannot use both 'out-dir' and 'output' at once`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1213,15 +1208,21 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=metadata=-%s")
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
-    if output_dir and emit_out_dir_flag:
-        # Use add_all with the output File and a map_each callback that returns the
-        # dirname so Bazel can apply path mapping (--experimental_output_paths=strip)
-        # to the directory portion of the path. `expand_directories = False`
-        # because rustdoc's `output` is a declared directory (the HTML tree);
-        # we want its dirname, not its contents.
+    if output_dir:
+        # Emit `--out-dir=<place-to-put-outputs>`. Semantics depend on whether
+        # `crate_info.output` is a file (rustc: rlib/binary) or a directory
+        # (rustdoc: HTML tree):
+        #   - File output -> the containing directory (`.dirname`); rustc writes
+        #     the file there.
+        #   - Directory output -> the directory path itself (`.path`); rustdoc
+        #     writes its HTML tree into it.
+        # Routing through `add_all([crate_info.output], map_each=...)` lets Bazel
+        # path mapping (`--experimental_output_paths=strip`) rewrite the value
+        # at execution time. `expand_directories = False` so directory-typed
+        # outputs pass through as a single argv entry.
         rustc_flags.add_all(
             [crate_info.output],
-            map_each = _get_dirname,
+            map_each = _get_out_dir_path,
             format_each = "--out-dir=%s",
             expand_directories = False,
         )
@@ -2887,6 +2888,21 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_out_dir_path(file):
+    """Return the path suitable for `--out-dir=<value>`.
+
+    For a file output (rlib/binary), the containing directory. For a directory
+    output (rustdoc HTML tree), the directory itself — rustdoc writes into
+    `<--out-dir>/<crate_name>/`, and we want that inside the declared directory.
+
+    Args:
+        file (File): The crate's output File.
+
+    Returns:
+        str: Directory path to hand to `--out-dir=`.
+    """
+    return file.path if file.is_directory else file.dirname
 
 def _get_crate_root_path(args):
     file, root_path = args

@@ -96,14 +96,6 @@ def rustdoc_compile_action(
     if force_depend_on_objects == None:
         force_depend_on_objects = is_test
 
-    # If an output was provided, ensure it's used in rustdoc arguments
-    if output:
-        rustdoc_flags.add_all(
-            [output],
-            before_each = "--output",
-            expand_directories = False,
-        )
-
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
@@ -201,9 +193,6 @@ def rustdoc_compile_action(
         include_link_flags = False,
         force_depend_on_objects = force_depend_on_objects,
         skip_expanding_rustc_env = True,
-        # rustdoc rejects `--out-dir` and `--output` together; when the caller
-        # supplies an `output`, we already pass `--output <output>` above.
-        emit_out_dir_flag = output == None,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
