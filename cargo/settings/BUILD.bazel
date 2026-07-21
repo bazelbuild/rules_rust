@@ -6,6 +6,7 @@ load(
     "emit_build_script_warnings",
     "experimental_symlink_execroot",
     "out_dir_volatile_file_basenames",
+    "use_cc_toolchain",
     "use_default_shell_env",
 )
 
@@ -33,3 +34,5 @@ use_default_shell_env()
 out_dir_volatile_file_basenames()
 
 emit_build_script_warnings()
+
+use_cc_toolchain()

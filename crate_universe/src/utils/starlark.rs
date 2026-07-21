@@ -142,6 +142,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) toolchains: Set<Label>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
     pub(crate) version: String,
     pub(crate) visibility: Set<String>,
 }
