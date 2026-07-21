@@ -294,12 +294,9 @@ fn supports_test_mod(version: &str) -> bool {
     matches!((parts.next(), parts.next()), (Some(major), Some(minor)) if (major, minor) >= (1, 96))
 }
 
-/// `$RULES_RUST_RA_LAUNCHER_DIR` is published by discover's
-/// `self_locate_config`. When unset (discover ran outside a setup
-/// install — direct exec for debugging) we fall back to the
-/// editor-agnostic `<workspace>/.rules_rust_analyzer/`; vscode/helix
-/// users who bypass setup get a stale path, same as every other
-/// fallback in this file.
+/// Prefers `$RULES_RUST_RA_LAUNCHER_DIR` (published by discover's
+/// `self_locate_config`). Falls back to
+/// `<workspace>/.rules_rust_analyzer/` for direct-exec debugging.
 fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
     let launcher_dir = std::env::var("RULES_RUST_RA_LAUNCHER_DIR")
         .ok()
@@ -488,12 +485,10 @@ pub fn assemble_rust_project(
             cwd: workspace.to_owned(),
             kind: RunnableKind::Check,
         },
-        // On-save flycheck. rust-analyzer substitutes `{label}` with
-        // the saved file's owning crate and runs the binary; the
-        // binary spawns `bazel build` for that label with rustc
-        // diagnostics enabled, harvests the resulting .rustc-output
-        // files via BEP, and streams their JSON to stdout for
-        // rust-analyzer to parse into squiggles.
+        // On-save flycheck. Args stay user-agnostic — per-user
+        // preferences (clippy, ...) live in
+        // `<launcher_dir>/user_config.json` and are read by
+        // `bin/flycheck.rs` on each save.
         Runnable {
             program: flycheck_launcher_path(workspace).to_string(),
             args: vec!["{label}".to_owned(), "{saved_file}".to_owned()],
@@ -854,6 +849,36 @@ mod tests {
 
         assert_eq!(project.crates.len(), 1);
         assert_eq!(project.crates[0].deps.len(), 0);
+    }
+
+    /// The runnable command must be byte-identical across users regardless
+    /// of clippy preference — flycheck reads its own per-user opt-in from
+    /// `user_config.json` on each save. If this ever regresses to
+    /// per-user command args, the CLI contract with `bin/flycheck.rs`
+    /// silently breaks (clap rejects unknown flags at runtime).
+    #[test]
+    fn flycheck_runnable_uses_positional_args_only() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([spec("ID-a", &[])]),
+        )
+        .expect("expect success");
+
+        let flycheck = project
+            .runnables
+            .iter()
+            .find(|r| matches!(r.kind, RunnableKind::Flycheck))
+            .expect("flycheck runnable must exist");
+        assert_eq!(
+            flycheck.args,
+            vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+        );
     }
 
     // --- diagnose() suite ---

@@ -111,7 +111,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "//local_pkgs/crates/bytes-1.12.0:bytes",
+        "//local_pkgs/crates/bytes-1.12.1:bytes",
         "//local_pkgs/crates/futures-util-0.3.32:futures_util",
         "//local_pkgs/crates/http-0.2.12:http",
         "//local_pkgs/crates/http-body-0.4.6:http_body",

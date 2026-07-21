@@ -170,49 +170,49 @@ rust_library(
     }),
     version = "1.12.3",
     deps = [
-        "@rmdbi__memchr-2.8.2//:memchr",
+        "@rmdbi__memchr-2.8.3//:memchr",
     ] + select({
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # aarch64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # arm-unknown-linux-gnueabi
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # arm-unknown-linux-musleabi
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # arm-unknown-linux-musleabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # armv7-unknown-linux-gnueabi
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # i686-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # loongarch64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # loongarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # mips-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # mips-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # powerpc-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # riscv64gc-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # s390x-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:sparc64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # sparc64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # sparc64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # x86_64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rmdbi__regex-automata-0.4.15//:regex_automata",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

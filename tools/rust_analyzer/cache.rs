@@ -15,7 +15,14 @@ use std::{
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 
-/// Where cache entries live, relative to the workspace root.
+/// Cache subdir name, relative to the launcher dir. `setup --clean`
+/// deletes `<launcher_dir>/CACHE_SUBDIR/` — importing the constant
+/// keeps that path in sync if we ever rename.
+pub const CACHE_SUBDIR: &str = "cache";
+
+/// Where cache entries live, relative to the workspace root, when
+/// discover falls back (no `$RULES_RUST_RA_CACHE_DIR` set — see
+/// [`cache_dir`]).
 ///
 /// Editor-agnostic by design: the discover binary that produces these
 /// entries is invoked the same way regardless of which editor's launcher
@@ -27,7 +34,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 /// the cache visible to `ls`, easy to clear with `rm -rf`, and immune to
 /// `bazel clean`. Making Bazel manage it would require turning it into
 /// an action output, which has its own correctness headaches.
-const CACHE_DIR_REL: &str = ".rules_rust_analyzer/cache";
+const CACHE_DIR_REL_PREFIX: &str = ".rules_rust_analyzer";
 
 /// Schema version mixed into every cache key. Bump on any change to
 /// the assembled `rust-project.json` shape — old cache entries become
@@ -36,7 +43,7 @@ const CACHE_DIR_REL: &str = ".rules_rust_analyzer/cache";
 /// unchanged workspace would keep serving JSON assembled by an older
 /// version of the assembler. See the explanatory comment on
 /// `compute_key` for the incident that motivated this.
-const CACHE_SCHEMA_VERSION: u32 = 0;
+const CACHE_SCHEMA_VERSION: u32 = 1;
 
 /// Compute the cache key for an assembled rust-project.json from the raw
 /// spec contents plus every auxiliary input the assembler bakes into its
@@ -46,7 +53,6 @@ const CACHE_SCHEMA_VERSION: u32 = 0;
 ///
 /// `spec_contents` should already be sorted by spec path so the key is
 /// independent of file-system enumeration order.
-#[allow(clippy::too_many_arguments)]
 pub fn compute_key(
     spec_contents: &[(Utf8PathBuf, String)],
     toolchain_info: &str,
@@ -101,7 +107,7 @@ pub fn cache_dir(workspace: &Utf8Path) -> Utf8PathBuf {
             return Utf8PathBuf::from(s);
         }
     }
-    workspace.join(CACHE_DIR_REL)
+    workspace.join(CACHE_DIR_REL_PREFIX).join(CACHE_SUBDIR)
 }
 
 fn cache_file(workspace: &Utf8Path, key: &str) -> Utf8PathBuf {
@@ -224,7 +230,7 @@ mod tests {
                 bazel,
                 ws,
                 er,
-                "/ws/.vscode/.rules_rust_analyzer"
+                "/ws/.vscode/.rules_rust_analyzer",
             ),
             compute_key(
                 &specs,
@@ -232,7 +238,7 @@ mod tests {
                 bazel,
                 ws,
                 er,
-                "/ws/.helix/.rules_rust_analyzer"
+                "/ws/.helix/.rules_rust_analyzer",
             ),
         );
     }

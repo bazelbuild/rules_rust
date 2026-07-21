@@ -1,0 +1,5 @@
+load(":rustc_flag_ordering_test.bzl", "rustc_flag_ordering_test_suite")
+
+rustc_flag_ordering_test_suite(
+    name = "rustc_flag_ordering_test_suite",
+)

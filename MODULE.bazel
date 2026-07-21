@@ -26,6 +26,7 @@ use_repo(
     "rrra__clap-4.6.0",
     "rrra__env_logger-0.11.10",
     "rrra__itertools-0.14.0",
+    "rrra__jsonc-parser-0.26.2",
     "rrra__log-0.4.29",
     "rrra__serde-1.0.228",
     "rrra__serde_json-1.0.149",
