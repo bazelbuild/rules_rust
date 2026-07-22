@@ -1,0 +1,31 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+load(":defs.bzl", "package_dir_artifact")
+
+package(default_visibility = ["//visibility:private"])
+
+package_dir_artifact(
+    name = "dir_artifact",
+    srcs = [
+        "src/lib.rs",
+        "src/submodule.rs",
+    ],
+)
+
+rust_library(
+    name = "my_lib",
+    srcs = [":dir_artifact"],
+    root_path = "src/lib.rs",
+)
+
+rust_test(
+    name = "my_lib_test",
+    crate = ":my_lib",
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":my_lib",
+    ],
+)
