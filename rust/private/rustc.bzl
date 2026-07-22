@@ -2905,6 +2905,16 @@ def _get_out_dir_path(file):
     return file.path if file.is_directory else file.dirname
 
 def _get_crate_root_path(args):
+    """Get the path to the crate root.
+
+    Args:
+        args (tuple[File, str]): A tuple containing:
+            - File: The crate root file or directory.
+            - str: The path to the root source file if the first element is a directory.
+
+    Returns:
+        str: The path to the crate root.
+    """
     file, root_path = args
     if file.is_directory:
         return paths.join(file.path, root_path)
