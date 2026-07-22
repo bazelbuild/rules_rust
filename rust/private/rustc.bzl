@@ -1644,6 +1644,7 @@ def rustc_compile_action(
         deps = depset(deps),
         proc_macro_deps = depset(proc_macro_deps),
         srcs = depset(srcs),
+        extra_named_deps = extra_named_deps or depset([]),
         **crate_info_dict
     )
 
@@ -2100,6 +2101,7 @@ def rustc_compile_action(
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             srcs = depset(srcs),
+            extra_named_deps = extra_named_deps or depset([]),
             **crate_info_dict
         )
 
