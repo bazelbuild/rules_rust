@@ -25,9 +25,9 @@ CrateInfo = provider(
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "data": "depset[File]: Runtime data associated with the target. Not passed to `Rustc` actions, except for `proc-macro` targets where `Rustc` is the runtime.",
-        "extra_named_deps": "depset[AliasableDepInfo]: Extra named dependencies.",
         "deps": "depset[DepVariantInfo]: This crate's direct (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
+        "extra_named_deps": "depset[AliasableDepInfo]: Extra named dependencies.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
