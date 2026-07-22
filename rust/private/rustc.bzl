@@ -1042,7 +1042,7 @@ def construct_arguments(
     if build_metadata and not use_json_output:
         fail("build_metadata requires parse_json_output")
 
-    output_dir = getattr(crate_info.output, "dirname", None)
+    output_dir = crate_info.output.dirname
     linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
@@ -1093,11 +1093,15 @@ def construct_arguments(
         # output tree whenever the crate has a generated input. Keep the manifest
         # directory next to those transformed inputs so proc macros can find them.
         # Derive the directory from a File so Bazel can apply path mapping.
+        # `expand_directories = False` because rustdoc's `crate_info.output` is
+        # a declared directory (the HTML tree) — we want its dirname, not its
+        # contents.
         process_wrapper_flags.add_all(
             [crate_info.output],
             before_each = "--subst",
             format_each = "cargo_manifest_dir=%s",
             map_each = _get_dirname,
+            expand_directories = False,
         )
         env["CARGO_MANIFEST_DIR"] = "${pwd}/${cargo_manifest_dir}"
 
@@ -1210,10 +1214,23 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        # Use add_all with the output File and a map_each callback that returns the
-        # dirname so Bazel can apply path mapping (--experimental_output_paths=strip)
-        # to the directory portion of the path.
-        rustc_flags.add_all([crate_info.output], map_each = _get_dirname, format_each = "--out-dir=%s")
+        # Emit `--out-dir=<place-to-put-outputs>`. Semantics depend on whether
+        # `crate_info.output` is a file (rustc: rlib/binary) or a directory
+        # (rustdoc: HTML tree):
+        #   - File output -> the containing directory (`.dirname`); rustc writes
+        #     the file there.
+        #   - Directory output -> the directory path itself (`.path`); rustdoc
+        #     writes its HTML tree into it.
+        # Routing through `add_all([crate_info.output], map_each=...)` lets Bazel
+        # path mapping (`--experimental_output_paths=strip`) rewrite the value
+        # at execution time. `expand_directories = False` so directory-typed
+        # outputs pass through as a single argv entry.
+        rustc_flags.add_all(
+            [crate_info.output],
+            map_each = _get_out_dir_path,
+            format_each = "--out-dir=%s",
+            expand_directories = False,
+        )
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1232,7 +1249,7 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and crate_info.type == "bin":
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         elif type(kind) in ["tuple", "list"] and len(kind) == 2:
             # 'kind' is a (string, File) tuple/list. Passing the File object directly to
@@ -2884,6 +2901,21 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_out_dir_path(file):
+    """Return the path suitable for `--out-dir=<value>`.
+
+    For a file output (rlib/binary), the containing directory. For a directory
+    output (rustdoc HTML tree), the directory itself — rustdoc writes into
+    `<--out-dir>/<crate_name>/`, and we want that inside the declared directory.
+
+    Args:
+        file (File): The crate's output File.
+
+    Returns:
+        str: Directory path to hand to `--out-dir=`.
+    """
+    return file.path if file.is_directory else file.dirname
 
 def _get_crate_root_path(args):
     file, root_path = args
