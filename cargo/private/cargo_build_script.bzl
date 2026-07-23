@@ -393,6 +393,11 @@ def _cargo_build_script_impl(ctx):
         script_data.append(target[DefaultInfo].files)
         script_data.append(target[DefaultInfo].default_runfiles.files)
 
+    script_tools = []
+    for target in ctx.attr.tools:
+        script_tools.append(target[DefaultInfo].files)
+        script_tools.append(target[DefaultInfo].default_runfiles.files)
+
     workspace_name = ctx.label.workspace_name
     if not workspace_name:
         workspace_name = ctx.workspace_name
@@ -581,7 +586,7 @@ def _cargo_build_script_impl(ctx):
         direct = [
             ctx.executable._cargo_build_script_runner,
         ] + ([toolchain.target_json] if toolchain.target_json else []),
-        transitive = script_data + toolchain_tools,
+        transitive = script_data + script_tools + toolchain_tools,
     )
 
     # dep_env_file contains additional environment variables coming from
