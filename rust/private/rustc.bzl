@@ -182,13 +182,15 @@ def _is_proc_macro(crate_info):
 def collect_deps(
         deps,
         proc_macro_deps,
-        aliases):
+        aliases,
+        extra_named_deps = None):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        extra_named_deps (depset[AliasableDepInfo], optional): Extra named dependencies.
 
     Returns:
         tuple: Returns a tuple of:
@@ -308,7 +310,10 @@ def collect_deps(
 
     return (
         rust_common.dep_info(
-            direct_crates = depset(direct_deps),
+            direct_crates = depset(
+                direct_deps,
+                transitive = [extra_named_deps] if extra_named_deps else [],
+            ),
             transitive_crates = depset(
                 direct_crates,
                 transitive = transitive_crates,
@@ -1620,7 +1625,8 @@ def rustc_compile_action(
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
         include_coverage = True,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        extra_named_deps = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1629,13 +1635,17 @@ def rustc_compile_action(
         toolchain (rust_toolchain): The current `rust_toolchain`
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
-        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
-            to the commandline as opposed to -L.
+        force_all_deps_direct (bool, optional): (deprecated) Whether to pass the transitive rlibs with --extern
+            to the commandline as opposed to -L. Aspects and extensions that need this should maintain an
+            explicit depset of named dependencies and pass it via `extra_named_deps` instead.
         crate_info_dict: A mutable dict used to create CrateInfo provider
         skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
         include_coverage (bool, optional): Whether to generate coverage information or not.
         allowed_unstable_rust_features (list, optional): A list of unstable Rust language features
             that are allowed to be used in the crate.
+        extra_named_deps (depset[AliasableDepInfo], optional): Extra named dependencies, passed
+            to the compiler via --extern instead of -L. This function takes care not to flatten
+            this depset at analysis time.
 
     Returns:
         list: A list of the following providers:
@@ -1651,6 +1661,7 @@ def rustc_compile_action(
         deps = depset(deps),
         proc_macro_deps = depset(proc_macro_deps),
         srcs = depset(srcs),
+        extra_named_deps = extra_named_deps or depset([]),
         **crate_info_dict
     )
 
@@ -1675,6 +1686,7 @@ def rustc_compile_action(
         deps = deps,
         proc_macro_deps = proc_macro_deps,
         aliases = crate_info.aliases,
+        extra_named_deps = extra_named_deps,
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
@@ -2106,6 +2118,7 @@ def rustc_compile_action(
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             srcs = depset(srcs),
+            extra_named_deps = extra_named_deps or depset([]),
             **crate_info_dict
         )
 
