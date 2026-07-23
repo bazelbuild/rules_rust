@@ -357,6 +357,10 @@ pub(crate) struct CrateAnnotations {
     /// [build_script_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub(crate) build_script_env: Option<Select<BTreeMap<String, String>>>,
 
+    /// Additional environment variable files to pass to a build script's
+    /// [build_script_env_files](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env_files) attribute.
+    pub(crate) build_script_env_files: Option<Select<BTreeSet<String>>>,
+
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
@@ -469,6 +473,7 @@ impl Add for CrateAnnotations {
             build_script_tools: select_merge(self.build_script_tools, rhs.build_script_tools),
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
+            build_script_env_files: select_merge(self.build_script_env_files, rhs.build_script_env_files),
             build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
             build_script_exec_properties: select_merge(self.build_script_exec_properties, rhs.build_script_exec_properties),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),

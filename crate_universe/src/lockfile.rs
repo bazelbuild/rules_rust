@@ -305,7 +305,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("c395b0c5bed8470775b13399a6e8ec43af4abd4aa104ebc81297a286e449fc23".to_owned()),
+            Digest("4037ebd01126700b0b77d29e7439bfc172547b01fa6bc8e964447e04f4707a8e".to_owned()),
             digest,
         );
     }
