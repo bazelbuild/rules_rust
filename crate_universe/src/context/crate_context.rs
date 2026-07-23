@@ -713,6 +713,12 @@ impl CrateContext {
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
                 }
 
+                // Build script env files
+                if let Some(extra) = &crate_extra.build_script_env_files {
+                    attrs.build_script_env_files =
+                        Select::merge(attrs.build_script_env_files.clone(), extra.clone());
+                }
+
                 // Exec properties
                 if let Some(extra) = &crate_extra.build_script_exec_properties {
                     attrs.exec_properties =
@@ -1097,6 +1103,59 @@ mod test {
 
         // Cargo build scripts should include all sources
         assert!(context.build_script_attrs.unwrap().data_glob.contains("**"));
+    }
+
+    #[test]
+    fn context_with_build_script_env_files_annotation() {
+        let mut build_script_env_files =
+            Select::from_value(BTreeSet::from(["@//:build-script.env".to_owned()]));
+        build_script_env_files.insert(
+            "@//:linux-build-script.env".to_owned(),
+            Some("x86_64-unknown-linux-gnu".to_owned()),
+        );
+
+        let mut config = crate::config::Config::default();
+        config.annotations.insert(
+            crate::config::CrateNameAndVersionReq::new(
+                "openssl-sys".to_owned(),
+                "0.9.87".parse().unwrap(),
+            ),
+            CrateAnnotations {
+                build_script_env_files: Some(build_script_env_files.clone()),
+                ..CrateAnnotations::default()
+            },
+        );
+
+        let annotations = Annotations::new(
+            crate::test::metadata::build_scripts(),
+            &None,
+            crate::test::lockfile::build_scripts(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let package_id = PackageId {
+            repr: "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
+                .to_owned(),
+        };
+        let crate_annotation = &annotations.metadata.crates[&package_id];
+
+        let context = CrateContext::new(
+            crate_annotation,
+            &annotations.metadata.packages,
+            &annotations.lockfile.crates,
+            &annotations.pairred_extras,
+            &annotations.metadata.workspace_metadata.tree_metadata,
+            false,
+            true,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(
+            context.build_script_attrs.unwrap().build_script_env_files,
+            build_script_env_files
+        );
     }
 
     #[test]
