@@ -182,13 +182,15 @@ def _is_proc_macro(crate_info):
 def collect_deps(
         deps,
         proc_macro_deps,
-        aliases):
+        aliases,
+        extra_named_deps = None):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        extra_named_deps (depset[AliasableDepInfo], optional): Extra named dependencies.
 
     Returns:
         tuple: Returns a tuple of:
@@ -308,7 +310,10 @@ def collect_deps(
 
     return (
         rust_common.dep_info(
-            direct_crates = depset(direct_deps),
+            direct_crates = depset(
+                direct_deps,
+                transitive = [extra_named_deps] if extra_named_deps else [],
+            ),
             transitive_crates = depset(
                 direct_crates,
                 transitive = transitive_crates,
@@ -1037,7 +1042,7 @@ def construct_arguments(
     if build_metadata and not use_json_output:
         fail("build_metadata requires parse_json_output")
 
-    output_dir = getattr(crate_info.output, "dirname", None)
+    output_dir = crate_info.output.dirname
     linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
@@ -1088,11 +1093,15 @@ def construct_arguments(
         # output tree whenever the crate has a generated input. Keep the manifest
         # directory next to those transformed inputs so proc macros can find them.
         # Derive the directory from a File so Bazel can apply path mapping.
+        # `expand_directories = False` because rustdoc's `crate_info.output` is
+        # a declared directory (the HTML tree) — we want its dirname, not its
+        # contents.
         process_wrapper_flags.add_all(
             [crate_info.output],
             before_each = "--subst",
             format_each = "cargo_manifest_dir=%s",
             map_each = _get_dirname,
+            expand_directories = False,
         )
         env["CARGO_MANIFEST_DIR"] = "${pwd}/${cargo_manifest_dir}"
 
@@ -1205,10 +1214,23 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        # Use add_all with the output File and a map_each callback that returns the
-        # dirname so Bazel can apply path mapping (--experimental_output_paths=strip)
-        # to the directory portion of the path.
-        rustc_flags.add_all([crate_info.output], map_each = _get_dirname, format_each = "--out-dir=%s")
+        # Emit `--out-dir=<place-to-put-outputs>`. Semantics depend on whether
+        # `crate_info.output` is a file (rustc: rlib/binary) or a directory
+        # (rustdoc: HTML tree):
+        #   - File output -> the containing directory (`.dirname`); rustc writes
+        #     the file there.
+        #   - Directory output -> the directory path itself (`.path`); rustdoc
+        #     writes its HTML tree into it.
+        # Routing through `add_all([crate_info.output], map_each=...)` lets Bazel
+        # path mapping (`--experimental_output_paths=strip`) rewrite the value
+        # at execution time. `expand_directories = False` so directory-typed
+        # outputs pass through as a single argv entry.
+        rustc_flags.add_all(
+            [crate_info.output],
+            map_each = _get_out_dir_path,
+            format_each = "--out-dir=%s",
+            expand_directories = False,
+        )
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1227,7 +1249,7 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and crate_info.type == "bin":
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         elif type(kind) in ["tuple", "list"] and len(kind) == 2:
             # 'kind' is a (string, File) tuple/list. Passing the File object directly to
@@ -1603,7 +1625,8 @@ def rustc_compile_action(
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
         include_coverage = True,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        extra_named_deps = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1612,13 +1635,17 @@ def rustc_compile_action(
         toolchain (rust_toolchain): The current `rust_toolchain`
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
-        force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
-            to the commandline as opposed to -L.
+        force_all_deps_direct (bool, optional): (deprecated) Whether to pass the transitive rlibs with --extern
+            to the commandline as opposed to -L. Aspects and extensions that need this should maintain an
+            explicit depset of named dependencies and pass it via `extra_named_deps` instead.
         crate_info_dict: A mutable dict used to create CrateInfo provider
         skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
         include_coverage (bool, optional): Whether to generate coverage information or not.
         allowed_unstable_rust_features (list, optional): A list of unstable Rust language features
             that are allowed to be used in the crate.
+        extra_named_deps (depset[AliasableDepInfo], optional): Extra named dependencies, passed
+            to the compiler via --extern instead of -L. This function takes care not to flatten
+            this depset at analysis time.
 
     Returns:
         list: A list of the following providers:
@@ -1634,6 +1661,7 @@ def rustc_compile_action(
         deps = depset(deps),
         proc_macro_deps = depset(proc_macro_deps),
         srcs = depset(srcs),
+        extra_named_deps = extra_named_deps or depset([]),
         **crate_info_dict
     )
 
@@ -1658,6 +1686,7 @@ def rustc_compile_action(
         deps = deps,
         proc_macro_deps = proc_macro_deps,
         aliases = crate_info.aliases,
+        extra_named_deps = extra_named_deps,
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
@@ -2089,6 +2118,7 @@ def rustc_compile_action(
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
             srcs = depset(srcs),
+            extra_named_deps = extra_named_deps or depset([]),
             **crate_info_dict
         )
 
@@ -2872,7 +2902,32 @@ def _add_native_link_flags(
                     format_each = "-lstatic=%s",
                 )
 
+def _get_out_dir_path(file):
+    """Return the path suitable for `--out-dir=<value>`.
+
+    For a file output (rlib/binary), the containing directory. For a directory
+    output (rustdoc HTML tree), the directory itself — rustdoc writes into
+    `<--out-dir>/<crate_name>/`, and we want that inside the declared directory.
+
+    Args:
+        file (File): The crate's output File.
+
+    Returns:
+        str: Directory path to hand to `--out-dir=`.
+    """
+    return file.path if file.is_directory else file.dirname
+
 def _get_crate_root_path(args):
+    """Get the path to the crate root.
+
+    Args:
+        args (tuple[File, str]): A tuple containing:
+            - File: The crate root file or directory.
+            - str: The path to the root source file if the first element is a directory.
+
+    Returns:
+        str: The path to the crate root.
+    """
     file, root_path = args
     if file.is_directory:
         return paths.join(file.path, root_path)
