@@ -32,6 +32,7 @@ load(
     "lto",
     "no_std",
     "pipelined_compilation",
+    "remove_metadata_from_staticlib",
     "rename_first_party_crates",
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
@@ -122,6 +123,8 @@ lto()
 no_std()
 
 pipelined_compilation()
+
+remove_metadata_from_staticlib()
 
 rename_first_party_crates()
 

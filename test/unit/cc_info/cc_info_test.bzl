@@ -179,6 +179,49 @@ def _is_cc_interface_library_test_impl(ctx):
 
 is_cc_interface_library_test = analysistest.make(_is_cc_interface_library_test_impl)
 
+def _remove_metadata_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    is_apple = ctx.target_platform_has_constraint(ctx.attr._apple[platform_common.ConstraintValueInfo])
+    is_windows = ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
+
+    a_file_action = None
+    static_lib = None
+    for action in tut.actions:
+        for output in action.outputs.to_list():
+            if output.basename.endswith(".a") or output.basename.endswith(".lib"):
+                a_file_action = action
+                static_lib = output
+                break
+        if a_file_action:
+            break
+
+    asserts.true(env, a_file_action != None, "Expected to find an action outputting .a or .lib")
+
+    if is_windows:
+        asserts.true(env, static_lib.basename.endswith(".lib"), "Expected .lib extension on Windows")
+        asserts.equals(env, "Symlink", a_file_action.mnemonic)
+    elif is_apple:
+        asserts.true(env, static_lib.basename.endswith(".a"), "Expected .a extension on Apple")
+        asserts.equals(env, "Symlink", a_file_action.mnemonic)
+    else:
+        asserts.true(env, static_lib.basename.endswith(".a"), "Expected .a extension on Linux")
+        asserts.equals(env, "CopyStaticLibWithoutRmeta", a_file_action.mnemonic)
+
+    return analysistest.end(env)
+
+remove_metadata_test = analysistest.make(
+    _remove_metadata_test_impl,
+    config_settings = {
+        str(Label("//rust/settings:remove_metadata_from_staticlib")): True,
+    },
+    attrs = {
+        "_apple": attr.label(default = Label("@platforms//os:macos")),
+        "_windows": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
+
 def _build_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -322,6 +365,11 @@ def _cc_info_test():
         name = "rlib_provides_cc_info_test",
         target_under_test = ":rlib",
     )
+
+    remove_metadata_test(
+        name = "remove_metadata_test",
+        target_under_test = ":rlib",
+    )
     rlib_with_dep_only_has_stdlib_linkflags_once_test(
         name = "rlib_with_dep_only_has_stdlib_linkflags_once_test",
         target_under_test = ":rlib_with_dep",
@@ -371,6 +419,7 @@ def cc_info_test_suite(name):
         name = name,
         tests = [
             ":rlib_provides_cc_info_test",
+            ":remove_metadata_test",
             ":rlib_with_dep_only_has_stdlib_linkflags_once_test",
             ":staticlib_provides_cc_info_test",
             ":cdylib_provides_cc_info_test",
