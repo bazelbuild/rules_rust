@@ -1,0 +1,17 @@
+load("@crate_index_wasm_cfg_features//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "native_only",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+    # This member's tokio dep is cfg-gated to non-wasm; on wasm32 the dep list
+    # is empty, so the target cannot be built there.
+    target_compatible_with = select({
+        "@platforms//cpu:wasm32": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = all_crate_deps(),
+)

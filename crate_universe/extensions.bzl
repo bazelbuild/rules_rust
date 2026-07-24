@@ -1448,6 +1448,12 @@ _ANNOTATION_SELECT_ATTRS = {
     "deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::deps` attribute.",
     ),
+    "disabled_features": attr.string_list(
+        doc = "A list of features to remove from a crate's resolved `rust_library::crate_features` attribute. Applied per-triple when set via `annotation_select`, preserving the feature on the other supported triples.",
+    ),
+    "excluded_deps": attr.string_list(
+        doc = "A list of dependency crate names to remove from a crate's resolved `rust_library::deps` attribute. Typically paired with `disabled_features` to also drop the optional dependencies a disabled feature would have activated.",
+    ),
     "link_deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::link_deps` attribute.",
     ),
@@ -1654,6 +1660,34 @@ _annotation_select = tag_class(
 crate = module_extension(
     doc = """\
 Crate universe module extensions.
+
+## Removing features and dependencies on specific platforms
+
+Cargo enables features additively. When one crate in the build turns on a
+feature of a shared dependency, that feature is enabled for every target that
+uses the dependency. This is usually fine, but sometimes it enables a feature on
+a platform that cannot build it.
+
+Take the `net` feature of `tokio`. It requires the `mio` and `socket2` crates,
+which do not compile for `wasm32-unknown-unknown`. If any crate in the build
+enables `net`, then `net` is enabled for `tokio` on every platform, and the Wasm
+build fails.
+
+The `disabled_features` and `excluded_deps` fields on an annotation remove
+features and dependencies from a crate. Pair them with `crate.annotation_select`
+to limit the removal to specific target triples. The feature or dependency stays
+enabled on the other triples, so only the platform you name loses it:
+
+```python
+crate.annotation_select(
+    crate = "tokio",
+    triples = ["wasm32-unknown-unknown"],
+    # For wasm32 only: drop `net` and the implicit `mio` and `socket2` features,
+    # and exclude the `mio` and `socket2` crates. `net` stays enabled elsewhere.
+    disabled_features = ["net", "mio", "socket2"],
+    excluded_deps = ["mio", "socket2"],
+)
+```
 
 Environment Variables:
 

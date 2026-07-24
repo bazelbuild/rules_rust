@@ -6,13 +6,14 @@ use camino::Utf8PathBuf;
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
-use crate::config::{AliasRule, CrateId, GenBinaries};
+use crate::config::{AliasRule, CrateAnnotations, CrateId, GenBinaries};
 use crate::metadata::{
     CrateAnnotation, Dependency, PairedExtras, SourceAnnotation, TreeResolverMetadata,
 };
-use crate::select::Select;
+use crate::select::{Select, SelectableOrderedValue};
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, Label};
+use crate::utils::target_triple::TargetTriple;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
@@ -381,6 +382,93 @@ pub(crate) struct CrateContext {
     pub(crate) override_targets: BTreeMap<String, Label>,
 }
 
+/// Remove values from a `Select` according to a removal spec keyed by
+/// configuration.
+///
+/// * A name listed under the common configuration (`None`) removes every
+///   matching value from every configuration.
+/// * A name listed under a specific target triple removes matching values for
+///   that triple only. A matching value that was unconditional (`common`) is
+///   first demoted onto every *other* supported triple so those platforms keep
+///   it; only the named triple loses it.
+///
+/// `matches` decides whether a value in the `Select` corresponds to a name in
+/// the removal spec (feature-name equality for `crate_features`, crate-name
+/// equality for `deps`).
+fn remove_selected<T, F>(
+    select: Select<BTreeSet<T>>,
+    removals: &Select<BTreeSet<String>>,
+    supported_platform_triples: &BTreeSet<String>,
+    matches: F,
+) -> Select<BTreeSet<T>>
+where
+    T: SelectableOrderedValue,
+    F: Fn(&T, &str) -> bool,
+{
+    let (mut common, mut selects) = select.into_parts();
+
+    // Partition the removal spec into names to drop everywhere (common) and
+    // names to drop for a specific triple.
+    let mut global: BTreeSet<String> = BTreeSet::new();
+    let mut per_triple: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (config, name) in removals.items() {
+        match config {
+            None => {
+                global.insert(name);
+            }
+            Some(triple) => {
+                per_triple.entry(triple).or_default().insert(name);
+            }
+        }
+    }
+
+    let matches_any = |value: &T, names: &BTreeSet<String>| names.iter().any(|n| matches(value, n));
+
+    // Global removals: drop from the common set and every configuration.
+    if !global.is_empty() {
+        common.retain(|value| !matches_any(value, &global));
+        for set in selects.values_mut() {
+            set.retain(|value| !matches_any(value, &global));
+        }
+    }
+
+    if !per_triple.is_empty() {
+        // Values in `common` that at least one triple wants removed must be
+        // demoted: dropped from `common` and re-pinned onto every supported
+        // triple that still wants them.
+        let demote: BTreeSet<T> = common
+            .iter()
+            .filter(|value| per_triple.values().any(|names| matches_any(value, names)))
+            .cloned()
+            .collect();
+        for value in &demote {
+            common.remove(value);
+            for triple in supported_platform_triples {
+                let removed_here = per_triple
+                    .get(triple)
+                    .is_some_and(|names| matches_any(value, names));
+                if !removed_here {
+                    selects
+                        .entry(triple.clone())
+                        .or_default()
+                        .insert(value.clone());
+                }
+            }
+        }
+
+        // Drop values that were pinned to a specific triple's set.
+        for (triple, names) in &per_triple {
+            if let Some(set) = selects.get_mut(triple) {
+                set.retain(|value| !matches_any(value, names));
+            }
+        }
+    }
+
+    selects.retain(|_, set| !set.is_empty());
+
+    Select::from_parts(common, selects)
+}
+
 impl CrateContext {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
@@ -578,6 +666,46 @@ impl CrateContext {
             override_targets: BTreeMap::new(),
         }
         .with_overrides(extras))
+    }
+
+    /// Apply the `disabled_features` / `excluded_deps` annotations, trimming the
+    /// resolver-provided `crate_features` and `deps` for the requested target
+    /// triples. This is the escape hatch for whole-workspace feature unification
+    /// forcing a feature (and its optional deps) onto a platform that cannot
+    /// build it — see [`crate::config::CrateAnnotations::disabled_features`].
+    pub(crate) fn apply_exclusions(
+        &mut self,
+        extra: &CrateAnnotations,
+        supported_platform_triples: &BTreeSet<TargetTriple>,
+    ) {
+        if extra.disabled_features.is_none() && extra.excluded_deps.is_none() {
+            return;
+        }
+
+        let triples: BTreeSet<String> = supported_platform_triples
+            .iter()
+            .map(TargetTriple::to_bazel)
+            .collect();
+
+        if let Some(disabled) = &extra.disabled_features {
+            let features = std::mem::take(&mut self.common_attrs.crate_features);
+            self.common_attrs.crate_features =
+                remove_selected(features, disabled, &triples, |feature, name| feature == name);
+        }
+
+        if let Some(excluded) = &extra.excluded_deps {
+            let deps = std::mem::take(&mut self.common_attrs.deps);
+            self.common_attrs.deps =
+                remove_selected(deps, excluded, &triples, |dep, name| dep.id.name == name);
+
+            // Also trim dev-dependencies: a feature unioned onto the shared
+            // target from a workspace member's dev-dependencies (e.g. a test
+            // HTTP server pulling tokio `net`) can drag the same optional deps
+            // into `deps_dev`.
+            let deps_dev = std::mem::take(&mut self.common_attrs.deps_dev);
+            self.common_attrs.deps_dev =
+                remove_selected(deps_dev, excluded, &triples, |dep, name| dep.id.name == name);
+        }
     }
 
     fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairedExtras>) -> Self {
@@ -942,6 +1070,69 @@ mod test {
             Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
+    }
+
+    fn triples(names: &[&str]) -> BTreeSet<String> {
+        names.iter().map(|n| n.to_string()).collect()
+    }
+
+    fn features(values: &[(Option<&str>, &str)]) -> Select<BTreeSet<String>> {
+        let mut select = Select::<BTreeSet<String>>::new();
+        for (config, value) in values {
+            select.insert(value.to_string(), config.map(str::to_string));
+        }
+        select
+    }
+
+    #[test]
+    fn remove_selected_demotes_unconditional_feature_off_one_triple() {
+        // `net` is unconditional (forced on by whole-workspace unification);
+        // disabling it on wasm32 must keep it active on the other triples.
+        let input = features(&[(None, "sync"), (None, "net")]);
+        let disabled = features(&[(Some("wasm32-unknown-unknown"), "net")]);
+        let supported = triples(&[
+            "wasm32-unknown-unknown",
+            "x86_64-unknown-linux-gnu",
+            "aarch64-apple-darwin",
+        ]);
+
+        let (common, selects) =
+            remove_selected(input, &disabled, &supported, |f, n| f == n).into_parts();
+
+        assert_eq!(common, triples(&["sync"]));
+        assert_eq!(selects.get("wasm32-unknown-unknown"), None);
+        assert_eq!(selects["x86_64-unknown-linux-gnu"], triples(&["net"]));
+        assert_eq!(selects["aarch64-apple-darwin"], triples(&["net"]));
+    }
+
+    #[test]
+    fn remove_selected_drops_triple_specific_value() {
+        // `net` is only present on wasm32 already; disabling it there removes it
+        // entirely without touching other triples.
+        let input = features(&[(None, "sync"), (Some("wasm32-unknown-unknown"), "net")]);
+        let disabled = features(&[(Some("wasm32-unknown-unknown"), "net")]);
+        let supported = triples(&["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"]);
+
+        let (common, selects) =
+            remove_selected(input, &disabled, &supported, |f, n| f == n).into_parts();
+
+        assert_eq!(common, triples(&["sync"]));
+        assert!(selects.is_empty());
+    }
+
+    #[test]
+    fn remove_selected_common_config_removes_everywhere() {
+        // A removal keyed to the common config drops the value from every
+        // configuration.
+        let input = features(&[(None, "net"), (Some("x86_64-unknown-linux-gnu"), "net")]);
+        let disabled = features(&[(None, "net")]);
+        let supported = triples(&["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"]);
+
+        let (common, selects) =
+            remove_selected(input, &disabled, &supported, |f, n| f == n).into_parts();
+
+        assert!(common.is_empty());
+        assert!(selects.is_empty());
     }
 
     #[test]

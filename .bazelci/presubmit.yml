@@ -773,6 +773,16 @@ tasks:
     run_targets:
       - "//:vendor_edit_test_in_tree"
 
+  # --- wasm_cfg_features (linux only; the wasm32 build is host-independent) ---
+  cu_integ_wasm_cfg_features_ubuntu2204:
+    name: Crate Universe - wasm_cfg_features
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/wasm_cfg_features
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
   example_bindgen_toolchain:
     name: Example custom bindgen toolchain registration
     platform: ubuntu2204

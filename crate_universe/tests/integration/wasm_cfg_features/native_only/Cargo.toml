@@ -1,0 +1,16 @@
+[package]
+name = "native_only"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+# `native_only` enables tokio's `net` feature, but only on non-wasm targets.
+# The `net` feature activates the optional `mio` and `socket2` dependencies.
+# Because this dependency is `cfg`-gated (rather than merely feature-gated),
+# cargo already omits it from the wasm32-unknown-unknown resolution, so this
+# member does not contribute to the leak. It is here to show that cfg-gated
+# dependencies are handled correctly on their own.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { version = "=1.52.0", features = ["net"] }

@@ -1,0 +1,15 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+# `server` is a native-only service that requests tokio's `net` feature with no
+# cfg gate. This is what makes cargo's whole-workspace feature unification treat
+# `net` as active for every target, including wasm32-unknown-unknown, pulling in
+# the `mio` and `socket2` dependencies that do not compile there. It is the
+# crate the `tokio` annotation in //:MODULE.bazel exists to counteract.
+[dependencies]
+tokio = { version = "=1.52.0", features = ["net"] }

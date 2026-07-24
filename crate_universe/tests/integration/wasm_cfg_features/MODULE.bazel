@@ -1,0 +1,64 @@
+module(
+    name = "cu_test_wasm_cfg_features",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    extra_target_triples = [
+        "wasm32-unknown-unknown",
+    ],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+# Workspace member `server` requests tokio's `net` feature unconditionally. Cargo's
+# whole-workspace feature unification therefore activates `net` (and its `mio`
+# and `socket2` dependencies) for *every* target the index is resolved for,
+# including wasm32-unknown-unknown where those crates do not compile. Undo that
+# for wasm32 only, leaving `net` intact on the other supported triples where
+# `server` genuinely needs it.
+crate.annotation_select(
+    crate = "tokio",
+    # `net` and the implicit `mio`/`socket2` features it activates (the two
+    # optional dependencies of the same name), plus the dependencies those
+    # features pull in.
+    disabled_features = [
+        "net",
+        "mio",
+        "socket2",
+    ],
+    excluded_deps = [
+        "mio",
+        "socket2",
+    ],
+    triples = ["wasm32-unknown-unknown"],
+)
+crate.from_cargo(
+    name = "crate_index_wasm_cfg_features",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+    manifests = ["//:Cargo.toml"],
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+    ],
+)
+use_repo(
+    crate,
+    "crate_index_wasm_cfg_features",
+)

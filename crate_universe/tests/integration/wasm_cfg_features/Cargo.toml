@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "app",
+    "native_only",
+    "server",
+]
+resolver = "2"

@@ -290,6 +290,22 @@ pub(crate) struct CrateAnnotations {
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
     pub(crate) crate_features: Option<Select<BTreeSet<String>>>,
 
+    /// Features to remove from the target's `crate_features`. Values under a
+    /// specific target triple are dropped for that triple only (a feature that
+    /// was unconditional is preserved on the other supported triples); values
+    /// under the common configuration are dropped everywhere. Used to undo
+    /// features that whole-workspace feature unification forces onto a platform
+    /// that cannot support them (e.g. tokio's `net` on `wasm32-unknown-unknown`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) disabled_features: Option<Select<BTreeSet<String>>>,
+
+    /// Dependencies (by crate name) to remove from the target's `deps`. Follows
+    /// the same per-triple semantics as `disabled_features` and is typically
+    /// paired with it to drop the optional dependencies a disabled feature would
+    /// have activated (e.g. `mio`/`socket2` alongside tokio's `net`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) excluded_deps: Option<Select<BTreeSet<String>>>,
+
     /// Additional data to pass to  the target's
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
     pub(crate) data: Option<Select<BTreeSet<Label>>>,
@@ -456,6 +472,8 @@ impl Add for CrateAnnotations {
             proc_macro_deps: select_merge(self.proc_macro_deps, rhs.proc_macro_deps),
             link_deps: select_merge(self.link_deps, rhs.link_deps),
             crate_features: select_merge(self.crate_features, rhs.crate_features),
+            disabled_features: select_merge(self.disabled_features, rhs.disabled_features),
+            excluded_deps: select_merge(self.excluded_deps, rhs.excluded_deps),
             data: select_merge(self.data, rhs.data),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
