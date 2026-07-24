@@ -43,6 +43,8 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags_file,
         link_flags_file,
         link_search_paths_file,
+        cdylib_link_flags_file,
+        bin_link_flags_file,
         output_dep_env_path,
         stdout_path,
         stderr_path,
@@ -218,6 +220,8 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags,
         link_flags,
         link_search_paths,
+        cdylib_link_flags,
+        bin_link_flags,
     } = BuildScriptOutput::outputs_to_flags(
         &buildrs_outputs,
         &exec_root.to_string_lossy(),
@@ -234,6 +238,14 @@ fn run_buildrs() -> Result<(), String> {
             link_search_paths_file, e
         )
     });
+    write(&cdylib_link_flags_file, cdylib_link_flags.as_bytes()).unwrap_or_else(|e| {
+        panic!(
+            "Unable to write file {:?}: {:#?}",
+            cdylib_link_flags_file, e
+        )
+    });
+    write(&bin_link_flags_file, bin_link_flags.as_bytes())
+        .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", bin_link_flags_file, e));
 
     if !exec_root_links.is_empty() {
         for link in exec_root_links {
@@ -400,6 +412,8 @@ struct Args {
     compile_flags_file: String,
     link_flags_file: String,
     link_search_paths_file: String,
+    cdylib_link_flags_file: String,
+    bin_link_flags_file: String,
     output_dep_env_path: String,
     stdout_path: Option<String>,
     stderr_path: Option<String>,
@@ -423,6 +437,10 @@ impl Args {
             Err("Argument `link_flags_file` not provided".to_owned());
         let mut link_search_paths_file: Result<String, String> =
             Err("Argument `link_search_paths_file` not provided".to_owned());
+        let mut cdylib_link_flags_file: Result<String, String> =
+            Err("Argument `cdylib_link_flags_file` not provided".to_owned());
+        let mut bin_link_flags_file: Result<String, String> =
+            Err("Argument `bin_link_flags_file` not provided".to_owned());
         let mut output_dep_env_path: Result<String, String> =
             Err("Argument `output_dep_env_path` not provided".to_owned());
         let mut stdout_path = None;
@@ -447,6 +465,10 @@ impl Args {
                 link_flags_file = Ok(arg.split_off("--link_flags=".len()));
             } else if arg.starts_with("--link_search_paths=") {
                 link_search_paths_file = Ok(arg.split_off("--link_search_paths=".len()));
+            } else if arg.starts_with("--cdylib_link_flags=") {
+                cdylib_link_flags_file = Ok(arg.split_off("--cdylib_link_flags=".len()));
+            } else if arg.starts_with("--bin_link_flags=") {
+                bin_link_flags_file = Ok(arg.split_off("--bin_link_flags=".len()));
             } else if arg.starts_with("--dep_env_out=") {
                 output_dep_env_path = Ok(arg.split_off("--dep_env_out=".len()));
             } else if arg.starts_with("--stdout=") {
@@ -472,6 +494,8 @@ impl Args {
             compile_flags_file: compile_flags_file.unwrap(),
             link_flags_file: link_flags_file.unwrap(),
             link_search_paths_file: link_search_paths_file.unwrap(),
+            cdylib_link_flags_file: cdylib_link_flags_file.unwrap(),
+            bin_link_flags_file: bin_link_flags_file.unwrap(),
             output_dep_env_path: output_dep_env_path.unwrap(),
             stdout_path,
             stderr_path,
