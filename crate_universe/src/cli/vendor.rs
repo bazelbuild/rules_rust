@@ -168,6 +168,12 @@ impl BazelInfo {
         }
 
         let output = String::from_utf8_lossy(output.stdout.as_slice());
+        Self::parse_bazel_info(&output)
+    }
+
+    /// Parse `bazel info` output into a `BazelInfo`. The `OUTPUT_BASE`
+    /// environment variable, when set, overrides the parsed output_base.
+    fn parse_bazel_info(output: &str) -> anyhow::Result<Self> {
         let mut bazel_info: HashMap<String, String> = output
             .trim()
             .split('\n')
@@ -183,7 +189,7 @@ impl BazelInfo {
         // Allow a predefined environment variable to take precedent. This
         // solves for the specific needs of Bazel CI on Github.
         if let Ok(path) = env::var("OUTPUT_BASE") {
-            bazel_info.insert("output_base".to_owned(), format!("output_base: {}", path));
+            bazel_info.insert("output_base".to_owned(), path);
         };
 
         BazelInfo::try_from(bazel_info)
@@ -408,5 +414,22 @@ mod tests {
             info.release
         );
         assert_eq!(PathBuf::from("/tmp/output_base"), info.output_base);
+    }
+
+    #[test]
+    fn test_parse_bazel_info_output_base_env_override() {
+        let bazel_info_output = "release: 8.0.0\noutput_base: /original/path";
+
+        // Without OUTPUT_BASE set, parse_bazel_info uses the parsed value.
+        env::remove_var("OUTPUT_BASE");
+        let info = BazelInfo::parse_bazel_info(bazel_info_output).unwrap();
+        assert_eq!(PathBuf::from("/original/path"), info.output_base);
+
+        // With OUTPUT_BASE set, it overrides the parsed value.
+        env::set_var("OUTPUT_BASE", "/override/path");
+        let info = BazelInfo::parse_bazel_info(bazel_info_output).unwrap();
+        assert_eq!(PathBuf::from("/override/path"), info.output_base);
+
+        env::remove_var("OUTPUT_BASE");
     }
 }
