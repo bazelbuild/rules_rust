@@ -7,6 +7,8 @@
 /bazel-*
 /bzlmod/hello_world/bazel-*
 /examples/bazel-*
+/examples/bindgen_toolchain/bazel-*
+/examples/cbindgen_toolchain/bazel-*
 /examples/cargo_manifest_dir/external_crate/bazel-*
 /crate_universe/tests/integration/*/bazel-*
 /crate_universe/tests/integration/vendor/*/bazel-*

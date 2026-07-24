@@ -1,0 +1,12 @@
+load("@rules_rust_cbindgen//:defs.bzl", "rust_cbindgen_toolchain")
+
+rust_cbindgen_toolchain(
+    name = "rust_cbindgen_toolchain",
+    cbindgen = "@crates//:cbindgen__cbindgen",
+)
+
+toolchain(
+    name = "my_cbindgen_toolchain",
+    toolchain = ":rust_cbindgen_toolchain",
+    toolchain_type = "@rules_rust_cbindgen//:toolchain_type",
+)

@@ -1,0 +1,22 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+load("@rules_rust_cbindgen//:defs.bzl", "rust_cbindgen_library")
+
+rust_static_library(
+    name = "simple",
+    srcs = ["simple.rs"],
+    edition = "2021",
+)
+
+rust_cbindgen_library(
+    name = "simple_cbindgen",
+    lang = "c",
+    lib = ":simple",
+)
+
+cc_test(
+    name = "simple_test",
+    size = "small",
+    srcs = ["simple_test.c"],
+    deps = [":simple_cbindgen"],
+)
