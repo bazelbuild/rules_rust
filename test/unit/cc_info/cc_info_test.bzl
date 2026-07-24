@@ -45,6 +45,10 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
         asserts.true(env, library_to_link.static_library != None)
         if type in ("rlib", "lib"):
             asserts.true(env, library_to_link.static_library.basename.startswith("lib" + tut.label.name))
+            if _is_windows(env.ctx):
+                asserts.true(env, library_to_link.static_library.basename.endswith(".lib"), "Expected .lib extension on Windows, got " + library_to_link.static_library.basename)
+            else:
+                asserts.true(env, library_to_link.static_library.basename.endswith(".a"), "Expected .a extension on non-Windows, got " + library_to_link.static_library.basename)
         asserts.true(env, library_to_link.pic_static_library != None)
         asserts.equals(env, library_to_link.static_library, library_to_link.pic_static_library)
 
