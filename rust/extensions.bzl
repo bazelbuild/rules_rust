@@ -16,6 +16,7 @@ load(
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
+load("//rust/private:strip_level.bzl", "build_strip_levels")
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -113,7 +114,14 @@ def _rust_impl(module_ctx):
         if toolchain_triples.get(repository_set["exec_triple"]) == repository_set["name"]:
             toolchain_triples.pop(repository_set["exec_triple"], None)
 
-    toolchains = root.tags.toolchain or rules_rust.tags.toolchain
+    # Toolchains and their `strip_level_select`s are read from the same module
+    # so that the selects always match the toolchains they refine.
+    if root.tags.toolchain:
+        toolchains = root.tags.toolchain
+        strip_level_selects = root.tags.strip_level_select
+    else:
+        toolchains = rules_rust.tags.toolchain
+        strip_level_selects = rules_rust.tags.strip_level_select
 
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
@@ -130,6 +138,8 @@ def _rust_impl(module_ctx):
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
             extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
+            triples = list(toolchain_triples.keys()) + list(toolchain.extra_target_triples)
+
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
@@ -143,7 +153,11 @@ def _rust_impl(module_ctx):
                 sha256s = toolchain.sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
-                strip_level = toolchain.strip_level if toolchain.strip_level else None,
+                strip_level = build_strip_levels(
+                    strip_level_selects = strip_level_selects,
+                    default_strip_level = toolchain.strip_level,
+                    triples = triples,
+                ) if triples else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
                 compact_windows_names = True,
@@ -300,11 +314,44 @@ _RUST_TOOLCHAIN_TAG = tag_class(
     } | _COMMON_TAG_KWARGS,
 )
 
+_RUST_STRIP_LEVEL_SELECT = tag_class(
+    doc = """\
+Override the `strip_level` for specific target triples.
+
+```python
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.strip_level_select(
+    triples = ["x86_64-unknown-linux-gnu"],
+    opt = "symbols",
+)
+```
+""",
+    attrs = {
+        "dbg": attr.string(
+            doc = "Strip level for the `dbg` compilation mode.",
+            default = "none",
+        ),
+        "fastbuild": attr.string(
+            doc = "Strip level for the `fastbuild` compilation mode.",
+            default = "none",
+        ),
+        "opt": attr.string(
+            doc = "Strip level for the `opt` compilation mode.",
+            default = "debuginfo",
+        ),
+        "triples": attr.string_list(
+            doc = "The target triples these strip levels apply to.",
+            mandatory = True,
+        ),
+    },
+)
+
 rust = module_extension(
     doc = "Rust toolchain extension.",
     implementation = _rust_impl,
     tag_classes = {
         "repository_set": _RUST_REPOSITORY_SET_TAG,
+        "strip_level_select": _RUST_STRIP_LEVEL_SELECT,
         "toolchain": _RUST_TOOLCHAIN_TAG,
     },
 )
