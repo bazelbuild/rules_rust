@@ -202,6 +202,23 @@ extension, are deleted from <code>OUT_DIR</code> after the build script runs and
 captures the directory. Files like <code>config.log</code> and <code>Makefile</code> embed the Bazel
 sandbox path, so their content changes on every action invocation, causing cache
 misses for all downstream <code>rustc</code> compilations.</p>
+<p><a id="use_cc_toolchain"></a></p>
+<h2 id="use_cc_toolchain"><a class="header" href="#use_cc_toolchain">use_cc_toolchain</a></h2>
+<pre>
+--@rules_rust//cargo/settings:use_cc_toolchain
+</pre>
+<p>A flag which controls the global default of whether <code>cargo_build_script</code>     targets should pull in the resolved <code>cc_toolchain</code>.</p>
+<p>When enabled (the default), each <code>cargo_build_script</code> action gets the
+resolved <code>cc_toolchain</code>'s <code>all_files</code> added to its inputs and picks up the
+<code>CC</code>, <code>CXX</code>, <code>AR</code>, <code>CFLAGS</code>, <code>CXXFLAGS</code>, <code>LDFLAGS</code>, and <code>INCLUDE</code>
+environment variables derived from that toolchain. This matches Cargo's
+behavior and is required for build scripts that shell out to a C/C++
+compiler (e.g. those using <code>cc-rs</code> or <code>cmake-rs</code>).</p>
+<p>When disabled, the <code>cc_toolchain</code> is omitted from <code>cargo_build_script</code>
+actions. This can significantly reduce action input sizes when using a
+hermetic sysroot but breaks any build script that needs to compile C/C++
+code. Individual targets may override this default via the
+<code>cargo_build_script.use_cc_toolchain</code> attribute.</p>
 <p><a id="use_default_shell_env"></a></p>
 <h2 id="use_default_shell_env"><a class="header" href="#use_default_shell_env">use_default_shell_env</a></h2>
 <pre>
