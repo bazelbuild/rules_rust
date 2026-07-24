@@ -1,6 +1,6 @@
 # Rules
 
-- [defs](defs.md): standard rust rules for building and testing libraries and binaries.
+- [rust](rust.md): standard rust rules for building and testing libraries and binaries.
 - [rustdoc](rust_doc.md): rules for generating and testing rust documentation.
 - [clippy](rust_clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
 - [rustfmt](rust_fmt.md): rules for running [rustfmt](https://github.com/rust-lang/rustfmt#readme).
