@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_clippy_aspect")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_suffix")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_suffix", "assert_env_value")
 
 def _find_clippy_action(actions):
     for action in actions:
@@ -93,6 +93,35 @@ def _clippy_aspect_with_explicit_flags_test_impl(ctx):
         _CLIPPY_EXPLICIT_FLAGS + _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
     )
 
+def _clippy_aspect_conf_dir_test_impl(ctx, expected_dir):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    clippy_action = _find_clippy_action(target.actions)
+    assert_env_value(
+        env,
+        clippy_action,
+        "CLIPPY_CONF_DIR",
+        "${{pwd}}/{}".format(expected_dir),
+    )
+
+    # Exactly one clippy.toml should appear in the action inputs, and it
+    # should come from `expected_dir`. Any other clippy.toml (e.g., the
+    # unchosen global default) is a bug: the aspect would still rerun on
+    # changes to a config it never reads.
+    config_inputs = [
+        f
+        for f in clippy_action.inputs.to_list()
+        if f.basename in ("clippy.toml", ".clippy.toml")
+    ]
+    asserts.true(
+        env,
+        len(config_inputs) == 1 and config_inputs[0].dirname == expected_dir,
+        "expected exactly one clippy config from {} in action inputs, got {}".format(expected_dir, config_inputs),
+    )
+
+    return analysistest.end(env)
+
 def make_clippy_aspect_unittest(impl, **kwargs):
     return analysistest.make(
         impl,
@@ -146,6 +175,14 @@ clippy_aspect_with_output_diagnostics_test = make_clippy_aspect_unittest(
     },
 )
 
+clippy_aspect_uses_default_conf_dir_test = make_clippy_aspect_unittest(
+    lambda ctx: _clippy_aspect_conf_dir_test_impl(ctx, "rust/settings"),
+)
+
+clippy_aspect_uses_target_conf_dir_test = make_clippy_aspect_unittest(
+    lambda ctx: _clippy_aspect_conf_dir_test_impl(ctx, "test/clippy/target_config"),
+)
+
 def clippy_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -193,6 +230,23 @@ def clippy_test_suite(name):
         target_under_test = Label("//test/clippy:ok_library"),
     )
 
+    clippy_aspect_uses_default_conf_dir_test(
+        name = "clippy_aspect_uses_default_conf_dir_test",
+        target_under_test = Label("//test/clippy:ok_library"),
+    )
+    clippy_aspect_uses_target_conf_dir_test(
+        name = "clippy_aspect_uses_target_conf_dir_test",
+        target_under_test = Label("//test/clippy:ok_library_with_clippy_config"),
+    )
+    clippy_aspect_uses_default_conf_dir_test(
+        name = "clippy_aspect_crate_test_ignores_library_conf_dir_test",
+        target_under_test = Label("//test/clippy:ok_crate_test_without_clippy_config"),
+    )
+    clippy_aspect_uses_target_conf_dir_test(
+        name = "clippy_aspect_crate_test_uses_own_conf_dir_test",
+        target_under_test = Label("//test/clippy:ok_crate_test_with_clippy_config"),
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -205,5 +259,9 @@ def clippy_test_suite(name):
             ":clippy_aspect_without_clippy_error_format_test",
             ":clippy_aspect_with_clippy_error_format_test",
             ":clippy_aspect_with_output_diagnostics_test",
+            ":clippy_aspect_uses_default_conf_dir_test",
+            ":clippy_aspect_uses_target_conf_dir_test",
+            ":clippy_aspect_crate_test_ignores_library_conf_dir_test",
+            ":clippy_aspect_crate_test_uses_own_conf_dir_test",
         ],
     )

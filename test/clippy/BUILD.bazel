@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_binary",
@@ -50,6 +51,24 @@ rust_proc_macro(
     edition = "2018",
 )
 
+rust_library(
+    name = "ok_library_with_clippy_config",
+    srcs = ["src/lib.rs"],
+    clippy_config = "//test/clippy/target_config:clippy.toml",
+    edition = "2018",
+)
+
+rust_test(
+    name = "ok_crate_test_without_clippy_config",
+    crate = ":ok_library_with_clippy_config",
+)
+
+rust_test(
+    name = "ok_crate_test_with_clippy_config",
+    clippy_config = "//test/clippy/target_config:clippy.toml",
+    crate = ":ok_library_with_clippy_config",
+)
+
 # Clippy analysis of passing targets.
 
 rust_clippy(
@@ -81,6 +100,11 @@ rust_clippy(
 rust_clippy(
     name = "ok_proc_macro_clippy",
     deps = [":ok_proc_macro"],
+)
+
+rust_clippy(
+    name = "ok_library_with_clippy_config_clippy",
+    deps = [":ok_library_with_clippy_config"],
 )
 
 # Declaration of failing targets.
@@ -127,6 +151,28 @@ rust_proc_macro(
     tags = ["noclippy"],
 )
 
+rust_library(
+    name = "bad_library_with_clippy_config",
+    srcs = ["src/lib.rs"],
+    clippy_config = "//test/clippy/too_many_args:clippy.toml",
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+write_file(
+    name = "generated_clippy_toml",
+    out = "gen/clippy.toml",
+    content = ["too-many-arguments-threshold = 1"],
+)
+
+rust_library(
+    name = "bad_library_with_generated_clippy_config",
+    srcs = ["src/lib.rs"],
+    clippy_config = ":generated_clippy_toml",
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
 # Clippy analysis of failing targets.
 
 rust_clippy(
@@ -164,6 +210,18 @@ rust_clippy(
     name = "bad_proc_macro_clippy",
     tags = ["manual"],
     deps = [":bad_proc_macro"],
+)
+
+rust_clippy(
+    name = "bad_library_with_clippy_config_clippy",
+    tags = ["manual"],
+    deps = [":bad_library_with_clippy_config"],
+)
+
+rust_clippy(
+    name = "bad_library_with_generated_clippy_config_clippy",
+    tags = ["manual"],
+    deps = [":bad_library_with_generated_clippy_config"],
 )
 
 sh_binary(
