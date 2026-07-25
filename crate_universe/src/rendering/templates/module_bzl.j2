@@ -163,6 +163,7 @@ def all_crate_deps(
         proc_macro_dev = False,
         build = False,
         build_proc_macro = False,
+        first_party = False,
         package_name = {{ default_package_name }}):
     """Finds the fully qualified label of all requested direct crate dependencies \
     for the package where this macro is called.
@@ -183,6 +184,15 @@ def all_crate_deps(
             in the output list.
         build_proc_macro (bool, optional): If True, build proc_macro dependencies are
             included in the output list.
+        first_party (bool, optional): If True, dependencies on other crates of this Cargo
+            workspace are included in the output list alongside the third party ones, for
+            each dependency kind requested. Each such crate is expected to have a Bazel
+            target named after its Cargo library target, in the Bazel package matching its
+            location in the Cargo workspace. Defaults to False, leaving those dependencies
+            for you to declare by hand. Note that intra-workspace dependencies are only
+            recorded in lockfiles written by a version of `crate_universe` that supports
+            them, so a lockfile predating this feature yields nothing here until it is
+            repinned.
         package_name (str, optional): The package name of the set of dependencies to look up.
             Defaults to `native.package_name()` when unset.
 
@@ -197,20 +207,34 @@ def all_crate_deps(
     all_dependency_maps = []
     if normal:
         all_dependency_maps.append(_NORMAL_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_NORMAL_DEPENDENCIES)
     if normal_dev:
         all_dependency_maps.append(_NORMAL_DEV_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_NORMAL_DEV_DEPENDENCIES)
     if proc_macro:
         all_dependency_maps.append(_PROC_MACRO_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_PROC_MACRO_DEPENDENCIES)
     if proc_macro_dev:
         all_dependency_maps.append(_PROC_MACRO_DEV_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_PROC_MACRO_DEV_DEPENDENCIES)
     if build:
         all_dependency_maps.append(_BUILD_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_BUILD_DEPENDENCIES)
     if build_proc_macro:
         all_dependency_maps.append(_BUILD_PROC_MACRO_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_BUILD_PROC_MACRO_DEPENDENCIES)
 
     # Default to always using normal dependencies
     if not all_dependency_maps:
         all_dependency_maps.append(_NORMAL_DEPENDENCIES)
+        if first_party:
+            all_dependency_maps.append(_FIRST_PARTY_NORMAL_DEPENDENCIES)
 
     dependencies = _flatten_dependency_maps(all_dependency_maps).pop(package_name, None)
 
@@ -319,29 +343,58 @@ _CRATE_EDITIONS = {
     {%- endfor %}
 }
 
-_NORMAL_DEPENDENCIES = {% set deps_type = "normal" %}{% include "partials/module/deps_map.j2" %}
+_NORMAL_DEPENDENCIES = {% set deps_type = "normal" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _NORMAL_ALIASES = {% set deps_type = "normal" %}{% include "partials/module/aliases_map.j2" %}
 
-_NORMAL_DEV_DEPENDENCIES = {% set deps_type = "normal-dev" %}{% include "partials/module/deps_map.j2" %}
+_NORMAL_DEV_DEPENDENCIES = {% set deps_type = "normal-dev" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _NORMAL_DEV_ALIASES = {% set deps_type = "normal-dev" %}{% include "partials/module/aliases_map.j2" %}
 
-_PROC_MACRO_DEPENDENCIES = {% set deps_type = "proc-macro" %}{% include "partials/module/deps_map.j2" %}
+_PROC_MACRO_DEPENDENCIES = {% set deps_type = "proc-macro" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _PROC_MACRO_ALIASES = {% set deps_type = "proc-macro-dev" %}{% include "partials/module/aliases_map.j2" %}
 
-_PROC_MACRO_DEV_DEPENDENCIES = {% set deps_type = "proc-macro-dev" %}{% include "partials/module/deps_map.j2" %}
+_PROC_MACRO_DEV_DEPENDENCIES = {% set deps_type = "proc-macro-dev" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _PROC_MACRO_DEV_ALIASES = {% set deps_type = "normal-dev" %}{% include "partials/module/aliases_map.j2" %}
 
-_BUILD_DEPENDENCIES = {% set deps_type = "build" %}{% include "partials/module/deps_map.j2" %}
+_BUILD_DEPENDENCIES = {% set deps_type = "build" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _BUILD_ALIASES = {% set deps_type = "build" %}{% include "partials/module/aliases_map.j2" %}
 
-_BUILD_PROC_MACRO_DEPENDENCIES = {% set deps_type = "build-proc-macro" %}{% include "partials/module/deps_map.j2" %}
+_BUILD_PROC_MACRO_DEPENDENCIES = {% set deps_type = "build-proc-macro" %}{% set first_party = false %}{% include "partials/module/deps_map.j2" %}
 
 _BUILD_PROC_MACRO_ALIASES = {% set deps_type = "build-proc-macro" %}{% include "partials/module/aliases_map.j2" %}
+
+# Dependencies on other crates of this Cargo workspace, consumed only when
+# `all_crate_deps` is called with `first_party = True`. Empty when the rules did
+# not supply a `cargo_lockfile` label to resolve those crates against.
+{%- if render_first_party_deps %}
+_FIRST_PARTY_NORMAL_DEPENDENCIES = {% set deps_type = "normal" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+
+_FIRST_PARTY_NORMAL_DEV_DEPENDENCIES = {% set deps_type = "normal-dev" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+
+_FIRST_PARTY_PROC_MACRO_DEPENDENCIES = {% set deps_type = "proc-macro" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+
+_FIRST_PARTY_PROC_MACRO_DEV_DEPENDENCIES = {% set deps_type = "proc-macro-dev" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+
+_FIRST_PARTY_BUILD_DEPENDENCIES = {% set deps_type = "build" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+
+_FIRST_PARTY_BUILD_PROC_MACRO_DEPENDENCIES = {% set deps_type = "build-proc-macro" %}{% set first_party = true %}{% include "partials/module/deps_map.j2" %}
+{%- else %}
+_FIRST_PARTY_NORMAL_DEPENDENCIES = {}
+
+_FIRST_PARTY_NORMAL_DEV_DEPENDENCIES = {}
+
+_FIRST_PARTY_PROC_MACRO_DEPENDENCIES = {}
+
+_FIRST_PARTY_PROC_MACRO_DEV_DEPENDENCIES = {}
+
+_FIRST_PARTY_BUILD_DEPENDENCIES = {}
+
+_FIRST_PARTY_BUILD_PROC_MACRO_DEPENDENCIES = {}
+{%- endif %}
 
 _CONDITIONS = {
 {%- for condition, triples in platforms %}

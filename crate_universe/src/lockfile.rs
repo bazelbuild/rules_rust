@@ -13,7 +13,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as Sha2Digest, Sha256};
 
-use crate::config::Config;
+use crate::config::{Config, RenderConfig};
 use crate::context::Context;
 use crate::metadata::Cargo;
 use crate::splicing::{SplicingManifest, SplicingMetadata};
@@ -78,9 +78,15 @@ impl Digest {
         // `single_version_override` would shift the canonical names, change
         // the digest, and force a producer-side repin to recover — which is
         // impossible for registry-distributed producers whose lockfile lives
-        // in a read-only bzlmod cache.
+        // in a read-only bzlmod cache. `rendering.cargo_lockfile_label` carries
+        // a consumer-side canonical repository name too, so it is cleared for
+        // exactly the same reason.
         let config_for_hash = Config {
             label_injection_mapping: Default::default(),
+            rendering: RenderConfig {
+                cargo_lockfile_label: None,
+                ..config.rendering.clone()
+            },
             ..config.clone()
         };
 

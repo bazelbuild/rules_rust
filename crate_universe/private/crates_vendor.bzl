@@ -264,6 +264,12 @@ def _write_config_file(ctx):
             output_pkg = _get_output_package(ctx),
             workspace_name = workspace_name,
             render_config = dict(json.decode(ctx.attr.render_config)) if ctx.attr.render_config else None,
+            # Vendored output is committed into the workspace that owns the Cargo
+            # workspace, so first-party labels stay repository-relative.
+            cargo_lockfile_label = "//{}:{}".format(
+                ctx.attr.cargo_lockfile.label.package,
+                ctx.attr.cargo_lockfile.label.name,
+            ) if ctx.attr.cargo_lockfile else None,
         ),
     )
 
@@ -285,6 +291,7 @@ def generate_config_file(
         output_pkg,
         workspace_name,
         render_config,
+        cargo_lockfile_label = None,
         repository_ctx = None):
     """Writes the rendering config to cargo-bazel-config.json.
 
@@ -301,6 +308,9 @@ def generate_config_file(
         output_pkg: The path to the package containing the build files.
         workspace_name (str): The name of the workspace.
         render_config: The render config to use.
+        cargo_lockfile_label (str, optional): The label of the `cargo_lockfile`. Its repository
+            is where `all_crate_deps(first_party = True)` looks for the Cargo workspace's own
+            crates.
         repository_ctx (repository_ctx, optional): A repository context object
             used for enabling certain functionality.
 
@@ -378,6 +388,7 @@ def generate_config_file(
         render_config = render_config,
         supported_platform_triples = supported_platform_triples,
         repository_name = repository_name or ctx.label.name,
+        cargo_lockfile_label = cargo_lockfile_label,
         repository_ctx = repository_ctx,
     )
 

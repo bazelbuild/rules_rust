@@ -212,6 +212,14 @@ pub(crate) mod metadata {
         )))
         .unwrap()
     }
+
+    pub(crate) fn workspace_path() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/workspace_path/metadata.json"
+        )))
+        .unwrap()
+    }
 }
 
 pub(crate) mod lockfile {
@@ -301,6 +309,14 @@ pub(crate) mod lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/workspace_build_scripts_deps/Cargo.lock"
+        )))
+        .unwrap()
+    }
+
+    pub(crate) fn workspace_path() -> cargo_lock::Lockfile {
+        cargo_lock::Lockfile::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/workspace_path/Cargo.lock"
         )))
         .unwrap()
     }

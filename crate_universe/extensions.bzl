@@ -591,6 +591,9 @@ def _generate_hub_and_spokes(
             workspace_name = cfg.name,
             generate_binaries = cfg.generate_binaries,
             render_config = render_config,
+            # The hub repository's `crates.bzl` lives outside the module being
+            # generated for, so first-party labels need an explicit repository.
+            cargo_lockfile_label = str(cfg.cargo_lockfile) if cfg.cargo_lockfile else None,
             repository_ctx = module_ctx,
         ),
     )

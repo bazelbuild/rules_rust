@@ -28,9 +28,17 @@
         {%- if deps_set.common | length %}
         _COMMON_CONDITION: {
             {%- for dep in deps_set.common %}
-            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- if first_party %}
+            {%- if not dep.workspace_member or dep.id not in context.workspace_members %}{% continue %}}{% endif %}{# Only crates of this Cargo workspace belong here, and only those with a known Bazel package #}
+            {%- else %}
+            {%- if dep.workspace_member or dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Crates of this Cargo workspace have no repository defined, skip adding their labels here #}
+            {%- endif %}
             {%- set crate = context.crates | get(key=dep.id) %}
+            {%- if first_party %}
+            "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ first_party_label(package = context.workspace_members | get(key=dep.id), target = dep.target) }}"),
+            {%- else %}
             "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ crate_alias(name = crate.name, version = crate.version, target = dep.target) }}"),
+            {%- endif %}
             {%- endfor %}
         },
         {%- endif %}
@@ -38,9 +46,17 @@
         {%- for condition, deps in deps_set.selects %}
         "{{ condition | addslashes }}": {
             {%- for dep in deps %}
-            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- if first_party %}
+            {%- if not dep.workspace_member or dep.id not in context.workspace_members %}{% continue %}}{% endif %}
+            {%- else %}
+            {%- if dep.workspace_member or dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Crates of this Cargo workspace have no repository defined, skip adding their labels here #}
+            {%- endif %}
             {%- set crate = context.crates | get(key=dep.id) %}
+            {%- if first_party %}
+            "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ first_party_label(package = context.workspace_members | get(key=dep.id), target = dep.target) }}"),
+            {%- else %}
             "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ crate_alias(name = crate.name, version = crate.version, target = dep.target) }}"),
+            {%- endif %}
             {%- endfor %}
         },
         {%- endfor %}

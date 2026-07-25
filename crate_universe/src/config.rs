@@ -132,6 +132,21 @@ pub(crate) struct RenderConfig {
     /// continue to write subpackage `BUILD.bazel`s into the hub repo directly.
     #[serde(default)]
     pub(crate) crates_vendor_synthesizes_subpackages: bool,
+
+    /// Internal: the label of the rule's `cargo_lockfile`. Only its repository
+    /// is used, to locate the Bazel repository holding the Cargo workspace's
+    /// own crates so `all_crate_deps(first_party = True)` can emit labels for
+    /// them. Injected by the rules, never set by users — a workspace member's
+    /// Bazel package is already known (`Context::workspace_members`); the
+    /// repository is the one piece the renderer cannot infer.
+    ///
+    /// Excluded from the digest by [`crate::lockfile::Digest::new`], mirroring
+    /// `label_injection_mapping`: canonical repository names are consumer-
+    /// specific, so hashing this would make a root-level
+    /// `single_version_override` demand a producer-side repin that a
+    /// registry-distributed lockfile in a read-only cache can never perform.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) cargo_lockfile_label: Option<Label>,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -156,6 +171,7 @@ impl Default for RenderConfig {
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
             incompatible_no_root_alias_targets: false,
             crates_vendor_synthesizes_subpackages: false,
+            cargo_lockfile_label: Option::default(),
         }
     }
 }

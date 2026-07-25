@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::CrateId;
 use crate::metadata::TreeResolverMetadata;
 use crate::select::Select;
-use crate::utils::sanitize_module_name;
+use crate::utils::{is_false, sanitize_module_name};
 
 /// A representation of a crate dependency
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -25,6 +25,13 @@ pub(crate) struct Dependency {
 
     /// The alias for the dependency from the perspective of the current package
     pub(crate) alias: Option<String>,
+
+    /// Whether the dependency is another member of the same Cargo workspace.
+    /// These are tracked but kept out of the third-party dependency maps, since
+    /// no repository is generated for them; `all_crate_deps(first_party = True)`
+    /// is what opts into them.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub(crate) workspace_member: bool,
 }
 
 /// A collection of [Dependency]s sorted by dependency kind.
@@ -50,8 +57,6 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -72,8 +77,6 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -96,8 +99,6 @@ impl DependencySet {
             let (proc_macro, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
                 .filter(|dep| is_build_dependency(dep))
                 .filter(|dep| !is_dev_dependency(dep))
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
@@ -202,6 +203,7 @@ fn collect_deps_selectable(
             .expect("Nodes Dependencies are expected to exclusively be library-like targets");
         let alias = get_target_alias(&dep.name, dep_pkg);
         let crate_id = CrateId::from(dep_pkg);
+        let workspace_member = is_workspace_member(dep, metadata);
 
         for kind_info in &dep.dep_kinds {
             if kind_info.kind != kind {
@@ -219,6 +221,7 @@ fn collect_deps_selectable(
                                 package_id: dep.pkg.clone(),
                                 target_name: target_name.clone(),
                                 alias: alias.clone(),
+                                workspace_member,
                             };
                             select.insert(dependency, config);
                         }
@@ -229,6 +232,7 @@ fn collect_deps_selectable(
                     package_id: dep.pkg.clone(),
                     target_name: target_name.clone(),
                     alias: alias.clone(),
+                    workspace_member,
                 };
                 select.insert(
                     dependency,
@@ -950,6 +954,51 @@ mod test {
                 .count(),
             0,
             "`mio` is a platform specific dependency and therefore should not be identified under the common configuration."
+        );
+    }
+
+    #[test]
+    fn workspace_member_deps_are_tracked_and_tagged() {
+        let metadata = metadata::workspace_path();
+
+        let child_b = find_metadata_node("child_b", &metadata);
+        let depset = DependencySet::new_for_node(child_b, &metadata, None);
+
+        // `child_b` depends on `child_a` through `[workspace.dependencies]`.
+        // The edge is recorded so `all_crate_deps(first_party = True)` has
+        // something to render, and tagged so the third-party dependency maps
+        // can leave it out.
+        let child_a: Vec<_> = depset
+            .normal_deps
+            .items()
+            .into_iter()
+            .filter(|(_, dep)| dep.target_name == "child_a")
+            .collect();
+
+        assert_eq!(child_a.len(), 1);
+        let (configuration, dep) = &child_a[0];
+        assert_eq!(configuration, &None);
+        assert!(
+            dep.workspace_member,
+            "`child_a` is a member of the same Cargo workspace as `child_b`"
+        );
+    }
+
+    #[test]
+    fn third_party_deps_are_not_tagged_as_workspace_members() {
+        let metadata = metadata::common();
+
+        let node = find_metadata_node("common", &metadata);
+        let depset = DependencySet::new_for_node(node, &metadata, None);
+
+        assert!(!depset.normal_deps.items().is_empty());
+        assert!(
+            depset
+                .normal_deps
+                .items()
+                .iter()
+                .all(|(_, dep)| !dep.workspace_member),
+            "no dependency of a single-package workspace can be a workspace member"
         );
     }
 }

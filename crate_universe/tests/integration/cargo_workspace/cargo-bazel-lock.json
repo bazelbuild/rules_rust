@@ -1,5 +1,5 @@
 {
-  "checksum": "0d1fb050eb87a6345ce8da4ff8f7ed41d6a12537ea25c0cb40b5916abb50df3f",
+  "checksum": "33f938e1a2c12be1faf7eb8c1f3e61ce98ca355ebfafe32d1db2dd59e84c215f",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -419,10 +419,6 @@
             {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
-            },
-            {
-              "id": "getrandom 0.1.16",
-              "target": "build_script_build"
             }
           ],
           "selects": {
@@ -439,6 +435,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "0.1.16"
@@ -550,12 +552,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "libc 0.2.139",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -596,6 +595,11 @@
             {
               "id": "clap 2.34.0",
               "target": "clap"
+            },
+            {
+              "id": "printer 0.1.0",
+              "target": "printer",
+              "workspace_member": true
             }
           ],
           "selects": {}
@@ -682,6 +686,11 @@
             {
               "id": "ferris-says 0.2.1",
               "target": "ferris_says"
+            },
+            {
+              "id": "rng 0.1.0",
+              "target": "rng",
+              "workspace_member": true
             }
           ],
           "selects": {}
@@ -1408,12 +1417,7 @@
           "selects": {}
         },
         "deps": {
-          "common": [
-            {
-              "id": "winapi 0.3.9",
-              "target": "build_script_build"
-            }
-          ],
+          "common": [],
           "selects": {
             "i686-pc-windows-gnu": [
               {
@@ -1428,6 +1432,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2015",
         "version": "0.3.9"
@@ -1491,12 +1501,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1562,12 +1569,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },

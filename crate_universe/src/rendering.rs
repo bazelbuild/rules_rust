@@ -2260,6 +2260,7 @@ mod test {
                 library_target_name: Some("library_name".into()),
                 common_attrs: CommonAttributes {
                     deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        workspace_member: false,
                         id: crate_id,
                         target: "target".into(),
                         // this is identical to what we have in the `name` attribute
@@ -2389,12 +2390,14 @@ mod test {
                     deps: Select::from_value(BTreeSet::from([
                         // These two dependencies are identical, except one is aliased.
                         CrateDependency {
+                            workspace_member: false,
                             id: dependency_id.clone(),
                             target: "my_dependency".into(),
                             alias: None,
                             local_path: None,
                         },
                         CrateDependency {
+                            workspace_member: false,
                             id: dependency_id,
                             target: "my_dependency".into(),
                             alias: Some("my_dependency_other".into()),
@@ -2548,6 +2551,142 @@ mod test {
         assert!(
             binary_section[proc_macro_deps_pos..].contains(":my_proc_macro"),
             "proc-macro lib must appear in proc_macro_deps:\n{binary_section}"
+        );
+    }
+
+    /// Renders a workspace's `crates.bzl` with the given `cargo_lockfile` label,
+    /// which is what first-party dependency labels resolve against.
+    fn render_crates_bzl(
+        metadata: cargo_metadata::Metadata,
+        lockfile: cargo_lock::Lockfile,
+        cargo_lockfile_label: Option<Label>,
+    ) -> String {
+        let render_config = RenderConfig {
+            cargo_lockfile_label,
+            ..Arc::<RenderConfig>::into_inner(mock_render_config(None)).unwrap()
+        };
+
+        let annotations = Annotations::new(
+            metadata,
+            &None,
+            lockfile,
+            Config {
+                rendering: render_config.clone(),
+                ..Default::default()
+            },
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let context = Context::new(annotations, false).unwrap();
+
+        let renderer = Renderer::new(Arc::new(render_config), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        output.get(&PathBuf::from("crates.bzl")).unwrap().clone()
+    }
+
+    #[test]
+    fn first_party_deps_are_rendered_separately() {
+        let crates_bzl = render_crates_bzl(
+            test::metadata::workspace_path(),
+            test::lockfile::workspace_path(),
+            Some(Label::Absolute {
+                repository: starlark::Repository::Canonical("test_repo".to_owned()),
+                package: String::new(),
+                target: "Cargo.lock".to_owned(),
+            }),
+        );
+
+        let expected = indoc! {r#"
+            _FIRST_PARTY_NORMAL_DEPENDENCIES = {
+                "child_a": {
+                },
+                "child_b": {
+                    _COMMON_CONDITION: {
+                        "child_a": Label("@@test_repo//child_a:child_a"),
+                    },
+                },
+                "": {
+                },
+            }
+        "#};
+        assert!(
+            crates_bzl.contains(expected),
+            "{crates_bzl}
+ does not contain {expected}"
+        );
+
+        // The third-party maps stay free of workspace members: no repository is
+        // generated for `child_a`, so a label into the hub would not resolve.
+        let (_, third_party) = crates_bzl
+            .split_once("_NORMAL_DEPENDENCIES = {")
+            .expect("`crates.bzl` always defines the normal dependency map");
+        let (third_party, _) = third_party.split_once("\n}").unwrap();
+        assert!(
+            !third_party.contains("\"child_a\": Label("),
+            "third party dependency map should not depend on `child_a`: {third_party}"
+        );
+    }
+
+    /// The integration test's `cargo_lockfile` is `//:Cargo.Bazel.lock` in a root
+    /// module, which reaches the renderer as `@@//:Cargo.Bazel.lock`. First-party
+    /// labels then have to come out as `@@//<package>:<target>` so they resolve
+    /// against the workspace being built rather than the hub repository.
+    #[test]
+    fn first_party_deps_of_a_root_module() {
+        let cargo_lockfile_label = Label::from_str("@@//:Cargo.Bazel.lock").unwrap();
+        assert_eq!(
+            cargo_lockfile_label.repository(),
+            Some(&starlark::Repository::Canonical(String::new()))
+        );
+
+        let crates_bzl = render_crates_bzl(
+            test::metadata::workspace_path(),
+            test::lockfile::workspace_path(),
+            Some(cargo_lockfile_label),
+        );
+
+        let expected = r#""child_a": Label("@@//child_a:child_a"),"#;
+        assert!(
+            crates_bzl.contains(expected),
+            "{crates_bzl}
+ does not contain {expected}"
+        );
+    }
+
+    #[test]
+    fn first_party_deps_are_empty_without_a_cargo_lockfile_label() {
+        // A config predating the injected label still renders; the first-party
+        // maps are simply empty, so `first_party = True` yields nothing rather
+        // than a broken label.
+        let crates_bzl = render_crates_bzl(
+            test::metadata::workspace_path(),
+            test::lockfile::workspace_path(),
+            None,
+        );
+
+        assert!(crates_bzl.contains("_FIRST_PARTY_NORMAL_DEPENDENCIES = {}"));
+        assert!(!crates_bzl.contains("test_repo"));
+    }
+
+    #[test]
+    fn first_party_maps_have_no_entries_without_intra_workspace_deps() {
+        // A workspace whose crates do not depend on each other still renders the
+        // maps, since the `cargo_lockfile` label is present, but they carry no
+        // entries for `all_crate_deps(first_party = True)` to return.
+        let crates_bzl = render_crates_bzl(
+            test::metadata::common(),
+            test::lockfile::common(),
+            Some(Label::from_str("@@//:Cargo.lock").unwrap()),
+        );
+
+        let (_, first_party) = crates_bzl
+            .split_once("\n_FIRST_PARTY_NORMAL_DEPENDENCIES = ")
+            .expect("`crates.bzl` always defines the first party dependency maps");
+        let (first_party, _) = first_party.split_once("\n}").unwrap();
+        assert!(
+            !first_party.contains("Label("),
+            "expected no first party dependencies in: {first_party}"
         );
     }
 }

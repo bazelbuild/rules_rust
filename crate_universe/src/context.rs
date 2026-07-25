@@ -127,9 +127,16 @@ impl Context {
             })
             .collect::<Result<BTreeMap<CrateId, String>>>()?;
 
+        // Workspace members are deliberately absent here: no repository is
+        // generated for a crate that lives in the Cargo workspace, so listing
+        // one as a direct dependency would only add noise to the lockfile.
         let add_crate_ids = |crates: &mut BTreeSet<CrateId>,
                              deps: &Select<BTreeSet<Dependency>>| {
-            for dep in deps.values() {
+            for dep in deps
+                .values()
+                .into_iter()
+                .filter(|dep| !dep.workspace_member)
+            {
                 crates.insert(CrateId::from(
                     &annotations.metadata.packages[&dep.package_id],
                 ));
