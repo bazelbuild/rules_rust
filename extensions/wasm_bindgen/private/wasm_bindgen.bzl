@@ -116,12 +116,15 @@ def _rust_wasm_bindgen_impl(ctx):
         flags = ctx.attr.bindgen_flags,
     )
 
+    wasm_target = ctx.attr.wasm_file[0]
+
     providers = [
         DefaultInfo(
             files = depset(
                 [info.wasm, info.snippets],
                 transitive = [info.js, info.ts],
             ),
+            runfiles = wasm_target[DefaultInfo].default_runfiles,
         ),
         info,
     ]
