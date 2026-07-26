@@ -93,6 +93,21 @@ toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_locatio
 toolchain_location_expands_extra_rustc_flags_test = analysistest.make(_toolchain_location_expands_extra_rustc_flags_impl)
 std_libs_support_srcs_outside_package_test = analysistest.make(_std_libs_support_srcs_outside_package_test_impl)
 
+def _std_libs_windows_ext_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+
+    symlinks = [a for a in actions if a.mnemonic == "Symlink"]
+    asserts.equals(env, 2, len(symlinks))
+
+    a_symlink = symlinks[1].outputs.to_list()[0]
+    asserts.equals(env, tut.label.package + "/libcore.lib", a_symlink.short_path)
+
+    return analysistest.end(env)
+
+std_libs_windows_ext_test = analysistest.make(_std_libs_windows_ext_test_impl)
+
 def _define_test_targets():
     native.filegroup(
         name = "stdlib_srcs",
@@ -106,6 +121,12 @@ def _define_test_targets():
     rust_stdlib_filegroup(
         name = "std_libs_with_srcs_outside_package",
         srcs = ["//test/unit/toolchain/subpackage:std_libs_srcs"],
+    )
+
+    rust_stdlib_filegroup(
+        name = "std_libs_with_windows_ext",
+        srcs = ["//test/unit/toolchain/subpackage:std_libs_srcs"],
+        staticlib_ext = ".lib",
     )
 
     native.filegroup(
@@ -233,6 +254,10 @@ def toolchain_test_suite(name):
         name = "std_libs_support_srcs_outside_package_test",
         target_under_test = ":std_libs_with_srcs_outside_package",
     )
+    std_libs_windows_ext_test(
+        name = "std_libs_windows_ext_test",
+        target_under_test = ":std_libs_with_windows_ext",
+    )
 
     native.test_suite(
         name = name,
@@ -243,5 +268,6 @@ def toolchain_test_suite(name):
             ":toolchain_location_expands_linkflags_test",
             ":toolchain_location_expands_extra_rustc_flags_test",
             ":std_libs_support_srcs_outside_package_test",
+            ":std_libs_windows_ext_test",
         ],
     )

@@ -476,21 +476,22 @@ def dedent(doc_string):
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
 
-def make_static_lib_symlink(ctx_package, actions, rlib_file):
-    """Add a .a symlink to an .rlib file.
+def make_static_lib_symlink(ctx_package, actions, rlib_file, staticlib_ext = ".a"):
+    """Add a symlink to an .rlib file with the static library extension.
 
     The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
-    * `<name>.a`, if <name> starts with `lib`
-    * `lib<name>.a`, otherwise.
+    * `<name><staticlib_ext>`, if <name> starts with `lib`
+    * `lib<name><staticlib_ext>`, otherwise.
 
     For example, the name of the symlink for
-    * `libcratea.rlib` is `libcratea.a`
-    * `crateb.rlib` is `libcrateb.a`.
+    * `libcratea.rlib` is `libcratea.a` (or .lib)
+    * `crateb.rlib` is `libcrateb.a` (or .lib).
 
     Args:
         ctx_package (string): The rule's context package name.
         actions (actions): The rule's context actions object.
         rlib_file (File): The file to symlink, which must end in .rlib.
+        staticlib_ext (string): The extension to use for the symlink.
 
     Returns:
         The symlink's File.
@@ -502,7 +503,7 @@ def make_static_lib_symlink(ctx_package, actions, rlib_file):
     if not basename.startswith("lib"):
         basename = "lib" + basename
 
-    # The .a symlink below is created as a sibling to the .rlib file.
+    # The symlink below is created as a sibling to the .rlib file.
     # Bazel doesn't allow creating a symlink outside of the rule's package,
     # so if the .rlib file comes from a different package, first symlink it
     # to the rule's package. The name of the new .rlib symlink is derived
@@ -513,7 +514,7 @@ def make_static_lib_symlink(ctx_package, actions, rlib_file):
         actions.symlink(output = new_rlib_file, target_file = rlib_file)
         rlib_file = new_rlib_file
 
-    dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+    dot_a = actions.declare_file(basename + staticlib_ext, sibling = rlib_file)
     actions.symlink(output = dot_a, target_file = rlib_file)
     return dot_a
 
