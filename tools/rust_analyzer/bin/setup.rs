@@ -51,7 +51,6 @@ const RUSTFMT_OVERRIDE_KEY: &str = "rust-analyzer.rustfmt.overrideCommand";
 const CHECK_OVERRIDE_KEY: &str = "rust-analyzer.check.overrideCommand";
 
 const FILES_WATCHER_EXCLUDE_KEY: &str = "files.watcherExclude";
-const FILES_EXCLUDE_KEY: &str = "files.exclude";
 const SEARCH_EXCLUDE_KEY: &str = "search.exclude";
 
 /// Bazel's convenience symlinks (`bazel-bin/`, `bazel-out/`, etc).
@@ -879,10 +878,6 @@ fn vscode_managed_keys(ctx: &SetupCtx) -> Vec<(String, ManagedValue)> {
         ManagedValue::InsertEntries(bazel_outputs()),
     ));
     out.push((
-        FILES_EXCLUDE_KEY.to_string(),
-        ManagedValue::InsertEntries(bazel_outputs()),
-    ));
-    out.push((
         SEARCH_EXCLUDE_KEY.to_string(),
         ManagedValue::InsertEntries(bazel_outputs()),
     ));
@@ -1370,7 +1365,6 @@ mod tests {
         assert!(obj.contains_key(PROC_MACRO_SRV_KEY));
         assert!(obj.contains_key(RUSTFMT_OVERRIDE_KEY));
         assert!(obj.contains_key(FILES_WATCHER_EXCLUDE_KEY));
-        assert!(obj.contains_key(FILES_EXCLUDE_KEY));
         assert!(obj.contains_key(SEARCH_EXCLUDE_KEY));
     }
 
@@ -1382,8 +1376,8 @@ mod tests {
         let without_srv = vscode_managed_keys(&ctx);
         // 5 rust-analyzer keys (discover, server, proc-macro, rustfmt,
         // check.overrideCommand) + 3 exclude maps = 8 total.
-        assert_eq!(with_srv.len(), 8);
-        assert_eq!(without_srv.len(), 7);
+        assert_eq!(with_srv.len(), 7);
+        assert_eq!(without_srv.len(), 6);
         assert!(!without_srv.iter().any(|(k, _)| k == PROC_MACRO_SRV_KEY));
     }
 
@@ -1393,8 +1387,8 @@ mod tests {
         let with_fmt = vscode_managed_keys(&ctx);
         ctx.skip_rustfmt = true;
         let without_fmt = vscode_managed_keys(&ctx);
-        assert_eq!(with_fmt.len(), 8);
-        assert_eq!(without_fmt.len(), 7);
+        assert_eq!(with_fmt.len(), 7);
+        assert_eq!(without_fmt.len(), 6);
         assert!(!without_fmt.iter().any(|(k, _)| k == RUSTFMT_OVERRIDE_KEY));
         // The proc-macro and check-override keys still ride along.
         assert!(without_fmt.iter().any(|(k, _)| k == PROC_MACRO_SRV_KEY));
