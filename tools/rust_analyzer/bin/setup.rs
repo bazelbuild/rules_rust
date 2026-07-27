@@ -1374,8 +1374,8 @@ mod tests {
         let with_srv = vscode_managed_keys(&ctx);
         ctx.skip_proc_macro_server = true;
         let without_srv = vscode_managed_keys(&ctx);
-        // 5 rust-analyzer keys (discover, server, proc-macro, rustfmt,
-        // check.overrideCommand) + 3 exclude maps = 8 total.
+// 5 rust-analyzer keys (discover, server, proc-macro, rustfmt,
+// check.overrideCommand) + 2 exclude maps = 7 total.
         assert_eq!(with_srv.len(), 7);
         assert_eq!(without_srv.len(), 6);
         assert!(!without_srv.iter().any(|(k, _)| k == PROC_MACRO_SRV_KEY));
