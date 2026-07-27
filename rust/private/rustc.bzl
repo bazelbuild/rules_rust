@@ -1359,7 +1359,17 @@ def construct_arguments(
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
 
-    if toolchain.coverage_supported and ctx.configuration.coverage_enabled:
+    # Use Bazel's standard instrumentation filter (--instrumentation_filter)
+    # so that only targets matching the filter get instrumented, consistent
+    # with how coverage works for other languages (Java, C++).
+    # For rust_test targets with a `crate` attribute, also check if the
+    # underlying crate should be instrumented. Rust compiles the crate
+    # sources directly into the test binary, so the test must be built
+    # with -Cinstrument-coverage for the crate's code to produce coverage.
+    is_coverage_instrumented = ctx.coverage_instrumented()
+    if not is_coverage_instrumented and crate_info.is_test and hasattr(ctx.attr, "crate") and ctx.attr.crate:
+        is_coverage_instrumented = ctx.coverage_instrumented(ctx.attr.crate)
+    if toolchain.coverage_supported and ctx.configuration.coverage_enabled and is_coverage_instrumented:
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
