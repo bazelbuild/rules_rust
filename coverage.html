@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Upstream Tooling - rules_rust</title>
+        <title>Code Coverage - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,25 +155,44 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="upstream-tooling"><a class="header" href="#upstream-tooling">Upstream Tooling</a></h1>
-<p>rules_rust manages versions of things like rustc. If you want to manually run upstream tooling configured at the versions, plugins and such that rules_rust has configured, rules_rust exposes these as targets in <code>@rules_rust//tools/upstream_wrapper</code>:</p>
-<pre><code class="language-console">% bazel query @rules_rust//tools/upstream_wrapper
-@rules_rust//tools/upstream_wrapper:cargo
-@rules_rust//tools/upstream_wrapper:cargo_clippy
-@rules_rust//tools/upstream_wrapper:rustc
-@rules_rust//tools/upstream_wrapper:rustfmt
+                        <h1 id="code-coverage"><a class="header" href="#code-coverage">Code Coverage</a></h1>
+<p>Rules Rust supports collecting code coverage data using <code>bazel coverage</code>, leveraging LLVM's source-based coverage instrumentation.</p>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<pre><code class="language-sh">bazel coverage //my_project/...
 </code></pre>
-<p>You can run them via <code>bazel run</code>, e.g. <code>bazel run @rules_rust//tools/upstream_wrapper:cargo -- check</code>.</p>
-
+<p>This instruments all targets matching the default <code>--instrumentation_filter</code> and produces an LCOV report at <code>bazel-out/_coverage/_coverage_report.dat</code>.</p>
+<h2 id="controlling-instrumentation"><a class="header" href="#controlling-instrumentation">Controlling Instrumentation</a></h2>
+<p>Rules Rust respects Bazel's standard <a href="https://bazel.build/reference/command-line-reference#flag--instrumentation_filter"><code>--instrumentation_filter</code></a> flag to control which targets get compiled with <code>-Cinstrument-coverage</code>. Only targets whose label matches the filter are instrumented, consistent with how coverage works for other languages (C++, Java).</p>
+<h3 id="recommended-bazelrc-settings"><a class="header" href="#recommended-bazelrc-settings">Recommended <code>.bazelrc</code> Settings</a></h3>
+<p>For projects with vendored or third-party dependencies, restrict instrumentation to workspace targets to avoid unnecessary recompilation:</p>
+<pre><code class="language-text">coverage --instrumentation_filter=^//
+</code></pre>
+<p>To further exclude specific directories:</p>
+<pre><code class="language-text">coverage --instrumentation_filter=^//,-^//third_party
+</code></pre>
+<h3 id="rust_test-with-a-crate-attribute"><a class="header" href="#rust_test-with-a-crate-attribute"><code>rust_test</code> with a <code>crate</code> attribute</a></h3>
+<p>When a <code>rust_test</code> target uses the <code>crate</code> attribute, Rust compiles the library source code directly into the test binary. Rules Rust automatically checks whether the underlying crate should be instrumented, so library code compiled into the test binary produces coverage data without needing <code>--instrument_test_targets</code>.</p>
+<p>Note: because the entire crate (including <code>#[cfg(test)]</code> code) is compiled as one unit, test-specific code in the crate will also be instrumented. This is a known inconsistency with the usual Bazel convention where test code is only instrumented when <code>--instrument_test_targets</code> is set.</p>
+<h3 id="--instrument_test_targets"><a class="header" href="#--instrument_test_targets"><code>--instrument_test_targets</code></a></h3>
+<p>By default, Bazel excludes test targets from instrumentation. If you want coverage of the test code itself (not just the libraries it exercises), add:</p>
+<pre><code class="language-text">coverage --instrument_test_targets
+</code></pre>
+<h3 id="flags-summary"><a class="header" href="#flags-summary">Flags Summary</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Flag</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>--instrumentation_filter=&lt;regex&gt;</code></td><td>Controls which targets are instrumented. Default: <code>-/javatests[/:],-/test/java[/:]</code></td></tr>
+<tr><td><code>--instrument_test_targets</code></td><td>Also instrument test targets. Not required for library coverage via <code>rust_test</code> with <code>crate</code>.</td></tr>
+<tr><td><code>--combined_report=lcov</code></td><td>Produce a combined LCOV report (set by default with <code>bazel coverage</code>).</td></tr>
+</tbody></table>
+</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="coverage.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="crate_universe_bzlmod.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="ide_integrations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="upstream_tooling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -183,11 +202,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="coverage.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="crate_universe_bzlmod.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="ide_integrations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="upstream_tooling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
