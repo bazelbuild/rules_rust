@@ -319,16 +319,16 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "anyhow": Label("//anyhow-1.0.100"),
-            "blake3": Label("//blake3-1.8.2"),
-            "clap": Label("//clap-4.5.50"),
-            "serde": Label("//serde-1.0.228"),
-            "serde_json": Label("//serde_json-1.0.145"),
-            "tempfile": Label("//tempfile-3.23.0"),
-            "tokio": Label("//tokio-1.48.0"),
-            "tracing": Label("//tracing-0.1.41"),
-            "tracing-subscriber": Label("//tracing-subscriber-0.3.20"),
-            "walkdir": Label("//walkdir-2.5.0"),
+            "anyhow": Label("@rrtd//anyhow-1.0.100"),
+            "blake3": Label("@rrtd//blake3-1.8.2"),
+            "clap": Label("@rrtd//clap-4.5.50"),
+            "serde": Label("@rrtd//serde-1.0.228"),
+            "serde_json": Label("@rrtd//serde_json-1.0.145"),
+            "tempfile": Label("@rrtd//tempfile-3.23.0"),
+            "tokio": Label("@rrtd//tokio-1.48.0"),
+            "tracing": Label("@rrtd//tracing-0.1.41"),
+            "tracing-subscriber": Label("@rrtd//tracing-subscriber-0.3.20"),
+            "walkdir": Label("@rrtd//walkdir-2.5.0"),
         },
     },
 }

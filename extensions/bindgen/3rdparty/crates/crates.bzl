@@ -319,11 +319,11 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "bindgen": Label("//bindgen-0.71.1"),
-            "clang-sys": Label("//clang-sys-1.8.1"),
-            "clap": Label("//clap-4.5.32"),
-            "clap_complete": Label("//clap_complete-4.5.46"),
-            "env_logger": Label("//env_logger-0.10.2"),
+            "bindgen": Label("@rules_rust_bindgen_deps//bindgen-0.71.1"),
+            "clang-sys": Label("@rules_rust_bindgen_deps//clang-sys-1.8.1"),
+            "clap": Label("@rules_rust_bindgen_deps//clap-4.5.32"),
+            "clap_complete": Label("@rules_rust_bindgen_deps//clap_complete-4.5.46"),
+            "env_logger": Label("@rules_rust_bindgen_deps//env_logger-0.10.2"),
         },
     },
 }

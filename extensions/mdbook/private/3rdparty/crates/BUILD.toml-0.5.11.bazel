@@ -111,6 +111,6 @@ rust_library(
     }),
     version = "0.5.11",
     deps = [
-        "@rmdbi__serde-1.0.228//:serde",
+        "@rmdbi__serde-1.0.229//:serde",
     ],
 )

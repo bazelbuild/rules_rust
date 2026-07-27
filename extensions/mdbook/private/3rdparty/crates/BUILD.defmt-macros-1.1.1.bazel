@@ -114,9 +114,9 @@ rust_proc_macro(
     deps = [
         "@rmdbi__defmt-macros-1.1.1//:build_script_build",
         "@rmdbi__defmt-parser-1.0.0//:defmt_parser",
-        "@rmdbi__proc-macro2-1.0.106//:proc_macro2",
-        "@rmdbi__quote-1.0.46//:quote",
-        "@rmdbi__syn-2.0.118//:syn",
+        "@rmdbi__proc-macro2-1.0.107//:proc_macro2",
+        "@rmdbi__quote-1.0.47//:quote",
+        "@rmdbi__syn-2.0.119//:syn",
     ],
 )
 

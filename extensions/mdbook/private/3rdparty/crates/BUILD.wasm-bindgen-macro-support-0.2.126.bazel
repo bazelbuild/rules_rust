@@ -109,9 +109,9 @@ rust_library(
     version = "0.2.126",
     deps = [
         "@rmdbi__bumpalo-3.20.3//:bumpalo",
-        "@rmdbi__proc-macro2-1.0.106//:proc_macro2",
-        "@rmdbi__quote-1.0.46//:quote",
-        "@rmdbi__syn-2.0.118//:syn",
+        "@rmdbi__proc-macro2-1.0.107//:proc_macro2",
+        "@rmdbi__quote-1.0.47//:quote",
+        "@rmdbi__syn-2.0.119//:syn",
         "@rmdbi__wasm-bindgen-shared-0.2.126//:wasm_bindgen_shared",
     ],
 )
