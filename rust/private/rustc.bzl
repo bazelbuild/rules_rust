@@ -290,6 +290,11 @@ def collect_deps(
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
             transitive_build_infos.append(dep_info.transitive_build_infos)
+            
+            # If the dep is a dylib, include its own CcInfo in transitive_noncrates
+            # so downstream binaries get the RPATH and runfiles for the .so
+            if crate_info.type == "dylib" and cc_info:
+                transitive_noncrates.append(cc_info.linking_context.linker_inputs)
         elif cc_info or dep_build_info:
             if cc_info:
                 # This dependency is a cc_library
@@ -2306,7 +2311,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         return []
 
     # Only generate CcInfo for particular crate types
-    if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
+    if crate_info.type not in ("dylib", "staticlib", "cdylib", "rlib", "lib"):
         return []
 
     dot_a = None
@@ -2355,6 +2360,14 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
                 cc_toolchain = cc_toolchain,
                 dynamic_library = crate_info.output,
                 interface_library = interface_library,
+            )
+    elif crate_info.type == "dylib":
+        if cc_toolchain:
+            library_to_link = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                dynamic_library = crate_info.output,
             )
     else:
         fail("Unexpected case")
@@ -2471,7 +2484,6 @@ def _process_build_scripts(
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
         transitive_inputs.append(dep_build_info.compile_data)
-
     out_dir_compile_inputs = depset(
         direct_inputs,
         transitive = transitive_inputs,

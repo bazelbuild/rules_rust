@@ -159,8 +159,22 @@ def _rust_static_library_impl(ctx):
     """
     return _rust_library_common(ctx, "staticlib")
 
-def _rust_shared_library_impl(ctx):
-    """The implementation of the `rust_shared_library` rule.
+def _rust_dylib_library_impl(ctx):
+    """The implementation of the `rust_dylib_library` rule.
+
+    This rule provides CcInfo, so it can be used everywhere Bazel
+    expects rules_cc.
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list of providers.
+    """
+    return _rust_library_common(ctx, "dylib")
+
+def _rust_cdylib_library_impl(ctx):
+    """The implementation of the `rust_cdylib_library` rule.
 
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc.
@@ -1082,6 +1096,37 @@ rust_library = rule(
         """),
 )
 
+rust_dylib_library = rule(
+    implementation = _rust_dylib_library_impl,
+    provides = COMMON_PROVIDERS,
+    attrs = _COMMON_ATTRS | {
+        "disable_pipelining": attr.bool(
+            default = False,
+            doc = dedent("""\
+                Disables pipelining for this rule if it is globally enabled.
+                This will cause this rule to not produce a `.rmeta` file and all the dependent
+                crates will instead use the `.rlib` file.
+            """),
+        ),
+    },
+    fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+    doc = dedent("""\
+        Builds a Rust ABI shared library.
+
+        This shared library will contain all transitively reachable crates and native objects.
+        It is meant to be used when producing an artifact that is then consumed by some other build system
+        (for example to produce a shared library that Python program links against).
+
+        This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
+
+        When building the whole binary in Bazel, use `rust_library` instead.
+        """),
+)
+
 def _resolve_platform(settings, attr):
     """Resolve the platform label for a transition, adding @ prefix if needed.
 
@@ -1158,8 +1203,8 @@ _rust_shared_library_transition = transition(
     ],
 )
 
-rust_shared_library = rule(
-    implementation = _rust_shared_library_impl,
+rust_cdylib_library = rule(
+    implementation = _rust_cdylib_library_impl,
     attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
@@ -1172,7 +1217,7 @@ rust_shared_library = rule(
         rust_common.test_crate_info,
     ],
     doc = dedent("""\
-        Builds a Rust shared library.
+        Builds a C ABI Rust shared library.
 
         This shared library will contain all transitively reachable crates and native objects.
         It is meant to be used when producing an artifact that is then consumed by some other build system
