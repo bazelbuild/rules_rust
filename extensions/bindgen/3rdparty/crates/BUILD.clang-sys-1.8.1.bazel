@@ -199,6 +199,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     links = "clang",
     pkg_name = "clang-sys",
     rustc_env_files = [

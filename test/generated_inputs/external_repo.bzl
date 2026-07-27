@@ -48,6 +48,9 @@ def _generated_inputs_in_external_repo_impl(repository_ctx):
         "{}/lib.rs".format(repo_path),
         content = _LIB_RS_CONTENT,
     )
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 _generated_inputs_in_external_repo = repository_rule(
     implementation = _generated_inputs_in_external_repo_impl,

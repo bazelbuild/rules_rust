@@ -2,7 +2,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 alias(
     name = "hyperfine",
-    actual = "@crate_index_cargo_bindeps//:hyperfine__hyperfine",
+    actual = "@crate_index_cargo_bindeps//hyperfine__hyperfine",
     tags = ["manual"],
 )
 

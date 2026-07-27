@@ -134,6 +134,9 @@ pub(crate) struct CommonAttributes {
     pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) extra_link_deps: Select<BTreeSet<Label>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -168,6 +171,7 @@ impl Default for CommonAttributes {
             linker_script: Default::default(),
             proc_macro_deps: Default::default(),
             extra_proc_macro_deps: Default::default(),
+            extra_link_deps: Default::default(),
             proc_macro_deps_dev: Default::default(),
             rustc_env: Default::default(),
             rustc_env_files: Default::default(),
@@ -265,6 +269,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -295,6 +302,7 @@ impl Default for BuildScriptAttributes {
             links: Default::default(),
             toolchains: Default::default(),
             use_default_shell_env: None,
+            use_cc_toolchain: None,
         }
     }
 }
@@ -584,6 +592,12 @@ impl CrateContext {
                     Select::merge(self.common_attrs.extra_proc_macro_deps, extra.clone());
             }
 
+            // Link deps
+            if let Some(extra) = &crate_extra.link_deps {
+                self.common_attrs.extra_link_deps =
+                    Select::merge(self.common_attrs.extra_link_deps, extra.clone());
+            }
+
             // Compile data
             if let Some(extra) = &crate_extra.compile_data {
                 self.common_attrs.compile_data =
@@ -705,6 +719,11 @@ impl CrateContext {
                 // Default Shell Env
                 if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
                     attrs.use_default_shell_env = Some(*extra);
+                }
+
+                // Use cc toolchain
+                if let Some(extra) = &crate_extra.build_script_use_cc_toolchain {
+                    attrs.use_cc_toolchain = Some(*extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {

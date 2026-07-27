@@ -141,6 +141,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "thiserror",
     rustc_flags = [
         "--cap-lints=allow",

@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
+load("//rust:defs.bzl", "rust_binary", "rust_clippy")
 load("//tools/private:tool_utils.bzl", "aspect_repository")
 
 exports_files(
@@ -7,29 +7,6 @@ exports_files(
         "rustfmt_utils.bzl",
     ],
     visibility = ["//visibility:public"],
-)
-
-rust_library(
-    name = "rustfmt_lib",
-    srcs = glob(
-        include = ["src/**/*.rs"],
-        exclude = [
-            "src/**/*main.rs",
-            "src/bin/**",
-        ],
-    ),
-    data = [
-        "//rust/settings:rustfmt.toml",
-        "//rust/toolchain:current_rustfmt_toolchain_for_target",
-    ],
-    edition = "2018",
-    rustc_env = {
-        "RUSTFMT": "$(rlocationpath //rust/toolchain:current_rustfmt_toolchain_for_target)",
-        "RUSTFMT_CONFIG": "$(rlocationpath //rust/settings:rustfmt.toml)",
-    },
-    deps = [
-        "//rust/runfiles",
-    ],
 )
 
 # Deprecated but present for compatibility.
@@ -44,35 +21,23 @@ alias(
 # and will try to do things like set the correct edition for files when formatting them based on their owning targets.
 rust_binary(
     name = "target_aware_rustfmt",
-    srcs = [
-        "src/main.rs",
-    ],
+    srcs = ["src/main.rs"],
     data = [
         "//rust/settings:rustfmt.toml",
+        "//rust/toolchain:current_rustfmt_toolchain_for_target",
     ],
     edition = "2018",
     rustc_env = {
         "ASPECT_REPOSITORY": aspect_repository(),
+        "RUSTFMT": "$(rlocationpath //rust/toolchain:current_rustfmt_toolchain_for_target)",
+        "RUSTFMT_CONFIG": "$(rlocationpath //rust/settings:rustfmt.toml)",
         "RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     },
     toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
     visibility = ["//visibility:public"],
     deps = [
-        ":rustfmt_lib",
-        "//util/label",
-    ],
-)
-
-rust_binary(
-    name = "rustfmt_test",
-    srcs = [
-        "src/bin/test_main.rs",
-    ],
-    edition = "2018",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":rustfmt_lib",
         "//rust/runfiles",
+        "//util/label",
     ],
 )
 

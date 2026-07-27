@@ -11,34 +11,11 @@ load(
     "assert_argv_contains_prefix_not",
     "assert_argv_contains_prefix_suffix",
     "assert_list_contains_adjacent_elements",
+    "get_bin_dir_from_action",
 )
 
 def _get_toolchain(ctx):
     return ctx.attr._toolchain[platform_common.ToolchainInfo]
-
-def _get_bin_dir_from_action(action):
-    """Extract the bin directory from an action's outputs.
-
-    This handles config transitions that add suffixes like -ST-<hash>, as
-    well as Bazel path mapping (`--experimental_output_paths=strip` plus a
-    `supports-path-mapping` requirement on the action), which rewrites
-    argv entries to live under `bazel-out/cfg/bin/...` even though the
-    File's `.dirname` still returns the un-mapped, configuration-specific
-    path.
-
-    Args:
-        action: The action to extract the bin directory from.
-
-    Returns:
-        The bin directory path as a string.
-    """
-    for arg in action.argv:
-        if arg.startswith("bazel-out/cfg/bin/"):
-            return "bazel-out/cfg/bin"
-    bin_dir = action.outputs.to_list()[0].dirname
-    if "/bin/" in bin_dir:
-        bin_dir = bin_dir.split("/bin/")[0] + "/bin"
-    return bin_dir
 
 def _get_darwin_component(arg):
     """Extract darwin component from a path.
@@ -213,7 +190,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
 
     toolchain = _get_toolchain(ctx)
     link_args = _extract_linker_args(action.argv)
-    bin_dir = _get_bin_dir_from_action(action)
+    bin_dir = get_bin_dir_from_action(action)
 
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
@@ -296,7 +273,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     action = tut.actions[0]
 
     linker_args = _extract_linker_args(action.argv)
-    bin_dir = _get_bin_dir_from_action(action)
+    bin_dir = get_bin_dir_from_action(action)
 
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)

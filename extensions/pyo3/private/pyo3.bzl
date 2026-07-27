@@ -333,7 +333,6 @@ def pyo3_extension(
         data = data,
         deps = [
             Label("//private:current_rust_pyo3_toolchain"),
-            Label("@rules_python//python/cc:current_py_cc_headers"),
         ] + deps,
         edition = edition,
         proc_macro_deps = proc_macro_deps,

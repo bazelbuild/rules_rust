@@ -718,16 +718,18 @@ rust_analyzer_toolchain(
     rust_analyzer = {rust_analyzer},
     rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
+    version = "{version}",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, rust_analyzer = None):
+def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, version, rust_analyzer = None):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
         rustc = rustc,
         proc_macro_srv = repr(proc_macro_srv),
         rust_analyzer = repr(rust_analyzer) if rust_analyzer else "None",
+        version = version,
     )
 
 _build_file_for_rustfmt_toolchain_template = """\
@@ -1135,6 +1137,10 @@ def _toolchain_repository_hub_impl(repository_ctx):
         target_compatible_with = repository_ctx.attr.target_compatible_with,
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
     ))
+
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 toolchain_repository_hub = repository_rule(
     doc = (
