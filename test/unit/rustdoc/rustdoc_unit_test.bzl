@@ -1,6 +1,7 @@
 """Unittest to verify properties of rustdoc rules"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script")
 load(
@@ -222,11 +223,51 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = []
         target_compatible_with = NOT_WINDOWS,
     )
 
+def _rustdoc_for_generated_root_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    return analysistest.end(env)
+
+rustdoc_for_generated_root_test = analysistest.make(_rustdoc_for_generated_root_test_impl)
+
 def _define_targets():
     rust_library(
         name = "adder",
         srcs = ["adder.rs"],
         edition = "2018",
+    )
+
+    write_file(
+        name = "gen_lib_src",
+        out = "gen_lib.rs",
+        content = [
+            "/// One.",
+            "/// ```",
+            "/// assert_eq!(1, 1);",
+            "/// ```",
+            "pub fn one() -> u32 { 1 }",
+            "",
+        ],
+    )
+
+    rust_library(
+        name = "gen_lib",
+        srcs = [":gen_lib.rs"],
+        edition = "2021",
+    )
+
+    rust_doc(
+        name = "gen_lib_doc",
+        crate = ":gen_lib",
+    )
+
+    rust_doc_test(
+        name = "gen_lib_doc_test",
+        crate = ":gen_lib",
+        target_compatible_with = NOT_WINDOWS,
     )
 
     _target_maker(
@@ -492,6 +533,11 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_with_cc_library_doctest",
     )
 
+    rustdoc_for_generated_root_test(
+        name = "rustdoc_for_generated_root_test",
+        target_under_test = ":gen_lib_doc",
+    )
+
     native.filegroup(
         name = "lib_doc_zip",
         srcs = [":lib_doc.zip"],
@@ -516,6 +562,7 @@ def rustdoc_test_suite(name):
             ":rustdoc_with_args_test",
             ":rustdoc_with_json_error_format_test",
             ":rustdoc_test_uses_cc_library_native_lib_test",
+            ":rustdoc_for_generated_root_test",
             ":rustdoc_zip_output_test",
         ],
     )

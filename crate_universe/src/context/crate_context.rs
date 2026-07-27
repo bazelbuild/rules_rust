@@ -268,6 +268,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -298,6 +301,7 @@ impl Default for BuildScriptAttributes {
             links: Default::default(),
             toolchains: Default::default(),
             use_default_shell_env: None,
+            use_cc_toolchain: None,
         }
     }
 }
@@ -722,6 +726,11 @@ impl CrateContext {
                 // Default Shell Env
                 if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
                     attrs.use_default_shell_env = Some(*extra);
+                }
+
+                // Use cc toolchain
+                if let Some(extra) = &crate_extra.build_script_use_cc_toolchain {
+                    attrs.use_cc_toolchain = Some(*extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {

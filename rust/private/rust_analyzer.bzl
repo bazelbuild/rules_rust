@@ -20,7 +20,7 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
+load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//rust/private:rustc.bzl", "BuildInfo")
@@ -195,14 +195,13 @@ def find_proc_macro_dylib(toolchain, target):
     if crate_info.type != "proc-macro":
         return None
 
-    dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
+    # Use the exec ext: rust-analyzer (host) is what loads the dylib.
+    dylib_ext = system_to_dylib_ext(toolchain.exec_triple.system)
     for action in target.actions:
         for output in action.outputs.to_list():
             if output.extension == dylib_ext[1:]:
                 return output
 
-    # Failed to find the dylib path inside a proc-macro crate.
-    # TODO: Should this be an error?
     return None
 
 rust_analyzer_aspect = aspect(

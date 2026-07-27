@@ -373,6 +373,10 @@ pub(crate) struct CrateAnnotations {
     /// [use_default_shell_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-use_default_shell_env) attribute.
     pub(crate) build_script_use_default_shell_env: Option<i32>,
 
+    /// The value to pass to a build script's
+    /// [use_cc_toolchain](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-use_cc_toolchain) attribute.
+    pub(crate) build_script_use_cc_toolchain: Option<i32>,
+
     /// Directory to run the crate's build script in. If not set, will run in the manifest directory, otherwise a directory relative to the exec root.
     pub(crate) build_script_rundir: Option<Select<String>>,
 
@@ -473,6 +477,7 @@ impl Add for CrateAnnotations {
             build_script_exec_properties: select_merge(self.build_script_exec_properties, rhs.build_script_exec_properties),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_use_default_shell_env: self.build_script_use_default_shell_env.or(rhs.build_script_use_default_shell_env),
+            build_script_use_cc_toolchain: self.build_script_use_cc_toolchain.or(rhs.build_script_use_cc_toolchain),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
             shallow_since: self.shallow_since.or(rhs.shallow_since),

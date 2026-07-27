@@ -115,7 +115,7 @@ rust_library(
         "@rmdbi__aho-corasick-1.1.4//:aho_corasick",
         "@rmdbi__bstr-1.12.3//:bstr",
         "@rmdbi__log-0.4.33//:log",
-        "@rmdbi__regex-automata-0.4.14//:regex_automata",
+        "@rmdbi__regex-automata-0.4.15//:regex_automata",
         "@rmdbi__regex-syntax-0.8.11//:regex_syntax",
     ],
 )

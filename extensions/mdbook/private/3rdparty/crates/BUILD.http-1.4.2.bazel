@@ -112,7 +112,7 @@ rust_library(
     }),
     version = "1.4.2",
     deps = [
-        "@rmdbi__bytes-1.12.0//:bytes",
+        "@rmdbi__bytes-1.12.1//:bytes",
         "@rmdbi__itoa-1.0.18//:itoa",
     ],
 )

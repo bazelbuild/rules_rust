@@ -1041,6 +1041,19 @@ def _crate_impl(module_ctx):
                 annotation_dict["gen_binaries"] = True
             annotation_dict["gen_build_script"] = _OPT_BOOL_VALUES[annotation_dict["gen_build_script"]]
 
+            # Convert the tri-state string values ("auto"/"on"/"off") into the
+            # `int` representation understood by `crate.annotation` (`None`, `1`,
+            # or `0` respectively).
+            for opt_bool_key in (
+                "build_script_use_cc_toolchain",
+                "build_script_use_default_shell_env",
+            ):
+                bool_value = _OPT_BOOL_VALUES[annotation_dict[opt_bool_key]]
+                if bool_value == None:
+                    annotation_dict.pop(opt_bool_key)
+                else:
+                    annotation_dict[opt_bool_key] = int(bool_value)
+
             # Process the override targets for the annotation.
             # In the non-bzlmod approach, this is given as a dict
             # with the possible keys "`proc_macro`, `build_script`, `lib`, `bin`".
@@ -1305,6 +1318,24 @@ _ANNOTATION_NORMAL_ATTRS = {
     ),
     "build_script_toolchains": attr.label_list(
         doc = "A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.",
+    ),
+    "build_script_use_cc_toolchain": attr.string(
+        doc = (
+            "Whether or not to pull in the resolved `cc_toolchain` when running the build script. " +
+            "Supported values are `on`, `off`, and `auto`. Setting `auto` (the default) defers to the " +
+            "`@rules_rust//cargo/settings:use_cc_toolchain` build setting (defaults to enabled)."
+        ),
+        values = _OPT_BOOL_VALUES.keys(),
+        default = "auto",
+    ),
+    "build_script_use_default_shell_env": attr.string(
+        doc = (
+            "Whether or not to include the default shell environment for the build script action. " +
+            "Supported values are `on`, `off`, and `auto`. Setting `auto` (the default) defers to the " +
+            "`@rules_rust//cargo/settings:use_default_shell_env` build setting."
+        ),
+        values = _OPT_BOOL_VALUES.keys(),
+        default = "auto",
     ),
     "compile_data_glob": attr.string_list(
         doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",

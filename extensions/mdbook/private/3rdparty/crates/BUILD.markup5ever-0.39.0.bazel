@@ -109,7 +109,7 @@ rust_library(
     version = "0.39.0",
     deps = [
         "@rmdbi__log-0.4.33//:log",
-        "@rmdbi__tendril-0.5.0//:tendril",
+        "@rmdbi__tendril-0.5.1//:tendril",
         "@rmdbi__web_atoms-0.2.5//:web_atoms",
     ],
 )

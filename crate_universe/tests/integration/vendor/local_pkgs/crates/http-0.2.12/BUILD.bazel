@@ -108,7 +108,7 @@ rust_library(
     }),
     version = "0.2.12",
     deps = [
-        "//local_pkgs/crates/bytes-1.12.0:bytes",
+        "//local_pkgs/crates/bytes-1.12.1:bytes",
         "//local_pkgs/crates/fnv-1.0.7:fnv",
         "//local_pkgs/crates/itoa-1.0.18:itoa",
     ],

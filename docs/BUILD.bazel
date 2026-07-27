@@ -109,6 +109,7 @@ stardoc(
     symbol_names = [
         "rust_clippy",
         "rust_clippy_aspect",
+        "rust_clippy_test",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],

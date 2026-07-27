@@ -10,3 +10,8 @@ sh_binary(
     name = "partial_failure_test",
     srcs = ["partial_failure_test_runner.sh"],
 )
+
+sh_binary(
+    name = "flycheck_clippy_test",
+    srcs = ["flycheck_clippy_test_runner.sh"],
+)

@@ -113,7 +113,7 @@ rust_library(
     }),
     version = "0.7.18",
     deps = [
-        "//local_pkgs/crates/bytes-1.12.0:bytes",
+        "//local_pkgs/crates/bytes-1.12.1:bytes",
         "//local_pkgs/crates/futures-core-0.3.32:futures_core",
         "//local_pkgs/crates/futures-sink-0.3.32:futures_sink",
         "//local_pkgs/crates/pin-project-lite-0.2.17:pin_project_lite",

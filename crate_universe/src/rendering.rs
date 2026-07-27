@@ -691,10 +691,8 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
-            use_default_shell_env: krate
-                .build_script_attrs
-                .as_ref()
-                .and_then(|a| a.use_default_shell_env),
+            use_default_shell_env: attrs.and_then(|a| a.use_default_shell_env),
+            use_cc_toolchain: attrs.and_then(|a| a.use_cc_toolchain),
             compile_data: make_data_with_exclude(
                 platforms,
                 attrs
@@ -1367,6 +1365,11 @@ mod test {
             build_file_content
         );
         assert!(
+            !build_file_content.contains("use_cc_toolchain ="),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
             build_file_content.contains("emit_warnings = False"),
             "```\n{}```\n",
             build_file_content
@@ -1383,6 +1386,7 @@ mod test {
 
         let attrs = BuildScriptAttributes {
             use_default_shell_env: Some(1),
+            use_cc_toolchain: Some(0),
             exec_properties: Select::from_value(BTreeMap::from([
                 ("OSFamily".to_owned(), "Linux".to_owned()),
                 ("container-image".to_owned(), "docker://my-image".to_owned()),
@@ -1446,6 +1450,11 @@ mod test {
         );
         assert!(
             build_file_content.contains("use_default_shell_env = 1"),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("use_cc_toolchain = 0"),
             "```\n{}```\n",
             build_file_content
         );
