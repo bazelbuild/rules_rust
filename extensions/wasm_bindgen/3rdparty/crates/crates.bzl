@@ -319,10 +319,10 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde_json": Label("//serde_json-1.0.145"),
-            "wasm-bindgen": Label("//wasm-bindgen-0.2.121"),
-            "wasm-bindgen-cli": Label("//wasm-bindgen-cli-0.2.121"),
-            "wasm-bindgen-test": Label("//wasm-bindgen-test-0.3.71"),
+            "serde_json": Label("@rrwbd//serde_json-1.0.145"),
+            "wasm-bindgen": Label("@rrwbd//wasm-bindgen-0.2.121"),
+            "wasm-bindgen-cli": Label("@rrwbd//wasm-bindgen-cli-0.2.121"),
+            "wasm-bindgen-test": Label("@rrwbd//wasm-bindgen-test-0.3.71"),
         },
     },
 }

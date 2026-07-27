@@ -108,6 +108,6 @@ rust_library(
     }),
     version = "4.1.0",
     deps = [
-        "@rmdbi__libc-0.2.186//:libc",
+        "@rmdbi__libc-0.2.189//:libc",
     ],
 )

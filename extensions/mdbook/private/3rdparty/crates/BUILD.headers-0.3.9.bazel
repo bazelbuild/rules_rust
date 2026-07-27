@@ -114,6 +114,6 @@ rust_library(
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__httpdate-1.0.3//:httpdate",
         "@rmdbi__mime-0.3.17//:mime",
-        "@rmdbi__sha1-0.10.6//:sha1",
+        "@rmdbi__sha1-0.10.7//:sha1",
     ],
 )

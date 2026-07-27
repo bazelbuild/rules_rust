@@ -113,7 +113,7 @@ rust_library(
     version = "0.1.8",
     deps = [
         "@rmdbi__inotify-sys-0.1.8//:build_script_build",
-        "@rmdbi__libc-0.2.186//:libc",
+        "@rmdbi__libc-0.2.189//:libc",
     ],
 )
 

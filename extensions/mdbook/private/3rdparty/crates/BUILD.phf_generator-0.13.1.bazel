@@ -108,7 +108,7 @@ rust_library(
     }),
     version = "0.13.1",
     deps = [
-        "@rmdbi__fastrand-2.4.1//:fastrand",
+        "@rmdbi__fastrand-2.5.0//:fastrand",
         "@rmdbi__phf_shared-0.13.1//:phf_shared",
     ],
 )
