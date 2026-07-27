@@ -120,6 +120,9 @@ def _mdbook_toolchain_repository_impl(repository_ctx):
         mdbook = str(Label(repository_ctx.attr.mdbook)),
         exec_constraint_sets_serialized = repr(repository_ctx.attr.exec_compatible_with),
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 mdbook_toolchain_repository = repository_rule(
     implementation = _mdbook_toolchain_repository_impl,

@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use cargo_build_script_runner::cargo_manifest_dir::{remove_symlink, symlink, RunfilesMaker};
-use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags};
+use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags, SUPPRESS_WARNINGS_ENV};
 
 fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
@@ -53,7 +53,7 @@ fn run_buildrs() -> Result<(), String> {
 
     cargo_manifest_maker.create_runfiles_dir().unwrap();
 
-    let out_dir_abs = exec_root.join(out_dir);
+    let out_dir_abs = exec_root.join(&out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
@@ -87,7 +87,8 @@ fn run_buildrs() -> Result<(), String> {
 
     let working_directory = resolve_rundir(&rundir, &exec_root, &manifest_dir)?;
 
-    let mut command = Command::new(exec_root.join(progname));
+    let script_path = exec_root.join(&progname);
+    let mut command = Command::new(&script_path);
     command
         .current_dir(&working_directory)
         .envs(target_env_vars)
@@ -95,6 +96,15 @@ fn run_buildrs() -> Result<(), String> {
         .env("CARGO_MANIFEST_DIR", manifest_dir)
         .env("RUSTC", rustc)
         .env("RUST_BACKTRACE", "full");
+
+    // The script binary may have a `<script>.runfiles/` tree or a
+    // `<script>.runfiles_manifest` file materialized next to it by Bazel
+    // (because the script was passed as a `FilesToRunProvider`). Expose
+    // whichever exists so the runfiles library can locate the script's
+    // runfiles (tools). Data files of `cargo_build_script` are intentionally
+    // NOT in this tree — they must be looked up relative to
+    // `CARGO_MANIFEST_DIR`.
+    set_script_runfiles_env(&script_path, &mut command);
 
     for dep_env_path in input_dep_env_paths.iter() {
         if let Ok(contents) = read_to_string(dep_env_path) {
@@ -158,25 +168,29 @@ fn run_buildrs() -> Result<(), String> {
         );
     }
 
-    let (buildrs_outputs, process_output) = BuildScriptOutput::outputs_from_command(&mut command)
-        .map_err(|process_output| {
-        format!(
-            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
-            if let Some(exit_code) = process_output.status.code() {
-                format!(" with exit code {exit_code}")
-            } else {
-                String::new()
+    let emit_warnings = env::var_os(SUPPRESS_WARNINGS_ENV).is_none_or(|v| v != "1");
+
+    let (buildrs_outputs, process_output) =
+        BuildScriptOutput::outputs_from_command(&mut command, emit_warnings).map_err(
+            |process_output| {
+                format!(
+                    "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+                    if let Some(exit_code) = process_output.status.code() {
+                        format!(" with exit code {exit_code}")
+                    } else {
+                        String::new()
+                    },
+                    String::from_utf8(process_output.stdout)
+                        .expect("Failed to parse stdout of child process"),
+                    String::from_utf8(process_output.stderr)
+                        .expect("Failed to parse stdout of child process"),
+                )
             },
-            String::from_utf8(process_output.stdout)
-                .expect("Failed to parse stdout of child process"),
-            String::from_utf8(process_output.stderr)
-                .expect("Failed to parse stdout of child process"),
-        )
-    })?;
+        )?;
 
     write(
         &env_file,
-        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy())
+        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy(), &out_dir)
             .as_bytes(),
     )
     .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", env_file, e));
@@ -204,7 +218,11 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags,
         link_flags,
         link_search_paths,
-    } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
+    } = BuildScriptOutput::outputs_to_flags(
+        &buildrs_outputs,
+        &exec_root.to_string_lossy(),
+        &out_dir,
+    );
 
     write(&compile_flags_file, compile_flags.as_bytes())
         .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", compile_flags_file, e));
@@ -306,6 +324,39 @@ fn should_symlink_exec_root() -> bool {
     env::var("RULES_RUST_SYMLINK_EXEC_ROOT")
         .map(|s| s == "1")
         .unwrap_or(false)
+}
+
+/// Locate the runfiles materialized for `script_path` and expose them to the
+/// build script via the appropriate env var.
+///
+/// Bazel materializes runfiles for a `FilesToRunProvider` tool either as a
+/// `<script>.runfiles/` directory tree, a `<script>.runfiles_manifest` file,
+/// or both. Both are checked; if neither is present, no env var is set and
+/// the runfiles library falls back to its own heuristics (e.g. argv[0]).
+///
+/// `RUNFILES_MANIFEST_FILE` inherited from the parent process is cleared so
+/// it doesn't shadow what we're exposing.
+fn set_script_runfiles_env(script_path: &Path, command: &mut Command) {
+    command.env_remove("RUNFILES_MANIFEST_FILE");
+    command.env_remove("RUNFILES_DIR");
+
+    let Some(file_name) = script_path.file_name() else {
+        return;
+    };
+
+    let mut runfiles_dir_name = file_name.to_owned();
+    runfiles_dir_name.push(".runfiles");
+    let runfiles_dir = script_path.with_file_name(&runfiles_dir_name);
+    if runfiles_dir.is_dir() {
+        command.env("RUNFILES_DIR", &runfiles_dir);
+    }
+
+    let mut runfiles_manifest_name = file_name.to_owned();
+    runfiles_manifest_name.push(".runfiles_manifest");
+    let runfiles_manifest = script_path.with_file_name(&runfiles_manifest_name);
+    if runfiles_manifest.is_file() {
+        command.env("RUNFILES_MANIFEST_FILE", &runfiles_manifest);
+    }
 }
 
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.

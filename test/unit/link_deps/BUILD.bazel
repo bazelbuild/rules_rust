@@ -1,0 +1,40 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
+load(":link_deps_test.bzl", "link_deps_test")
+
+# A dummy library to be used as a dependency
+rust_library(
+    name = "leaf_lib",
+    srcs = ["lib.rs"],
+)
+
+# Test 1: rust_library supports link_deps
+rust_library(
+    name = "main_lib",
+    srcs = ["lib.rs"],
+    link_deps = [":leaf_lib"],
+    tags = ["manual"],
+)
+
+link_deps_test(
+    name = "link_deps_success_test",
+    target_under_test = ":main_lib",
+)
+
+# Test 2: Build test linking a C library via link_deps
+cc_library(
+    name = "c_lib",
+    srcs = ["c_lib.c"],
+)
+
+rust_binary(
+    name = "rust_bin",
+    srcs = ["main.rs"],
+    link_deps = [":c_lib"],
+)
+
+build_test(
+    name = "rust_bin_link_deps_test",
+    targets = [":rust_bin"],
+)

@@ -97,6 +97,14 @@ pub struct GenerateOptions {
     #[clap(long)]
     pub warnings_output_path: PathBuf,
 
+    /// Path to write a JSON list of hub alias subpackage names. The bzlmod
+    /// extension reads this file to learn which `<name>/BUILD.bazel` files
+    /// to slurp into the hub repository (the per-alias subpackages always
+    /// render; `module_ctx` cannot enumerate directories, so this sidecar
+    /// is how the extension learns the set).
+    #[clap(long)]
+    pub hub_packages_output_path: PathBuf,
+
     /// Whether to skip writing the cargo lockfile back after resolving.
     /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
     /// But you probably don't want to set this.
@@ -113,26 +121,35 @@ pub struct GenerateOptions {
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
-    // Load the config
+    // Load the config. `config.label_injection_mapping` is the per-session
+    // apparent -> canonical map reflecting the root module's current
+    // `single_version_override` / `multiple_version_override` choices. It is
+    // applied to the Context just before rendering and is sanitized out of
+    // the digest hash in `Digest::new`, so consumer-side overrides don't
+    // force a producer-side repin (the producer's lockfile may live in a
+    // read-only bzlmod cache).
     let config = Config::try_from_path(&opt.config)?;
 
     // Go straight to rendering if there is no need to repin
     if !opt.repin {
         if let Some(lockfile) = &opt.lockfile {
-            let context = Context::try_from_path(lockfile)?;
+            // Lockfile stores apparent labels; rewrite to canonical here.
+            let context = Context::try_from_path(lockfile)?
+                .apply_label_injection_mapping(&config.label_injection_mapping)?;
 
             // Render build files
-            let outputs = Renderer::new(
+            let renderer = Renderer::new(
                 Arc::new(config.rendering),
                 Arc::new(config.supported_platform_triples),
-            )
-            .render(&context, opt.generator)?;
-
-            // make file paths compatible with bazel labels
-            let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
-
-            // Write the outputs to disk
-            write_outputs(normalized_outputs, opt.dry_run)?;
+            );
+            render_and_write_outputs(
+                &renderer,
+                &context,
+                opt.generator.clone(),
+                &opt.repository_dir,
+                &opt.hub_packages_output_path,
+                opt.dry_run,
+            )?;
 
             let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
 
@@ -205,21 +222,30 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
-    // Generate renderable contexts for each package
+    // Generate renderable contexts for each package. The Context here holds
+    // the user's APPARENT labels (e.g. `@openssl//:install`) because the
+    // label_injection mapping was detached at config load.
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
-    // Render build files
-    let outputs = Renderer::new(
+    // Render build files. Apply the apparent -> canonical mapping just for
+    // rendering — the lockfile written below uses the original apparent
+    // Context, so consumer-side overrides stay sound without producer-side
+    // repin.
+    let render_context = context
+        .clone()
+        .apply_label_injection_mapping(&config.label_injection_mapping)?;
+    let renderer = Renderer::new(
         Arc::new(config.rendering.clone()),
         Arc::new(config.supported_platform_triples.clone()),
-    )
-    .render(&context, opt.generator)?;
-
-    // make file paths compatible with bazel labels
-    let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
-
-    // Write the outputs to disk
-    write_outputs(normalized_outputs, opt.dry_run)?;
+    );
+    render_and_write_outputs(
+        &renderer,
+        &render_context,
+        opt.generator.clone(),
+        &opt.repository_dir,
+        &opt.hub_packages_output_path,
+        opt.dry_run,
+    )?;
 
     // Ensure Bazel lockfiles are written to disk so future generations can be short-circuited.
     if let Some(lockfile) = opt.lockfile {
@@ -267,6 +293,30 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
     fs::write(path, new_contents)
         .context("Failed to write Cargo.lock file back to the workspace.")?;
 
+    Ok(())
+}
+
+fn render_and_write_outputs(
+    renderer: &Renderer,
+    context: &Context,
+    generator: Option<Label>,
+    repository_dir: &Path,
+    hub_packages_output_path: &Path,
+    dry_run: bool,
+) -> Result<()> {
+    let rendered = renderer.render_hub(context, generator)?;
+    let normalized_outputs = normalize_cargo_file_paths(rendered.files, repository_dir);
+    write_outputs(normalized_outputs, dry_run)?;
+    write_hub_packages(hub_packages_output_path, &rendered.hub_packages)?;
+    Ok(())
+}
+
+fn write_hub_packages(output_file: &Path, hub_packages: &[String]) -> Result<()> {
+    std::fs::write(
+        output_file,
+        serde_json::to_string(hub_packages).context("Failed to serialize hub alias subpackages")?,
+    )
+    .context("Failed to write hub alias subpackages file")?;
     Ok(())
 }
 

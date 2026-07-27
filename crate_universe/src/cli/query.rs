@@ -61,7 +61,11 @@ pub fn query(opt: QueryOptions) -> Result<()> {
         None => bail!("No digest provided in lockfile"),
     };
 
-    // Load the config file
+    // Load the config file. `config.label_injection_mapping` is populated
+    // but unused for the digest check — `Digest::new` sanitizes it out
+    // before hashing so this comparison stays stable across consumer-side
+    // overrides (e.g., `single_version_override` on an injected dep);
+    // otherwise every override would force a producer-side repin.
     let config = Config::try_from_path(&opt.config)?;
 
     let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;

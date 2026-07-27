@@ -30,6 +30,7 @@ load(
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
+    _zself_profile_events = "zself_profile_events",
 )
 load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
@@ -102,15 +103,6 @@ def third_party_dir():
         build_setting_default = str(Label("//third_party/rust")),
     )
 
-def use_real_import_macro():
-    """A flag to control whether rust_library and rust_binary targets should \
-    implicitly depend on the *real* import macro, or on a no-op target.
-    """
-    bool_flag(
-        name = "use_real_import_macro",
-        build_setting_default = False,
-    )
-
 def pipelined_compilation():
     """When set, this flag causes rustc to emit `*.rmeta` files and use them for `rlib -> rlib` dependencies.
 
@@ -119,6 +111,7 @@ def pipelined_compilation():
     """
     bool_flag(
         name = "pipelined_compilation",
+        scope = "universal",
         build_setting_default = False,
     )
 
@@ -248,6 +241,21 @@ def experimental_use_coverage_metadata_files():
     bool_flag(
         name = "experimental_use_coverage_metadata_files",
         build_setting_default = True,
+    )
+
+def experimental_compile_rustdoc_tests():
+    """A flag to control whether `rust_doc_test` compiles doc tests during the build phase.
+
+    When enabled and the toolchain channel is "nightly", `rust_doc_test` will compile \
+    doc test binaries using `rustdoc --test --no-run` during `bazel build` and only \
+    execute them during `bazel test`. This requires a nightly Rust toolchain because \
+    `--no-run` depends on `-Zunstable-options`.
+
+    When enabled with a non-nightly toolchain, the existing behavior is silently used.
+    """
+    bool_flag(
+        name = "experimental_compile_rustdoc_tests",
+        build_setting_default = False,
     )
 
 def toolchain_generated_sysroot():
@@ -496,6 +504,7 @@ def extra_exec_rustc_flags():
     """
     _extra_exec_rustc_flags(
         name = "extra_exec_rustc_flags",
+        scope = "universal",
         build_setting_default = [],
     )
 
@@ -507,6 +516,7 @@ def extra_exec_rustc_flag():
     """
     _extra_exec_rustc_flag(
         name = "extra_exec_rustc_flag",
+        scope = "universal",
         build_setting_default = [],
     )
 
@@ -563,5 +573,14 @@ def collect_cfgs():
     """
     bool_flag(
         name = "collect_cfgs",
+        scope = "universal",
         build_setting_default = False,
+    )
+
+def zself_profile_events(name = "zself_profile_events"):
+    """Passes -Zself-profile and -Zself-profile-events flags to rustc, requires a nightly toolchain.
+    """
+    _zself_profile_events(
+        name = name,
+        build_setting_default = [],
     )

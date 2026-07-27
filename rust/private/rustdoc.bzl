@@ -15,29 +15,49 @@
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:pic_utils.bzl", "should_use_pic")
 load("//rust/private:providers.bzl", "LintsInfo")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
-load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
+load(
+    "//rust/private:utils.bzl",
+    "dedent",
+    "find_cc_toolchain",
+    "find_toolchain",
+    "get_lib_name_default",
+    "get_lib_name_for_windows",
+    "get_preferred_artifact",
+)
 
-def _strip_crate_info_output(crate_info):
-    """Set the CrateInfo.output to None for a given CrateInfo provider.
+def _rustdoc_crate_info(crate_info, output):
+    """Clone a `CrateInfo` provider for use by a rustdoc action.
+
+    The `CrateInfo` provider documents `output` as a required `File`
+    ([rust/private/providers.bzl](../providers.bzl)) and every other
+    consumer of `crate_info.output` in the tree assumes it. rustdoc
+    actions don't produce the crate's compile output (`.rlib`/binary),
+    so we swap in a rustdoc-owned `File` — the rustdoc HTML directory
+    when the caller has one, or the crate's root source file as a
+    valid fallback for actions (like the legacy test-writer path) that
+    have no rustdoc-produced `File` at analysis time.
 
     Args:
-        crate_info (CrateInfo): A provider
+        crate_info (CrateInfo): The original provider.
+        output (File): A `File` to publish as the rustdoc `CrateInfo`'s
+            `output`. Must be non-`None`.
 
     Returns:
-        CrateInfo: A modified CrateInfo provider
+        CrateInfo: A modified CrateInfo provider.
     """
     return rust_common.create_crate_info(
         name = crate_info.name,
         type = crate_info.type,
         root = crate_info.root,
+        root_path = crate_info.root_path,
         srcs = crate_info.srcs,
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
-        # This crate info should have no output
-        output = None,
+        output = output,
         metadata = None,
         edition = crate_info.edition,
         rustc_env = crate_info.rustc_env,
@@ -55,7 +75,8 @@ def rustdoc_compile_action(
         lints_info = None,
         output = None,
         rustdoc_flags = [],
-        is_test = False):
+        is_test = False,
+        force_depend_on_objects = None):
     """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
 
     Args:
@@ -64,24 +85,21 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
-        rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
+        rustdoc_flags (Args, optional): An `Args` object of `rustdoc` specific flags.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
+        force_depend_on_objects (bool, optional): If set, overrides is_test for controlling whether
+            to depend on .rlib files instead of .rmeta. Defaults to is_test.
 
     Returns:
         struct: A struct of some `ctx.actions.run` arguments.
     """
-
-    # If an output was provided, ensure it's used in rustdoc arguments
-    if output:
-        rustdoc_flags = [
-            "--output",
-            output.path,
-        ] + rustdoc_flags
+    if force_depend_on_objects == None:
+        force_depend_on_objects = is_test
 
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
-        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
+        rustdoc_flags.add_all(lints_info.rustdoc_lint_flags)
         lint_files = lint_files + lints_info.rustdoc_lint_files
 
     # Collect HTML customization files
@@ -115,16 +133,42 @@ def rustdoc_compile_action(
         dep_info = dep_info,
         build_info = build_info,
         lint_files = lint_files,
-        # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
-        force_depend_on_objects = is_test,
+        force_depend_on_objects = force_depend_on_objects,
+        include_linker_inputs = is_test or force_depend_on_objects,
         include_link_flags = False,
     )
 
-    # Since this crate is not actually producing the output described by the
-    # given CrateInfo, this attribute needs to be stripped to allow the rest
-    # of the rustc functionality in `construct_arguments` to avoid generating
-    # arguments expecting to do so.
-    rustdoc_crate_info = _strip_crate_info_output(crate_info)
+    # rustdoc actions don't produce the crate's compile output, so we swap in
+    # a rustdoc-owned `File` for the `CrateInfo` handed to `construct_arguments`.
+    # Prefer the caller-supplied rustdoc output when available; otherwise fall
+    # back to the crate root, which is always a `File` per the provider contract.
+    rustdoc_crate_info = _rustdoc_crate_info(crate_info, output if output != None else crate_info.root)
+
+    # rustdoc does not understand linker flags like -lstatic that
+    # `include_link_flags` generates. So we manually build flags that only apply
+    # to rustdoc.
+    if is_test or force_depend_on_objects:
+        compilation_mode = ctx.var["COMPILATION_MODE"]
+        use_pic = should_use_pic(
+            cc_toolchain = cc_toolchain,
+            feature_configuration = feature_configuration,
+            crate_type = crate_info.type,
+            compilation_mode = compilation_mode,
+            toolchain = toolchain,
+        )
+        for_windows = toolchain.target_abi == "msvc"
+        get_lib_name = get_lib_name_for_windows if for_windows else get_lib_name_default
+        for dep in dep_info.transitive_noncrates.to_list():
+            for lib in dep.libraries:
+                if not (lib.static_library or lib.pic_static_library):
+                    continue
+                arg = get_lib_name(get_preferred_artifact(lib, use_pic))
+                if not for_windows:
+                    arg = "-l" + arg
+                if type(rustdoc_flags) == "Args":
+                    rustdoc_flags.add("-Clink-arg=%s" % arg)
+                else:
+                    rustdoc_flags.append("-Clink-arg=%s" % arg)
 
     args, env = construct_arguments(
         ctx = ctx,
@@ -147,7 +191,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         add_flags_for_binary = True,
         include_link_flags = False,
-        force_depend_on_objects = is_test,
+        force_depend_on_objects = force_depend_on_objects,
         skip_expanding_rustc_env = True,
     )
 
@@ -168,6 +212,7 @@ def rustdoc_compile_action(
         inputs = all_inputs,
         env = env,
         arguments = args.all,
+        supports_path_mapping = args.supports_path_mapping,
         tools = [toolchain.rust_doc],
     )
 
@@ -214,27 +259,28 @@ def _rust_doc_impl(ctx):
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
-    # Add the current crate as an extern for the compile action
-    rustdoc_flags = [
-        "--extern",
-        "{}={}".format(crate_info.name, crate_info.output.path),
-    ]
+    rustdoc_flags = ctx.actions.args()
+    rustdoc_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+        expand_directories = False,
+    )
 
     # Add HTML customization flags if attributes are provided
     if ctx.attr.html_in_header:
-        rustdoc_flags.extend(["--html-in-header", ctx.file.html_in_header.path])
+        rustdoc_flags.add("--html-in-header", ctx.file.html_in_header)
 
     if ctx.attr.html_before_content:
-        rustdoc_flags.extend(["--html-before-content", ctx.file.html_before_content.path])
+        rustdoc_flags.add("--html-before-content", ctx.file.html_before_content)
 
     if ctx.attr.html_after_content:
-        rustdoc_flags.extend(["--html-after-content", ctx.file.html_after_content.path])
+        rustdoc_flags.add("--html-after-content", ctx.file.html_after_content)
 
     # Add markdown CSS files if provided
     for css_file in ctx.files.markdown_css:
-        rustdoc_flags.extend(["--markdown-css", css_file.path])
+        rustdoc_flags.add(["--markdown-css", css_file])
 
-    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+    rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,

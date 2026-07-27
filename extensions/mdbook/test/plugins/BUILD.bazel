@@ -1,0 +1,30 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//:defs.bzl", "mdbook")
+
+rust_binary(
+    name = "mdbook-test-preprocessor",
+    srcs = ["mdbook_test_preprocessor.rs"],
+    edition = "2021",
+)
+
+mdbook(
+    name = "plugins",
+    srcs = glob(["src/**/*.md"]),
+    book = "book.toml",
+    plugins = [":mdbook-test-preprocessor"],
+)
+
+rust_test(
+    name = "plugins_test",
+    srcs = ["plugins_test.rs"],
+    data = [":plugins"],
+    edition = "2021",
+    rustc_env = {"MDBOOK_PLUGINS_OUTPUT": "$(rlocationpath :plugins)"},
+    deps = ["@rules_rust//rust/runfiles"],
+)
+
+build_test(
+    name = "plugins_build_test",
+    targets = [":plugins"],
+)

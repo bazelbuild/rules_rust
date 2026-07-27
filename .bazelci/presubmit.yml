@@ -10,6 +10,7 @@ min_rust_version_shell_commands: &min_rust_version_shell_commands
   - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.85.0"],\n|' MODULE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
+  - "--//rust/settings:experimental_compile_rustdoc_tests=True"
 nightly_aspects_flags: &nightly_aspects_flags
   - "--//rust/toolchain/channel=nightly"
   - "--config=rustfmt"
@@ -68,6 +69,18 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
     grep -q '^LF:[1-9]' bazel-out/_coverage/_coverage_report.dat \
     || { 1>&2 echo "Coverage report has no line data" \
       ; 1>&2 head -50 bazel-out/_coverage/_coverage_report.dat \
+      ; exit 1 \
+      ; }
+  # Regression check: mixed in-tree/generated-source crates must produce
+  # real coverage, not just the zero-LF baseline record.
+  - |
+    awk '/^SF:test\/generated_inputs\/lib\.rs$/,/^end_of_record$/' \
+        bazel-out/_coverage/_coverage_report.dat \
+      | grep -qE '^LF:[1-9]' \
+    || { 1>&2 echo "No coverage for mixed-source crate (test/generated_inputs/lib.rs)" \
+      ; 1>&2 echo "Coverage was silently dropped for crates with generated sources." \
+      ; 1>&2 awk '/^SF:test\/generated_inputs\/lib\.rs$/,/^end_of_record$/' \
+          bazel-out/_coverage/_coverage_report.dat \
       ; exit 1 \
       ; }
 split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
@@ -390,43 +403,104 @@ tasks:
     platform: ubuntu2204
     run_targets:
       - "//test/rustfmt:rustfmt_failure_tester"
-  rust_analyzer_tests_linux:
-    name: Rust-Analyzer Linux Tests
-    platform: ubuntu2204
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-      - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_tests_macos:
-    name: Rust-Analyzer Macos Tests
-    platform: macos_arm64
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-      - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_tests_windows:
-    name: Rust-Analyzer Windows Tests
-    platform: windows
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-  ide_integration_vscode_tests_linux:
+  ide_integration_tests_linux:
     name: IDE VSCode Tests
     platform: ubuntu2204
     run_targets:
       - "//tools/vscode:gen_launch_json"
       - "//test/vscode:vscode_test"
-  ide_integration_vscode_tests_macos:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+      - "//test/rust_analyzer:partial_failure_test"
+      - "//test/rust_analyzer:flycheck_clippy_test"
+  ide_integration_tests_macos:
     name: IDE VSCode Tests
     platform: macos_arm64
     run_targets:
       - "//tools/vscode:gen_launch_json"
       - "//test/vscode:vscode_test"
-  ide_integration_vscode_tests_windows:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+      - "//test/rust_analyzer:partial_failure_test"
+      - "//test/rust_analyzer:flycheck_clippy_test"
+  ide_integration_tests_windows:
     name: IDE VSCode Tests
     platform: windows
     run_targets:
       - "//tools/vscode:gen_launch_json"
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      # TODO: Enable rust-analyzer tests on windows.
+      # - "//test/rust_analyzer:rust_analyzer_test"
+
+  path_mapping_ubuntu2204:
+    name: Path Mapping Linux
+    platform: ubuntu2204
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  path_mapping_rbe_ubuntu2204:
+    name: Path Mapping RBE
+    platform: rbe_ubuntu2204
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
+  path_mapping_macos:
+    name: Path Mapping MacOS
+    platform: macos_arm64
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  # TODO: path_mapping requires sandboxing
+  # https://github.com/bazelbuild/bazel/issues/7480
+  #
+  # path_mapping_windows:
+  #   name: Path Mapping Windows
+  #   platform: windows
+  #   build_flags:
+  #     - --config=clippy
+  #     - --config=rustfmt
+  #     - --experimental_output_paths=strip
+  #   test_flags:
+  #     - --config=clippy
+  #     - --config=rustfmt
+  #     - --experimental_output_paths=strip
+  #   build_targets: *default_windows_targets
+  #   test_targets: *default_windows_targets
+
   ###########################################################################
   # C R A T E   U N I V E R S E   I N T E G R A T I O N   T E S T S
   ###########################################################################
@@ -526,6 +600,14 @@ tasks:
   cu_integ_cargo_workspace_macos:
     name: Crate Universe - cargo_workspace
     platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_workspace
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_workspace_windows:
+    name: Crate Universe - cargo_workspace
+    platform: windows
     working_directory: crate_universe/tests/integration/cargo_workspace
     build_targets:
       - "//..."
@@ -640,19 +722,19 @@ tasks:
     test_targets:
       - "//..."
 
-  # --- using_cxx (linux + macos only, C++ codegen platform issues) ---
-  cu_integ_using_cxx_ubuntu2204:
-    name: Crate Universe - using_cxx
+  # --- external_annotations (linux + macos only, C++ codegen platform issues) ---
+  cu_integ_ext_annotations_ubuntu2204:
+    name: Crate Universe - external_annotations
     platform: ubuntu2204
-    working_directory: crate_universe/tests/integration/using_cxx
+    working_directory: crate_universe/tests/integration/ext_annotations
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  cu_integ_using_cxx_macos:
-    name: Crate Universe - using_cxx
+  cu_integ_ext_annotations_macos:
+    name: Crate Universe - external_annotations
     platform: macos_arm64
-    working_directory: crate_universe/tests/integration/using_cxx
+    working_directory: crate_universe/tests/integration/ext_annotations
     build_targets:
       - "//..."
     test_targets:
@@ -1086,6 +1168,15 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "//..."
+  extensions_bindgen_ios:
+    platform: macos_arm64
+    name: Extensions Bindgen iOS
+    working_directory: extensions/bindgen
+    build_flags:
+      - "--cpu=ios_arm64"
+      - "--apple_platform_type=ios"
+    build_targets:
       - "//..."
   # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
   # # The bindgen rules are currently broken on windows

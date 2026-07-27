@@ -19,8 +19,10 @@ rust_test(
     deps = all_crate_deps(normal_dev = True),
 )
 
-# Ensures that Bazel aliases from the crates_repository are actually usable.
+# Ensures that Bazel aliases from the crates_repository are actually usable
+# via the subpackage form. The legacy root alias `@cargo_aliases//:names` is
+# suppressed by this fixture's `incompatible_no_root_alias_targets = True`.
 build_test(
     name = "names_build_test",
-    targets = ["@cargo_aliases//:names"],
+    targets = ["@cargo_aliases//names"],
 )

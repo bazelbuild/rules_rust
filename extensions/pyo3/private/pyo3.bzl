@@ -86,7 +86,7 @@ def _py_pyo3_library_impl(ctx):
     extension = crate_info.output
     is_windows = extension.basename.endswith(".dll")
 
-    # https://pyo3.rs/v0.26.0/building-and-distribution#manual-builds
+    # https://pyo3.rs/v0.29.0/building-and-distribution#manual-builds
     #
     # Determine the on-disk and logical Python module layout.
     #
@@ -333,7 +333,6 @@ def pyo3_extension(
         data = data,
         deps = [
             Label("//private:current_rust_pyo3_toolchain"),
-            Label("@rules_python//python/cc:current_py_cc_headers"),
         ] + deps,
         edition = edition,
         proc_macro_deps = proc_macro_deps,

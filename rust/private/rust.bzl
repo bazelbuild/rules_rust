@@ -32,6 +32,7 @@ load(
 )
 load(
     ":rustc.bzl",
+    "UnstableSelfProfileInfo",
     "collect_extra_rustc_flags",
     "is_no_std",
     "rustc_compile_action",
@@ -50,8 +51,8 @@ load(
     "find_toolchain",
     "generate_output_diagnostics",
     "get_edition",
-    "get_import_macro_deps",
     "transform_deps",
+    "transform_link_deps",
     "transform_sources",
 )
 
@@ -66,20 +67,49 @@ def _assert_no_deprecated_attributes(_ctx):
     pass
 
 def _assert_correct_dep_mapping(ctx):
-    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
+    """Ensures dependencies are correctly mapped between 'deps', 'proc_macro_deps', and 'link_deps'.
+
+    This function validates that procedural macros and native libraries are listed in
+    their appropriate attributes to maintain the rules_rust dependency model.
 
     Args:
         ctx (ctx): The current rule's context object
     """
     for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
+        # Identify if this is a Rust-related target using any known Rust provider.
+        is_rust_target = (
+            rust_common.crate_info in dep or
+            rust_common.crate_group_info in dep or
+            rust_common.test_crate_info in dep or
+            rust_common.dep_info in dep or
+            BuildInfo in dep
+        )
+
+        if is_rust_target:
+            if rust_common.crate_info in dep and dep[rust_common.crate_info].type == "proc-macro":
                 fail(
                     "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
                         ctx.label,
                         dep.label,
                     ),
                 )
+
+            continue
+
+        # If it's not a known Rust target but provides CcInfo, it's a native library
+        # that should ideally be in 'link_deps'.
+        if CcInfo in dep:
+            # buildifier: disable=print
+            print(
+                ("\nWARNING: Target {dep} in 'deps' of {target} is a C++ library. " +
+                 "Only Rust targets are allowed in 'deps'. " +
+                 "Please use 'link_deps' for manual FFI linkage. " +
+                 "Support for C++ libraries in 'deps' is deprecated and will be removed in a future release.").format(
+                    dep = dep.label,
+                    target = ctx.label,
+                ),
+            )
+
     for dep in ctx.attr.proc_macro_deps:
         if CrateInfo in dep:
             types = [dep[CrateInfo].type]
@@ -158,6 +188,27 @@ def _rust_proc_macro_impl(ctx):
     """
     return _rust_library_common(ctx, "proc-macro")
 
+def _validate_root_path(ctx):
+    """Validates that root_path is used iff there is no explicit crate_root and srcs is a single-element directory artifact."""
+    if getattr(ctx.attr, "crate", None):
+        if getattr(ctx.attr, "root_path", ""):
+            fail("rust_test.crate and rust_test.root_path are mutually exclusive.")
+        return
+
+    explicit_crate_root = getattr(ctx.file, "crate_root", None) != None
+    if explicit_crate_root and ctx.file.crate_root.is_directory:
+        fail("`crate_root` must be a file, not a directory. If you want to use a directory artifact as source, use `srcs` and `root_path` instead.")
+
+    srcs = ctx.files.srcs
+    is_single_dir = len(srcs) == 1 and srcs[0].is_directory
+    should_use_root_path = (not explicit_crate_root) and is_single_dir
+    has_root_path = bool(getattr(ctx.attr, "root_path", ""))
+
+    if should_use_root_path and not has_root_path:
+        fail("`root_path` must be specified when `srcs` is a single directory artifact and `crate_root` is not set.")
+    elif not should_use_root_path and has_root_path:
+        fail("`root_path` can only be used when `crate_root` is not set and `srcs` is a single directory artifact.")
+
 def _rust_library_common(ctx, crate_type):
     """The common implementation of the library-like rules.
 
@@ -168,6 +219,7 @@ def _rust_library_common(ctx, crate_type):
     Returns:
         list: A list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
@@ -217,7 +269,9 @@ def _rust_library_common(ctx, crate_type):
         )
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     return rustc_compile_action(
         ctx = ctx,
@@ -228,6 +282,7 @@ def _rust_library_common(ctx, crate_type):
             name = crate_name,
             type = crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -258,6 +313,7 @@ def _rust_binary_impl(ctx):
     Returns:
         list: A list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
@@ -269,7 +325,9 @@ def _rust_binary_impl(ctx):
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
@@ -293,6 +351,7 @@ def _rust_binary_impl(ctx):
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -349,6 +408,7 @@ def _rust_test_impl(ctx):
     Returns:
         list: The list of providers. See `rustc_compile_action`
     """
+    _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
     _assert_correct_dep_mapping(ctx)
 
@@ -356,7 +416,9 @@ def _rust_test_impl(ctx):
 
     crate_type = "bin"
     deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    if hasattr(ctx.attr, "link_deps"):
+        deps += transform_link_deps(ctx.attr.link_deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
@@ -415,6 +477,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate.root,
+            root_path = crate.root_path,
             srcs = srcs,
             deps = depset(deps, transitive = [crate.deps]).to_list(),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
@@ -472,6 +535,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate_root,
+            root_path = getattr(ctx.attr, "root_path", ""),
             srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
@@ -626,12 +690,6 @@ RUSTC_ATTRS = {
     "_extra_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_rustc_flags"),
     ),
-    "_is_proc_macro_dep": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep"),
-    ),
-    "_is_proc_macro_dep_enabled": attr.label(
-        default = Label("//rust/private:is_proc_macro_dep_enabled"),
-    ),
     "_per_crate_rustc_flag": attr.label(
         default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
     ),
@@ -698,6 +756,9 @@ _COMMON_ATTRS = {
 
             If `crate_root` is not set, then this rule will look for a `lib.rs` file (or `main.rs` for rust_binary)
             or the single file in `srcs` if `srcs` contains only one file.
+
+            If the `srcs` contains only one file and that file is a directory,
+            use `root_path` to specify the path to the crate root .rs file under that directory.
         """),
         allow_single_file = [".rs"],
     ),
@@ -713,14 +774,21 @@ _COMMON_ATTRS = {
     ),
     "deps": attr.label_list(
         doc = dedent("""\
-            List of other libraries to be linked to this library target.
+            List of other Rust libraries to be linked to this library target.
 
-            These can be either other `rust_library` targets or `cc_library` targets if
-            linking a native library.
+            These must be targets that provide `CrateInfo`, such as `rust_library`.
         """),
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
+    ),
+    "link_deps": attr.label_list(
+        doc = dedent("""\
+            List of other native libraries to be linked to this library target.
+
+            These are typically `cc_library` targets.
+        """),
+        providers = [[CcInfo], [rust_common.crate_info]],
     ),
     "lint_config": attr.label(
         doc = "Set of lints to apply when building this crate.",
@@ -746,6 +814,9 @@ _COMMON_ATTRS = {
         ),
         values = [-1, 0, 1],
         default = -1,
+    ),
+    "root_path": attr.string(
+        doc = """If the crate root (single member of the `srcs` list) is a directory, this is the path to the crate root `.rs` file under that directory.""",
     ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
@@ -816,6 +887,11 @@ _COMMON_ATTRS = {
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
+    ),
+    "zself_profile_events": attr.label(
+        doc = "Passes -Zself-profile and -Zself-profile-events flag to rustc, requires a nightly toolchain.",
+        providers = [UnstableSelfProfileInfo],
+        default = None,
     ),
     "_collect_cfgs": attr.label(
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
@@ -1108,40 +1184,10 @@ rust_shared_library = rule(
         """),
 )
 
-def _proc_macro_dep_transition_impl(settings, _attr):
-    if settings["//rust/private:is_proc_macro_dep_enabled"]:
-        return {"//rust/private:is_proc_macro_dep": True}
-    else:
-        return []
-
-_proc_macro_dep_transition = transition(
-    inputs = ["//rust/private:is_proc_macro_dep_enabled"],
-    outputs = ["//rust/private:is_proc_macro_dep"],
-    implementation = _proc_macro_dep_transition_impl,
-)
-
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = COMMON_PROVIDERS,
-    # Start by copying the common attributes, then override the `deps` attribute
-    # to apply `_proc_macro_dep_transition`. To add this transition we additionally
-    # need to declare `_allowlist_function_transition`, see
-    # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
-    attrs = dict(
-        _COMMON_ATTRS.items(),
-        _allowlist_function_transition = attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
-        deps = attr.label_list(
-            doc = dedent("""\
-                List of other libraries to be linked to this library target.
-
-                These can be either other `rust_library` targets or `cc_library` targets if
-                linking a native library.
-            """),
-            cfg = _proc_macro_dep_transition,
-        ),
-    ),
+    attrs = {name: value for name, value in _COMMON_ATTRS.items() if name != "link_deps"},
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),

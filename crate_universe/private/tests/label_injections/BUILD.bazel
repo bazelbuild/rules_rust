@@ -1,0 +1,4 @@
+load(":label_injections_test.bzl", "label_injections_test_suite")
+
+############################ UNIT TESTS #############################
+label_injections_test_suite(name = "label_injections_test_suite")

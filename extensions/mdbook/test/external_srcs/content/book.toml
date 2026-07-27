@@ -1,0 +1,5 @@
+[book]
+authors = ["Test Author"]
+language = "en"
+src = "src"
+title = "External Book"

@@ -24,3 +24,25 @@ rust_test(
     name = "simple_test",
     crate = ":simple_example",
 )
+
+rust_bindgen_library(
+    name = "std_headers_bindgen",
+    bindgen_flags = [
+        "--allowlist-function=get_random_value",
+    ],
+    cc_lib = "//test/integration/std_headers",
+    edition = "2021",
+    header = "//test/integration/std_headers:std_headers.h",
+)
+
+rust_binary(
+    name = "std_headers_example",
+    srcs = ["main_std_headers.rs"],
+    edition = "2021",
+    deps = [":std_headers_bindgen"],
+)
+
+rust_test(
+    name = "std_headers_test",
+    crate = ":std_headers_example",
+)

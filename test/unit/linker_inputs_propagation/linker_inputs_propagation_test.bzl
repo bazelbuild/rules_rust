@@ -27,11 +27,27 @@ def _dependency_linkopts_are_propagated_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     link_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
 
+    pic_suffix = _get_pic_suffix(ctx)
+
     # Expect a library's own linkopts to come after the flags we create to link them.
     # This is required, because linkopts are ordered and the linker will only apply later ones when resolving symbols required for earlier ones.
     # This means that if one of our transitive deps has a linkopt like `-lfoo`, the dep will see the symbols of foo at link time.
-    _assert_contains_in_order(env, link_action.argv, ["-lstatic=foo_with_linkopts", "-Clink-arg=-lfoo_with_linkopts", "--codegen=link-arg=-L/doesnotexist"])
+    _assert_contains_in_order(env, link_action.argv, [
+        "-lstatic=foo_with_linkopts{}".format(pic_suffix),
+        "-Clink-arg=-lfoo_with_linkopts{}".format(pic_suffix),
+        "--codegen=link-arg=-L/doesnotexist",
+    ])
     return analysistest.end(env)
+
+def _get_pic_suffix(ctx):
+    # cc_library only produces .pic.a artifacts on linux-ish platforms in opt mode
+    # (mac/win produce a single variant regardless of mode). Mirrors the same logic
+    # in native_deps_test.bzl.
+    if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+        return ""
+    if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
+        return ""
+    return ".pic" if ctx.var["COMPILATION_MODE"] == "opt" else ""
 
 def _assert_contains_input(env, inputs, name):
     for input in inputs.to_list():
@@ -70,6 +86,10 @@ shared_lib_is_propagated_test = analysistest.make(
 
 dependency_linkopts_are_propagated_test = analysistest.make(
     _dependency_linkopts_are_propagated_test_impl,
+    attrs = {
+        "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
+        "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    },
 )
 
 def _linker_inputs_propagation_test():

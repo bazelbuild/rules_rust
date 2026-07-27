@@ -33,7 +33,6 @@ UNPRETTY_MODES = [
     "hir,identified",
     "hir,typed",
     "hir",
-    "identified",
     "mir-cfg",
     "mir",
     "normal",
@@ -144,6 +143,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
         deps = crate_info.deps.to_list(),
         proc_macro_deps = crate_info.proc_macro_deps.to_list(),
         aliases = crate_info.aliases,
+        extra_named_deps = crate_info.extra_named_deps,
     )
     lint_files = []
 
@@ -191,6 +191,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
             file = ctx.file,
             toolchain = toolchain,
             tool_path = toolchain.rustc.path,
+            tool_file = toolchain.rustc,
             cc_toolchain = cc_toolchain,
             feature_configuration = feature_configuration,
             crate_info = crate_info,
@@ -220,6 +221,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
             arguments = args.all,
             mnemonic = mnemonic,
             toolchain = "@rules_rust//rust:toolchain_type",
+            execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
 
     output_groups.update({"rust_unpretty": depset(outputs)})

@@ -1,0 +1,13 @@
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load(":proc_macro_dylib_test.bzl", "exec_triple_selects_dylib_test")
+
+rust_proc_macro(
+    name = "test_proc_macro",
+    srcs = ["test_proc_macro.rs"],
+    edition = "2021",
+)
+
+exec_triple_selects_dylib_test(
+    name = "exec_triple_selects_dylib",
+    target_under_test = ":test_proc_macro",
+)

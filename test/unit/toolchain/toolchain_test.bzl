@@ -30,8 +30,10 @@ def _toolchain_specifies_target_json_test_impl(ctx):
     asserts.equals(env, expected_basename, toolchain_info.target_json.basename)
 
     # The value is expected to be to a generated file in bazel-out.
-    asserts.true(env, toolchain_info.target_flag_value.startswith("bazel-out/"))
-    asserts.true(env, toolchain_info.target_flag_value.endswith("/bin/{}/{}".format(ctx.label.package, expected_basename)))
+    asserts.equals(env, "File", type(toolchain_info.target_flag_value))
+    target_path = toolchain_info.target_flag_value.path
+    asserts.true(env, target_path.startswith("bazel-out/"))
+    asserts.true(env, target_path.endswith("/bin/{}/{}".format(ctx.label.package, expected_basename)))
 
     return analysistest.end(env)
 

@@ -40,10 +40,10 @@ You add the required rules for cross compilation to your MODULE.bazel as shown b
 ```Starlark
 # Get latest release from:
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.70.0")
+bazel_dep(name = "rules_rust", version = "0.71.3")
 
 # https://github.com/bazelbuild/platforms/releases
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 
 # https://github.com/bazel-contrib/toolchains_llvm
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)

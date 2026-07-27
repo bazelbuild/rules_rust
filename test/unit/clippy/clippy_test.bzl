@@ -1,8 +1,8 @@
 """Unittest to verify properties of clippy rules"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_clippy_aspect")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_suffix", "assert_list_contains_adjacent_elements")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_suffix")
 
 def _find_clippy_action(actions):
     for action in actions:
@@ -31,14 +31,24 @@ def _clippy_aspect_action_has_flag_impl(ctx, flags, *, prefix_suffix_flags = [])
         fail("clippy_checks is only expected to contain 1 file")
 
     # Ensure the arguments to generate the marker file are present in
-    # the clippy action
-    assert_list_contains_adjacent_elements(
+    # the clippy action. Under `--experimental_output_paths=strip`,
+    # Bazel rewrites `File`-typed argv entries to the mapped
+    # `bazel-out/cfg/bin/...` prefix because the action advertises
+    # `supports-path-mapping`.
+    expected_short_path = clippy_checks[0].short_path.lstrip("./")
+    found = False
+    for idx in range(len(clippy_action.argv) - 1):
+        if (
+            clippy_action.argv[idx] == "--touch-file" and
+            clippy_action.argv[idx + 1].startswith("bazel-out/") and
+            clippy_action.argv[idx + 1].endswith(expected_short_path)
+        ):
+            found = True
+            break
+    asserts.true(
         env,
-        clippy_action.argv,
-        [
-            "--touch-file",
-            clippy_checks[0].path,
-        ],
+        found,
+        "Expected `--touch-file bazel-out/cfg/bin/<...>{}` in {}".format(expected_short_path, clippy_action.argv),
     )
 
     return analysistest.end(env)

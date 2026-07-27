@@ -7,6 +7,11 @@ make_answer!();
 #[cfg(feature = "with_build_script")]
 pub const CONST: &str = env!("CONST");
 
+#[cfg(feature = "with_cc")]
+extern "C" {
+    fn rustdoc_native_dep() -> u32;
+}
+
 /// The answer to the ultimate question
 /// ```
 /// fn answer() -> u32 { 42 }
@@ -15,6 +20,11 @@ pub const CONST: &str = env!("CONST");
 #[cfg(not(feature = "with_proc_macro"))]
 pub fn answer() -> u32 {
     42
+}
+
+#[cfg(feature = "with_cc")]
+pub fn native_answer() -> u32 {
+    unsafe { rustdoc_native_dep() }
 }
 
 #[cfg(test)]

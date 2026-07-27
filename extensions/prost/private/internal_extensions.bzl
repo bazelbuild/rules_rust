@@ -7,7 +7,7 @@ def _rust_ext_dev_impl(module_ctx):
 
     rbe_preconfig(
         name = "buildkite_config",
-        toolchain = "ubuntu2204",
+        toolchain = "ubuntu2404",
     )
 
     deps.append(struct(repo = "buildkite_config"))

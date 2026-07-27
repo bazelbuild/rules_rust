@@ -60,6 +60,9 @@ repository = "https://github.com/bazelbuild/rules_rust"
 cargo = []
 default = ["cargo"]
 
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags=["-Ctarget-feature=+crt-static"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

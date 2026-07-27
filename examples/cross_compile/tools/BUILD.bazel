@@ -5,7 +5,7 @@ rust_binary(
     srcs = ["infer_tester.rs"],
     visibility = ["//visibility:public"],
     deps = [
-        "@crates_io//:infer",
+        "@crates_io//infer",
         "@rules_rust//rust/runfiles",
     ],
 )

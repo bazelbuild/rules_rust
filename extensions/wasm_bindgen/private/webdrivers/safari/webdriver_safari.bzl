@@ -43,6 +43,9 @@ def _safaridriver_repository_impl(repository_ctx):
     )
 
     repository_ctx.file("BUILD.bazel", _SAFARIDRIVER_BUILD_CONTENT)
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = False)
+    return None
 
 safaridriver_repository = repository_rule(
     doc = """\

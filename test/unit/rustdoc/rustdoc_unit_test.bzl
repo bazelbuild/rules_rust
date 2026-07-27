@@ -1,9 +1,18 @@
 """Unittest to verify properties of rustdoc rules"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_proc_macro", "rust_test")
+load(
+    "//rust:defs.bzl",
+    "rust_binary",
+    "rust_doc",
+    "rust_doc_test",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_test",
+)
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -154,6 +163,24 @@ def _rustdoc_with_json_error_format_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_test_uses_cc_library_native_lib_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+
+    asserts.true(
+        env,
+        action.mnemonic in ["RustdocTestWriter", "RustdocTestCompile"],
+        "Expected RustdocTestWriter or RustdocTestCompile, got {}".format(action.mnemonic),
+    )
+    asserts.true(
+        env,
+        "-Clink-arg=-lrustdoc_cc_library" in action.argv or "-Clink-arg=-lrustdoc_cc_library.pic" in action.argv,
+        "Expected {} to contain a rustdoc_cc_library native link arg".format(action.argv),
+    )
+
+    return analysistest.end(env)
+
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
 rustdoc_for_bin_with_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_cc_lib_test_impl)
@@ -168,6 +195,7 @@ rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
     str(Label("//rust/settings:error_format")): "json",
 })
+rustdoc_test_uses_cc_library_native_lib_test = analysistest.make(_rustdoc_test_uses_cc_library_native_lib_test_impl)
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
     rule_fn(
@@ -195,11 +223,51 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = []
         target_compatible_with = NOT_WINDOWS,
     )
 
+def _rustdoc_for_generated_root_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    return analysistest.end(env)
+
+rustdoc_for_generated_root_test = analysistest.make(_rustdoc_for_generated_root_test_impl)
+
 def _define_targets():
     rust_library(
         name = "adder",
         srcs = ["adder.rs"],
         edition = "2018",
+    )
+
+    write_file(
+        name = "gen_lib_src",
+        out = "gen_lib.rs",
+        content = [
+            "/// One.",
+            "/// ```",
+            "/// assert_eq!(1, 1);",
+            "/// ```",
+            "pub fn one() -> u32 { 1 }",
+            "",
+        ],
+    )
+
+    rust_library(
+        name = "gen_lib",
+        srcs = [":gen_lib.rs"],
+        edition = "2021",
+    )
+
+    rust_doc(
+        name = "gen_lib_doc",
+        crate = ":gen_lib",
+    )
+
+    rust_doc_test(
+        name = "gen_lib_doc_test",
+        crate = ":gen_lib",
+        target_compatible_with = NOT_WINDOWS,
     )
 
     _target_maker(
@@ -294,9 +362,14 @@ def _define_targets():
         hdrs = ["rustdoc.h"],
         srcs = ["rustdoc.cc"],
         deps = [":cc_lib"],
-        # This is not needed for :cc_lib, but it is needed in other
-        # circumstances to link in system libraries.
-        linkopts = ["-lcc_lib"],
+        # Exercises propagation of system-library `-l` linkopts. Picks a
+        # library guaranteed to exist on each platform so the `-l` flag
+        # resolves without depending on any cc_library artifact name (which
+        # would gain a `.pic` suffix when consumers request PIC).
+        linkopts = select({
+            "@platforms//os:windows": ["-luser32"],
+            "//conditions:default": ["-lm"],
+        }),
         linkstatic = True,
     )
 
@@ -315,6 +388,27 @@ def _define_targets():
         srcs = ["rustdoc_nodep_lib.rs"],
         crate_features = ["with_cc"],
         deps = [":cc_lib"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_depends_on_native",
+        srcs = ["rustdoc_depends_on_native.rs"],
+        deps = [":lib_nodep_with_cc"],
+    )
+
+    cc_library(
+        name = "rustdoc_cc_library",
+        hdrs = ["rustdoc.h"],
+        srcs = ["rustdoc.cc"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_cc_library",
+        srcs = ["rustdoc_nodep_lib.rs"],
+        crate_features = ["with_cc"],
+        deps = [":rustdoc_cc_library"],
     )
 
     cargo_build_script(
@@ -434,6 +528,16 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_doc",
     )
 
+    rustdoc_test_uses_cc_library_native_lib_test(
+        name = "rustdoc_test_uses_cc_library_native_lib_test",
+        target_under_test = ":lib_with_cc_library_doctest",
+    )
+
+    rustdoc_for_generated_root_test(
+        name = "rustdoc_for_generated_root_test",
+        target_under_test = ":gen_lib_doc",
+    )
+
     native.filegroup(
         name = "lib_doc_zip",
         srcs = [":lib_doc.zip"],
@@ -457,6 +561,8 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_lib_with_cc_lib_test",
             ":rustdoc_with_args_test",
             ":rustdoc_with_json_error_format_test",
+            ":rustdoc_test_uses_cc_library_native_lib_test",
+            ":rustdoc_for_generated_root_test",
             ":rustdoc_zip_output_test",
         ],
     )

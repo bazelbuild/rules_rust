@@ -42,6 +42,9 @@ def _empty_repository_impl(repository_ctx):
         repository_ctx.name,
     ))
     repository_ctx.file("BUILD.bazel", "")
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 _empty_repository = repository_rule(
     doc = "Declare an empty repository.",
@@ -115,6 +118,8 @@ def _rust_impl(module_ctx):
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
+        if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
+            fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
         if len(toolchain.versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
@@ -123,19 +128,21 @@ def _rust_impl(module_ctx):
             _empty_repository(name = "rust_toolchains")
         else:
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
+            extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
-                extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
+                extra_exec_rustc_flags = extra_exec_rustc_flags,
                 allocator_library = str(toolchain.allocator_library) if toolchain.allocator_library else None,
                 global_allocator_library = str(toolchain.global_allocator_library) if toolchain.global_allocator_library else None,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
+                opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
@@ -255,6 +262,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "extra_exec_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in exec configuration",
         ),
+        "extra_exec_rustc_flags_triples": attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in exec configuration. Key is the triple, value is the flag.",
+        ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
@@ -263,6 +273,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "extra_target_triples": attr.string_list(
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        "opt_level": attr.string_dict(
+            doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",

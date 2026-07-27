@@ -57,6 +57,10 @@ filegroup(
     visibility = ["//crate_universe:__subpackages__"],
 )
 
+MSVC_RUSTC_FLAGS = [
+    "-Ctarget-feature=+crt-static",
+]
+
 rust_library(
     name = "cargo_bazel",
     srcs = glob(
@@ -67,6 +71,12 @@ rust_library(
     compile_data = [":rust_data"],
     edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_flags = select({
+        "//rust/platform:aarch64-pc-windows-msvc": MSVC_RUSTC_FLAGS,
+        "//rust/platform:i686-pc-windows-msvc": MSVC_RUSTC_FLAGS,
+        "//rust/platform:x86_64-pc-windows-msvc": MSVC_RUSTC_FLAGS,
+        "//conditions:default": [],
+    }),
     # This target embeds additional, stamping related information (see
     # https://docs.bazel.build/versions/main/user-manual.html#workspace_status
     # for more information). Set stamp = -1 to indicate that it should respect
