@@ -92,7 +92,7 @@ def get_generator(repository_ctx, host_triple):
 def render_config(
         build_file_template = "//:BUILD.{name}-{version}.bazel",
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
-        crate_alias_template = "//{name}-{version}",
+        crate_alias_template = "@{repository}//{name}-{version}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
