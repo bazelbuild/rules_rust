@@ -42,12 +42,10 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
         asserts.equals(env, None, library_to_link.interface_library)
         asserts.equals(env, None, library_to_link.resolved_symlink_dynamic_library)
         asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
-        if library_to_link.static_library != None:
-            if type in ("rlib", "lib"):
-                asserts.true(env, library_to_link.static_library.basename.startswith("lib" + tut.label.name))
-            asserts.equals(env, None, library_to_link.pic_static_library)
-        else:
-            asserts.true(env, library_to_link.pic_static_library != None)
+        asserts.true(env, library_to_link.static_library != None)
+        if type in ("rlib", "lib"):
+            asserts.true(env, library_to_link.static_library.basename.startswith("lib" + tut.label.name))
+        if library_to_link.pic_static_library != None:
             if type in ("rlib", "lib"):
                 asserts.true(env, library_to_link.pic_static_library.basename.startswith("lib" + tut.label.name))
 

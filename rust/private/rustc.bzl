@@ -2315,10 +2315,9 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     if crate_info.type == "staticlib":
         if cc_toolchain:
             kwargs = {}
+            kwargs["static_library"] = crate_info.output
             if use_pic:
                 kwargs["pic_static_library"] = crate_info.output
-            else:
-                kwargs["static_library"] = crate_info.output
 
             library_to_link = cc_common.create_library_to_link(
                 actions = ctx.actions,
@@ -2335,10 +2334,9 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
         if cc_toolchain:
             kwargs = {}
+            kwargs["static_library"] = dot_a
             if use_pic:
                 kwargs["pic_static_library"] = dot_a
-            else:
-                kwargs["static_library"] = dot_a
 
             library_to_link = cc_common.create_library_to_link(
                 actions = ctx.actions,
