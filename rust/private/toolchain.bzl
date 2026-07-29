@@ -555,26 +555,25 @@ def _rust_toolchain_impl(ctx):
                 ctx.label,
             ))
 
-    experimental_link_std_dylib = _experimental_link_std_dylib(ctx)
-
-    def make_ccinfo(label, actions, allocator_library, std):
+    def make_ccinfo(label, actions, allocator_library, std, link_std_dylib):
         return make_libstd_and_allocator_ccinfo(
             cc_toolchain = cc_toolchain,
             feature_configuration = feature_configuration,
             label = label,
             actions = actions,
-            experimental_link_std_dylib = experimental_link_std_dylib,
+            link_std_dylib = link_std_dylib,
             rust_std = rust_std,
             allocator_library = allocator_library,
             std = std,
         )
 
-    def make_local_ccinfo(allocator_library, std):
+    def make_local_ccinfo(allocator_library, std, link_std_dylib):
         return make_ccinfo(
             ctx.label,
             ctx.actions,
             struct(cc_info = allocator_library),
             std,
+            link_std_dylib,
         )
 
     # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
@@ -600,9 +599,11 @@ def _rust_toolchain_impl(ctx):
         env = ctx.attr.env,
         exec_triple = exec_triple,
         iso_date = ctx.attr.iso_date,
-        libstd_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std"),
-        libstd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std"),
-        nostd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "no_std_with_alloc"),
+        libstd_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std", False),
+        libstd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std", False),
+        nostd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "no_std_with_alloc", False),
+        libstd_dylib_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std", True),
+        libstd_dylib_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std", True),
         make_libstd_and_allocator_ccinfo = make_ccinfo,
         linker = sysroot.linker,
         linker_preference = linker_preference,

@@ -1001,6 +1001,15 @@ _RUST_TEST_ATTRS = {
     "env_inherit": attr.string_list(
         doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
+    "link_std_dylib": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            Flag to dynamically link the standard library as a Rust dylib .so object when building this test.
+
+            Default is false. This is often required when testing a target that depends on a Rust ABI dylib.
+        """),
+    ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
         default = True,
@@ -1106,6 +1115,16 @@ rust_dylib_library = rule(
                 Disables pipelining for this rule if it is globally enabled.
                 This will cause this rule to not produce a `.rmeta` file and all the dependent
                 crates will instead use the `.rlib` file.
+            """),
+        ),
+        "link_std_dylib": attr.bool(
+            mandatory = False,
+            default = False,
+            doc = dedent("""\
+                Flag to dynamically link the standard library as a Rust dylib .so object when building this library.
+
+                Default is false. This is typically required for Rust ABI dylibs so that the stdlib is shared
+                with the binary that loads them, avoiding duplicate symbols.
             """),
         ),
     },
@@ -1269,6 +1288,15 @@ _RUST_BINARY_ATTRS = {
             Execpath returns absolute path, and in order to be able to construct the absolute path we
             need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
             more complicated debugger attachment.
+        """),
+    ),
+    "link_std_dylib": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            Flag to dynamically link the standard library as a Rust dylib .so object when building this binary.
+            
+            Default is false. This is often required when building a binary that depends on a Rust ABI dylib.
         """),
     ),
     "linker_script": attr.label(
