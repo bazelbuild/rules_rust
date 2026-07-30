@@ -15,7 +15,7 @@ The fastest way to try this in an empty project is to click the green "Use this 
 General discussions and announcements take place in the [GitHub Discussions](https://github.com/bazelbuild/rules_rust/discussions), but there are
 additional places where community members gather to discuss `rules_rust`.
 
-* Chat: [#rust](https://bazelbuild.slack.com/archives/CSV56UT0F) channel on Bazel Slack: [https://slack.bazel.build/](https://slack.bazel.build/)
+* Chat: [#rust](https://bazelbuild.slack.com/archives/CSV56UT0F) channel on Bazel Slack: [http://web.archive.org/web/20200603132559/https://slack.bazel.build/](https://slack.bazel.build/)
 * **Archived** Developer mailing list: [groups.google.com/g/rules_rust](https://groups.google.com/g/rules_rust)
 
 ## Documentation
