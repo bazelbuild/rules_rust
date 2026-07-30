@@ -9,6 +9,23 @@ load(
 )
 load("//rust:defs.bzl", "rust_binary")
 
+def _sanitize_tristate(value):
+    """Coerce a user-provided value to the rule's `-1`/`0`/`1` tri-state `int` shape.
+
+    Args:
+        value (bool | int | None): The user-provided value. `None` is treated as
+            "unset" (`-1`), booleans are mapped to `0`/`1`, and integers are
+            passed through.
+
+    Returns:
+        int: The sanitized tri-state value (`-1`, `0`, or `1`).
+    """
+    if value == None:
+        return -1
+    if type(value) == "bool":
+        return 1 if value else 0
+    return value
+
 def cargo_build_script(
         *,
         name,
@@ -24,6 +41,7 @@ def cargo_build_script(
         build_script_env = {},
         build_script_env_files = [],
         emit_warnings = True,
+        use_cc_toolchain = None,
         use_default_shell_env = None,
         data = [],
         compile_data = [],
@@ -117,6 +135,14 @@ def cargo_build_script(
             to stderr. Honored only when
             `@rules_rust//cargo/settings:emit_build_script_warnings` is `auto` (the
             default); set the flag to `on` or `off` to override every target.
+        use_cc_toolchain (bool, optional): Whether or not to pull in the resolved `cc_toolchain` when running the build script.
+
+            When enabled, the resolved `cc_toolchain`'s `all_files` are added to the action inputs and the `CC`,
+            `CXX`, `AR`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, and `INCLUDE` environment variables are populated from
+            that toolchain (matching Cargo's normal behavior). Disabling this can significantly shrink build
+            script action input trees (particularly with hermetic sysroots) but breaks any build script that
+            needs to compile C/C++ code. If unset the global setting
+            `@rules_rust//cargo/settings:use_cc_toolchain` will be used to determine this value.
         use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
             setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
@@ -206,12 +232,8 @@ def cargo_build_script(
         **wrapper_kwargs
     )
 
-    if use_default_shell_env == None:
-        sanitized_use_default_shell_env = -1
-    elif type(use_default_shell_env) == "bool":
-        sanitized_use_default_shell_env = 1 if use_default_shell_env else 0
-    else:
-        sanitized_use_default_shell_env = use_default_shell_env
+    sanitized_use_default_shell_env = _sanitize_tristate(use_default_shell_env)
+    sanitized_use_cc_toolchain = _sanitize_tristate(use_cc_toolchain)
 
     # This target executes the build script.
     _build_script_run(
@@ -225,6 +247,7 @@ def cargo_build_script(
         build_script_env = build_script_env,
         build_script_env_files = build_script_env_files,
         emit_warnings = emit_warnings,
+        use_cc_toolchain = sanitized_use_cc_toolchain,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,

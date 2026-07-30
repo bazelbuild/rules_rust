@@ -319,16 +319,16 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "axum": Label("//:axum-0.4.8"),
-            "hyper": Label("//:hyper-0.14.32"),
-            "mime": Label("//:mime-0.3.17"),
-            "serde_json": Label("//:serde_json-1.0.135"),
-            "socket2": Label("//:socket2-0.4.10"),
-            "tokio": Label("//:tokio-1.43.0"),
-            "tower": Label("//:tower-0.4.13"),
-            "tower-http": Label("//:tower-http-0.2.5"),
-            "tracing": Label("//:tracing-0.1.41"),
-            "tracing-subscriber": Label("//:tracing-subscriber-0.3.19"),
+            "axum": Label("//axum-0.4.8"),
+            "hyper": Label("//hyper-0.14.32"),
+            "mime": Label("//mime-0.3.17"),
+            "serde_json": Label("//serde_json-1.0.135"),
+            "socket2": Label("//socket2-0.4.10"),
+            "tokio": Label("//tokio-1.43.0"),
+            "tower": Label("//tower-0.4.13"),
+            "tower-http": Label("//tower-http-0.2.5"),
+            "tracing": Label("//tracing-0.1.41"),
+            "tracing-subscriber": Label("//tracing-subscriber-0.3.19"),
         },
     },
 }

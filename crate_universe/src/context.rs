@@ -412,7 +412,6 @@ mod test {
                 .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep_by_alias(dep)))
                 .collect::<Vec<_>>(),
             [
-                (&CrateId::new("child".to_owned(), Version::new(0, 1, 0)), false),
                 (&CrateId::new("tonic".to_owned(), Version::new(0, 4, 3)), false),
                 (&CrateId::new("tonic-build".to_owned(), Version::new(0, 4, 2)), false),
             ],

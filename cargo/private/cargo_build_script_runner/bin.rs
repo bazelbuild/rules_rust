@@ -200,7 +200,6 @@ fn run_buildrs() -> Result<(), String> {
             &buildrs_outputs,
             &crate_links,
             &exec_root.to_string_lossy(),
-            &out_dir,
         )
         .as_bytes(),
     )

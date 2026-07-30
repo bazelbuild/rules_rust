@@ -114,6 +114,7 @@ def _crates_repository_impl(repository_ctx):
 
     paths_to_track_file = repository_ctx.path("paths-to-track")
     warnings_output_file = repository_ctx.path("warnings-output-file")
+    hub_packages_output_file = repository_ctx.path("hub-packages.json")
 
     # Run the generator
     repository_ctx.report_progress("Generating crate BUILD files.")
@@ -128,6 +129,7 @@ def _crates_repository_impl(repository_ctx):
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        hub_packages_output_file = hub_packages_output_file,
         skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile = repository_ctx.attr.strip_internal_dependencies_from_cargo_lockfile,
         # sysroot = tools.sysroot,

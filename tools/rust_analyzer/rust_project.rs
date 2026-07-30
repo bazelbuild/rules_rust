@@ -248,6 +248,13 @@ pub struct Runnable {
 }
 
 /// The kind of runnable.
+///
+/// Matches rust-analyzer's `RunnableKind` at the discoverConfig
+/// boundary. rust-analyzer's deserializer is strict — emitting a
+/// variant it doesn't recognize causes the ENTIRE discovery to be
+/// rejected, so per-variant emission lives at the call site and is
+/// gated on the rust-analyzer version (read from the toolchain's
+/// declared `version`; see [`ToolchainInfo::version`]).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RunnableKind {
@@ -265,33 +272,38 @@ pub enum RunnableKind {
     TestOne,
 
     /// Run every test in a module. rust-analyzer substitutes
-    /// `{test_pattern}` with the module path (e.g. `tests::`). Even if
-    /// the resulting Bazel command is approximate (Bazel's test filter
-    /// is per-target, not per-module), THIS TEMPLATE MUST EXIST: when
-    /// a crate has a `build` field, rust-analyzer routes every runnable
-    /// through `ProjectJsonTargetSpec` lookup, and missing kinds cause
-    /// the codelens-rendering pipeline to silently drop BOTH the
-    /// missing-kind and adjacent runnables of OTHER kinds at the same
-    /// source range. Without TestMod, the `▶ Run Test` codelens on
-    /// every `#[test]` fn inside a `#[cfg(test)] mod tests { }` block
-    /// disappears entirely.
+    /// `{test_pattern}` with the module path. Bazel's test filter is
+    /// per-target rather than per-module, so we forward as
+    /// `--test_arg` and let libtest's name-prefix match filter.
+    ///
+    /// Added in rust-analyzer 1.96. Required there: with a `build`
+    /// field present, rust-analyzer routes every runnable through
+    /// `ProjectJsonTargetSpec` lookup, and missing kinds cause the
+    /// codelens-rendering pipeline to silently drop the `▶ Run Test`
+    /// codelens on every `#[test]` fn. Emitting it on 1.95 and
+    /// earlier breaks discovery entirely (unknown variant).
     TestMod,
 }
 
-/// Workspace-relative path of the flycheck launcher script that
-/// `setup_vscode` writes. The path itself is platform-dependent (`.sh` on
-/// POSIX, `.bat` on Windows) but the directory layout is fixed and shared
-/// with `bin/setup_vscode.rs` — keep them in sync.
+/// True when the toolchain's declared `version` is new enough to
+/// deserialize [`RunnableKind::TestMod`] (i.e. 1.96+). Empty or
+/// unparsable versions return `false` — safer to degrade gracefully
+/// (lose the module-level codelens) than to break discovery.
+fn supports_test_mod(version: &str) -> bool {
+    let mut parts = version.split('.').filter_map(|p| p.parse::<u32>().ok());
+    matches!((parts.next(), parts.next()), (Some(major), Some(minor)) if (major, minor) >= (1, 96))
+}
+
+/// Prefers `$RULES_RUST_RA_LAUNCHER_DIR` (published by discover's
+/// `self_locate_config`). Falls back to
+/// `<workspace>/.rules_rust_analyzer/` for direct-exec debugging.
 fn flycheck_launcher_path(workspace: &Utf8Path) -> Utf8PathBuf {
-    let filename = if cfg!(windows) {
-        "flycheck.bat"
-    } else {
-        "flycheck.sh"
-    };
-    workspace
-        .join(".vscode")
-        .join(".rules_rust_analyzer")
-        .join(filename)
+    let launcher_dir = std::env::var("RULES_RUST_RA_LAUNCHER_DIR")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(Utf8PathBuf::from)
+        .unwrap_or_else(|| workspace.join(".rules_rust_analyzer"));
+    launcher_dir.join(crate::FLYCHECK_BINARY_FILENAME)
 }
 
 /// Findings from inspecting the consolidated `CrateSpec` set for problems
@@ -464,95 +476,86 @@ pub fn assemble_rust_project(
     toolchain_info: ToolchainInfo,
     crate_specs: &BTreeSet<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
+    let emit_test_mod = supports_test_mod(&toolchain_info.version);
+
+    let mut runnables = vec![
+        Runnable {
+            program: bazel.to_string(),
+            args: vec!["build".to_owned(), "{label}".to_owned()],
+            cwd: workspace.to_owned(),
+            kind: RunnableKind::Check,
+        },
+        // On-save flycheck. Args stay user-agnostic — per-user
+        // preferences (clippy, ...) live in
+        // `<launcher_dir>/user_config.json` and are read by
+        // `bin/flycheck.rs` on each save.
+        Runnable {
+            program: flycheck_launcher_path(workspace).to_string(),
+            args: vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+            cwd: workspace.to_owned(),
+            kind: RunnableKind::Flycheck,
+        },
+        Runnable {
+            program: bazel.to_string(),
+            args: vec![
+                "test".to_owned(),
+                "{label}".to_owned(),
+                "--test_output".to_owned(),
+                "streamed".to_owned(),
+                "--test_arg".to_owned(),
+                "--nocapture".to_owned(),
+                "--test_arg".to_owned(),
+                "--exact".to_owned(),
+                "--test_arg".to_owned(),
+                "{test_id}".to_owned(),
+            ],
+            cwd: workspace.to_owned(),
+            kind: RunnableKind::TestOne,
+        },
+        // Run unlocks the per-#[test]-fn TestOne codelens via the
+        // same rust-analyzer ProjectJsonTargetSpec quirk that makes
+        // TestMod load-bearing. Empirically verified against 1.96.0;
+        // the template itself is only INVOKED for binary main()s, so
+        // its presence is harmless when the user clicks a test
+        // codelens — TestOne fires instead.
+        Runnable {
+            program: bazel.to_string(),
+            args: vec!["run".to_owned(), "{label}".to_owned()],
+            cwd: workspace.to_owned(),
+            kind: RunnableKind::Run,
+        },
+    ];
+
+    if emit_test_mod {
+        // `{test_pattern}` is rust-analyzer's module path (e.g.
+        // `tests::`). Bazel's test filter is per-target rather than
+        // per-module, so we forward as `--test_arg` and let libtest's
+        // name-prefix match do the filtering. Approximate but
+        // functionally correct for the typical lib + inline
+        // `#[cfg(test)] mod tests` layout. See `RunnableKind::TestMod`
+        // for why this matters on rust-analyzer 1.96+.
+        runnables.push(Runnable {
+            program: bazel.to_string(),
+            args: vec![
+                "test".to_owned(),
+                "{label}".to_owned(),
+                "--test_output".to_owned(),
+                "streamed".to_owned(),
+                "--test_arg".to_owned(),
+                "--nocapture".to_owned(),
+                "--test_arg".to_owned(),
+                "{test_pattern}".to_owned(),
+            ],
+            cwd: workspace.to_owned(),
+            kind: RunnableKind::TestMod,
+        });
+    }
+
     let mut project = RustProject {
         sysroot: toolchain_info.sysroot,
         sysroot_src: toolchain_info.sysroot_src,
         crates: Vec::new(),
-        runnables: vec![
-            Runnable {
-                program: bazel.to_string(),
-                args: vec!["build".to_owned(), "{label}".to_owned()],
-                cwd: workspace.to_owned(),
-                kind: RunnableKind::Check,
-            },
-            // On-save flycheck. rust-analyzer substitutes `{label}` with
-            // the saved file's owning crate and runs the launcher; the
-            // launcher dispatches via `bazel run` to the flycheck wrapper,
-            // which spawns `bazel build` for that label with rustc
-            // diagnostics enabled, harvests the resulting .rustc-output
-            // files via BEP, and streams their JSON contents to stdout
-            // for rust-analyzer to parse into squiggles.
-            //
-            // We point at the launcher (written by `setup_vscode` into
-            // `.vscode/.rules_rust_analyzer/`) rather than at `bazel run
-            // flycheck` directly so the per-shim `--output_user_root`
-            // (an absolute path on the user's machine) doesn't end up
-            // serialized into rust-project.json — the launcher bakes it
-            // in once at setup time and isolates Bazel-server contention
-            // from the user's primary build.
-            Runnable {
-                program: flycheck_launcher_path(workspace).to_string(),
-                args: vec!["{label}".to_owned(), "{saved_file}".to_owned()],
-                cwd: workspace.to_owned(),
-                kind: RunnableKind::Flycheck,
-            },
-            Runnable {
-                program: bazel.to_string(),
-                args: vec![
-                    "test".to_owned(),
-                    "{label}".to_owned(),
-                    "--test_output".to_owned(),
-                    "streamed".to_owned(),
-                    "--test_arg".to_owned(),
-                    "--nocapture".to_owned(),
-                    "--test_arg".to_owned(),
-                    "--exact".to_owned(),
-                    "--test_arg".to_owned(),
-                    "{test_id}".to_owned(),
-                ],
-                cwd: workspace.to_owned(),
-                kind: RunnableKind::TestOne,
-            },
-            // TestMod is REQUIRED for `▶ Run Test` codelens to render on
-            // any `#[test]` fn — see the doc on `RunnableKind::TestMod`
-            // for why. `{test_pattern}` is rust-analyzer's module path
-            // (e.g. `tests::`); Bazel's test filter is per-target rather
-            // than per-module, so we forward it as `--test_arg` and let
-            // libtest's name-prefix match do the filtering. Approximate
-            // but functionally correct for the typical lib + inline
-            // `#[cfg(test)] mod tests` layout.
-            Runnable {
-                program: bazel.to_string(),
-                args: vec![
-                    "test".to_owned(),
-                    "{label}".to_owned(),
-                    "--test_output".to_owned(),
-                    "streamed".to_owned(),
-                    "--test_arg".to_owned(),
-                    "--nocapture".to_owned(),
-                    "--test_arg".to_owned(),
-                    "{test_pattern}".to_owned(),
-                ],
-                cwd: workspace.to_owned(),
-                kind: RunnableKind::TestMod,
-            },
-            // Run is REQUIRED — same quirk as TestMod above. Without
-            // this template, per-`#[test]`-fn TestOne codelens silently
-            // disappears (only mod-level "Run Tests" survives). The
-            // template itself is only INVOKED for binary `fn main()`s
-            // (which lib crates don't have), so emitting it has no
-            // user-visible effect beyond unlocking TestOne — but it MUST
-            // be present. Empirically verified against rust-analyzer
-            // 1.96.0; if this constraint loosens upstream, drop it
-            // again because `bazel run` of a `rust_test` target is a
-            // no-op confusing UX.
-            Runnable {
-                program: bazel.to_string(),
-                args: vec!["run".to_owned(), "{label}".to_owned()],
-                cwd: workspace.to_owned(),
-                kind: RunnableKind::Run,
-            },
-        ],
+        runnables,
     };
 
     // Pre-compute crate_id → index and crate_id → spec maps so the dep
@@ -641,6 +644,20 @@ pub fn assemble_rust_project(
 mod tests {
     use super::*;
 
+    #[test]
+    fn supports_test_mod_at_or_above_1_96() {
+        // At-minimum and above-minimum: emit.
+        assert!(supports_test_mod("1.96.0"));
+        assert!(supports_test_mod("2.0.0"));
+        // The cited problem version: don't emit.
+        assert!(!supports_test_mod("1.95.0"));
+        // Unknown / unset version: safe default (degrade gracefully —
+        // lose the module-level codelens rather than break discovery
+        // by emitting a variant rust-analyzer rejects).
+        assert!(!supports_test_mod(""));
+        assert!(!supports_test_mod("not-a-version"));
+    }
+
     /// A simple example with a single crate and no dependencies.
     #[test]
     fn generate_rust_project_single() {
@@ -650,6 +667,7 @@ mod tests {
             ToolchainInfo {
                 sysroot: "sysroot".to_owned().into(),
                 sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
             },
             &BTreeSet::from([CrateSpec {
                 aliases: BTreeMap::new(),
@@ -687,6 +705,7 @@ mod tests {
             ToolchainInfo {
                 sysroot: "sysroot".to_owned().into(),
                 sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
             },
             &BTreeSet::from([
                 CrateSpec {
@@ -789,6 +808,7 @@ mod tests {
             ToolchainInfo {
                 sysroot: "sysroot".to_owned().into(),
                 sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-b"]), spec("ID-b", &["ID-a"])]),
         )
@@ -821,6 +841,7 @@ mod tests {
             ToolchainInfo {
                 sysroot: "sysroot".to_owned().into(),
                 sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-nonexistent"])]),
         )
@@ -828,6 +849,36 @@ mod tests {
 
         assert_eq!(project.crates.len(), 1);
         assert_eq!(project.crates[0].deps.len(), 0);
+    }
+
+    /// The runnable command must be byte-identical across users regardless
+    /// of clippy preference — flycheck reads its own per-user opt-in from
+    /// `user_config.json` on each save. If this ever regresses to
+    /// per-user command args, the CLI contract with `bin/flycheck.rs`
+    /// silently breaks (clap rejects unknown flags at runtime).
+    #[test]
+    fn flycheck_runnable_uses_positional_args_only() {
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([spec("ID-a", &[])]),
+        )
+        .expect("expect success");
+
+        let flycheck = project
+            .runnables
+            .iter()
+            .find(|r| matches!(r.kind, RunnableKind::Flycheck))
+            .expect("flycheck runnable must exist");
+        assert_eq!(
+            flycheck.args,
+            vec!["{label}".to_owned(), "{saved_file}".to_owned()],
+        );
     }
 
     // --- diagnose() suite ---

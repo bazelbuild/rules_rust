@@ -144,7 +144,7 @@ rust_library(
     }),
     version = "1.52.3",
     deps = [
-        "//local_pkgs/crates/bytes-1.12.0:bytes",
+        "//local_pkgs/crates/bytes-1.12.1:bytes",
         "//local_pkgs/crates/mio-1.2.1:mio",
         "//local_pkgs/crates/parking_lot-0.12.5:parking_lot",
         "//local_pkgs/crates/pin-project-lite-0.2.17:pin_project_lite",

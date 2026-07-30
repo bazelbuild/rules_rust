@@ -9,6 +9,9 @@ def _build_file_repository_impl(repository_ctx):
     ))
 
     repository_ctx.file("BUILD.bazel", repository_ctx.read(repository_ctx.path(repository_ctx.attr.build_file)))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 build_file_repository = repository_rule(
     doc = "A repository rule for generating external repositories with a specific build file.",

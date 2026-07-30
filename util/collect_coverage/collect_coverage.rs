@@ -166,6 +166,16 @@ fn main() {
         })
         .collect();
 
+    // A test that ran without `-Cinstrument-coverage` (e.g. filtered out by
+    // `--instrumentation_filter` or a `rust_test` without `--instrument_test_targets`)
+    // produces no `.profraw` files. Skip the merge step and emit an empty lcov
+    // report instead of letting `llvm-profdata merge` fail on empty input.
+    if profraw_files.is_empty() {
+        debug_log!("No .profraw files in COVERAGE_DIR; writing empty report");
+        fs::write(&coverage_output_file, "").unwrap();
+        return;
+    }
+
     let mut llvm_profdata_cmd = process::Command::new(llvm_profdata);
     llvm_profdata_cmd
         .arg("merge")

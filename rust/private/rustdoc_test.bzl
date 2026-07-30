@@ -117,6 +117,7 @@ def _create_crate_info(ctx):
         name = crate.name,
         type = crate.type,
         root = crate.root,
+        root_path = crate.root_path,
         srcs = crate.srcs,
         deps = depset(deps, transitive = [crate.deps]),
         proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),

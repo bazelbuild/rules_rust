@@ -214,6 +214,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     link_deps = [
         "@rpyo3c__pyo3-ffi-0.29.0//:pyo3_ffi",
     ],

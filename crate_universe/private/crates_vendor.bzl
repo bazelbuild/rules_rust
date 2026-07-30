@@ -730,12 +730,24 @@ def _crates_vendor_remote_repository_impl(repository_ctx):
             "defs.bzl": repository_ctx.read(srcs.defs_module),
         }
 
+        # Mirror per-alias subpackage `<name>/BUILD.bazel` files so
+        # `@<repo>//<alias>` resolves through the hub. The vendor tree
+        # has them committed next to `crates.bzl`; enumerate the sibling
+        # directories and pull in any that hold a `BUILD.bazel`.
+        for child in srcs.crates_module.dirname.readdir():
+            subpackage_build = child.get_child("BUILD.bazel")
+            if subpackage_build.exists:
+                contents["{}/BUILD.bazel".format(child.basename)] = repository_ctx.read(subpackage_build)
+
     for path, text in contents.items():
         repository_ctx.file(path, text)
 
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 crates_vendor_remote_repository = repository_rule(
     doc = (

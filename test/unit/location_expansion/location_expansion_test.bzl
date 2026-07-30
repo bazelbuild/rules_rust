@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_library")
+load("//rust:defs.bzl", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_env_value")
 
 def _find_action(tut, mnemonic):
@@ -34,6 +34,27 @@ def _location_expansion_rustc_flags_test(ctx):
     return analysistest.end(env)
 
 location_expansion_rustc_flags_test = analysistest.make(_location_expansion_rustc_flags_test)
+
+def _location_expansion_rustc_env_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = _find_action(tut, "Rustc")
+    if not action:
+        fail("No Rustc action found")
+
+    # Sanity-check: `$(execpaths ...)` in `rustc_env` is expanded at
+    # analysis time and surfaces as a configuration-specific path in
+    # the env value. The build-time guard against path-mapping
+    # mismatches lives in `mylibrary_env` itself: it pulls the env
+    # path in via `include_bytes!(env!("MY_DATA"))`, so any path under
+    # `--experimental_output_paths=strip` that doesn't match the
+    # sandbox layout fails the build — see the comment in
+    # `mylibrary_env.rs`.
+    expected = "${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/flag_execpaths.data"
+    assert_env_value(env, action, "MY_DATA", expected)
+    return analysistest.end(env)
+
+location_expansion_rustc_env_test = analysistest.make(_location_expansion_rustc_env_test)
 
 def _location_expansion_build_script_env_test(ctx):
     env = analysistest.begin(ctx)
@@ -75,6 +96,36 @@ def _location_expansion_test():
         ],
     )
 
+    # A library whose location expansion lives ONLY in `rustc_env` (not
+    # in `rustc_flags`). Exercises the path-mapping interaction with
+    # rustc_env specifically.
+    rust_library(
+        name = "mylibrary_env",
+        srcs = ["mylibrary_env.rs"],
+        edition = "2018",
+        rustc_env = {
+            "MY_DATA": "$(execpaths :flag_generator_execpaths)",
+        },
+        compile_data = [
+            ":flag_generator_execpaths",
+        ],
+    )
+
+    # Same shape as `mylibrary_env` but built through `rust_test`, which
+    # takes a different `crate_info.rustc_env` code path — see
+    # `mytest_env.rs` for the details of why PR #4117 doesn't cover it.
+    rust_test(
+        name = "mytest_env",
+        srcs = ["mytest_env.rs"],
+        edition = "2018",
+        rustc_env = {
+            "MY_DATA": "$(execpaths :flag_generator_execpaths)",
+        },
+        compile_data = [
+            ":flag_generator_execpaths",
+        ],
+    )
+
     cargo_build_script(
         name = "mybuildscript",
         srcs = ["build_script.rs"],
@@ -88,6 +139,11 @@ def _location_expansion_test():
     location_expansion_rustc_flags_test(
         name = "location_expansion_rustc_flags_test",
         target_under_test = ":mylibrary",
+    )
+
+    location_expansion_rustc_env_test(
+        name = "location_expansion_rustc_env_test",
+        target_under_test = ":mylibrary_env",
     )
 
     location_expansion_build_script_env_test(
@@ -107,6 +163,7 @@ def location_expansion_test_suite(name):
         name = name,
         tests = [
             ":location_expansion_rustc_flags_test",
+            ":location_expansion_rustc_env_test",
             ":location_expansion_build_script_env_test",
         ],
     )

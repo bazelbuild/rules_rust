@@ -25,6 +25,13 @@ cargo_build_script(
     links = "Y",
 )
 
+cargo_build_script(
+    name = "set_out_dir_build",
+    srcs = ["set_out_dir.rs"],
+    edition = "2018",
+    links = "Z",
+)
+
 rust_library(
     name = "set_a",
     srcs = ["empty.rs"],
@@ -50,6 +57,13 @@ rust_library(
         ":set_a",
         ":set_c_build",
     ],
+)
+
+rust_library(
+    name = "set_out_dir",
+    srcs = ["empty.rs"],
+    edition = "2018",
+    deps = [":set_out_dir_build"],
 )
 
 cargo_build_script(
@@ -89,6 +103,13 @@ cargo_build_script(
     link_deps = [":set_dep_dir"],
 )
 
+cargo_build_script(
+    name = "read_out_dir",
+    srcs = ["read_out_dir.rs"],
+    edition = "2018",
+    link_deps = [":set_out_dir"],
+)
+
 rust_test(
     name = "build_read_a",
     srcs = ["read_a.rs"],
@@ -115,6 +136,13 @@ rust_test(
     srcs = ["read_dep_dir.rs"],
     edition = "2018",
     deps = [":read_dep_dir"],
+)
+
+rust_test(
+    name = "build_read_out_dir",
+    srcs = ["read_out_dir.rs"],
+    edition = "2018",
+    deps = [":read_out_dir"],
 )
 
 create_dep_dir(

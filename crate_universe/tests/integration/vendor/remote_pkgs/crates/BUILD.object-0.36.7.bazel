@@ -151,6 +151,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    emit_warnings = False,
     pkg_name = "object",
     rustc_env_files = [
         ":cargo_toml_env_vars",

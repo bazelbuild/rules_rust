@@ -548,6 +548,9 @@ def _toolchain_repository_proxy_impl(repository_ctx):
         target_compatible_with = repository_ctx.attr.target_compatible_with,
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 toolchain_repository_proxy = repository_rule(
     doc = (
@@ -774,6 +777,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         rustc = "//:rustc",
         proc_macro_srv = proc_macro_srv,
         rust_analyzer = rust_analyzer,
+        version = version,
     ))
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_contents))

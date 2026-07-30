@@ -147,6 +147,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    emit_warnings = False,
     pkg_name = "proc-macro2",
     rustc_flags = [
         "--cap-lints=allow",

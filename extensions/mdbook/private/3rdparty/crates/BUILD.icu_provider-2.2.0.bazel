@@ -116,7 +116,7 @@ rust_library(
     deps = [
         "@rmdbi__icu_locale_core-2.2.0//:icu_locale_core",
         "@rmdbi__writeable-0.6.3//:writeable",
-        "@rmdbi__yoke-0.8.2//:yoke",
+        "@rmdbi__yoke-0.8.3//:yoke",
         "@rmdbi__zerofrom-0.1.8//:zerofrom",
         "@rmdbi__zerotrie-0.2.4//:zerotrie",
         "@rmdbi__zerovec-0.11.6//:zerovec",

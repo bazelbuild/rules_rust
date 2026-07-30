@@ -319,8 +319,8 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "remote_manifests": {
         _COMMON_CONDITION: {
-            "serde_yaml": Label("//:serde_yaml-0.9.34+deprecated"),
-            "tokio": Label("//:tokio-1.52.3"),
+            "serde_yaml": Label("//serde_yaml-0.9.34+deprecated"),
+            "tokio": Label("//tokio-1.52.3"),
         },
     },
 }
@@ -335,8 +335,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "remote_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("//:tempfile-3.27.0"),
-            "tokio-test": Label("//:tokio-test-0.4.5"),
+            "tempfile": Label("//tempfile-3.27.0"),
+            "tokio-test": Label("//tokio-test-0.4.5"),
         },
     },
 }
@@ -494,12 +494,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__bytes-1.12.0",
-        sha256 = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593",
+        name = "cvm__bytes-1.12.1",
+        sha256 = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/bytes/1.12.0/download"],
-        strip_prefix = "bytes-1.12.0",
-        build_file = Label("//remote_manifests/crates:BUILD.bytes-1.12.0.bazel"),
+        urls = ["https://static.crates.io/crates/bytes/1.12.1/download"],
+        strip_prefix = "bytes-1.12.1",
+        build_file = Label("//remote_manifests/crates:BUILD.bytes-1.12.1.bazel"),
     )
 
     maybe(
@@ -684,12 +684,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__quote-1.0.45",
-        sha256 = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924",
+        name = "cvm__quote-1.0.46",
+        sha256 = "dfbc457d0c7a0759a614551b11a6409e5951f6c7537be1f1b7682b9ae9230368",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/quote/1.0.45/download"],
-        strip_prefix = "quote-1.0.45",
-        build_file = Label("//remote_manifests/crates:BUILD.quote-1.0.45.bazel"),
+        urls = ["https://static.crates.io/crates/quote/1.0.46/download"],
+        strip_prefix = "quote-1.0.46",
+        build_file = Label("//remote_manifests/crates:BUILD.quote-1.0.46.bazel"),
     )
 
     maybe(

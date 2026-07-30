@@ -142,6 +142,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) toolchains: Set<Label>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
     pub(crate) version: String,
     pub(crate) visibility: Set<String>,
 }
@@ -173,6 +175,8 @@ pub(crate) struct RustLibrary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
@@ -188,6 +192,8 @@ pub(crate) struct RustBinary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
