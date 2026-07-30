@@ -1043,7 +1043,12 @@ _RUST_TEST_ATTRS = {
     "_junit_runner": attr.label(
         default = Label("//util/junit_runner"),
         executable = True,
-        cfg = "target",
+        # Built for the exec platform, like the other test-support tools
+        # (process_wrapper, collect_coverage). This keeps the runner off the
+        # target configuration, so it doesn't inherit target-only settings such
+        # as a custom #[global_allocator] or cc_common.link, which it has no way
+        # to satisfy and which would otherwise fail to link.
+        cfg = "exec",
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
