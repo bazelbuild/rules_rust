@@ -73,8 +73,8 @@ alias(
 )
 
 alias(
-    name = "experimental_per_crate_rustc_flag",
-    actual = "//rust/settings:experimental_per_crate_rustc_flag",
+    name = "per_crate_rustc_flag",
+    actual = "//rust/settings:per_crate_rustc_flag",
     visibility = ["//visibility:public"],
 )
 

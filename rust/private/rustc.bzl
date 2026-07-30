@@ -3165,11 +3165,11 @@ def _per_crate_rustc_flag_impl(ctx):
 
 per_crate_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`. " +
-        "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
-        "The label matching uses the canonical form of the label (i.e //package:label_name)." +
-        "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
-        "This flag is only applied to the exec configuration (proc-macros, cargo_build_script, etc)." +
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:per_crate_rustc_flag`. " +
+        "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag. " +
+        "The label matching uses the canonical form of the label (i.e //package:label_name). " +
+        "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root. " +
+        "This flag is not applied to the exec configuration (proc-macros, cargo_build_script, etc). " +
         "Multiple uses are accumulated."
     ),
     implementation = _per_crate_rustc_flag_impl,
