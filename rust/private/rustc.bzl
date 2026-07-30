@@ -1801,9 +1801,9 @@ def rustc_compile_action(
         rust_flags.append(("-Zsplit-dwarf-out-dir=%s", dwo_outputs))
 
     if hasattr(ctx.attr, "link_std_dylib"):
-        link_std_dylib = toolchain._experimental_link_std_dylib or ctx.attr.link_std_dylib
+        link_std_dylib = toolchain._link_std_dylib or ctx.attr.link_std_dylib
     else:
-        link_std_dylib = toolchain._experimental_link_std_dylib
+        link_std_dylib = toolchain._link_std_dylib
 
     args, env_from_args = construct_arguments(
         ctx = ctx,
@@ -2432,7 +2432,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     if crate_info.type in ("rlib", "lib"):
         # We're an rlib or lib, which uses the default toolchain setting for std dylib linking.
-        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info, toolchain._experimental_link_std_dylib)
+        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info, toolchain._link_std_dylib)
         if libstd_and_allocator_cc_info:
             # TODO: if we already have an rlib in our deps, we could skip this
             cc_infos.append(libstd_and_allocator_cc_info)

@@ -122,7 +122,7 @@ rust_stdlib_filegroup = rule(
 
 def _experimental_link_std_dylib(ctx):
     return not is_exec_configuration(ctx) and \
-           ctx.attr.experimental_link_std_dylib[BuildSettingInfo].value and \
+           ctx.attr._link_std_dylib[BuildSettingInfo].value and \
            ctx.attr.rust_std[rust_common.stdlib_info].std_dylib != None
 
 def _symlink_sysroot_tree(ctx, name, target, target_files = None):
@@ -644,7 +644,7 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
-        _experimental_link_std_dylib = _experimental_link_std_dylib(ctx),
+        _link_std_dylib = _experimental_link_std_dylib(ctx),
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_compile_rustdoc_tests = ctx.attr._experimental_compile_rustdoc_tests[BuildSettingInfo].value,
@@ -720,10 +720,6 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
-        ),
-        "experimental_link_std_dylib": attr.label(
-            default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
-            doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
         ),
         "experimental_use_allocator_libraries_with_mangled_symbols": attr.int(
             doc = (
@@ -913,6 +909,10 @@ rust_toolchain = rule(
         "_incompatible_do_not_include_transitive_data_in_compile_inputs": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
             doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
+        ),
+        "_link_std_dylib": attr.label(
+            default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
+            doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),
