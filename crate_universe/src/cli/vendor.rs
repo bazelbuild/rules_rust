@@ -155,8 +155,14 @@ struct BazelInfo {
 impl BazelInfo {
     /// Construct a new struct based on the current binary and workspace paths provided.
     fn try_new(bazel: &Path, workspace_dir: &Path) -> anyhow::Result<Self> {
-        let output = process::Command::new(bazel)
-            .current_dir(workspace_dir)
+        let mut cmd = process::Command::new(bazel);
+        cmd.current_dir(workspace_dir);
+        // Pass --output_base as a Bazel startup flag so it never touches the
+        // default (possibly non-writable) output_base path.
+        if let Ok(output_base) = env::var("OUTPUT_BASE") {
+            cmd.arg("--output_base").arg(output_base);
+        }
+        let output = cmd
             .arg("info")
             .arg("release")
             .arg("output_base")
@@ -171,10 +177,9 @@ impl BazelInfo {
         Self::parse_bazel_info(&output)
     }
 
-    /// Parse `bazel info` output into a `BazelInfo`. The `OUTPUT_BASE`
-    /// environment variable, when set, overrides the parsed output_base.
+    /// Parse `bazel info` output into a `BazelInfo`.
     fn parse_bazel_info(output: &str) -> anyhow::Result<Self> {
-        let mut bazel_info: HashMap<String, String> = output
+        let bazel_info: HashMap<String, String> = output
             .trim()
             .split('\n')
             .map(|line| {
@@ -185,12 +190,6 @@ impl BazelInfo {
                 Ok((k.to_string(), (v[1..]).trim().to_string()))
             })
             .collect::<anyhow::Result<HashMap<_, _>>>()?;
-
-        // Allow a predefined environment variable to take precedent. This
-        // solves for the specific needs of Bazel CI on Github.
-        if let Ok(path) = env::var("OUTPUT_BASE") {
-            bazel_info.insert("output_base".to_owned(), path);
-        };
 
         BazelInfo::try_from(bazel_info)
     }
@@ -414,22 +413,5 @@ mod tests {
             info.release
         );
         assert_eq!(PathBuf::from("/tmp/output_base"), info.output_base);
-    }
-
-    #[test]
-    fn test_parse_bazel_info_output_base_env_override() {
-        let bazel_info_output = "release: 8.0.0\noutput_base: /original/path";
-
-        // Without OUTPUT_BASE set, parse_bazel_info uses the parsed value.
-        env::remove_var("OUTPUT_BASE");
-        let info = BazelInfo::parse_bazel_info(bazel_info_output).unwrap();
-        assert_eq!(PathBuf::from("/original/path"), info.output_base);
-
-        // With OUTPUT_BASE set, it overrides the parsed value.
-        env::set_var("OUTPUT_BASE", "/override/path");
-        let info = BazelInfo::parse_bazel_info(bazel_info_output).unwrap();
-        assert_eq!(PathBuf::from("/override/path"), info.output_base);
-
-        env::remove_var("OUTPUT_BASE");
     }
 }
