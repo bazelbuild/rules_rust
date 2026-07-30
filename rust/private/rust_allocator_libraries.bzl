@@ -82,6 +82,9 @@ def make_libstd_and_allocator_ccinfo(
         """).format(label, rust_std))
     rust_stdlib_info = rust_std[rust_common.stdlib_info]
 
+    if link_std_dylib and (not rust_stdlib_info.std_dylib or not cc_toolchain):
+        return None
+
     if rust_stdlib_info.self_contained_files:
         compilation_outputs = cc_common.create_compilation_outputs(
             objects = depset(rust_stdlib_info.self_contained_files),

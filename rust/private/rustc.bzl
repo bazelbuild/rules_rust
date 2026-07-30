@@ -20,7 +20,6 @@ load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
-    "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
@@ -407,7 +406,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
         elif crate_type in ("dylib"):
             is_linking_dynamic_library = True
-            action_name = CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME
+            action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
         elif crate_type in ("staticlib"):
             is_linking_dynamic_library = False
             action_name = CPP_LINK_STATIC_LIBRARY_ACTION_NAME
@@ -2214,6 +2213,9 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib):
     #
     # When provided, the allocator_libraries attribute takes precedence over the
     # toolchain allocator attributes.
+    if link_std_dylib and not toolchain.libstd_dylib_and_allocator_ccinfo:
+        fail("link_std_dylib was requested but no std dylib is available for this toolchain target.")
+
     libs = None
     attr_allocator_library = None
     attr_global_allocator_library = None
