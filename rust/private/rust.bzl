@@ -607,6 +607,13 @@ def _rust_test_impl(ctx):
             rust_test_bin_rloc = ctx.workspace_name + "/" + test_bin_short
         env["RUST_TEST_BIN"] = rust_test_bin_rloc
 
+        # RUST_TEST_BIN above is a runfiles path and only resolves against
+        # RUNFILES_DIR. Coverage postprocessing may run with RUNFILES_DIR
+        # unset (--experimental_split_coverage_postprocessing), so also hand
+        # over the binary's execroot-relative path directly instead of making
+        # collect_coverage reconstruct it.
+        env["RUST_TEST_BIN_EXECROOT_PATH"] = output.path
+
         junit_runner = ctx.actions.declare_file(ctx.label.name + "_junit_runner" + toolchain.binary_ext)
         ctx.actions.symlink(
             output = junit_runner,
