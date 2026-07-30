@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "junit_test",
+    srcs = ["lib.rs"],
+    edition = "2021",
+)
+
+rust_test(
+    name = "no_junit_test",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    junit = False,
+)
