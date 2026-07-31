@@ -185,6 +185,7 @@ fn apply_rustfmt(options: &Config, editions_and_targets: &HashMap<String, Vec<St
             .arg(&options.rustfmt_config.config)
             .arg("--config")
             .arg("skip_children=true")
+            .args(&options.rustfmt_args)
             .args(sources)
             .status()
             .expect("Failed to run rustfmt");
@@ -212,21 +213,58 @@ struct Config {
     /// to be formatted. If empty, all targets in the workspace will
     /// be formatted.
     pub packages: Vec<String>,
+
+    /// Extra arguments to pass down to rustfmt (e.g. `--check`, `--verbose`).
+    pub rustfmt_args: Vec<String>,
+}
+
+/// Parse command line arguments into target packages and extra arguments for rustfmt.
+fn parse_cli_args(args: impl IntoIterator<Item = String>) -> (Vec<String>, Vec<String>) {
+    let mut packages = Vec::new();
+    let mut rustfmt_args = Vec::new();
+    let mut iter = args.into_iter();
+
+    while let Some(arg) = iter.next() {
+        if arg == "--" {
+            // Everything after `--` is passed directly to rustfmt.
+            rustfmt_args.extend(iter);
+            break;
+        } else if arg.starts_with('-') {
+            // It's a flag for rustfmt.
+            let takes_value = matches!(
+                arg.as_str(),
+                "--config-path" | "--config" | "--edition" | "--color" | "--print-config" | "--emit"
+            );
+            rustfmt_args.push(arg);
+            if takes_value {
+                if let Some(val) = iter.next() {
+                    rustfmt_args.push(val);
+                }
+            }
+        } else {
+            packages.push(arg);
+        }
+    }
+
+    (packages, rustfmt_args)
 }
 
 /// Parse command line arguments and environment variables to
 /// produce config data for running rustfmt.
 fn parse_args() -> Config {
-    Config{
+    let (packages, rustfmt_args) = parse_cli_args(env::args().skip(1));
+
+    Config {
         workspace: PathBuf::from(
             env::var("BUILD_WORKSPACE_DIRECTORY")
-            .expect("The environment variable BUILD_WORKSPACE_DIRECTORY is required for finding the workspace root")
+                .expect("The environment variable BUILD_WORKSPACE_DIRECTORY is required for finding the workspace root"),
         ),
         bazel: PathBuf::from(
             env::var("BAZEL_REAL")
-            .unwrap_or_else(|_| "bazel".to_owned())
+                .unwrap_or_else(|_| "bazel".to_owned()),
         ),
         rustfmt_config: parse_rustfmt_config(),
-        packages: env::args().skip(1).collect(),
+        packages,
+        rustfmt_args,
     }
 }
