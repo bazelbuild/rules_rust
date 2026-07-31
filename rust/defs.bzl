@@ -15,6 +15,50 @@
 """Public entry point to all Rust rules and supported APIs."""
 
 load(
+    "//rust:rust_clippy.bzl",
+    _rust_clippy = "rust_clippy",
+)
+load(
+    "//rust:rust_clippy_aspect.bzl",
+    _rust_clippy_aspect = "rust_clippy_aspect",
+)
+load(
+    "//rust:rust_clippy_test.bzl",
+    _rust_clippy_test = "rust_clippy_test",
+)
+load(
+    "//rust:rust_doc.bzl",
+    _rust_doc = "rust_doc",
+)
+load(
+    "//rust:rust_doc_test.bzl",
+    _rust_doc_test = "rust_doc_test",
+)
+load(
+    "//rust:rust_lint_config.bzl",
+    _rust_lint_config = "rust_lint_config",
+)
+load(
+    "//rust:rust_test_suite.bzl",
+    _rust_test_suite = "rust_test_suite",
+)
+load(
+    "//rust:rust_unpretty.bzl",
+    _rust_unpretty = "rust_unpretty",
+)
+load(
+    "//rust:rust_unpretty_aspect.bzl",
+    _rust_unpretty_aspect = "rust_unpretty_aspect",
+)
+load(
+    "//rust:rustfmt_aspect.bzl",
+    _rustfmt_aspect = "rustfmt_aspect",
+)
+load(
+    "//rust:rustfmt_test.bzl",
+    _rustfmt_test = "rustfmt_test",
+)
+load(
     "//rust:toolchain.bzl",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
 )
@@ -24,16 +68,9 @@ load(
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
     _get_clippy_ready_crate_info = "get_clippy_ready_crate_info",
-    _rust_clippy = "rust_clippy",
     _rust_clippy_action = "rust_clippy_action",
-    _rust_clippy_aspect = "rust_clippy_aspect",
-    _rust_clippy_test = "rust_clippy_test",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
-load(
-    "//rust/private:lints.bzl",
-    _rust_lint_config = "rust_lint_config",
-)
 load(
     "//rust/private:rust.bzl",
     _rust_binary = "rust_binary",
@@ -43,7 +80,6 @@ load(
     _rust_shared_library = "rust_shared_library",
     _rust_static_library = "rust_static_library",
     _rust_test = "rust_test",
-    _rust_test_suite = "rust_test_suite",
 )
 load(
     "//rust/private:rust_analyzer.bzl",
@@ -59,24 +95,6 @@ load(
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
-)
-load(
-    "//rust/private:rustdoc.bzl",
-    _rust_doc = "rust_doc",
-)
-load(
-    "//rust/private:rustdoc_test.bzl",
-    _rust_doc_test = "rust_doc_test",
-)
-load(
-    "//rust/private:rustfmt.bzl",
-    _rustfmt_aspect = "rustfmt_aspect",
-    _rustfmt_test = "rustfmt_test",
-)
-load(
-    "//rust/private:unpretty.bzl",
-    _rust_unpretty = "rust_unpretty",
-    _rust_unpretty_aspect = "rust_unpretty_aspect",
 )
 
 rust_library = _rust_library

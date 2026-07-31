@@ -33,38 +33,98 @@ bzl_library(
 )
 
 stardoc(
-    name = "cargo",
-    out = "src/cargo.md",
-    input = "@rules_rust//cargo:defs.bzl",
-    symbol_names = [
-        "cargo_bootstrap_repository",
-        "cargo_build_script",
-        "cargo_dep_env",
-        "cargo_env",
-        "extract_cargo_lints",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    name = "cargo_build_script",
+    out = "src/cargo_build_script.md",
+    input = "@rules_rust//cargo:cargo_build_script.bzl",
+    symbol_names = ["cargo_build_script"],
     deps = [":all_docs"],
 )
 
 stardoc(
-    name = "rust",
-    out = "src/rust.md",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_binary",
-        "rust_library",
-        "rust_library_group",
-        "rust_lint_config",
-        "rust_static_library",
-        "rust_shared_library",
-        "rust_proc_macro",
-        "rust_test",
-        "rust_test_suite",
-        "rust_unpretty_aspect",
-        "rust_unpretty",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    name = "cargo_env",
+    out = "src/cargo_env.md",
+    input = "@rules_rust//cargo:cargo_env.bzl",
+    symbol_names = ["cargo_env"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "extract_cargo_lints",
+    out = "src/extract_cargo_lints.md",
+    input = "@rules_rust//cargo:extract_cargo_lints.bzl",
+    symbol_names = ["extract_cargo_lints"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_binary",
+    out = "src/rust_binary.md",
+    input = "@rules_rust//rust:rust_binary.bzl",
+    symbol_names = ["rust_binary"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_library",
+    out = "src/rust_library.md",
+    input = "@rules_rust//rust:rust_library.bzl",
+    symbol_names = ["rust_library"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_library_group",
+    out = "src/rust_library_group.md",
+    input = "@rules_rust//rust:rust_library_group.bzl",
+    symbol_names = ["rust_library_group"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_lint_config",
+    out = "src/rust_lint_config.md",
+    input = "@rules_rust//rust:rust_lint_config.bzl",
+    symbol_names = ["rust_lint_config"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_proc_macro",
+    out = "src/rust_proc_macro.md",
+    input = "@rules_rust//rust:rust_proc_macro.bzl",
+    symbol_names = ["rust_proc_macro"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_shared_library",
+    out = "src/rust_shared_library.md",
+    input = "@rules_rust//rust:rust_shared_library.bzl",
+    symbol_names = ["rust_shared_library"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_static_library",
+    out = "src/rust_static_library.md",
+    input = "@rules_rust//rust:rust_static_library.bzl",
+    symbol_names = ["rust_static_library"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_test",
+    out = "src/rust_test.md",
+    input = "@rules_rust//rust:rust_test.bzl",
+    symbol_names = ["rust_test"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_test_suite",
+    out = "src/rust_test_suite.md",
+    input = "@rules_rust//rust:rust_test_suite.bzl",
+    symbol_names = ["rust_test_suite"],
     deps = [":all_docs"],
 )
 
@@ -72,19 +132,22 @@ stardoc(
     name = "rust_bzlmod",
     out = "src/rust_bzlmod.md",
     input = "@rules_rust//rust:extensions.bzl",
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
 )
 
 stardoc(
     name = "rust_unpretty",
     out = "src/rust_unpretty.md",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_unpretty_aspect",
-        "rust_unpretty",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    input = "@rules_rust//rust:rust_unpretty.bzl",
+    symbol_names = ["rust_unpretty"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_unpretty_aspect",
+    out = "src/rust_unpretty_aspect.md",
+    input = "@rules_rust//rust:rust_unpretty_aspect.bzl",
+    symbol_names = ["rust_unpretty_aspect"],
     deps = [":all_docs"],
 )
 
@@ -97,59 +160,94 @@ stardoc(
         "DepInfo",
         "StdLibInfo",
     ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
 )
 
 stardoc(
     name = "rust_clippy",
     out = "src/rust_clippy.md",
-    header_template = ":rust_clippy.vm",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_clippy",
-        "rust_clippy_aspect",
-        "rust_clippy_test",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    input = "@rules_rust//rust:rust_clippy.bzl",
+    symbol_names = ["rust_clippy"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_clippy_aspect",
+    out = "src/rust_clippy_aspect.md",
+    input = "@rules_rust//rust:rust_clippy_aspect.bzl",
+    symbol_names = ["rust_clippy_aspect"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_clippy_test",
+    out = "src/rust_clippy_test.md",
+    input = "@rules_rust//rust:rust_clippy_test.bzl",
+    symbol_names = ["rust_clippy_test"],
     deps = [":all_docs"],
 )
 
 stardoc(
     name = "rust_doc",
     out = "src/rust_doc.md",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_doc",
-        "rust_doc_test",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    input = "@rules_rust//rust:rust_doc.bzl",
+    symbol_names = ["rust_doc"],
     deps = [":all_docs"],
 )
 
 stardoc(
-    name = "rust_fmt",
-    out = "src/rust_fmt.md",
-    header_template = ":rust_fmt.vm",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rustfmt_aspect",
-        "rustfmt_test",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    name = "rust_doc_test",
+    out = "src/rust_doc_test.md",
+    input = "@rules_rust//rust:rust_doc_test.bzl",
+    symbol_names = ["rust_doc_test"],
     deps = [":all_docs"],
 )
 
 stardoc(
-    name = "rust_toolchains",
-    out = "src/rust_toolchains.md",
-    input = "@rules_rust//rust:toolchain.bzl",
-    symbol_names = [
-        "rust_toolchain",
-        "rustfmt_toolchain",
-        "rust_analyzer_toolchain",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    name = "rustfmt_aspect",
+    out = "src/rustfmt_aspect.md",
+    input = "@rules_rust//rust:rustfmt_aspect.bzl",
+    symbol_names = ["rustfmt_aspect"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rustfmt_test",
+    out = "src/rustfmt_test.md",
+    input = "@rules_rust//rust:rustfmt_test.bzl",
+    symbol_names = ["rustfmt_test"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_toolchain",
+    out = "src/rust_toolchain.md",
+    input = "@rules_rust//rust:rust_toolchain.bzl",
+    symbol_names = ["rust_toolchain"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rustfmt_toolchain",
+    out = "src/rustfmt_toolchain.md",
+    input = "@rules_rust//rust:rustfmt_toolchain.bzl",
+    symbol_names = ["rustfmt_toolchain"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_analyzer_toolchain",
+    out = "src/rust_analyzer_toolchain.md",
+    input = "@rules_rust//rust:rust_analyzer_toolchain.bzl",
+    symbol_names = ["rust_analyzer_toolchain"],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_stdlib_filegroup",
+    out = "src/rust_stdlib_filegroup.md",
+    input = "@rules_rust//rust:rust_stdlib_filegroup.bzl",
+    symbol_names = ["rust_stdlib_filegroup"],
     deps = [":all_docs"],
 )
 
@@ -237,24 +335,42 @@ stardoc(
 mdbook(
     name = "book",
     srcs = glob(["src/**/*.md"]) + [
-        ":cargo",
+        ":cargo_build_script",
+        ":cargo_env",
         ":cargo_settings",
         ":crate_universe_bzlmod",
         ":crate_universe_workspace",
+        ":extract_cargo_lints",
         ":providers",
-        ":rust",
+        ":rust_analyzer_toolchain",
+        ":rust_binary",
         ":rust_bindgen",
         ":rust_bzlmod",
         ":rust_clippy",
+        ":rust_clippy_aspect",
+        ":rust_clippy_test",
         ":rust_doc",
-        ":rust_fmt",
+        ":rust_doc_test",
+        ":rust_library",
+        ":rust_library_group",
+        ":rust_lint_config",
         ":rust_mdbook",
+        ":rust_proc_macro",
         ":rust_prost",
         ":rust_pyo3",
         ":rust_settings",
-        ":rust_toolchains",
+        ":rust_shared_library",
+        ":rust_static_library",
+        ":rust_stdlib_filegroup",
+        ":rust_test",
+        ":rust_test_suite",
+        ":rust_toolchain",
         ":rust_unpretty",
+        ":rust_unpretty_aspect",
         ":rust_wasm_bindgen",
+        ":rustfmt_aspect",
+        ":rustfmt_test",
+        ":rustfmt_toolchain",
     ],
     book = "book.toml",
 )

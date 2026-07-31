@@ -13,8 +13,8 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
     Args:
         ctx (ctx): The rule's context object.
         toolchain (ToolchainInfo): The current `rust_wasm_bindgen_toolchain`.
-        wasm_file (Target): The target representing the `.wasm` file.
-        target_output (str): _description_
+        wasm_file (list of Target): A single-element list containing the target representing the `.wasm` file. The attribute is a `list` because it is behind `wasm_bindgen_transition`.
+        target_output (str): The wasm-bindgen `--target` output type (e.g. `bundler`, `web`, `nodejs`, `no-modules`, `deno`).
         flags (list, optional): Flags to pass to `wasm-bindgen`.
 
     Returns:

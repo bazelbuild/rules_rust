@@ -126,7 +126,7 @@ def render_config(
         crate_repository_template (str, optional): The base template to use for Crate label repository names. The
             available format keys are [`{repository}`, `{name}`, `{version}`].
         crate_alias_template (str, optional): The template to use when referring to generated aliases within the external
-            repository. The available format keys are [`{repository}`, `{name}`, `{version}`].
+            repository. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
         default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
@@ -347,13 +347,15 @@ def generate_config(repository_ctx):
     return config_path
 
 def get_lockfiles(repository_ctx):
-    """_summary_
+    """Resolve the Cargo and Bazel lockfile paths from the repository rule's attributes.
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
 
     Returns:
-        struct: _description_
+        struct: A struct with the following fields:
+            - `cargo` (path): The path to the Cargo lockfile.
+            - `bazel` (path | None): The path to the Bazel lockfile, or `None` if none was configured.
     """
     return struct(
         cargo = repository_ctx.path(repository_ctx.attr.cargo_lockfile),

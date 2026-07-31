@@ -501,7 +501,7 @@ rust_prost_toolchain = rule(
             doc = "Additional options to add to Prost.",
         ),
         "prost_plugin": attr.label(
-            doc = "Additional plugins to add to Prost.",
+            doc = "The Prost `protoc` plugin (e.g. `protoc-gen-prost`) to invoke.",
             cfg = "exec",
             executable = True,
             mandatory = True,
@@ -530,7 +530,7 @@ rust_prost_toolchain = rule(
             doc = "Additional options to add to Tonic.",
         ),
         "tonic_plugin": attr.label(
-            doc = "Additional plugins to add to Tonic.",
+            doc = "The Tonic `protoc` plugin (e.g. `protoc-gen-tonic`) to invoke.",
             cfg = "exec",
             executable = True,
         ),

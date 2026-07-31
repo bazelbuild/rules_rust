@@ -45,9 +45,10 @@ env_file = rule(
     doc = """\
 Emit a one-line `KEY=${pwd}/<src.path>\\n` file suitable for `rust_library`'s
 `rustc_env_files` attribute. The path is generated through `Args.add_all`'s
-`format_each` so Bazel's path mapping (`--experimental_output_paths=strip`)
-rewrites it before the action runs, and the `${pwd}` prefix is later resolved
-to the exec_root by `process_wrapper`'s env-block substitution.
+`map_each` (via the `_arg_map_pair` callback) so Bazel's path mapping
+(`--experimental_output_paths=strip`) rewrites it before the action runs, and
+the `${pwd}` prefix is later resolved to the exec_root by `process_wrapper`'s
+env-block substitution.
 
 Pair with a matching `compile_data = [src]` on the consumer crate and use
 `include_str!(env!("KEY"))` in Rust to embed the file's content at compile

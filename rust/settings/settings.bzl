@@ -49,7 +49,6 @@ def unpretty():
     - `hir,identified`
     - `hir,typed`
     - `hir`
-    - `identified`
     - `mir-cfg`
     - `mir`
     - `normal`

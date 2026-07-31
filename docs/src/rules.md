@@ -1,9 +1,9 @@
 # Rules
 
-- [defs](defs.md): standard rust rules for building and testing libraries and binaries.
-- [rustdoc](rust_doc.md): rules for generating and testing rust documentation.
-- [clippy](rust_clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
-- [rustfmt](rust_fmt.md): rules for running [rustfmt](https://github.com/rust-lang/rustfmt#readme).
+- [rust](rust.md): standard rust rules for building and testing libraries and binaries.
+- [rustdoc](rustdoc.md): rules for generating and testing rust documentation.
+- [clippy](clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
+- [rustfmt](rustfmt.md): rules for running [rustfmt](https://github.com/rust-lang/rustfmt#readme).
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
 - [crate_universe](external_crates.md): Rules for generating Bazel targets for external crate dependencies.
 

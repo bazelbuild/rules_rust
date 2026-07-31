@@ -1,4 +1,4 @@
-"""rust_library"""
+"""# rust_library.bzl"""
 
 load(
     "//rust/private:rust.bzl",
