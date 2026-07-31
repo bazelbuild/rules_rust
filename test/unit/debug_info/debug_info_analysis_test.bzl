@@ -195,8 +195,8 @@ not_nightly_fission_test = analysistest.make(
 )
 
 _NOT_NIGHTLY_COMPATIBILITY = ["@platforms//os:linux"] + select({
-    "//rust/toolchain/channel:stable": [],
     "//rust/toolchain/channel:beta": [],
+    "//rust/toolchain/channel:stable": [],
     "//conditions:default": ["@platforms//:incompatible"],
 })
 
