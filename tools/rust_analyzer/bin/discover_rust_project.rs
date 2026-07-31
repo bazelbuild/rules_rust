@@ -1,6 +1,6 @@
 //! Binary used for automatic Rust workspace discovery by `rust-analyzer`.
 //! See [rust-analyzer documentation][rd] for a thorough description of this interface.
-//! [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
+//! [rd]: <https://rust-analyzer.github.io/book/configuration.html#workspace.discoverConfig>.
 
 use std::{
     env,
