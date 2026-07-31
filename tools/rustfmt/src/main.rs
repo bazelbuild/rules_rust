@@ -254,14 +254,14 @@ fn parse_cli_args(args: impl IntoIterator<Item = String>) -> (Vec<String>, Vec<S
 fn parse_args() -> Config {
     let (packages, rustfmt_args) = parse_cli_args(env::args().skip(1));
 
-    Config {
+    Config{
         workspace: PathBuf::from(
             env::var("BUILD_WORKSPACE_DIRECTORY")
-                .expect("The environment variable BUILD_WORKSPACE_DIRECTORY is required for finding the workspace root"),
+            .expect("The environment variable BUILD_WORKSPACE_DIRECTORY is required for finding the workspace root")
         ),
         bazel: PathBuf::from(
             env::var("BAZEL_REAL")
-                .unwrap_or_else(|_| "bazel".to_owned()),
+            .unwrap_or_else(|_| "bazel".to_owned())
         ),
         rustfmt_config: parse_rustfmt_config(),
         packages,
