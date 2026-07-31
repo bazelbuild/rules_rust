@@ -184,6 +184,22 @@ _FISSION_COMPATIBILITY = ["@platforms//os:linux"] + select({
     "//conditions:default": ["@platforms//:incompatible"],
 })
 
+# `-Zsplit-dwarf-out-dir` requires nightly. When testing split debug info,
+# stable and beta should behave the same as `--fission=no` so we reuse the
+# impl of `no_fission_test`.
+not_nightly_fission_test = analysistest.make(
+    _no_fission_test_impl,
+    config_settings = {
+        "//command_line_option:fission": ["yes"],
+    },
+)
+
+_NOT_NIGHTLY_COMPATIBILITY = ["@platforms//os:linux"] + select({
+    "//rust/toolchain/channel:stable": [],
+    "//rust/toolchain/channel:beta": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
 def debug_info_analysis_test_suite(name):
     """Analysis tests for debug info in cdylib and bin targets.
 
@@ -295,6 +311,11 @@ def debug_info_analysis_test_suite(name):
         name = "lib_no_fission_test",
         target_under_test = ":mylib",
     )
+    not_nightly_fission_test(
+        name = "lib_not_nightly_fission_test",
+        target_under_test = ":mylib",
+        target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
+    )
 
     fission_test(
         name = "bin_fission_test",
@@ -305,6 +326,11 @@ def debug_info_analysis_test_suite(name):
         name = "bin_no_fission_test",
         target_under_test = ":myrustbin",
     )
+    not_nightly_fission_test(
+        name = "bin_not_nightly_fission_test",
+        target_under_test = ":myrustbin",
+        target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
+    )
 
     fission_test(
         name = "test_fission_test",
@@ -314,6 +340,11 @@ def debug_info_analysis_test_suite(name):
     no_fission_test(
         name = "test_no_fission_test",
         target_under_test = ":myrusttest",
+    )
+    not_nightly_fission_test(
+        name = "test_not_nightly_fission_test",
+        target_under_test = ":myrusttest",
+        target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
     )
 
     native.test_suite(
