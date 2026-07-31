@@ -14,6 +14,7 @@ load(
     "error_format",
     "experimental_compile_rustdoc_tests",
     "experimental_link_std_dylib",
+    "experimental_persistent_worker",
     "experimental_use_allocator_libraries_with_mangled_symbols",
     "experimental_use_cc_common_link",
     "experimental_use_coverage_metadata_files",
@@ -86,6 +87,8 @@ clippy_error_format()
 experimental_compile_rustdoc_tests()
 
 experimental_link_std_dylib()
+
+experimental_persistent_worker()
 
 experimental_use_cc_common_link()
 

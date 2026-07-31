@@ -690,6 +690,9 @@ RUSTC_ATTRS = {
     "_extra_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_rustc_flags"),
     ),
+    "_experimental_persistent_worker": attr.label(
+        default = Label("//rust/settings:experimental_persistent_worker"),
+    ),
     "_per_crate_rustc_flag": attr.label(
         default = Label("//rust/settings:per_crate_rustc_flag"),
     ),

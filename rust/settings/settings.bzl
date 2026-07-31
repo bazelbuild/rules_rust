@@ -115,6 +115,17 @@ def pipelined_compilation():
         build_setting_default = False,
     )
 
+def experimental_persistent_worker():
+    """Enable persistent rustc workers and incremental compilation for non-opt builds.
+
+    Actions remain compatible with one-shot local and remote execution. Persistent-worker-capable
+    executors can reuse rustc's incremental cache between requests.
+    """
+    bool_flag(
+        name = "experimental_persistent_worker",
+        build_setting_default = False,
+    )
+
 # buildifier: disable=unnamed-macro
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \

@@ -9,6 +9,8 @@ use crate::flags::{FlagParseError, Flags, ParseOutcome};
 use crate::rustc;
 use crate::util::*;
 
+const WORKER_RESPONSE_FILE_ARG: &str = "--rules-rust-response-file=";
+
 #[derive(Debug)]
 pub(crate) enum OptionError {
     FlagError(FlagParseError),
@@ -49,6 +51,10 @@ pub(crate) struct Options {
     pub(crate) rustc_quit_on_rmeta: bool,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
+    // Enable rustc incremental compilation using a cache owned by this wrapper.
+    pub(crate) rustc_incremental: bool,
+    // An optional persistent cache directory supplied by the worker parent.
+    pub(crate) rustc_incremental_dir: Option<String>,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -67,6 +73,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut output_file = None;
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
+    let mut rustc_incremental_raw = None;
+    let mut rustc_incremental_dir = None;
     let mut flags = Flags::new();
     let mut require_explicit_unstable_features = None;
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
@@ -125,6 +133,16 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         'rendered' will extract the rendered message and print that.\n\
         Default: `rendered`",
         &mut rustc_output_format_raw,
+    );
+    flags.define_flag(
+        "--rustc-incremental",
+        "Enable rustc incremental compilation.",
+        &mut rustc_incremental_raw,
+    );
+    flags.define_flag(
+        "--rustc-incremental-dir",
+        "Persistent incremental cache directory supplied by the worker.",
+        &mut rustc_incremental_dir,
     );
     flags.define_flag(
         "--require-explicit-unstable-features",
@@ -252,6 +270,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         .transpose()?;
 
     let rustc_quit_on_rmeta = rustc_quit_on_rmeta_raw.is_some_and(|s| s == "true");
+    let rustc_incremental = rustc_incremental_raw.is_some_and(|s| s == "true");
     let rustc_output_format = rustc_output_format_raw
         .map(|v| match v.as_str() {
             "json" => Ok(rustc::ErrorFormat::Json),
@@ -301,6 +320,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         output_file,
         rustc_quit_on_rmeta,
         rustc_output_format,
+        rustc_incremental,
+        rustc_incremental_dir,
     })
 }
 
@@ -344,6 +365,11 @@ fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     arg
 }
 
+fn response_file_path(arg: &str) -> Option<&str> {
+    arg.strip_prefix(WORKER_RESPONSE_FILE_ARG)
+        .or_else(|| arg.strip_prefix('@'))
+}
+
 /// Apply substitutions to the given param file. Returns true iff any allow-features flags were found.
 fn prepare_param_file(
     filename: &str,
@@ -361,7 +387,7 @@ fn prepare_param_file(
         for arg in read_file(filename)? {
             let arg = prepare_arg(arg, subst_mappings);
             has_allow_features_flag |= is_allow_features_flag(&arg);
-            if let Some(arg_file) = arg.strip_prefix('@') {
+            if let Some(arg_file) = response_file_path(&arg) {
                 has_allow_features_flag |=
                     process_file(arg_file, subst_mappings, read_file, write_to_file)?;
             } else {
@@ -391,7 +417,7 @@ fn prepare_args(
 
     for arg in args.into_iter() {
         let arg = prepare_arg(arg, subst_mappings);
-        if let Some(param_file) = arg.strip_prefix('@') {
+        if let Some(param_file) = response_file_path(&arg) {
             let expanded_file = format!("{param_file}.expanded");
             let format_err = |err: io::Error| {
                 OptionError::Generic(format!(
@@ -473,6 +499,47 @@ fn environment_block(
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_worker_response_file_applies_substitutions() {
+        let mut written_files = HashMap::<String, String>::new();
+        let mut read_file = |filename: &str| -> Result<Vec<String>, OptionError> {
+            match filename {
+                "/exec/flags.params" => Ok(vec!["@${pwd}/nested.params".to_owned()]),
+                "/exec/nested.params" => Ok(vec!["--cfg=from_response_file".to_owned()]),
+                _ => Err(OptionError::Generic(format!(
+                    "unexpected response file: {filename}"
+                ))),
+            }
+        };
+        let mut write_file = |filename: &str, content: &str| -> Result<(), OptionError> {
+            written_files.insert(filename.to_owned(), content.to_owned());
+            Ok(())
+        };
+
+        let args = vec![
+            "rustc".to_owned(),
+            format!("{WORKER_RESPONSE_FILE_ARG}${{pwd}}/flags.params"),
+        ];
+        let subst_mappings = vec![("pwd".to_owned(), "/exec".to_owned())];
+        let args = prepare_args(
+            args,
+            &subst_mappings,
+            false,
+            Some(&mut read_file),
+            Some(&mut write_file),
+        )
+        .unwrap();
+
+        assert_eq!(args, ["rustc", "@/exec/flags.params.expanded"]);
+        assert_eq!(
+            written_files,
+            HashMap::from([(
+                "/exec/flags.params.expanded".to_owned(),
+                "--cfg=from_response_file".to_owned()
+            )])
+        );
+    }
 
     #[test]
     fn test_enforce_allow_features_flag_user_didnt_say() {
