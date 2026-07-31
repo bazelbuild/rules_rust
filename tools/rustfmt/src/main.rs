@@ -233,7 +233,12 @@ fn parse_cli_args(args: impl IntoIterator<Item = String>) -> (Vec<String>, Vec<S
             // It's a flag for rustfmt.
             let takes_value = matches!(
                 arg.as_str(),
-                "--config-path" | "--config" | "--edition" | "--color" | "--print-config" | "--emit"
+                "--config-path"
+                    | "--config"
+                    | "--edition"
+                    | "--color"
+                    | "--print-config"
+                    | "--emit"
             );
             rustfmt_args.push(arg);
             if takes_value {
