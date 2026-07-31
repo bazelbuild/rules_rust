@@ -268,3 +268,65 @@ fn parse_args() -> Config {
         rustfmt_args,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_cli_args_packages_only() {
+        let args = vec!["//foo/...".to_string(), "//bar:bar".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/...", "//bar:bar"]);
+        assert!(rustfmt_args.is_empty());
+    }
+
+    #[test]
+    fn test_parse_cli_args_flags_before_packages() {
+        let args = vec!["--check".to_string(), "//foo/...".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_flags_after_packages() {
+        let args = vec!["//foo/...".to_string(), "--check".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_double_dash_escape() {
+        let args = vec![
+            "//foo/...".to_string(),
+            "--".to_string(),
+            "--check".to_string(),
+            "--verbose".to_string(),
+        ];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check", "--verbose"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_double_dash_only() {
+        let args = vec!["--".to_string(), "--check".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert!(packages.is_empty());
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_flag_with_value() {
+        let args = vec![
+            "--edition".to_string(),
+            "2021".to_string(),
+            "//foo/...".to_string(),
+        ];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--edition", "2021"]);
+    }
+}
