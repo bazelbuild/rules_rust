@@ -412,9 +412,7 @@ def _rust_bindgen_impl(ctx):
         env = env,
         arguments = [args],
         tools = tools,
-        # ctx.actions.run now require (through a buildifier check) that we
-        # specify this
-        toolchain = None,
+        toolchain = "@rules_rust_bindgen//:toolchain_type",
     )
 
     if ctx.attr.merge_cc_lib_objects_into_rlib:
