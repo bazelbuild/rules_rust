@@ -463,15 +463,52 @@ fn main() {
     let stderr_buf = Arc::new(Mutex::new(Vec::<String>::new()));
     let (done_tx, done_rx) = mpsc::channel();
 
+    // Drain one child pipe: mirror each line to our own std stream and collect
+    // it. Read raw bytes via read_until, not BufRead::lines(). lines() returns
+    // an error on the first non-UTF-8 byte, which aborts the read early: that
+    // drops libtest's trailing summary (so a passing run looks like a harness
+    // crash) and closes the pipe under a still-running child. Decode lossily;
+    // the summary tokens the parser needs are ASCII and survive intact.
+    fn drain(
+        mut reader: impl BufRead,
+        mut mirror: impl Write,
+        buf: &Mutex<Vec<String>>,
+        stream: &str,
+    ) {
+        let mut bytes = Vec::new();
+        loop {
+            bytes.clear();
+            match reader.read_until(b'\n', &mut bytes) {
+                Ok(0) => break,
+                Ok(_) => {
+                    if bytes.last() == Some(&b'\n') {
+                        bytes.pop();
+                        if bytes.last() == Some(&b'\r') {
+                            bytes.pop();
+                        }
+                    }
+                    let text = String::from_utf8_lossy(&bytes);
+                    let _ = writeln!(mirror, "{}", text);
+                    buf.lock().unwrap().push(text.into_owned());
+                }
+                Err(e) => {
+                    eprintln!("WARNING: junit_runner: error reading {}: {}", stream, e);
+                    break;
+                }
+            }
+        }
+    }
+
     {
         let stderr_buf = Arc::clone(&stderr_buf);
         let done_tx = done_tx.clone();
         thread::spawn(move || {
-            let reader = BufReader::new(child_stderr);
-            for line in reader.lines().map_while(Result::ok) {
-                let _ = writeln!(std::io::stderr(), "{}", line);
-                stderr_buf.lock().unwrap().push(line);
-            }
+            drain(
+                BufReader::new(child_stderr),
+                std::io::stderr(),
+                &stderr_buf,
+                "stderr",
+            );
             let _ = done_tx.send(());
         });
     }
@@ -480,19 +517,12 @@ fn main() {
         let stdout_buf = Arc::clone(&stdout_buf);
         let done_tx = done_tx.clone();
         thread::spawn(move || {
-            let reader = BufReader::new(child_stdout);
-            for line in reader.lines() {
-                match line {
-                    Ok(l) => {
-                        let _ = writeln!(std::io::stdout(), "{}", l);
-                        stdout_buf.lock().unwrap().push(l);
-                    }
-                    Err(e) => {
-                        eprintln!("WARNING: junit_runner: error reading stdout: {}", e);
-                        break;
-                    }
-                }
-            }
+            drain(
+                BufReader::new(child_stdout),
+                std::io::stdout(),
+                &stdout_buf,
+                "stdout",
+            );
             let _ = done_tx.send(());
         });
     }
