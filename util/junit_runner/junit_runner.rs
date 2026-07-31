@@ -4,7 +4,10 @@ use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 
 fn resolve_runfiles(rlocation_path: &str) -> PathBuf {
     if let Ok(manifest) = env::var("RUNFILES_MANIFEST_FILE") {
@@ -443,47 +446,75 @@ fn main() {
     let child_stdout = child.stdout.take().expect("stdout was piped");
     let child_stderr = child.stderr.take().expect("stderr was piped");
 
-    // Drain stderr on a separate thread and mirror it straight through, so a
-    // test that writes a lot to stderr can't wedge us by filling the pipe
-    // while we're busy reading stdout.
-    let stderr_thread = thread::spawn(move || {
-        let reader = BufReader::new(child_stderr);
-        let mut collected = Vec::new();
-        let err = std::io::stderr();
-        let mut err = err.lock();
-        for line in reader.lines().map_while(Result::ok) {
-            let _ = writeln!(err, "{}", line);
-            collected.push(line);
-        }
-        collected.join("\n")
-    });
+    // Read stdout and stderr concurrently, each on its own thread, mirroring
+    // every line through and collecting it into a shared buffer. Both pipes
+    // must be drained at once so a test that floods one can't wedge us while
+    // we read the other. Each reader signals completion on a channel.
+    //
+    // We wait on the test *process* first, then give the readers a short grace
+    // period. A test can leak a child (a mock server, a helper daemon) that
+    // inherits these pipes and outlives it; that child keeps the write end
+    // open, so the pipe never reaches EOF and a naive read blocks until Bazel
+    // kills the run at its test timeout. Once the test process has exited we
+    // already have all of its output, so we stop waiting and move on. Bazel
+    // reaps the leaked processes during normal sandbox teardown, exactly as it
+    // would without this wrapper.
+    let stdout_buf = Arc::new(Mutex::new(Vec::<String>::new()));
+    let stderr_buf = Arc::new(Mutex::new(Vec::<String>::new()));
+    let (done_tx, done_rx) = mpsc::channel();
 
-    let mut stdout_lines = Vec::new();
     {
-        let reader = BufReader::new(child_stdout);
-        let out = std::io::stdout();
-        let mut out = out.lock();
-        for line in reader.lines() {
-            match line {
-                Ok(l) => {
-                    let _ = writeln!(out, "{}", l);
-                    stdout_lines.push(l);
-                }
-                Err(e) => {
-                    eprintln!("WARNING: junit_runner: error reading stdout: {}", e);
-                    break;
-                }
+        let stderr_buf = Arc::clone(&stderr_buf);
+        let done_tx = done_tx.clone();
+        thread::spawn(move || {
+            let reader = BufReader::new(child_stderr);
+            for line in reader.lines().map_while(Result::ok) {
+                let _ = writeln!(std::io::stderr(), "{}", line);
+                stderr_buf.lock().unwrap().push(line);
             }
-        }
+            let _ = done_tx.send(());
+        });
     }
 
-    let stderr_output = stderr_thread.join().unwrap_or_default();
+    {
+        let stdout_buf = Arc::clone(&stdout_buf);
+        let done_tx = done_tx.clone();
+        thread::spawn(move || {
+            let reader = BufReader::new(child_stdout);
+            for line in reader.lines() {
+                match line {
+                    Ok(l) => {
+                        let _ = writeln!(std::io::stdout(), "{}", l);
+                        stdout_buf.lock().unwrap().push(l);
+                    }
+                    Err(e) => {
+                        eprintln!("WARNING: junit_runner: error reading stdout: {}", e);
+                        break;
+                    }
+                }
+            }
+            let _ = done_tx.send(());
+        });
+    }
+    drop(done_tx);
+
     let status = child.wait().unwrap_or_else(|e| {
         eprintln!("ERROR: junit_runner: failed to wait for test binary: {}", e);
         std::process::exit(1);
     });
 
-    let stdout_output = stdout_lines.join("\n");
+    // The test process is gone and its output is already written; let the
+    // readers finish draining, but never block on a leaked child forever.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    for _ in 0..2 {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if done_rx.recv_timeout(remaining).is_err() {
+            break;
+        }
+    }
+
+    let stdout_output = stdout_buf.lock().unwrap().join("\n");
+    let stderr_output = stderr_buf.lock().unwrap().join("\n");
     let parsed = parse_libtest_output(&stdout_output);
 
     let exit_code = status.code();
