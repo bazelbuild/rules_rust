@@ -23,6 +23,13 @@ def _metadata_output_groups_present_test_impl(ctx):
         "Expected %s to end with .rustc-output" % rustc_rmeta_output[0],
     )
 
+    metadata_action = [action for action in tut.actions if action.mnemonic == "RustcMetadata"][0]
+    asserts.equals(env, [], [
+        arg
+        for arg in metadata_action.argv
+        if arg.startswith("--codegen=linker=") or arg.startswith("--codegen=link-arg=")
+    ])
+
     return analysistest.end(env)
 
 def _metadata_output_groups_missing_test_impl(ctx):

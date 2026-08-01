@@ -41,6 +41,7 @@ def _common_rustdoc_checks(env, tut):
     # `Rustdoc` actions
     assert_argv_contains_prefix_not(env, action, "--remap-path-prefix")
     assert_argv_contains_prefix_not(env, action, "--emit")
+    assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
 
 def _rustdoc_for_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
