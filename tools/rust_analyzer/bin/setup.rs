@@ -76,9 +76,8 @@ use gen_rust_project_lib::{
 
 // `_opt` targets the `opt_executable` wrapper — these run on every
 // save/discovery and pay off in opt mode.
-const DISCOVER_BINARY_RLOCATION: &str =
-    "rules_rust/tools/rust_analyzer/discover_bazel_rust_project_opt";
-const FLYCHECK_BINARY_RLOCATION: &str = "rules_rust/tools/rust_analyzer/flycheck_opt";
+const DISCOVER_BINARY_RLOCATION: &str = env!("DISCOVER_BINARY_RLOCATION");
+const FLYCHECK_BINARY_RLOCATION: &str = env!("FLYCHECK_BINARY_RLOCATION");
 
 /// Install filename (`<name>.exe`) + `launcher_paths.json` key for
 /// each launcher. Keep in sync with [`toolchain_target_for`].
