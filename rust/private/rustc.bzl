@@ -1320,7 +1320,19 @@ def construct_arguments(
             )
 
             env.update(link_env)
-            rustc_flags.add(ld, format = "--codegen=linker=%s")
+
+            # Keep generated linker paths File-backed so Bazel can rewrite them.
+            linker = ld
+            if toolchain.linker and ld == toolchain.linker.path:
+                linker = toolchain.linker
+            elif cc_toolchain and ld.startswith("bazel-out/"):
+                linker_files = cc_toolchain._linker_files if hasattr(cc_toolchain, "_linker_files") else cc_toolchain.linker_files()
+                for linker_file in linker_files.to_list():
+                    if linker_file.path == ld or ld.endswith("/" + linker_file.short_path):
+                        linker = linker_file
+                        break
+
+            rustc_flags.add(linker, format = "--codegen=linker=%s")
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574

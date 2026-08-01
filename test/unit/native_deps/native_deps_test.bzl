@@ -191,6 +191,11 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     toolchain = _get_toolchain(ctx)
     link_args = _extract_linker_args(action.argv)
     bin_dir = get_bin_dir_from_action(action)
+    linker_args = [arg for arg in action.argv if arg.startswith("--codegen=linker=")]
+
+    asserts.equals(env, 1, len(linker_args))
+    if bin_dir == "bazel-out/cfg/bin" and linker_args[0].startswith("--codegen=linker=bazel-out/"):
+        assert_argv_contains_prefix(env, action, "--codegen=linker={}/".format(bin_dir))
 
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
