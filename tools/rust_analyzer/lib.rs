@@ -496,7 +496,14 @@ where
         .replace("__WORKSPACE__", workspace.as_str())
         .replace("${pwd}", execution_root.as_str())
         .replace("__EXEC_ROOT__", execution_root.as_str())
-        .replace("__OUTPUT_BASE__", output_base.as_str());
+        .replace("__OUTPUT_BASE__", output_base.as_str())
+        // exec_root/external contains symlinks into the output_base/external
+        // but those symlinks are ephemeral. if we do not replace here, goto
+        // definition can fail because those symlinks would no longer be found.
+        .replace(
+            &format!("{execution_root}/external/"),
+            &format!("{output_base}/external/"),
+        );
 
     serde_json::from_str(&content).context("failed to deserialize after template substitution")
 }
