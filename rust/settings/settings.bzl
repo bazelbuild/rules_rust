@@ -521,8 +521,8 @@ def extra_exec_rustc_flag():
     )
 
 # buildifier: disable=unnamed-macro
-def experimental_per_crate_rustc_flag():
-    """Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`.
+def per_crate_rustc_flag():
+    """Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:per_crate_rustc_flag`.
 
     The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting
     with the prefix filter will be built with the given flag. The label matching uses the canonical form of
@@ -531,7 +531,7 @@ def experimental_per_crate_rustc_flag():
     configuration (proc-macros, cargo_build_script, etc). Multiple uses are accumulated.
     """
     _per_crate_rustc_flag(
-        name = "experimental_per_crate_rustc_flag",
+        name = "per_crate_rustc_flag",
         build_setting_default = [],
     )
 

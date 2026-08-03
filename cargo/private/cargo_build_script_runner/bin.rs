@@ -24,6 +24,44 @@ use std::process::Command;
 use cargo_build_script_runner::cargo_manifest_dir::{remove_symlink, symlink, RunfilesMaker};
 use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags, SUPPRESS_WARNINGS_ENV};
 
+fn parse_env_file(contents: &str) -> Result<Vec<(String, String)>, String> {
+    fn push_variable(
+        variables: &mut Vec<(String, String)>,
+        variable: &mut String,
+    ) -> Result<(), String> {
+        let (key, value) = variable
+            .split_once('=')
+            .ok_or_else(|| "error: Wrong environment file format, should not happen".to_owned())?;
+        variables.push((key.to_owned(), value.to_owned()));
+        variable.clear();
+        Ok(())
+    }
+
+    let mut variables = Vec::new();
+    let mut variable = String::new();
+
+    for line in contents.lines() {
+        if let Some(value) = line.strip_suffix('\\') {
+            variable.push_str(value);
+            variable.push('\n');
+            continue;
+        }
+
+        variable.push_str(line);
+        if !variable.is_empty() {
+            push_variable(&mut variables, &mut variable)?;
+        }
+    }
+
+    // `str::lines` does not yield a final empty line, so finalize a value
+    // whose last line ended in a continuation as well.
+    if !variable.is_empty() {
+        push_variable(&mut variables, &mut variable)?;
+    }
+
+    Ok(variables)
+}
+
 fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
     // some execution strategies and remote execution environments may use symlinks in ways which
@@ -107,25 +145,10 @@ fn run_buildrs() -> Result<(), String> {
     set_script_runfiles_env(&script_path, &mut command);
 
     for dep_env_path in input_dep_env_paths.iter() {
-        if let Ok(contents) = read_to_string(dep_env_path) {
-            for line in contents.split('\n') {
-                // split on empty contents will still produce a single empty string in iterable.
-                if line.is_empty() {
-                    continue;
-                }
-                match line.split_once('=') {
-                    Some((key, value)) => {
-                        command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
-                    }
-                    _ => {
-                        return Err(
-                            "error: Wrong environment file format, should not happen".to_owned()
-                        )
-                    }
-                }
-            }
-        } else {
-            return Err("error: Dependency environment file unreadable".to_owned());
+        let contents = read_to_string(dep_env_path)
+            .map_err(|_| "error: Dependency environment file unreadable".to_owned())?;
+        for (key, value) in parse_env_file(&contents)? {
+            command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
         }
     }
 

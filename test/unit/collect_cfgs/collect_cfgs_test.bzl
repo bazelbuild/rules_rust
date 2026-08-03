@@ -75,7 +75,7 @@ collect_cfgs_per_crate_rustc_flag_test = analysistest.make(
     },
     config_settings = {
         str(Label("//rust/settings:collect_cfgs")): True,
-        str(Label("//rust/settings:experimental_per_crate_rustc_flag")): ["//test/unit@--cfg=foo"],
+        str(Label("//rust/settings:per_crate_rustc_flag")): ["//test/unit@--cfg=foo"],
     },
 )
 

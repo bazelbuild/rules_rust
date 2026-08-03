@@ -353,7 +353,7 @@ rust_clippy_aspect = aspect(
             default = "//rust/settings:incompatible_change_clippy_error_format",
         ),
         "_per_crate_rustc_flag": attr.label(
-            default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
+            default = Label("//rust/settings:per_crate_rustc_flag"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",
