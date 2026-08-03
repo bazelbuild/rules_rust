@@ -1107,22 +1107,22 @@ const NEOVIM_LUA_RUSTFMT: &str = r#"      rustfmt = {
 const HELIX_TOML_TEMPLATE: &str = r#"[language-server.rust-analyzer]
 command = "__RA_LAUNCHER__"
 
-[language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]
+[language-server.rust-analyzer.config.workspace.discoverConfig]
 command = ["__DISCOVER_LAUNCHER__", "{arg}"]
 progressLabel = "rules_rust"
 filesToWatch = ["BUILD", "BUILD.bazel", "MODULE.bazel", "WORKSPACE", "WORKSPACE.bazel"]
 __OPT_PROC_MACRO____OPT_RUSTFMT__
-[language-server.rust-analyzer.config.rust-analyzer.lens]
+[language-server.rust-analyzer.config.lens]
 enable = true
 "#;
 
 const HELIX_TOML_PROC_MACRO: &str = r#"
-[language-server.rust-analyzer.config.rust-analyzer.procMacro]
+[language-server.rust-analyzer.config.procMacro]
 server = "__PMS_LAUNCHER__"
 "#;
 
 const HELIX_TOML_RUSTFMT: &str = r#"
-[language-server.rust-analyzer.config.rust-analyzer.rustfmt]
+[language-server.rust-analyzer.config.rustfmt]
 overrideCommand = ["__RUSTFMT_LAUNCHER__"]
 "#;
 
@@ -1658,9 +1658,8 @@ mod tests {
             .join(LAUNCHER_SUBDIR);
         let snippet = generate_helix_toml(&ctx, &launcher_dir);
         assert!(snippet.contains("[language-server.rust-analyzer]"));
-        assert!(snippet.contains(
-            "[language-server.rust-analyzer.config.rust-analyzer.workspace.discoverConfig]"
-        ));
+        assert!(snippet
+            .contains("[language-server.rust-analyzer.config.workspace.discoverConfig]"));
         // rust-analyzer LSP path comes from the toolchain.
         assert!(snippet.contains("/obase/external/ra/rust-analyzer"));
         // discover sits next to the helix-specific launcher dir.
