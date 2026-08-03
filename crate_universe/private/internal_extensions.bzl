@@ -2,8 +2,10 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//cargo:defs.bzl", "cargo_bootstrap_repository")
 load("//cargo/3rdparty/crates:crates.bzl", _cargo_crate_repositories = "crate_repositories")
+
+# buildifier: disable=bzl-visibility
+load("//cargo/private:cargo_bootstrap.bzl", "cargo_bootstrap_repository")
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
 load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")

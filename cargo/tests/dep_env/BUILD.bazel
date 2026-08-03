@@ -1,7 +1,8 @@
 """Tests for passing configuration to cargo_build_script rules"""
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//cargo:defs.bzl", "cargo_build_script", "cargo_dep_env")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//cargo/private:cargo_dep_env.bzl", "cargo_dep_env")
 load("//rust:defs.bzl", "rust_library", "rust_library_group", "rust_test")
 load(":dep_env.bzl", "create_dep_dir")
 

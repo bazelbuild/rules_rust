@@ -2,7 +2,9 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//cargo:defs.bzl", "cargo_bootstrap_repository")
+
+# buildifier: disable=bzl-visibility
+load("//cargo/private:cargo_bootstrap.bzl", "cargo_bootstrap_repository")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")
