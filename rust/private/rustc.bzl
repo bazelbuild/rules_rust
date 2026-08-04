@@ -2074,6 +2074,7 @@ def rustc_compile_action(
     for runfiles_attr in (
         getattr(ctx.attr, "srcs", []),
         getattr(ctx.attr, "deps", []),
+        getattr(ctx.attr, "link_deps", []),
         getattr(ctx.attr, "data", []),
         [crate_attr] if crate_attr else [],
     ):
@@ -2084,7 +2085,7 @@ def rustc_compile_action(
     if crate_info.type in ["bin", "cdylib", "staticlib"]:
         dynamic_libraries = ctx.runfiles(files = [
             library_to_link.dynamic_library
-            for dep in getattr(ctx.attr, "deps", [])
+            for dep in getattr(ctx.attr, "deps", []) + getattr(ctx.attr, "link_deps", [])
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
