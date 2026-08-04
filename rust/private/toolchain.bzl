@@ -888,9 +888,6 @@ rust_toolchain = rule(
         "_experimental_compile_rustdoc_tests": attr.label(
             default = Label("//rust/settings:experimental_compile_rustdoc_tests"),
         ),
-        "_skip_fission_for_rust": attr.label(
-            default = Label("//rust/settings:skip_fission_for_rust"),
-        ),
         "_experimental_use_allocator_libraries_with_mangled_symbols_setting": attr.label(
             default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
             providers = [BuildSettingInfo],
@@ -928,6 +925,9 @@ rust_toolchain = rule(
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),
+        ),
+        "_skip_fission_for_rust": attr.label(
+            default = Label("//rust/settings:skip_fission_for_rust"),
         ),
         "_third_party_dir": attr.label(
             default = Label("//rust/settings:third_party_dir"),
