@@ -3,7 +3,13 @@
 # Usage: util/release.sh [version]
 #
 # where version (optional) is the new version of rules_rust.
-set -xeuo pipefail
+set -euo pipefail
+
+if [ "$(uname)" == "Darwin" ]; then
+  SEDOPTS=(-i '' -e)
+else
+  SEDOPTS=(-i)
+fi
 
 # Normalize working directory to root of repository.
 cd "$(dirname "${BASH_SOURCE[0]}")"/..
@@ -28,7 +34,7 @@ function version_pattern() {
 grep -rl \
   --include='version.bzl' \
   "$(version_pattern $OLD)" \
-  | xargs sed -i "s/^$(version_pattern $OLD)$/$(version_pattern $NEW)/g"
+  | xargs sed ${SEDOPTS[@]} "s/^$(version_pattern $OLD)$/$(version_pattern $NEW)/g"
 
 # Update matching bazel_dep(name = "rules_rust", version = ...) declarations.
 function bazel_dep_pattern() {
@@ -39,7 +45,7 @@ function bazel_dep_pattern() {
 grep -rl \
   --include='MODULE.bazel' --include='*.bzl' --include='*.md' \
   "$(bazel_dep_pattern $OLD)" \
-  | xargs sed -i "s/^$(bazel_dep_pattern $OLD)$/$(bazel_dep_pattern $NEW)/"
+  | xargs sed ${SEDOPTS[@]} "s/^$(bazel_dep_pattern $OLD)$/$(bazel_dep_pattern $NEW)/"
 
 # Update module() declarations:
 # module(

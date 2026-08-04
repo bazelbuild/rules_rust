@@ -68,7 +68,10 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
 def _no_at_label(label):
     """Strips leading '@'s for stringified labels in the main repository for backwards-compatibility reasons."""
     s = str(label)
-    if s.startswith("@@//"):
+    if s.startswith(
+        # buildifier: disable=canonical-repository
+        "@@//",
+    ):
         return s[2:]
     if s.startswith("@//"):
         return s[1:]

@@ -35,6 +35,7 @@ build --incompatible_enable_cc_toolchain_resolution=true
 build --host_platform=//bazel/platforms:host
 build --platforms=//bazel/platforms:missing
 build --build_tag_filters=-platform_missing
+test --platforms=//bazel/platforms:host
 
 ###############################################################################
 ## Unique configuration groups

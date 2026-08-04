@@ -91,7 +91,7 @@ def _produce_tool_path_test_impl(ctx):
 def _lookup_tool_sha256_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # Release version included in //rust:known_shas.bzl
+    # Release version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
         ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
@@ -104,7 +104,7 @@ def _lookup_tool_sha256_test_impl(ctx):
         ),
     )
 
-    # Values in //rust:known_shas.bzl override sha256 arg
+    # Values in //rust/private:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
         ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
@@ -117,7 +117,7 @@ def _lookup_tool_sha256_test_impl(ctx):
         ),
     )
 
-    # Nightly version included in //rust:known_shas.bzl
+    # Nightly version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
         ("2024-06-13/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", "d925acda44aa5f2b5e37a6a17aa3fdea4e190f0078ed33cc7db2d2ee6c2d0010"),
@@ -130,7 +130,7 @@ def _lookup_tool_sha256_test_impl(ctx):
         ),
     )
 
-    # Lookup failure (returns "") for a nightly version not included in //rust:known_shas.bzl
+    # Lookup failure (returns "") for a nightly version not included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
         ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),

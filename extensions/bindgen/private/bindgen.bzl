@@ -243,7 +243,18 @@ def _rust_bindgen_impl(ctx):
     args.add_all(ctx.attr.bindgen_flags)
 
     rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    if "--rust-edition" not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+    user_flags = [f.split("=")[0] for f in ctx.attr.bindgen_flags]
+
+    # Ignore `nightly` or `beta` versions.
+    if rust_toolchain.version and rust_toolchain.version[0].isdigit():
+        # Pass `--rust-target` so bindgen knows the actual toolchain version.
+        # Without this, bindgen defaults to it's built-in `LATEST_STABLE_RUST`
+        # which may be older than the actual toolchain version and would
+        # reject newer editions (e.g. edition 2024 requires `rust-target >= 1.85.0`).
+        if "--rust-target" not in user_flags:
+            args.add("--rust-target=%s" % rust_toolchain.version)
+
+    if "--rust-edition" not in user_flags:
         args.add("--rust-edition=%s" % rust_toolchain.default_edition)
 
     args.add(header)
@@ -274,6 +285,9 @@ def _rust_bindgen_impl(ctx):
     # Configure Clang Arguments
     args.add("--")
 
+    # Ignore unknown warning options from the CC toolchain (e.g., GCC-specific flags)
+    args.add("-Wno-unknown-warning-option")
+
     resource_dir = _get_resource_dir(cc_toolchain)
     if resource_dir:
         args.add("-resource-dir=%s" % resource_dir)
@@ -303,13 +317,14 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`).
+    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`, `-target T`).
     param_flags_known_to_clang = (
         "-I",
         "-iquote",
         "-isystem",
         "--sysroot",
         "--gcc-toolchain",
+        "-target",
         "--target",
         "-W",
         "--system-header-prefix",
@@ -349,6 +364,8 @@ def _rust_bindgen_impl(ctx):
         # The cc_toolchain merged these flags into its returned flags - don't strip these out.
         if arg in ctx.attr.clang_flags:
             args.add(arg)
+            if arg in param_flags_known_to_clang:
+                open_arg = True
             continue
 
         if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
@@ -395,9 +412,7 @@ def _rust_bindgen_impl(ctx):
         env = env,
         arguments = [args],
         tools = tools,
-        # ctx.actions.run now require (through a buildifier check) that we
-        # specify this
-        toolchain = None,
+        toolchain = "@rules_rust_bindgen//:toolchain_type",
     )
 
     if ctx.attr.merge_cc_lib_objects_into_rlib:

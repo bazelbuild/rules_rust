@@ -73,7 +73,7 @@ where
                         unmapped
                             .entry(original_configuration.clone())
                             .or_default()
-                            .extend(values.into_iter());
+                            .extend(values);
                     }
                 }
             }

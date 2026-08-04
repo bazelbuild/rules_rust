@@ -1,1 +1,1 @@
-# Intentionally blank; using bzlmod
+workspace(name = "cross_compile_llvm_example")

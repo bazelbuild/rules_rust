@@ -40,6 +40,14 @@ def triple(triple):
             abi = None,
             str = triple,
         )
+    elif triple == "avr-none":
+        return struct(
+            arch = "avr",
+            vendor = None,
+            system = "none",
+            abi = None,
+            str = triple,
+        )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(
             arch = triple.split("-")[0],
@@ -100,7 +108,7 @@ def get_host_triple(repository_ctx, abi = {}):
     Example:
 
     ```python
-    load("@rules_rust//rust:repositories.bzl", "load_arbitrary_tool")
+    load("@rules_rust//rust/private:repository_utils.bzl", "load_arbitrary_tool")
     load("@rules_rust//rust/platform:triple.bzl", "get_host_triple")
 
     def _impl(repository_ctx):

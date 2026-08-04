@@ -73,10 +73,10 @@ impl TemplateEngine {
                 )),
             ),
             (
-                "vendor_module.j2",
+                "defs_bzl_shim.j2",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/rendering/templates/vendor_module.j2"
+                    "/src/rendering/templates/defs_bzl_shim.j2"
                 )),
             ),
         ])
@@ -154,7 +154,9 @@ impl TemplateEngine {
         Ok(header)
     }
 
-    pub(crate) fn render_module_bzl(
+    /// Render `crates.bzl` — the survivor file holding every macro, data
+    /// dict, and the `crate_repositories()` function.
+    pub(crate) fn render_crates_bzl(
         &self,
         data: &Context,
         platforms: &Platforms,
@@ -170,13 +172,13 @@ impl TemplateEngine {
             .context("Failed to render crates module")
     }
 
-    pub(crate) fn render_vendor_module_file(&self, data: &Context) -> Result<String> {
-        let mut context = self.new_tera_ctx();
-        context.insert("context", data);
-
+    /// Render the deprecated `defs.bzl` re-export shim. Kept so consumers
+    /// that still `load("@<repo>//:defs.bzl", ...)` keep working while
+    /// `crates.bzl` is the source of truth.
+    pub(crate) fn render_defs_bzl_shim(&self) -> Result<String> {
         self.engine
-            .render("vendor_module.j2", &context)
-            .context("Failed to render vendor module")
+            .render("defs_bzl_shim.j2", &self.context)
+            .context("Failed to render defs.bzl shim")
     }
 }
 

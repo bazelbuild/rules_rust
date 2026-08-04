@@ -20,7 +20,7 @@ load(
     "splice_workspace_manifest",
 )
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
-load("//rust:defs.bzl", "rust_common")
+load("//rust:rust_common.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
 
 # A reduced subset of platform triples that cover a wide range of known users.
@@ -48,6 +48,13 @@ def _crates_repository_impl(repository_ctx):
 
     # Locate the lockfiles
     lockfiles = get_lockfiles(repository_ctx)
+
+    # Watch lockfiles and manifests for changes.
+    repository_ctx.watch(lockfiles.cargo)
+    if lockfiles.bazel:
+        repository_ctx.watch(lockfiles.bazel)
+    for m in repository_ctx.attr.manifests:
+        repository_ctx.watch(repository_ctx.path(m))
 
     # Locate Rust tools (cargo, rustc)
     tools = get_rust_tools(repository_ctx, host_triple)
@@ -107,6 +114,7 @@ def _crates_repository_impl(repository_ctx):
 
     paths_to_track_file = repository_ctx.path("paths-to-track")
     warnings_output_file = repository_ctx.path("warnings-output-file")
+    hub_packages_output_file = repository_ctx.path("hub-packages.json")
 
     # Run the generator
     repository_ctx.report_progress("Generating crate BUILD files.")
@@ -121,6 +129,7 @@ def _crates_repository_impl(repository_ctx):
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        hub_packages_output_file = hub_packages_output_file,
         skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile = repository_ctx.attr.strip_internal_dependencies_from_cargo_lockfile,
         # sysroot = tools.sysroot,
@@ -139,8 +148,9 @@ def _crates_repository_impl(repository_ctx):
     # Determine the set of reproducible values
     attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}
     exclude = ["to_json", "to_proto"]
-    for attr in exclude:
-        attrs.pop(attr, None)
+    for attr in list(attrs.keys()):
+        if attr in exclude or attr.startswith("_"):
+            attrs.pop(attr, None)
 
     # Note that this is only scoped to the current host platform. Users should
     # ensure they provide all the values necessary for the host environments
@@ -374,7 +384,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         ),
         "splicing_config": attr.string(
             doc = (
-                "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
+                "The configuration flags to use for splicing Cargo manifests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
         ),

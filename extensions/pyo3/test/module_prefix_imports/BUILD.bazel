@@ -9,6 +9,7 @@ pyo3_extension(
     edition = "2021",
     imports = ["."],
     module_name = "foo.bar",
+    stubs = True,
 )
 
 py_test(

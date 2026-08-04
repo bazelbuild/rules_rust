@@ -3,18 +3,13 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//rust/private:repository_utils.bzl", "TINYJSON_KWARGS")
-load("//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
+load("//tools/rust_analyzer/3rdparty/crates:crates.bzl", _rust_analyzer_crate_repositories = "crate_repositories")
 
 def _internal_deps_impl(module_ctx):
-    # This should contain the subset of WORKSPACE.bazel that defines
-    # repositories.
-
-    # We don't want rules_rust_dependencies, as they contain things like
-    # rules_cc, which is already declared in MODULE.bazel.
     direct_deps = [struct(repo = "rules_rust_tinyjson", is_dev_dep = False)]
     http_archive(**TINYJSON_KWARGS)
 
-    direct_deps.extend(rust_analyzer_dependencies())
+    direct_deps.extend(_rust_analyzer_crate_repositories())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used

@@ -2,8 +2,7 @@
 
 import unittest
 
-# TODO: https://github.com/periareon/rules_venv/issues/80
-from string_sum_import import sum_as_string  # type: ignore
+from string_sum_import import sum_as_string
 
 
 class StringSumTest(unittest.TestCase):

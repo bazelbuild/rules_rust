@@ -1,8 +1,9 @@
 //! The cli entrypoint for the `vendor` subcommand
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitStatus};
 use std::sync::Arc;
@@ -89,19 +90,41 @@ pub struct VendorOptions {
     pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
 }
 
-/// Run buildifier on a given file.
-fn buildifier_format(bin: &Path, file: &Path) -> anyhow::Result<ExitStatus> {
-    let status = process::Command::new(bin)
+/// Format content via buildifier's stdin/stdout, avoiding the need to write
+/// the file to disk before formatting. The `path` argument is passed as
+/// `--path` so buildifier can infer the file type (BUILD vs .bzl).
+///
+/// See <https://github.com/bazelbuild/rules_rust/issues/2972>.
+fn buildifier_format(bin: &Path, content: &str, path: &Path) -> anyhow::Result<String> {
+    let mut child = process::Command::new(bin)
         .args(["-lint=fix", "-mode=fix", "-warnings=all"])
-        .arg(file)
-        .status()
-        .context("Failed to apply buildifier fixes")?;
+        .arg(format!("--path={}", path.display()))
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
+        .spawn()
+        .context("Failed to spawn buildifier")?;
 
-    if !status.success() {
-        bail!(status)
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(content.as_bytes())
+        .context("Failed to write to buildifier stdin")?;
+
+    let output = child
+        .wait_with_output()
+        .context("Failed to wait for buildifier")?;
+
+    if !output.status.success() {
+        bail!(
+            "buildifier failed on {}: {}",
+            path.display(),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
-    Ok(status)
+    String::from_utf8(output.stdout).context("buildifier produced invalid UTF-8")
 }
 
 /// Run `bazel mod tidy` in a workspace.
@@ -132,8 +155,14 @@ struct BazelInfo {
 impl BazelInfo {
     /// Construct a new struct based on the current binary and workspace paths provided.
     fn try_new(bazel: &Path, workspace_dir: &Path) -> anyhow::Result<Self> {
-        let output = process::Command::new(bazel)
-            .current_dir(workspace_dir)
+        let mut cmd = process::Command::new(bazel);
+        cmd.current_dir(workspace_dir);
+        // Pass --output_base as a Bazel startup flag so it never touches the
+        // default (possibly non-writable) output_base path.
+        if let Ok(output_base) = env::var("OUTPUT_BASE") {
+            cmd.arg("--output_base").arg(output_base);
+        }
+        let output = cmd
             .arg("info")
             .arg("release")
             .arg("output_base")
@@ -145,7 +174,12 @@ impl BazelInfo {
         }
 
         let output = String::from_utf8_lossy(output.stdout.as_slice());
-        let mut bazel_info: HashMap<String, String> = output
+        Self::parse_bazel_info(&output)
+    }
+
+    /// Parse `bazel info` output into a `BazelInfo`.
+    fn parse_bazel_info(output: &str) -> anyhow::Result<Self> {
+        let bazel_info: HashMap<String, String> = output
             .trim()
             .split('\n')
             .map(|line| {
@@ -156,12 +190,6 @@ impl BazelInfo {
                 Ok((k.to_string(), (v[1..]).trim().to_string()))
             })
             .collect::<anyhow::Result<HashMap<_, _>>>()?;
-
-        // Allow a predefined environment variable to take precedent. This
-        // solves for the specific needs of Bazel CI on Github.
-        if let Ok(path) = env::var("OUTPUT_BASE") {
-            bazel_info.insert("output_base".to_owned(), format!("output_base: {}", path));
-        };
 
         BazelInfo::try_from(bazel_info)
     }
@@ -228,7 +256,9 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         &opt.repin,
     )?;
 
-    // Load the config from disk
+    // Load the config from disk. `config.label_injection_mapping` is applied
+    // to the Context just before render (see near `Renderer::new` below) and
+    // is sanitized out of the digest hash by `Digest::new`.
     let config = Config::try_from_path(&opt.config)?;
 
     let resolver_data = TreeResolver::new(cargo.clone()).generate(
@@ -265,6 +295,13 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // Generate renderable contexts for search package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
+    // Apply label_injection just before render. The Context at this point
+    // contains the user's apparent labels (e.g. `@openssl//:install`); the
+    // mapping rewrites them to the per-session canonical (e.g.
+    // `@@openssl+v3.5.5//:install`), reflecting whatever the root module's
+    // current `single_version_override` etc. resolved to.
+    let context = context.apply_label_injection_mapping(&config.label_injection_mapping)?;
+
     // Render build files
     let outputs = Renderer::new(
         Arc::new(config.rendering.clone()),
@@ -295,20 +332,24 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // make cargo versioned crates compatible with bazel labels
     let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.workspace_dir);
 
-    // buildifier files to check
-    let file_names: BTreeSet<PathBuf> = normalized_outputs.keys().cloned().collect();
+    // Optionally format outputs through buildifier before writing to disk.
+    // Piping via stdin avoids a race where a freshly-written file may not yet
+    // be visible to the buildifier subprocess.
+    let normalized_outputs = if let Some(ref buildifier_bin) = opt.buildifier {
+        normalized_outputs
+            .into_iter()
+            .map(|(path, content)| {
+                let formatted = buildifier_format(buildifier_bin, &content, &path)
+                    .with_context(|| format!("Failed to run buildifier on {}", path.display()))?;
+                Ok((path, formatted))
+            })
+            .collect::<anyhow::Result<BTreeMap<_, _>>>()?
+    } else {
+        normalized_outputs
+    };
 
     // Write outputs
     write_outputs(normalized_outputs, opt.dry_run).context("Failed writing output files")?;
-
-    // Optionally apply buildifier fixes
-    if let Some(buildifier_bin) = opt.buildifier {
-        for file in file_names {
-            let file_path = opt.workspace_dir.join(file);
-            buildifier_format(&buildifier_bin, &file_path)
-                .with_context(|| format!("Failed to run buildifier on {}", file_path.display()))?;
-        }
-    }
 
     // Optionally perform bazel mod tidy to update the MODULE.bazel file
     if bazel_info.release >= semver::Version::new(7, 0, 0) {

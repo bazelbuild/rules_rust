@@ -12,8 +12,8 @@ load(
     "collect_cfgs",
     "default_allocator_library",
     "error_format",
+    "experimental_compile_rustdoc_tests",
     "experimental_link_std_dylib",
-    "experimental_per_crate_rustc_flag",
     "experimental_use_allocator_libraries_with_mangled_symbols",
     "experimental_use_cc_common_link",
     "experimental_use_coverage_metadata_files",
@@ -26,20 +26,22 @@ load(
     "extra_rustc_flag",
     "extra_rustc_flags",
     "incompatible_change_clippy_error_format",
-    "incompatible_change_rust_test_compilation_output_directory",
     "incompatible_do_not_include_data_in_compile_data",
+    "incompatible_do_not_include_transitive_data_in_compile_inputs",
     "lto",
     "no_std",
+    "per_crate_rustc_flag",
     "pipelined_compilation",
     "rename_first_party_crates",
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
     "rustfmt_toml",
+    "skip_fission_for_rust",
     "third_party_dir",
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
     "unpretty",
-    "use_real_import_macro",
+    "zself_profile_events",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -82,9 +84,9 @@ error_format()
 
 clippy_error_format()
 
-experimental_link_std_dylib()
+experimental_compile_rustdoc_tests()
 
-experimental_per_crate_rustc_flag()
+experimental_link_std_dylib()
 
 experimental_use_cc_common_link()
 
@@ -110,13 +112,15 @@ extra_rustc_flags()
 
 incompatible_change_clippy_error_format()
 
-incompatible_change_rust_test_compilation_output_directory()
-
 incompatible_do_not_include_data_in_compile_data()
+
+incompatible_do_not_include_transitive_data_in_compile_inputs()
 
 lto()
 
 no_std()
+
+per_crate_rustc_flag()
 
 pipelined_compilation()
 
@@ -136,4 +140,6 @@ toolchain_linker_preference()
 
 unpretty()
 
-use_real_import_macro()
+zself_profile_events()
+
+skip_fission_for_rust()

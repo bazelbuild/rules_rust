@@ -43,10 +43,12 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 # See `@rules_rust//rust/platform:triple_mappings.bzl` for the complete list.
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
+    "aarch64-apple-ios-macabi": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-none": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "arm-unknown-linux-musleabi": _support(std = True, host_tools = True),
@@ -54,21 +56,27 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
+    "loongarch64-unknown-linux-gnu": _support(std = True, host_tools = True),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "riscv32imac-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "sparc64-unknown-linux-gnu": _support(std = True, host_tools = False),
     "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
+    "thumbv7m-none-eabi": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
+    "thumbv8m.main-none-eabihf": _support(std = True, host_tools = False),
     "wasm32-unknown-emscripten": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
     "wasm32-wasip1": _support(std = True, host_tools = False),
     "wasm32-wasip1-threads": _support(std = True, host_tools = False),
     "wasm32-wasip2": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
+    "x86_64-apple-ios-macabi": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
@@ -78,6 +86,13 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "avr-none": _support(std = False, host_tools = False),
+    "bpfeb-unknown-none": _support(std = False, host_tools = False),
+    "bpfel-unknown-none": _support(std = False, host_tools = False),
+    "mips-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "sparc64-unknown-netbsd": _support(std = True, host_tools = True),
+    "sparc64-unknown-openbsd": _support(std = True, host_tools = True),
+    "thumbv6-none-eabi": _support(std = False, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
 }
 
@@ -113,21 +128,28 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "armv7": "armv7",
     "armv7s": None,
     "asmjs": None,
+    "avr": "avr",
+    "bpfeb": "bpfeb",
+    "bpfel": "bpfel",
+    "hexagon": "hexagon",
     "i386": "i386",
     "i586": None,
     "i686": "x86_32",
     "le32": None,
-    "mips": None,
-    "mipsel": None,
-    "powerpc": "ppc",
-    "powerpc64": None,
+    "loongarch64": "loongarch64",
+    "mips": "mips32",
+    "powerpc": "ppc32",
+    "powerpc64": "ppc",
     "powerpc64le": "ppc64le",
     "riscv32": "riscv32",
+    "riscv32imac": "riscv32",
     "riscv32imc": "riscv32",
     "riscv64": "riscv64",
     "riscv64gc": "riscv64",
     "s390": None,
     "s390x": "s390x",
+    "sparc64": "sparc64",
+    "thumbv6": "armv6",
     "thumbv6m": "armv6-m",
     "thumbv7em": "armv7e-m",
     "thumbv7m": "armv7-m",
@@ -152,7 +174,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "linux": "linux",
     "macos": "osx",
     "nacl": None,
-    "netbsd": None,
+    "netbsd": "netbsd",
     "nixos": "nixos",
     "none": "none",
     "nto": "qnx",
@@ -160,9 +182,9 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "solaris": None,
     "uefi": "uefi",
     "unknown": None,
-    "wasi": None,
-    "wasip1": None,
-    "wasip2": None,
+    "wasi": "wasi",
+    "wasip1": "wasi",
+    "wasip2": "wasi",
     "windows": "windows",
 }
 
@@ -177,9 +199,11 @@ _SYSTEM_TO_BINARY_EXT = {
     "ios": "",
     "linux": "",
     "macos": "",
+    "netbsd": "",
     "nixos": "",
     "none": "",
     "nto": "",
+    "threads": ".wasm",
     "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
@@ -202,14 +226,16 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "ios": ".a",
     "linux": ".a",
     "macos": ".a",
+    "netbsd": ".a",
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
+    "threads": ".a",
     "uefi": ".lib",
-    "unknown": "",
-    "wasi": "",
-    "wasip1": "",
-    "wasip2": "",
+    "unknown": ".a",
+    "wasi": ".a",
+    "wasip1": ".a",
+    "wasip2": ".a",
     "windows": ".lib",
 }
 
@@ -224,9 +250,11 @@ _SYSTEM_TO_DYLIB_EXT = {
     "ios": ".dylib",
     "linux": ".so",
     "macos": ".dylib",
+    "netbsd": ".so",
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
+    "threads": ".wasm",
     "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
     "wasi": ".wasm",
@@ -282,7 +310,12 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "wasi": [],
     "wasip1": [],
     "wasip2": [],
-    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+    "windows": {
+        # see https://github.com/rust-lang/rust/blob/c4aa646f15e40bd3e64ddb5017b7b89b3646ac99/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs#L14-L23
+        "gnu": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
+        "gnullvm": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
+        "msvc": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+    },
 }
 
 def cpu_arch_to_constraints(cpu_arch, *, system = None, abi = None):
@@ -346,9 +379,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:
         if arch == "x86_64" or abi == "sim":
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
+            all_abi_constraints.append("@apple_support//constraints:simulator")
         else:
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
+            all_abi_constraints.append("@apple_support//constraints:device")
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
@@ -408,8 +441,24 @@ def system_to_staticlib_ext(system):
 def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
 
-def system_to_stdlib_linkflags(system):
-    return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
+def system_to_stdlib_linkflags(system, abi = None):
+    """_summary_
+
+    Args:
+        system (_type_): _description_
+        abi (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
+    flags = _SYSTEM_TO_STDLIB_LINKFLAGS[system]
+    if type(flags) == "list":
+        return flags
+    if abi:
+        for prefix, abi_flags in flags.items():
+            if prefix and abi.startswith(prefix):
+                return abi_flags
+    return flags.get(None, [])
 
 def triple_to_constraint_set(target_triple):
     """Returns a set of constraints for a given platform triple
@@ -438,11 +487,6 @@ def triple_to_constraint_set(target_triple):
             "@platforms//os:wasi",
             "@rules_rust//rust/platform:wasi_preview_2",
         ]
-    if target_triple == "wasm32-unknown-emscripten":
-        return [
-            "@platforms//cpu:wasm32",
-            "@platforms//os:emscripten",
-        ]
     if target_triple == "wasm32-unknown-unknown":
         return [
             "@platforms//cpu:wasm32",
@@ -458,6 +502,18 @@ def triple_to_constraint_set(target_triple):
         return [
             "@platforms//cpu:wasm64",
             "@platforms//os:none",
+        ]
+    if target_triple == "aarch64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:osx",
+            "@apple_support//constraints:catalyst",
+        ]
+    if target_triple == "x86_64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:osx",
+            "@apple_support//constraints:catalyst",
         ]
 
     triple_struct = triple(target_triple)

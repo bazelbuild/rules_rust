@@ -18,6 +18,7 @@ pyo3_extension(
     srcs = ["string_sum_import.rs"],
     edition = "2021",
     imports = ["."],
+    stubs = True,
 )
 
 py_test(

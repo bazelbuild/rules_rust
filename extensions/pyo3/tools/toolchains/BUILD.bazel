@@ -5,7 +5,7 @@ load("@rules_venv//python/pylint:defs.bzl", "py_pylint_toolchain")
 
 py_black_toolchain(
     name = "py_black_toolchain",
-    black = "@pip_deps//:black",
+    black = "@pip_deps//black",
 )
 
 toolchain(
@@ -17,7 +17,7 @@ toolchain(
 
 py_isort_toolchain(
     name = "py_isort_toolchain",
-    isort = "@pip_deps//:isort",
+    isort = "@pip_deps//isort",
 )
 
 toolchain(
@@ -29,7 +29,7 @@ toolchain(
 
 py_mypy_toolchain(
     name = "py_mypy_toolchain",
-    mypy = "@pip_deps//:mypy",
+    mypy = "@pip_deps//mypy",
 )
 
 toolchain(
@@ -41,7 +41,7 @@ toolchain(
 
 py_pylint_toolchain(
     name = "py_pylint_toolchain",
-    pylint = "@pip_deps//:pylint",
+    pylint = "@pip_deps//pylint",
 )
 
 toolchain(

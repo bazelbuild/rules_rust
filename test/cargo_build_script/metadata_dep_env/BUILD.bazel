@@ -1,0 +1,37 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+cargo_build_script(
+    name = "producer_build_rs",
+    srcs = ["producer_build.rs"],
+    edition = "2021",
+    links = "producer",
+)
+
+rust_library(
+    name = "producer_lib",
+    srcs = ["producer_lib.rs"],
+    edition = "2021",
+    deps = [":producer_build_rs"],
+)
+
+cargo_build_script(
+    name = "consumer_build_rs",
+    srcs = ["consumer_build.rs"],
+    edition = "2021",
+    link_deps = [":producer_lib"],
+)
+
+rust_test(
+    name = "metadata_dep_env_modern_test",
+    srcs = ["modern_test.rs"],
+    edition = "2021",
+    deps = [":consumer_build_rs"],
+)
+
+rust_test(
+    name = "metadata_dep_env_legacy_test",
+    srcs = ["legacy_test.rs"],
+    edition = "2021",
+    deps = [":consumer_build_rs"],
+)

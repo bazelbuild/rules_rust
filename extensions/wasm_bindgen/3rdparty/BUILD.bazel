@@ -22,7 +22,7 @@ crates_vendor(
             version = WASM_BINDGEN_VERSION,
         ),
         "wasm-bindgen-test": crate.spec(
-            version = "0.3.55",
+            version = "0.3.71",
         ),
     },
     # Shorten the repository name to avoid MAX_PATH issues on Windows

@@ -1,0 +1,95 @@
+module(
+    name = "cu_test_no_cargo_manifests",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+no_cargo = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+no_cargo.annotation(
+    compile_data_glob = ["**/*.md"],
+    crate = "axum",
+    repositories = ["no_cargo"],
+)
+no_cargo.spec(
+    package = "axum",
+    repositories = ["no_cargo"],
+    version = "0.4.0",
+)
+no_cargo.spec(
+    features = ["full"],
+    package = "hyper",
+    repositories = ["no_cargo"],
+    version = "0.14.22",
+)
+no_cargo.spec(
+    package = "mime",
+    repositories = ["no_cargo"],
+    version = "0.3",
+)
+no_cargo.spec(
+    package = "serde_json",
+    repositories = ["no_cargo"],
+    version = "1.0",
+)
+no_cargo.spec(
+    features = ["all"],
+    package = "socket2",
+    repositories = ["no_cargo"],
+    version = "0.4.7",
+)
+no_cargo.spec(
+    features = ["full"],
+    package = "tokio",
+    repositories = ["no_cargo"],
+    version = "1.17.0",
+)
+no_cargo.spec(
+    features = ["util"],
+    package = "tower",
+    repositories = ["no_cargo"],
+    version = "0.4",
+)
+no_cargo.spec(
+    features = ["util"],
+    package = "tower",
+    package_alias = "tower_new",
+    repositories = ["no_cargo"],
+    version = "0.5.3",
+)
+no_cargo.spec(
+    features = ["trace"],
+    package = "tower-http",
+    repositories = ["no_cargo"],
+    version = "0.2.1",
+)
+no_cargo.spec(
+    package = "tracing",
+    repositories = ["no_cargo"],
+    version = "0.1",
+)
+no_cargo.spec(
+    package = "tracing-subscriber",
+    repositories = ["no_cargo"],
+    version = "0.3",
+)
+no_cargo.splicing_config(
+    repositories = ["no_cargo"],
+    resolver_version = "2",
+)
+no_cargo.from_specs(
+    name = "no_cargo",
+)
+use_repo(
+    no_cargo,
+    "no_cargo",
+)

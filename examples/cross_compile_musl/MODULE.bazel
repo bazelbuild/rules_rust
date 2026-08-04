@@ -9,13 +9,13 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 RUST_EDITION = "2021"
 
-RUST_VERSION = "1.80.0"
+RUST_VERSION = "1.83.0"
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -121,7 +121,7 @@ crate.from_cargo(
 )
 use_repo(crate, "cu")
 
-bazel_dep(name = "toolchains_musl", version = "0.1.20", dev_dependency = True)
+bazel_dep(name = "toolchains_musl", version = "0.1.27", dev_dependency = True)
 
 toolchains_musl = use_extension("@toolchains_musl//:toolchains_musl.bzl", "toolchains_musl", dev_dependency = True)
 toolchains_musl.config(

@@ -1,16 +1,24 @@
 """Bzlmod module extensions"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//:repositories.bzl", "mdbook_register_toolchains")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//private:toolchain.bzl", "mdbook_toolchain_repository")
 load("//private/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def _rust_ext_impl(module_ctx):
-    # This should contain the subset of WORKSPACE.bazel that defines
-    # repositories.
     direct_deps = []
 
-    direct_deps.extend(mdbook_register_toolchains(register_toolchains = False))
+    direct_deps.append(struct(
+        repo = "rules_rust_mdbook_toolchain",
+        is_dev_dep = False,
+    ))
     direct_deps.extend(crate_repositories())
+
+    maybe(
+        mdbook_toolchain_repository,
+        name = "rules_rust_mdbook_toolchain",
+        mdbook = str(Label("//private/3rdparty/crates:mdbook__mdbook")),
+    )
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used

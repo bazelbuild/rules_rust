@@ -1,0 +1,35 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "mdbook")
+
+mdbook(
+    name = "external_srcs",
+    srcs = ["//test/external_srcs/content:srcs"],
+    book = "//test/external_srcs/content:book.toml",
+)
+
+mdbook(
+    name = "local_book_mixed",
+    srcs = ["//test/external_srcs/content:srcs"],
+    book = "//test/external_srcs/local_book_mixed:book.toml",
+)
+
+rust_test(
+    name = "external_srcs_test",
+    srcs = ["external_srcs_test.rs"],
+    data = [
+        ":external_srcs",
+        ":local_book_mixed",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "MDBOOK_EXTERNAL_SRCS_OUTPUT": "$(rlocationpath :external_srcs)",
+        "MDBOOK_LOCAL_BOOK_MIXED_OUTPUT": "$(rlocationpath :local_book_mixed)",
+    },
+    deps = ["@rules_rust//rust/runfiles"],
+)
+
+build_test(
+    name = "external_srcs_build_test",
+    targets = [":external_srcs"],
+)

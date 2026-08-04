@@ -25,33 +25,11 @@ local_path_override(
 bazel_dep(name = "rules_proto", version = "7.1.0")
 
 # https://registry.bazel.build/modules/protobuf
-bazel_dep(name = "protobuf", version = "29.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
 
-# https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
-
-###############################################################################
-# L L V M
-# https://github.com/bazel-contrib/toolchains_llvm/blob/master/tests/MODULE.bazel
-###############################################################################
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-
-# LLVM Versions and platforms
-# https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl
-LLVM_VERSIONS = {
-    "": "16.0.0",
-    "darwin-aarch64": "16.0.3",
-    "darwin-x86_64": "15.0.7",
-}
-
-# Host LLVM toolchain.
-llvm.toolchain(
-    name = "llvm_toolchain",
-    llvm_versions = LLVM_VERSIONS,
-)
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
-
-register_toolchains("@llvm_toolchain//:all")
+# Required for Bazel 9 support when building Protobuf
+bazel_dep(name = "rules_android", version = "0.7.1", dev_dependency = True)
+bazel_dep(name = "rules_go", version = "0.60.0", dev_dependency = True)
 
 ###############################################################################
 # T O O L C H A I N S
@@ -73,8 +51,8 @@ register_toolchains("@rust_toolchains//:all")
 
 # Custom Prost toolchain
 register_toolchains(
-    "@//build/prost_toolchain",
-    "@//build/proto_toolchain",
+    "//tools/prost_toolchain",
+    "//tools/proto_toolchain",
 )
 
 ###############################################################################

@@ -1,0 +1,7 @@
+exports_files(["book.toml"])
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["src/**/*.md"]),
+    visibility = ["//visibility:public"],
+)

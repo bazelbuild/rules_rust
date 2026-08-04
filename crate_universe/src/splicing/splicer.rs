@@ -259,7 +259,7 @@ impl<'a> SplicerKind<'a> {
             Self::inject_workspace_members(&mut manifest, manifests, workspace_dir.as_std_path())?;
 
         // Collect all patches from the manifests provided
-        for (_, sub_manifest) in manifests.iter() {
+        for sub_manifest in manifests.values() {
             Self::inject_patches(&mut manifest, &sub_manifest.patch).with_context(|| {
                 format!(
                     "Duplicate `[patch]` entries detected in {:#?}",
@@ -1145,7 +1145,7 @@ mod test {
         assert!(workspace_manifest.is_err());
 
         // Ensure both the external workspace member
-        let err_str = format!("{:?}", &workspace_manifest);
+        let err_str = format!("{:?}", workspace_manifest);
         assert!(
             err_str
                 .contains("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces:")
@@ -1583,8 +1583,8 @@ mod test {
     fn splice_multi_package_with_conflicting_patch() {
         let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
-        let mut patch = 3;
-        for pkg in ["pkg_a", "pkg_b"] {
+        // Using the patch semver to make the patch info unique.
+        for (pkg, patch) in [("pkg_a", 3), ("pkg_b", 4)] {
             // Generate a patch entry
             let new_patch = cargo_toml::PatchSet::from([(
                 "registry".to_owned(),
@@ -1593,9 +1593,6 @@ mod test {
                     cargo_toml::Dependency::Simple(format!("1.2.{patch}")),
                 )]),
             )]);
-
-            // Increment the patch semver to make the patch info unique.
-            patch += 1;
 
             // Insert the patch entry to the manifests
             let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");

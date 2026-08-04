@@ -13,6 +13,7 @@ def _cargo_dep_env_impl(ctx):
         content = "",
     )
     ctx.actions.run(
+        mnemonic = "CargoDepEnv",
         outputs = [empty_dir],
         executable = "true",
     )

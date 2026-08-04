@@ -1,6 +1,7 @@
 //! Crate specific information embedded into [crate::context::Context] objects.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 
 use camino::Utf8PathBuf;
 use cargo_metadata::{Node, Package, PackageId};
@@ -133,6 +134,9 @@ pub(crate) struct CommonAttributes {
     pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) extra_link_deps: Select<BTreeSet<Label>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -167,6 +171,7 @@ impl Default for CommonAttributes {
             linker_script: Default::default(),
             proc_macro_deps: Default::default(),
             extra_proc_macro_deps: Default::default(),
+            extra_link_deps: Default::default(),
             proc_macro_deps_dev: Default::default(),
             rustc_env: Default::default(),
             rustc_env_files: Default::default(),
@@ -264,6 +269,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -294,6 +302,7 @@ impl Default for BuildScriptAttributes {
             links: Default::default(),
             toolchains: Default::default(),
             use_default_shell_env: None,
+            use_cc_toolchain: None,
         }
     }
 }
@@ -496,16 +505,8 @@ impl CrateContext {
 
         let build_script_attrs = if let Some(target) = build_script_target {
             // Track the build script dependency
-            common_attrs.deps.insert(
-                CrateDependency {
-                    id: current_crate_id,
-                    target: target.crate_name.clone(),
-                    alias: None,
-                    local_path: match source_annotations.get(&annotation.node.id) {
-                        Some(SourceAnnotation::Path { path }) => Some(path.clone()),
-                        _ => None,
-                    },
-                },
+            common_attrs.extra_deps.insert(
+                Label::from_str(&format!(":{}", target.crate_name)).unwrap(),
                 None,
             );
 
@@ -589,6 +590,12 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.proc_macro_deps {
                 self.common_attrs.extra_proc_macro_deps =
                     Select::merge(self.common_attrs.extra_proc_macro_deps, extra.clone());
+            }
+
+            // Link deps
+            if let Some(extra) = &crate_extra.link_deps {
+                self.common_attrs.extra_link_deps =
+                    Select::merge(self.common_attrs.extra_link_deps, extra.clone());
             }
 
             // Compile data
@@ -703,6 +710,12 @@ impl CrateContext {
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
                 }
 
+                // Build script env files
+                if let Some(extra) = &crate_extra.build_script_env_files {
+                    attrs.build_script_env_files =
+                        Select::merge(attrs.build_script_env_files.clone(), extra.clone());
+                }
+
                 // Exec properties
                 if let Some(extra) = &crate_extra.build_script_exec_properties {
                     attrs.exec_properties =
@@ -712,6 +725,11 @@ impl CrateContext {
                 // Default Shell Env
                 if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
                     attrs.use_default_shell_env = Some(*extra);
+                }
+
+                // Use cc toolchain
+                if let Some(extra) = &crate_extra.build_script_use_cc_toolchain {
+                    attrs.use_cc_toolchain = Some(*extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
@@ -1087,6 +1105,59 @@ mod test {
 
         // Cargo build scripts should include all sources
         assert!(context.build_script_attrs.unwrap().data_glob.contains("**"));
+    }
+
+    #[test]
+    fn context_with_build_script_env_files_annotation() {
+        let mut build_script_env_files =
+            Select::from_value(BTreeSet::from(["@//:build-script.env".to_owned()]));
+        build_script_env_files.insert(
+            "@//:linux-build-script.env".to_owned(),
+            Some("x86_64-unknown-linux-gnu".to_owned()),
+        );
+
+        let mut config = crate::config::Config::default();
+        config.annotations.insert(
+            crate::config::CrateNameAndVersionReq::new(
+                "openssl-sys".to_owned(),
+                "0.9.87".parse().unwrap(),
+            ),
+            CrateAnnotations {
+                build_script_env_files: Some(build_script_env_files.clone()),
+                ..CrateAnnotations::default()
+            },
+        );
+
+        let annotations = Annotations::new(
+            crate::test::metadata::build_scripts(),
+            &None,
+            crate::test::lockfile::build_scripts(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let package_id = PackageId {
+            repr: "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
+                .to_owned(),
+        };
+        let crate_annotation = &annotations.metadata.crates[&package_id];
+
+        let context = CrateContext::new(
+            crate_annotation,
+            &annotations.metadata.packages,
+            &annotations.lockfile.crates,
+            &annotations.pairred_extras,
+            &annotations.metadata.workspace_metadata.tree_metadata,
+            false,
+            true,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(
+            context.build_script_attrs.unwrap().build_script_env_files,
+            build_script_env_files
+        );
     }
 
     #[test]

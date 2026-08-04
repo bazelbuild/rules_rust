@@ -1,0 +1,15 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    edition = "2021",
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_script"],
+)

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
-load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen", "rust_wasm_bindgen_test")
+load("//:defs.bzl", "rust_wasm_bindgen", "rust_wasm_bindgen_test")
 
 package(default_visibility = ["//:__subpackages__"])
 

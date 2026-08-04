@@ -12,7 +12,7 @@ mod tests {
         let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
 
         let content = std::fs::read_to_string(&rust_project_path)
-            .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
+            .unwrap_or_else(|_| panic!("couldn't open {:?}", rust_project_path));
 
         for dep in &[
             "lib_dep",
@@ -37,7 +37,7 @@ mod tests {
         let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
 
         let content = std::fs::read_to_string(&rust_project_path)
-            .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
+            .unwrap_or_else(|_| panic!("couldn't open {:?}", rust_project_path));
 
         let project: Project =
             serde_json::from_str(&content).expect("Failed to deserialize project JSON");

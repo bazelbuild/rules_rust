@@ -19,3 +19,12 @@ wasm_bindgen_transition = transition(
     inputs = [],
     outputs = ["//command_line_option:platforms"],
 )
+
+def _opt_transition(_settings, _attr):
+    return {"//command_line_option:compilation_mode": "opt"}
+
+opt_transition = transition(
+    implementation = _opt_transition,
+    inputs = [],
+    outputs = ["//command_line_option:compilation_mode"],
+)

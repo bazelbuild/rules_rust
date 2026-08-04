@@ -17,13 +17,7 @@ using [Prost][prost] and [Tonic][tonic]
 ## Setup
 
 ```python
-load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
-
-rust_prost_dependencies()
-
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
+bazel_dep(name = "rules_rust_prost", version = "{SEE_RELEASE_NOTES}")
 ```
 
 The `prost` and `tonic` rules do not specify a default toolchain in order to avoid mismatched
@@ -102,7 +96,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library_group")
 rust_library_group(
     name = "prost_runtime",
     deps = [
-        "@crates_io//:prost",
+        "@crates_io//prost",
     ],
 )
 
@@ -110,17 +104,17 @@ rust_library_group(
     name = "tonic_runtime",
     deps = [
         ":prost_runtime",
-        "@crates_io//:tonic",
+        "@crates_io//tonic",
     ],
 )
 
 rust_prost_toolchain(
     name = "prost_toolchain_impl",
-    prost_plugin = "@crates_io//:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin = "@crates_io//protoc-gen-prost__protoc-gen-prost",
     prost_runtime = ":prost_runtime",
-    prost_types = "@crates_io//:prost-types",
+    prost_types = "@crates_io//prost-types",
     proto_compiler = "@com_google_protobuf//:protoc",
-    tonic_plugin = "@crates_io//:protoc-gen-tonic__protoc-gen-tonic",
+    tonic_plugin = "@crates_io//protoc-gen-tonic__protoc-gen-tonic",
     tonic_runtime = ":tonic_runtime",
 )
 
@@ -131,7 +125,7 @@ toolchain(
 )
 ```
 
-Lastly, you must register the toolchain in your `WORKSPACE` file. For example:
+Lastly, you must register the toolchain in your `MODULE.bazel` file. For example:
 
 ```python
 register_toolchains("//toolchains:prost_toolchain")

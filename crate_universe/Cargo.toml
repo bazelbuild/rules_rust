@@ -47,7 +47,7 @@ exclude = [
 
 [package]
 name = "cargo-bazel"
-version = "0.17.0"
+version = "0.18.0"
 authors = ["Andre Brisco - andre.brisco@protonmail.com"]
 categories = ["development-tools"]
 description = "A collection of tools which use Cargo to generate build targets for Bazel"
@@ -60,13 +60,16 @@ repository = "https://github.com/bazelbuild/rules_rust"
 cargo = []
 default = ["cargo"]
 
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags=["-Ctarget-feature=+crt-static"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.98"
 camino = "1.1.9"
 cargo_metadata = "0.19.2"
-cargo_toml = "0.22.1"
+cargo_toml = "0.22.3"
 cargo-lock = "10.1.0"
 cargo-platform = "0.1.9"
 cfg-expr = "0.18.0"
@@ -90,7 +93,7 @@ spdx = "0.10.8"
 tempfile = "3.19.1"
 tera = { version = "1.20.0", default-features = false }
 textwrap = "0.16.2"
-toml = "0.8.21"
+toml = "0.9.0"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 url = "2.5.4"

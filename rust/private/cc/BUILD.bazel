@@ -8,7 +8,7 @@ cc_empty_library(
 alias(
     name = "malloc",
     actual = select({
-        "//rust/settings:experimental_use_cc_common_link_on": "@bazel_tools//tools/cpp:malloc",
+        # "//rust/settings:experimental_use_cc_common_link_on": "@bazel_tools//tools/cpp:malloc",
         "//conditions:default": ":empty",
     }),
     visibility = ["//visibility:public"],

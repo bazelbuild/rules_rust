@@ -1,9 +1,9 @@
 //! A helper tool for generating urls and sha256 checksums of cargo-bazel binaries and writing them to a module.
 
 use std::collections::BTreeMap;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::{env, fs};
 
 use clap::Parser;
@@ -151,25 +151,34 @@ fn render_module(artifacts: &[Artifact]) -> String {
         )
 }
 
-fn write_module(content: &str) -> PathBuf {
-    let dest = PathBuf::from(
-        env::var("BUILD_WORKSPACE_DIRECTORY").expect("This binary is required to run under Bazel"),
-    )
-    .join(env!("MODULE_ROOT_PATH"));
-
-    fs::write(&dest, content).unwrap();
-
-    dest
-}
-
-fn run_buildifier(buildifier_path: &Path, module: &Path) {
-    Command::new(buildifier_path)
-        .arg("-lint=fix")
-        .arg("-mode=fix")
-        .arg("-warnings=all")
-        .arg(module)
-        .output()
+fn run_buildifier(buildifier_path: &Path, content: &str, path: &Path) -> String {
+    let mut child = Command::new(buildifier_path)
+        .args(["-lint=fix", "-mode=fix", "-warnings=all"])
+        .arg(format!("--path={}", path.display()))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .unwrap();
+
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(content.as_bytes())
+        .unwrap();
+
+    let output = child.wait_with_output().unwrap();
+
+    if !output.status.success() {
+        panic!(
+            "buildifier failed on {}: {}",
+            path.display(),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    String::from_utf8(output.stdout).unwrap()
 }
 
 fn main() {
@@ -179,9 +188,16 @@ fn main() {
 
     let content = render_module(&artifacts);
 
-    let path = write_module(&content);
+    let dest = PathBuf::from(
+        env::var("BUILD_WORKSPACE_DIRECTORY").expect("This binary is required to run under Bazel"),
+    )
+    .join(env!("MODULE_ROOT_PATH"));
 
-    if let Some(buildifier_path) = opt.buildifier {
-        run_buildifier(&buildifier_path, &path);
-    }
+    let content = if let Some(ref buildifier_path) = opt.buildifier {
+        run_buildifier(buildifier_path, &content, &dest)
+    } else {
+        content
+    };
+
+    fs::write(&dest, content).unwrap();
 }

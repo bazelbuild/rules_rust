@@ -9,10 +9,12 @@
 //! data files to compute the coverage report.
 //!
 //! This script assumes the following environment variables are set:
-//! - `COVERAGE_DIR``: Directory containing metadata files needed for coverage collection (e.g. gcda files, profraw).
+//! - `COVERAGE_DIR`: Directory containing metadata files needed for coverage collection (e.g. gcda files, profraw).
 //! - `COVERAGE_OUTPUT_FILE`: The coverage action output path.
 //! - `ROOT`: Location from where the code coverage collection was invoked.
-//! - `RUNFILES_DIR`: Location of the test's runfiles.
+//! - `RUNFILES_DIR` (optional): Location of the test's runfiles. Not set in split
+//!   coverage postprocessing mode (`--experimental_split_coverage_postprocessing`).
+//! - `TEST_BINARY`: Runfiles-relative path to the test binary (used when `RUNFILES_DIR` is absent).
 //! - `VERBOSE_COVERAGE`: Print debug info from the coverage scripts
 //!
 //! The script looks in $COVERAGE_DIR for the Rust metadata coverage files
@@ -85,31 +87,71 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
     }
 }
 
+/// Derive the Bazel output configuration bin directory from `COVERAGE_DIR`.
+///
+/// `COVERAGE_DIR` follows the stable convention `bazel-out/<config>/testlogs/...`.
+/// Extracting the first two path components gives `bazel-out/<config>`, which
+/// combined with `bin` yields the directory containing the test binary.
+fn config_bin_dir(execroot: &Path, coverage_dir: &Path) -> PathBuf {
+    let coverage_rel = coverage_dir.strip_prefix(execroot).unwrap_or(coverage_dir);
+    let mut components = coverage_rel.components();
+    let bazel_out = components
+        .next()
+        .expect("COVERAGE_DIR should have at least 2 path components");
+    let config = components
+        .next()
+        .expect("COVERAGE_DIR should have at least 2 path components");
+    PathBuf::from(bazel_out.as_os_str())
+        .join(config.as_os_str())
+        .join("bin")
+}
+
 fn main() {
     let coverage_dir = PathBuf::from(env::var("COVERAGE_DIR").unwrap());
     let execroot = PathBuf::from(env::var("ROOT").unwrap());
-    let mut runfiles_dir = PathBuf::from(env::var("RUNFILES_DIR").unwrap());
 
-    if !runfiles_dir.is_absolute() {
-        runfiles_dir = execroot.join(runfiles_dir);
-    }
+    // RUNFILES_DIR is explicitly removed by Bazel in split coverage
+    // postprocessing mode (--experimental_split_coverage_postprocessing).
+    let runfiles_dir = env::var("RUNFILES_DIR")
+        .map(|d| {
+            let p = PathBuf::from(d);
+            if p.is_absolute() {
+                p
+            } else {
+                execroot.join(p)
+            }
+        })
+        .ok();
 
     debug_log!("ROOT: {}", execroot.display());
-    debug_log!("RUNFILES_DIR: {}", runfiles_dir.display());
+    match runfiles_dir {
+        Some(ref rd) => debug_log!("RUNFILES_DIR: {}", rd.display()),
+        None => debug_log!("RUNFILES_DIR: not set (split coverage postprocessing)"),
+    }
 
     let coverage_output_file = coverage_dir.join("coverage.dat");
     let profdata_file = coverage_dir.join("coverage.profdata");
-    let llvm_cov = find_metadata_file(
-        &execroot,
-        &runfiles_dir,
-        &env::var("RUST_LLVM_COV").unwrap(),
-    );
-    let llvm_profdata = find_metadata_file(
-        &execroot,
-        &runfiles_dir,
-        &env::var("RUST_LLVM_PROFDATA").unwrap(),
-    );
-    let test_binary = find_test_binary(&execroot, &runfiles_dir);
+    let llvm_cov_path = env::var("RUST_LLVM_COV").unwrap();
+    let llvm_profdata_path = env::var("RUST_LLVM_PROFDATA").unwrap();
+    let llvm_cov = match runfiles_dir {
+        Some(ref rd) => find_metadata_file(&execroot, rd, &llvm_cov_path),
+        None => execroot.join(&llvm_cov_path),
+    };
+    let llvm_profdata = match runfiles_dir {
+        Some(ref rd) => find_metadata_file(&execroot, rd, &llvm_profdata_path),
+        None => execroot.join(&llvm_profdata_path),
+    };
+    let test_binary = match runfiles_dir {
+        Some(ref rd) => find_test_binary(&execroot, rd),
+        None => {
+            let bin_dir = config_bin_dir(&execroot, &coverage_dir);
+            let test_binary = execroot
+                .join(bin_dir)
+                .join(env::var("TEST_BINARY").unwrap());
+            debug_log!("Resolved TEST_BINARY to: {}", test_binary.display());
+            test_binary
+        }
+    };
     let profraw_files: Vec<PathBuf> = fs::read_dir(coverage_dir)
         .unwrap()
         .flatten()
@@ -123,6 +165,16 @@ fn main() {
             None
         })
         .collect();
+
+    // A test that ran without `-Cinstrument-coverage` (e.g. filtered out by
+    // `--instrumentation_filter` or a `rust_test` without `--instrument_test_targets`)
+    // produces no `.profraw` files. Skip the merge step and emit an empty lcov
+    // report instead of letting `llvm-profdata merge` fail on empty input.
+    if profraw_files.is_empty() {
+        debug_log!("No .profraw files in COVERAGE_DIR; writing empty report");
+        fs::write(&coverage_output_file, "").unwrap();
+        return;
+    }
 
     let mut llvm_profdata_cmd = process::Command::new(llvm_profdata);
     llvm_profdata_cmd
@@ -147,11 +199,12 @@ fn main() {
         .arg("-format=lcov")
         .arg("-instr-profile")
         .arg(&profdata_file)
-        .arg("-ignore-filename-regex='.*external/.+'")
-        .arg("-ignore-filename-regex='/tmp/.+'")
-        .arg(format!("-path-equivalence=.,'{}'", execroot.display()))
+        .arg("-ignore-filename-regex=.*external/.+")
+        .arg("-ignore-filename-regex=/tmp/.+")
+        .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
-        .stdout(process::Stdio::piped());
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped());
 
     debug_log!("Spawning {:#?}", llvm_cov_cmd);
     let child = llvm_cov_cmd
@@ -159,6 +212,18 @@ fn main() {
         .expect("Failed to spawn llvm-cov process");
 
     let output = child.wait_with_output().expect("llvm-cov process failed");
+
+    if !output.status.success() {
+        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("<non-utf8>");
+        if stderr.contains("no coverage data found") {
+            debug_log!("No coverage data found in binary; writing empty report");
+            fs::write(&coverage_output_file, "").unwrap();
+            fs::remove_file(&profdata_file).ok();
+            return;
+        }
+        eprintln!("llvm-cov export failed:\n{}", stderr);
+        process::exit(output.status.code().unwrap_or(1));
+    }
 
     // Parse the child process's stdout to a string now that it's complete.
     debug_log!("Parsing llvm-cov output");

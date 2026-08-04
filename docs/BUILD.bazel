@@ -11,6 +11,7 @@ bzl_library(
         "@bazel_tools//tools:bzl_srcs",
     ],
     deps = [
+        "@apple_support//lib:apple_support",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:selects",
         "@bazel_skylib//lib:structs",
@@ -27,7 +28,6 @@ bzl_library(
         "@rules_rust//rust:bzl_lib",
         "@rules_rust_bindgen//:bzl_lib",
         "@rules_rust_prost//:bzl_lib",
-        "@rules_rust_protobuf//:bzl_lib",
         "@rules_rust_wasm_bindgen//:bzl_lib",
     ],
 )
@@ -109,6 +109,7 @@ stardoc(
     symbol_names = [
         "rust_clippy",
         "rust_clippy_aspect",
+        "rust_clippy_test",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
@@ -134,26 +135,6 @@ stardoc(
     symbol_names = [
         "rustfmt_aspect",
         "rustfmt_test",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
-    deps = [":all_docs"],
-)
-
-stardoc(
-    name = "rust_repositories",
-    out = "src/rust_repositories.md",
-    input = "@rules_rust//rust:repositories.bzl",
-    symbol_names = [
-        "rules_rust_dependencies",
-        "rust_analyzer_toolchain_repository",
-        "rust_register_toolchains",
-        "rust_repositories",
-        "rust_repository_set",
-        "rust_stdlib_filegroup",
-        "rust_toolchain_repository_proxy",
-        "rust_toolchain_repository",
-        "rust_toolchain_tools_repository",
-        "rust_toolchain",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
@@ -217,13 +198,6 @@ stardoc(
 )
 
 stardoc(
-    name = "rust_protobuf",
-    out = "src/rust_protobuf.md",
-    input = "@rules_rust_protobuf//:defs.bzl",
-    deps = ["@rules_rust_protobuf//:bzl_lib"],
-)
-
-stardoc(
     name = "rust_prost",
     out = "src/rust_prost.md",
     input = "@rules_rust_prost//:defs.bzl",
@@ -276,9 +250,7 @@ mdbook(
         ":rust_fmt",
         ":rust_mdbook",
         ":rust_prost",
-        ":rust_protobuf",
         ":rust_pyo3",
-        ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",
         ":rust_unpretty",

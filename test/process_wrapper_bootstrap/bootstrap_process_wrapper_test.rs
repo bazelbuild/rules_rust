@@ -18,7 +18,7 @@ fn test_shebang() {
 
     let content = read_to_string(script).unwrap();
     assert!(
-        content.starts_with("#!/usr/bin/env bash"),
+        content.starts_with("#!/bin/sh"),
         "The shell script does not start with the expected shebang."
     )
 }

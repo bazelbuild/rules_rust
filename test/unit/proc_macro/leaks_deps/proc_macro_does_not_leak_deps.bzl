@@ -35,7 +35,8 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
         else:
             native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative.lib"]
     else:
-        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative"]
+        pic_suffix = ".pic" if ctx.var["COMPILATION_MODE"] == "opt" and toolchain.target_os not in ("darwin", "macos") else ""
+        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative{}".format(pic_suffix)]
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)

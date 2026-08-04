@@ -45,6 +45,7 @@ fn test_well_known_types() {
                 ..Mixin::default()
             }],
             syntax: Syntax::Proto3.into(),
+            ..Api::default()
         }),
         method: Some(Method {
             name: "method".to_string(),

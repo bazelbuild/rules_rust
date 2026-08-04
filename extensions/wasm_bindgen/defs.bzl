@@ -9,23 +9,17 @@ Bazel rules for generating wasm modules for Javascript using [wasm-bindgen][wb].
 
 ## Setup
 
-To begin using the `wasm-bindgen` rules, users can load the necessary dependencies
-in their workspace by adding the following to their `WORKSPACE.bazel` file.
+To begin using the `wasm-bindgen` rules, add the following to your `MODULE.bazel` file:
 
 ```python
-load("@rules_rust_wasm_bindgen//:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
-
-rust_wasm_bindgen_dependencies()
-
-rust_wasm_bindgen_register_toolchains()
+bazel_dep(name = "rules_rust_wasm_bindgen", version = "{SEE_RELEASE_NOTES}")
 ```
 
 This should enable users to start using the [rust_wasm_bindgen](#rust_wasm_bindgen)
 rule. However, it's common to want to control the version of `wasm-bindgen` in the
 workspace instead of relying on the one provided by `rules_rust`. In this case, users
-should avoid calling `rust_wasm_bindgen_register_toolchains` and instead use the
-[rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) rule to define their own
-toolchains to register in the workspace.
+should use the [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) rule to
+define their own toolchains to register.
 
 ## Interfacing with Javascript rules
 
@@ -45,7 +39,7 @@ load(
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 load(
-    "//private:wasm_bindgen_test.bzl",
+    "//private:wasm_bindgen_test_wrapper.bzl",
     _rust_wasm_bindgen_test = "rust_wasm_bindgen_test",
 )
 

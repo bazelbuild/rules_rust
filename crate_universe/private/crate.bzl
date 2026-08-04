@@ -96,6 +96,7 @@ def _annotation(
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
+        build_script_env_files = None,
         build_script_exec_properties = None,
         build_script_link_deps = None,
         build_script_proc_macro_deps = None,
@@ -103,6 +104,7 @@ def _annotation(
         build_script_rustc_env = None,
         build_script_toolchains = None,
         build_script_use_default_shell_env = None,
+        build_script_use_cc_toolchain = None,
         compile_data = None,
         compile_data_glob = None,
         compile_data_glob_excludes = None,
@@ -110,6 +112,7 @@ def _annotation(
         data = None,
         data_glob = None,
         deps = None,
+        link_deps = None,
         extra_aliased_targets = None,
         gen_binaries = None,
         disable_pipelining = False,
@@ -122,7 +125,8 @@ def _annotation(
         rustc_env_files = None,
         rustc_flags = None,
         shallow_since = None,
-        override_targets = None):
+        override_targets = None,
+        label_injections = None):
     """A collection of extra attributes and settings for a particular crate
 
     Args:
@@ -140,6 +144,8 @@ def _annotation(
             attribute.
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
         build_script_env (dict, optional): Additional environment variables to set when running the crate's `cargo_build_script` - sets that target's `build_script_env` attribute.
+        build_script_env_files (list, optional): A list of labels to set on a crate's
+            `cargo_build_script::build_script_env_files` attribute.
         build_script_exec_properties (dict, optional): Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.
         build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
@@ -149,6 +155,9 @@ def _annotation(
         build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
         build_script_use_default_shell_env (int, optional): Whether or not to include the default shell environment for the build
             script action.
+        build_script_use_cc_toolchain (int, optional): Whether or not to pull in the resolved `cc_toolchain` when
+            running the build script. Set to `1` to force enable, `0` to force disable, or leave unset to
+            defer to the `@rules_rust//cargo/settings:use_cc_toolchain` build setting (defaults to enabled).
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
             attribute.
@@ -159,6 +168,7 @@ def _annotation(
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
+        link_deps (list, optional): A list of labels to add to a crate's `rust_library::link_deps` attribute.
         extra_aliased_targets (dict, optional): A list of targets to add to the generated aliases in the root
             crate_universe repository.
         gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
@@ -182,6 +192,9 @@ def _annotation(
             instead of a crate registry. This flag optimizes fetching the source code.
         override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
             the parent repo to provide its own version of this dependency. Keys can be `proc-macro`, `custom-build`, `lib`, `bin`.
+        label_injections (dict, optional): A mapping of canonical repository prefix to apparent label, applied by the
+            `cargo-bazel` generator to every string in this annotation. Populated by `sanitize_label_injections` in
+            `crate_universe/private/common_utils.bzl`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
@@ -204,6 +217,7 @@ def _annotation(
             build_script_data_glob = build_script_data_glob,
             build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
+            build_script_env_files = _stringify_list(build_script_env_files),
             build_script_exec_properties = build_script_exec_properties,
             build_script_link_deps = build_script_link_deps,
             build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
@@ -211,6 +225,7 @@ def _annotation(
             build_script_rustc_env = build_script_rustc_env,
             build_script_toolchains = _stringify_list(build_script_toolchains),
             build_script_use_default_shell_env = build_script_use_default_shell_env,
+            build_script_use_cc_toolchain = build_script_use_cc_toolchain,
             compile_data = _stringify_list(compile_data),
             compile_data_glob = compile_data_glob,
             compile_data_glob_excludes = compile_data_glob_excludes,
@@ -218,6 +233,7 @@ def _annotation(
             data = _stringify_list(data),
             data_glob = data_glob,
             deps = _stringify_list(deps),
+            link_deps = _stringify_list(link_deps),
             extra_aliased_targets = extra_aliased_targets,
             gen_binaries = gen_binaries,
             disable_pipelining = disable_pipelining,
@@ -231,6 +247,7 @@ def _annotation(
             rustc_flags = rustc_flags,
             shallow_since = shallow_since,
             override_targets = override_targets,
+            label_injections = label_injections,
         ),
     ))
 

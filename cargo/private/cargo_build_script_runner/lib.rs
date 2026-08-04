@@ -17,6 +17,8 @@
 use std::io::{BufRead, BufReader, Read};
 use std::process::{Command, Output};
 
+pub const SUPPRESS_WARNINGS_ENV: &str = "RULES_RUST_SUPPRESS_BUILD_SCRIPT_WARNINGS";
+
 pub mod cargo_manifest_dir;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -46,13 +48,7 @@ pub enum BuildScriptOutput {
 }
 
 impl BuildScriptOutput {
-    /// Converts a line into a [BuildScriptOutput] enum.
-    ///
-    /// Examples
-    /// ```rust
-    /// assert_eq!(BuildScriptOutput::new("cargo::rustc-link-lib=lib"), Some(BuildScriptOutput::LinkLib("lib".to_owned())));
-    /// ```
-    fn new(line: &str) -> Option<BuildScriptOutput> {
+    fn new(line: &str, emit_warnings: bool) -> Option<BuildScriptOutput> {
         let split = line.splitn(2, '=').collect::<Vec<_>>();
         if split.len() <= 1 {
             // Not a cargo directive.
@@ -83,8 +79,24 @@ impl BuildScriptOutput {
                 None
             }
             "warning" => {
-                eprint!("Build Script Warning: {}", split[1]);
+                if emit_warnings {
+                    eprint!("Build Script Warning: {}", split[1]);
+                }
                 None
+            }
+            "metadata" => {
+                // cargo::metadata=KEY=VALUE is forwarded to dependents as
+                // DEP_<links>_<KEY>=<VALUE> by Cargo.
+                if let Some((key, value)) = param.split_once('=') {
+                    Some(BuildScriptOutput::DepEnv(format!(
+                        "{}={}",
+                        key.to_uppercase().replace('-', "_"),
+                        value.trim()
+                    )))
+                } else {
+                    // Keep legacy behavior for malformed metadata payloads.
+                    Some(BuildScriptOutput::DepEnv(format!("METADATA={}", param)))
+                }
             }
             "rustc-cdylib-link-arg" | "rustc-link-arg-bin" | "rustc-link-arg-bins" => {
                 // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
@@ -108,7 +120,10 @@ impl BuildScriptOutput {
     }
 
     /// Converts a [BufReader] into a vector of [BuildScriptOutput] enums.
-    fn outputs_from_reader<T: Read>(mut reader: BufReader<T>) -> Vec<BuildScriptOutput> {
+    fn outputs_from_reader<T: Read>(
+        mut reader: BufReader<T>,
+        emit_warnings: bool,
+    ) -> Vec<BuildScriptOutput> {
         let mut result = Vec::<BuildScriptOutput>::new();
         let mut buf = Vec::new();
         while reader
@@ -118,7 +133,7 @@ impl BuildScriptOutput {
         {
             // like cargo, ignore any lines that are not valid utf8
             if let Ok(line) = String::from_utf8(buf.clone()) {
-                if let Some(bso) = BuildScriptOutput::new(&line) {
+                if let Some(bso) = BuildScriptOutput::new(&line, emit_warnings) {
                     result.push(bso);
                 }
             }
@@ -130,13 +145,14 @@ impl BuildScriptOutput {
     /// Take a [Command], execute it and converts its input into a vector of [BuildScriptOutput]
     pub fn outputs_from_command(
         cmd: &mut Command,
+        emit_warnings: bool,
     ) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
         let child_output = cmd
             .output()
             .unwrap_or_else(|e| panic!("Unable to start command:\n{:#?}\n{:?}", cmd, e));
         if child_output.status.success() {
             let reader = BufReader::new(child_output.stdout.as_slice());
-            let output = Self::outputs_from_reader(reader);
+            let output = Self::outputs_from_reader(reader, emit_warnings);
             Ok((output, child_output))
         } else {
             Err(child_output)
@@ -144,13 +160,13 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a list of environment variables.
-    pub fn outputs_to_env(outputs: &[BuildScriptOutput], exec_root: &str) -> String {
+    pub fn outputs_to_env(outputs: &[BuildScriptOutput], exec_root: &str, out_dir: &str) -> String {
         outputs
             .iter()
             .filter_map(|x| {
                 if let BuildScriptOutput::Env(env) = x {
-                    Some(Self::escape_for_serializing(Self::redact_exec_root(
-                        env, exec_root,
+                    Some(Self::escape_for_serializing(Self::redact_paths(
+                        env, exec_root, out_dir,
                     )))
                 } else {
                     None
@@ -174,6 +190,13 @@ impl BuildScriptOutput {
                     Some(format!(
                         "{}{}",
                         prefix,
+                        // Do NOT redact the producer's out_dir to the generic
+                        // `${out_dir}` token here: DEP_* env vars are consumed
+                        // by *downstream* crates' build scripts, whose runner
+                        // only substitutes `${pwd}` and whose own out_dir
+                        // points to a different directory, so the token would
+                        // resolve incorrectly (or not at all). Only the exec
+                        // root is safe to substitute.
                         Self::escape_for_serializing(Self::redact_exec_root(env, exec_root))
                     ))
                 } else {
@@ -185,7 +208,11 @@ impl BuildScriptOutput {
     }
 
     /// Convert a vector of [BuildScriptOutput] into a flagfile.
-    pub fn outputs_to_flags(outputs: &[BuildScriptOutput], exec_root: &str) -> CompileAndLinkFlags {
+    pub fn outputs_to_flags(
+        outputs: &[BuildScriptOutput],
+        exec_root: &str,
+        out_dir: &str,
+    ) -> CompileAndLinkFlags {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
         let mut link_search_paths = Vec::new();
@@ -203,13 +230,44 @@ impl BuildScriptOutput {
 
         CompileAndLinkFlags {
             compile_flags: compile_flags.join("\n"),
-            link_flags: Self::redact_exec_root(&link_flags.join("\n"), exec_root),
-            link_search_paths: Self::redact_exec_root(&link_search_paths.join("\n"), exec_root),
+            link_flags: Self::redact_flags(&link_flags.join("\n"), exec_root, out_dir),
+            link_search_paths: Self::redact_flags(
+                &link_search_paths.join("\n"),
+                exec_root,
+                out_dir,
+            ),
         }
     }
 
     fn redact_exec_root(value: &str, exec_root: &str) -> String {
         value.replace(exec_root, "${pwd}")
+    }
+
+    /// Redact for env vars: uses the generic `${out_dir}` token, resolved
+    /// by `process_wrapper`'s `--out-dir` flag. Safe because env files are
+    /// only consumed by the target that directly owns the build script.
+    fn redact_paths(value: &str, exec_root: &str, out_dir: &str) -> String {
+        let with_pwd = Self::redact_exec_root(value, exec_root);
+        if out_dir.is_empty() {
+            with_pwd
+        } else {
+            with_pwd.replace(out_dir, "${out_dir}")
+        }
+    }
+
+    /// Redact for flags (link flags, link search paths): uses the full
+    /// `out_dir` relative path as the substitution key so each build
+    /// script gets a unique token. This avoids collisions when flag files
+    /// are consumed transitively by a target whose `--out-dir` points to
+    /// a different build script. The corresponding `--subst` entries are
+    /// added on the Starlark side for every transitive build info.
+    fn redact_flags(value: &str, exec_root: &str, out_dir: &str) -> String {
+        let with_pwd = Self::redact_exec_root(value, exec_root);
+        if out_dir.is_empty() {
+            with_pwd
+        } else {
+            with_pwd.replace(out_dir, &format!("${{{out_dir}}}"))
+        }
     }
 
     // The process-wrapper treats trailing backslashes as escapes for following newlines.
@@ -233,7 +291,7 @@ mod tests {
 
     fn from_read_buffer_to_env_and_flags_test_impl(buff: Cursor<&str>) {
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 13);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
@@ -273,11 +331,11 @@ mod tests {
             "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path", ""),
             "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path"),
+            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", ""),
             CompileAndLinkFlags {
                 // -Lblah was output as a rustc-flags, so even though it probably _should_ be a link
                 // flag, we don't treat it like one.
@@ -349,10 +407,10 @@ cargo::rustc-env=valid2=2
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 2);
         assert_eq!(
-            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path", ""),
             "valid1=1\nvalid2=2"
         );
     }
@@ -368,11 +426,111 @@ cargo:rustc-env=valid2=2
 ",
         );
         let reader = BufReader::new(buff);
-        let result = BuildScriptOutput::outputs_from_reader(reader);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
         assert_eq!(result.len(), 2);
         assert_eq!(
-            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path", ""),
             "valid1=1\nvalid2=2"
+        );
+    }
+
+    #[test]
+    fn warning_lines_never_appear_in_outputs() {
+        let lines = "cargo::warning=hello\ncargo::rustc-env=A=1\n";
+        for emit_warnings in [true, false] {
+            let result = BuildScriptOutput::outputs_from_reader(
+                BufReader::new(Cursor::new(lines)),
+                emit_warnings,
+            );
+            assert_eq!(result, vec![BuildScriptOutput::Env("A=1".to_owned())]);
+        }
+    }
+
+    #[test]
+    fn metadata_directive_maps_to_dep_env_key_value() {
+        let reader = BufReader::new(Cursor::new("cargo::metadata=version_1_10_0=1\n"));
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            result,
+            vec![BuildScriptOutput::DepEnv("VERSION_1_10_0=1".to_owned())]
+        );
+    }
+
+    /// Verify that a build-script-emitted env var that references the
+    /// `out_dir` (e.g. `cargo::rustc-env=FOO=$OUT_DIR/bar`) is rewritten
+    /// to use the `${out_dir}` substitution token. `process_wrapper`
+    /// substitutes the token at action execution time using the value
+    /// from its `--out-dir` arg, which is sourced from a `File`-typed
+    /// `Args` entry on the rules_rust side and therefore picks up Bazel
+    /// path mapping (`--experimental_output_paths=strip`) when the
+    /// consumer Rustc action advertises `supports-path-mapping`.
+    #[test]
+    fn out_dir_in_env_value_is_redacted_to_substitution_token() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-env=FOO=/abs/exec_root/bazel-out/cfg/bin/_bs.out_dir/op.rs
+cargo::rustc-env=BAR=/abs/exec_root/elsewhere/file.rs
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_env(
+                &result,
+                "/abs/exec_root",
+                "bazel-out/cfg/bin/_bs.out_dir",
+            ),
+            "FOO=${pwd}/${out_dir}/op.rs\nBAR=${pwd}/elsewhere/file.rs"
+        );
+    }
+
+    /// Verify that `DEP_*` values referencing the producer's `out_dir` keep
+    /// the real path (with only the exec root substituted). Dep env files are
+    /// consumed by *downstream* crates' build scripts, whose runner only
+    /// substitutes `${pwd}` and whose own `out_dir` points to a different
+    /// directory, so a `${out_dir}` token would be left unresolved (e.g.
+    /// libssh2-sys failing to find `zlib.h` from libz-sys's `DEP_Z_INCLUDE`).
+    #[test]
+    fn out_dir_in_dep_env_value_is_not_redacted_to_substitution_token() {
+        let buff = Cursor::new(
+            "
+cargo::include=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_dep_env(&result, "z", "/abs/exec_root"),
+            "DEP_Z_INCLUDE=${pwd}/bazel-out/cfg/bin/pkg/_bs.out_dir/include"
+        );
+    }
+
+    /// Link search paths use the full `out_dir` path as the substitution
+    /// key so each build script gets a unique token. This avoids
+    /// collisions when the flag file is consumed transitively by a target
+    /// whose `--out-dir` points to a different build script.
+    #[test]
+    fn out_dir_in_flags_uses_full_path_as_substitution_key() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir
+cargo::rustc-link-search=/abs/exec_root/other/path
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader, true);
+        assert_eq!(
+            BuildScriptOutput::outputs_to_flags(
+                &result,
+                "/abs/exec_root",
+                "bazel-out/cfg/bin/pkg/_bs.out_dir",
+            ),
+            CompileAndLinkFlags {
+                compile_flags: "".to_owned(),
+                link_flags: "".to_owned(),
+                link_search_paths:
+                    "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+            }
         );
     }
 }

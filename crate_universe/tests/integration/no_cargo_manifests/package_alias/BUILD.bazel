@@ -1,0 +1,4 @@
+alias(
+    name = "tower-new",
+    actual = "@no_cargo//:tower_new",  # ensures the package_alias works
+)

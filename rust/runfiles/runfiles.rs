@@ -31,7 +31,9 @@
 //! ```
 
 use std::collections::{BTreeMap, HashMap};
+#[cfg(not(target_family = "wasm"))]
 use std::env;
+#[cfg(not(target_family = "wasm"))]
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -196,49 +198,21 @@ pub struct Runfiles {
 }
 
 impl Runfiles {
-    /// Creates a manifest based Runfiles object when RUNFILES_MANIFEST_FILE
-    /// environment variable is present, with an non-empty value, or a directory
-    /// based Runfiles object otherwise.
-    pub fn create() -> Result<Self> {
-        let mode = match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-            Some(manifest_file) if !manifest_file.is_empty() => {
-                Self::create_manifest_based(Path::new(&manifest_file))?
-            }
-            _ => {
-                let dir = find_runfiles_dir()?;
-                let manifest_path = dir.join("MANIFEST");
-                match manifest_path.exists() {
-                    true => Self::create_manifest_based(&manifest_path)?,
-                    false => Mode::DirectoryBased(dir),
-                }
-            }
-        };
-
-        let repo_mapping = raw_rlocation(&mode, "_repo_mapping")
-            // This is the only place directory based runfiles might do file IO for a runfile. In the
-            // event that a `_repo_mapping` file does not exist, a default map should be created. Otherwise
-            // if the file is known to exist, parse it and raise errors for users should parsing fail.
-            .filter(|f| f.exists())
-            .map(parse_repo_mapping)
-            .transpose()?
-            .unwrap_or_default();
-
-        Ok(Runfiles { mode, repo_mapping })
+    /// Returns a new [`RunfilesBuilder`]. See its methods for the available
+    /// knobs; [`RunfilesBuilder::build`] with no source set is equivalent
+    /// to [`Runfiles::create`].
+    pub fn builder() -> RunfilesBuilder {
+        RunfilesBuilder::default()
     }
 
-    fn create_manifest_based(manifest_path: &Path) -> Result<Mode> {
-        let manifest_content = std::fs::read_to_string(manifest_path)
-            .map_err(RunfilesError::RunfilesManifestIoError)?;
-        let path_mapping = manifest_content
-            .lines()
-            .flat_map(|line| {
-                let pair = line
-                    .split_once(' ')
-                    .ok_or(RunfilesError::RunfilesManifestInvalidFormat)?;
-                Ok::<(PathBuf, PathBuf), RunfilesError>((pair.0.into(), pair.1.into()))
-            })
-            .collect::<HashMap<_, _>>();
-        Ok(Mode::ManifestBased(path_mapping))
+    /// Discovers a runfiles source from the process environment and loads
+    /// `_repo_mapping` if present. Equivalent to `Runfiles::builder().build()`.
+    ///
+    /// Discovery order: `RUNFILES_MANIFEST_FILE`, then a `RUNFILES_DIR` /
+    /// `TEST_SRCDIR` / `<argv0>.runfiles` directory (with an inner `MANIFEST`
+    /// preferred when present), then a `<argv0>.runfiles_manifest` sibling.
+    pub fn create() -> Result<Self> {
+        Self::builder().build()
     }
 
     /// Returns the runtime path of a runfile.
@@ -287,6 +261,145 @@ impl Runfiles {
     }
 }
 
+/// Builder for [`Runfiles`]. Construct via [`Runfiles::builder`].
+///
+/// Any unset knob falls back to the same behavior as [`Runfiles::create`]:
+/// [`build`](RunfilesBuilder::build) with no source runs process-based
+/// discovery, and with no `repo_mapping` reads `_repo_mapping` from the
+/// resolved runfiles tree if present.
+#[derive(Default)]
+pub struct RunfilesBuilder {
+    source: Option<Source>,
+    repo_mapping: Option<String>,
+}
+
+enum Source {
+    Directory(PathBuf),
+    Manifest(HashMap<PathBuf, PathBuf>),
+}
+
+impl RunfilesBuilder {
+    /// Use this directory as the runfiles root, skipping discovery. Suitable
+    /// for platforms without env vars, argv, or a discoverable filesystem
+    /// (notably `wasm32-unknown-unknown`, where the host locates the tree).
+    pub fn directory(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.source = Some(Source::Directory(dir.into()));
+        self
+    }
+
+    /// Use this in-memory manifest as the runfiles source, skipping discovery.
+    /// The content follows Bazel's `SourceManifestAction` format.
+    pub fn manifest(mut self, content: impl AsRef<str>) -> Self {
+        self.source = Some(Source::Manifest(parse_manifest(content.as_ref())));
+        self
+    }
+
+    /// Override the `_repo_mapping` file contents. When unset, [`build`](Self::build)
+    /// reads `_repo_mapping` from the resolved runfiles tree if it exists.
+    pub fn repo_mapping(mut self, mapping: impl Into<String>) -> Self {
+        self.repo_mapping = Some(mapping.into());
+        self
+    }
+
+    pub fn build(self) -> Result<Runfiles> {
+        let mode = match self.source {
+            Some(Source::Directory(dir)) => Mode::DirectoryBased(dir),
+            Some(Source::Manifest(map)) => Mode::ManifestBased(map),
+            None => discover_mode()?,
+        };
+
+        let repo_mapping = match self.repo_mapping {
+            Some(content) => parse_repo_mapping_str(&content)?,
+            // No override: try to load `_repo_mapping` from the resolved tree.
+            // `.exists()` returns false on platforms without a real fs (wasm),
+            // so this cleanly no-ops instead of erroring.
+            None => raw_rlocation(&mode, "_repo_mapping")
+                .filter(|f| f.exists())
+                .map(parse_repo_mapping)
+                .transpose()?
+                .unwrap_or_default(),
+        };
+
+        Ok(Runfiles { mode, repo_mapping })
+    }
+}
+
+fn discover_mode() -> Result<Mode> {
+    if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR).filter(|v| !v.is_empty()) {
+        return read_manifest_file(Path::new(&manifest_file));
+    }
+
+    // Bazel itself does not publish a normative spec for how a runfiles
+    // library resolves runfiles when none of the documented env vars
+    // (`RUNFILES_MANIFEST_FILE`, `RUNFILES_DIR`, `TEST_SRCDIR`) are set —
+    // see <https://bazel.build/concepts/runfiles> and
+    // <https://bazel.build/reference/test-encyclopedia>, which describe
+    // the env vars and the runfiles tree but leave discovery to each
+    // language's library. What Bazel *does* guarantee on the producer
+    // side is that every binary action writes a `<binary>.runfiles_manifest`
+    // text file next to the output, and that `bazel run` / `bazel test`
+    // additionally materialize a `<binary>.runfiles/` directory.
+    //
+    // Resolution order:
+    //   1. Whatever `find_runfiles_dir()` returns (env vars,
+    //      `<argv0>.runfiles/` sibling walk, or the `.runfiles` ancestor
+    //      walk). If it returns a directory containing a `MANIFEST`,
+    //      prefer that; otherwise use the dir.
+    //   2. Fall back to `<argv0>.runfiles_manifest` — the file Bazel
+    //      writes on every build action, even when no `bazel run`
+    //      invocation materialized the directory. This is what lets
+    //      editor-exec'd wrappers find their runfiles without an
+    //      out-of-band bootstrap step.
+    match find_runfiles_dir() {
+        Ok(dir) => {
+            let manifest_path = dir.join("MANIFEST");
+            if manifest_path.exists() {
+                read_manifest_file(&manifest_path)
+            } else {
+                Ok(Mode::DirectoryBased(dir))
+            }
+        }
+        Err(_) => match find_runfiles_manifest_from_argv0() {
+            Some(manifest_path) => read_manifest_file(&manifest_path),
+            None => Err(RunfilesError::RunfilesDirNotFound),
+        },
+    }
+}
+
+fn read_manifest_file(path: &Path) -> Result<Mode> {
+    let content = std::fs::read_to_string(path).map_err(RunfilesError::RunfilesManifestIoError)?;
+    Ok(Mode::ManifestBased(parse_manifest(&content)))
+}
+
+fn parse_manifest(content: &str) -> HashMap<PathBuf, PathBuf> {
+    content
+        .lines()
+        .flat_map(|line| {
+            let raw_pair = line
+                .strip_prefix(' ')
+                .unwrap_or(line)
+                .split_once(' ')
+                .ok_or(RunfilesError::RunfilesManifestInvalidFormat)?;
+            let pair = if line.starts_with(' ') {
+                // Unescape according to SourceManifestAction.java.
+                // https://github.com/bazelbuild/bazel/blob/3cb75e7bb181e3fb2b33707c172bf80431dc4712/src/main/java/com/google/devtools/build/lib/analysis/SourceManifestAction.java#L77-L84
+                (
+                    raw_pair
+                        .0
+                        .replace("\\s", " ")
+                        .replace("\\n", "\n")
+                        .replace("\\b", "\\")
+                        .into(),
+                    raw_pair.1.replace("\\n", "\n").replace("\\b", "\\").into(),
+                )
+            } else {
+                (raw_pair.0.into(), raw_pair.1.into())
+            };
+            Ok::<(PathBuf, PathBuf), RunfilesError>(pair)
+        })
+        .collect::<HashMap<_, _>>()
+}
+
 fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
     let path = path.as_ref();
     match mode {
@@ -296,13 +409,15 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
 }
 
 fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
+    let content = std::fs::read_to_string(path).map_err(RunfilesError::RepoMappingIoError)?;
+    parse_repo_mapping_str(&content)
+}
+
+fn parse_repo_mapping_str(content: &str) -> Result<RepoMapping> {
     let mut exact = HashMap::new();
     let mut prefixes = BTreeMap::new();
 
-    for line in std::fs::read_to_string(path)
-        .map_err(RunfilesError::RepoMappingIoError)?
-        .lines()
-    {
+    for line in content.lines() {
         let parts: Vec<&str> = line.splitn(3, ',').collect();
         if parts.len() < 3 {
             return Err(RunfilesError::RepoMappingInvalidFormat);
@@ -330,6 +445,58 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
     Ok(RepoMapping { exact, prefixes })
 }
 
+/// Locate a `<binary>.runfiles_manifest` file sitting next to `argv[0]`.
+///
+/// Bazel writes this manifest on every binary build action but only
+/// materializes the `<binary>.runfiles/` directory on `bazel run` /
+/// `bazel test`. When a binary is exec'd by path outside a `bazel run`
+/// invocation — e.g. an editor launching a wrapper directly — the
+/// manifest file is the only runfiles source of truth.
+///
+/// `argv[0]` is preferred over [`std::env::current_exe`] because Bazel
+/// materializes the runfiles next to the launcher symlink the user
+/// invoked, not next to the resolved executable target. The fallback to
+/// [`std::env::current_exe`] only applies when `argv[0]` is a bare
+/// basename (i.e. the binary was found via `$PATH` and has no directory
+/// component to use as the manifest's parent).
+///
+/// Returns `None` when no manifest file exists (in which case callers
+/// fall through to `find_runfiles_dir`).
+#[cfg(not(target_family = "wasm"))]
+fn find_runfiles_manifest_from_argv0() -> Option<PathBuf> {
+    let argv0 = std::env::args_os().next()?;
+    let argv0_path = PathBuf::from(&argv0);
+    if argv0_path
+        .parent()
+        .is_some_and(|p| !p.as_os_str().is_empty())
+    {
+        if let Some(manifest) = find_runfiles_manifest_for(&argv0_path) {
+            return Some(manifest);
+        }
+    }
+    // `argv[0]` was a bare basename (PATH lookup) or its sibling check
+    // came up empty; try the resolved executable path next.
+    let exe = std::env::current_exe().ok()?;
+    find_runfiles_manifest_for(&exe)
+}
+
+#[cfg(target_family = "wasm")]
+fn find_runfiles_manifest_from_argv0() -> Option<PathBuf> {
+    None
+}
+
+/// Inner helper for [`find_runfiles_manifest_from_argv0`] that takes an
+/// explicit binary path so it's testable without controlling argv[0].
+#[cfg(not(target_family = "wasm"))]
+fn find_runfiles_manifest_for(exe_path: &Path) -> Option<PathBuf> {
+    let dir = exe_path.parent()?;
+    let file_name = exe_path.file_name()?;
+    let mut manifest_name = file_name.to_owned();
+    manifest_name.push(".runfiles_manifest");
+    let manifest_path = dir.join(&manifest_name);
+    manifest_path.is_file().then_some(manifest_path)
+}
+
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
     if let Some(value) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
@@ -352,6 +519,11 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
         }
     }
 
+    find_runfiles_dir_from_argv0()
+}
+
+#[cfg(not(target_family = "wasm"))]
+fn find_runfiles_dir_from_argv0() -> Result<PathBuf> {
     // Consume the first argument (argv[0])
     let exec_path = std::env::args().next().expect("arg 0 was not set");
 
@@ -403,6 +575,12 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
         }
     }
 
+    Err(RunfilesError::RunfilesDirNotFound)
+}
+
+/// wasm has no `argv[0]` or symlink resolution to work with.
+#[cfg(target_family = "wasm")]
+fn find_runfiles_dir_from_argv0() -> Result<PathBuf> {
     Err(RunfilesError::RunfilesDirNotFound)
 }
 
@@ -634,6 +812,43 @@ mod test {
     }
 
     #[test]
+    fn test_manifest_parsing() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let manifest_file = temp_dir.join("test_manifest_parsing.manifest");
+        std::fs::write(
+            &manifest_file,
+            [
+                "a/b c/d\n",
+                " a\\sb/c\\nd\\be f g/h\\ni\\bj\n",
+                "empty-file \n",
+            ]
+            .join("\n"),
+        )
+        .unwrap();
+
+        with_mock_env(
+            [
+                (MANIFEST_FILE_ENV_VAR, Some(manifest_file.to_str().unwrap())),
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+                assert_eq!(r.rlocation("a/b"), Some(PathBuf::from("c/d")));
+                // Note that the `\s` is not escaped in the link, so not testing for it.
+                assert_eq!(
+                    r.rlocation("a b/c\nd\\e"),
+                    Some(PathBuf::from("f g/h\ni\\j"))
+                );
+                assert_eq!(r.rlocation("empty-file"), Some(PathBuf::from("")));
+                assert_eq!(r.rlocation("does/not/exist"), None);
+            },
+        );
+    }
+
+    #[test]
     fn test_manifest_based_can_read_data_from_runfiles() {
         let mut path_mapping = HashMap::new();
         path_mapping.insert("a/b".into(), "c/d".into());
@@ -643,6 +858,41 @@ mod test {
         };
 
         assert_eq!(r.rlocation("a/b"), Some(PathBuf::from("c/d")));
+    }
+
+    /// Direct unit test for the `<binary>.runfiles_manifest` discovery
+    /// step that backs the build-action-friendly path in
+    /// `Runfiles::create()`. Built as a pure helper so it doesn't depend
+    /// on controlling argv[0] (which Bazel's test runner sets in
+    /// environment-specific ways that vary across platforms and
+    /// invocations).
+    #[test]
+    fn find_runfiles_manifest_for_returns_sibling_when_present() {
+        let tmp =
+            PathBuf::from(std::env::var("TEST_TMPDIR").unwrap()).join("manifest_sibling_test");
+        std::fs::create_dir_all(&tmp).unwrap();
+        let bin = tmp.join("my_wrapper");
+        let manifest = tmp.join("my_wrapper.runfiles_manifest");
+        std::fs::write(&bin, "").unwrap();
+        std::fs::write(&manifest, "_repo_mapping /irrelevant\n").unwrap();
+        assert_eq!(find_runfiles_manifest_for(&bin), Some(manifest));
+
+        // Without the manifest file, returns None — caller falls through
+        // to the runfiles-directory walk.
+        let bin_no_manifest = tmp.join("other_wrapper");
+        std::fs::write(&bin_no_manifest, "").unwrap();
+        assert_eq!(find_runfiles_manifest_for(&bin_no_manifest), None);
+    }
+
+    /// Bare-basename argv[0] (i.e. binary found via `$PATH`) has no
+    /// directory component, so the sibling-manifest lookup has nothing
+    /// to look next to. `find_runfiles_manifest_from_argv0` falls back
+    /// to `std::env::current_exe` in that case; this test pins the
+    /// inner helper's behavior on bare paths.
+    #[test]
+    fn find_runfiles_manifest_for_returns_none_for_bare_basename() {
+        let bare = PathBuf::from("my_wrapper");
+        assert_eq!(find_runfiles_manifest_for(&bare), None);
     }
 
     #[test]
@@ -838,5 +1088,74 @@ mod test {
         let result = r.rlocation_from("aaa/path", "+other+repo");
         // Should fall back to the path as-is
         assert_eq!(result, Some(runfiles_dir.join("aaa/path")));
+    }
+
+    #[test]
+    fn test_builder_directory() {
+        let runfiles_dir = make_runfiles_like_dir("test_builder_directory");
+
+        let r = Runfiles::builder()
+            .directory(&runfiles_dir)
+            .build()
+            .unwrap();
+
+        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+        let mut file = File::open(&f)
+            .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer).unwrap();
+        assert_eq!("Example Text!", buffer);
+    }
+
+    /// Point the builder at a nonexistent root and confirm construction
+    /// still succeeds — the builder must not touch the fs when a source is set.
+    #[test]
+    fn test_builder_directory_does_not_touch_fs() {
+        let r = Runfiles::builder()
+            .directory("/definitely/does/not/exist/for/runfiles")
+            .build()
+            .unwrap();
+
+        let p = r.rlocation("some/workspace/data.txt").unwrap();
+        assert_eq!(
+            p,
+            PathBuf::from("/definitely/does/not/exist/for/runfiles/some/workspace/data.txt")
+        );
+    }
+
+    #[test]
+    fn test_builder_manifest() {
+        let r = Runfiles::builder()
+            .manifest("a/b c/d\n empty-file \n")
+            .build()
+            .unwrap();
+        assert_eq!(r.rlocation("a/b"), Some(PathBuf::from("c/d")));
+        assert_eq!(r.rlocation("empty-file"), Some(PathBuf::from("")));
+        assert_eq!(r.rlocation("does/not/exist"), None);
+    }
+
+    #[test]
+    fn test_builder_manifest_with_repo_mapping() {
+        let r = Runfiles::builder()
+            .manifest("canonical/x/y actual/x/y\n")
+            .repo_mapping("source_repo,apparent_name,canonical\n")
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            r.rlocation_from("apparent_name/x/y", "source_repo"),
+            Some(PathBuf::from("actual/x/y"))
+        );
+        assert_eq!(r.rlocation_from("apparent_name/x/y", "other_repo"), None);
+    }
+
+    #[test]
+    fn test_builder_rejects_invalid_repo_mapping() {
+        let err = Runfiles::builder()
+            .directory("/tmp")
+            .repo_mapping("not,enough")
+            .build()
+            .expect_err("Should have failed with an invalid repo mapping");
+        assert_eq!(err, RunfilesError::RepoMappingInvalidFormat);
     }
 }

@@ -230,11 +230,11 @@ def _cc_common_link_test_targets():
 
 _RUSTC_FLAGS_CODEGEN_UNITS = 2
 _SETTINGS_CODEGEN_UNITS = 3
-_PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS = 4
-_EXTRA_RUSTC_FLAG_CODEGEN_UNITS = 5
-_EXTRA_RUSTC_FLAGS_CODEGEN_UNITS = 6
-_EXTRA_EXEC_RUSTC_FLAG_CODEGEN_UNITS = 7
-_EXTRA_EXEC_RUSTC_FLAGS_CODEGEN_UNITS = 8
+_EXTRA_RUSTC_FLAG_CODEGEN_UNITS = 4
+_EXTRA_RUSTC_FLAGS_CODEGEN_UNITS = 5
+_EXTRA_EXEC_RUSTC_FLAG_CODEGEN_UNITS = 6
+_EXTRA_EXEC_RUSTC_FLAGS_CODEGEN_UNITS = 7
+_PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS = 8
 _TOOLCHAIN_EXTRA_RUSTC_FLAGS_CODEGEN_UNITS = 9
 _TOOLCHAIN_EXTRA_EXEC_RUSTC_FLAGS_CODEGEN_UNITS = 10
 _TOOLCHAIN_EXTRA_RUSTC_FLAGS_FOR_CRATE_TYPES = 11
@@ -262,12 +262,12 @@ codegen_units_test = analysistest.make(
         str(Label("@rules_rust//rust/settings:experimental_use_cc_common_link")): False,
         # Set `-Ccodegen-units` in various different ways.
         str(Label("@rules_rust//rust/settings:codegen_units")): _SETTINGS_CODEGEN_UNITS,
-        # Empty prefix (before the `@`) means the flag is applied to all crates.
-        str(Label("@rules_rust//rust/settings:experimental_per_crate_rustc_flag")): ["@-Ccodegen-units=%s" % _PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS],
         str(Label("@rules_rust//rust/settings:extra_rustc_flag")): ["-Ccodegen-units=%s" % _EXTRA_RUSTC_FLAG_CODEGEN_UNITS],
         str(Label("@rules_rust//rust/settings:extra_rustc_flags")): ["-Ccodegen-units=%s" % _EXTRA_RUSTC_FLAGS_CODEGEN_UNITS],
         str(Label("@rules_rust//rust/settings:extra_exec_rustc_flag")): ["-Ccodegen-units=%s" % _EXTRA_EXEC_RUSTC_FLAG_CODEGEN_UNITS],
         str(Label("@rules_rust//rust/settings:extra_exec_rustc_flags")): ["-Ccodegen-units=%s" % _EXTRA_EXEC_RUSTC_FLAGS_CODEGEN_UNITS],
+        # Empty prefix (before the `@`) means the flag is applied to all crates.
+        str(Label("@rules_rust//rust/settings:per_crate_rustc_flag")): ["@-Ccodegen-units=%s" % _PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS],
         "//command_line_option:extra_toolchains": ["//unit:codegen_units_toolchain"],
     },
     attrs = {"expected_codegen_units": attr.int_list()},
@@ -364,9 +364,9 @@ def _codegen_units_test_targets():
         expected_codegen_units = [
             _RUSTC_FLAGS_CODEGEN_UNITS,
             _SETTINGS_CODEGEN_UNITS,
-            _PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS,
             _EXTRA_RUSTC_FLAG_CODEGEN_UNITS,
             _EXTRA_RUSTC_FLAGS_CODEGEN_UNITS,
+            _PER_CRATE_RUSTC_FLAG_CODEGEN_UNITS,
             _TOOLCHAIN_EXTRA_RUSTC_FLAGS_CODEGEN_UNITS,
             _TOOLCHAIN_EXTRA_RUSTC_FLAGS_FOR_CRATE_TYPES,
         ],

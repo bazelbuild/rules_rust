@@ -1,0 +1,44 @@
+module(
+    name = "cu_test_remove_internal_deps",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "bazel_lib", version = "3.0.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate_strip = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_strip.from_cargo(
+    name = "crate_index_remove_internal_deps",
+    cargo_lockfile = "//:Cargo.bazel.lock",
+    manifests = [
+        "//:Cargo.toml",
+    ],
+    strip_internal_dependencies_from_cargo_lockfile = True,
+)
+use_repo(
+    crate_strip,
+    "crate_index_remove_internal_deps",
+)
+
+crate_no_strip = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_no_strip.from_cargo(
+    name = "crate_index_no_strip_internal_deps",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+    ],
+)
+use_repo(
+    crate_no_strip,
+    "crate_index_no_strip_internal_deps",
+)

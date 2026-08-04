@@ -24,9 +24,10 @@ CrateInfo = provider(
         ),
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
-        "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
-        "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
+        "data": "depset[File]: Runtime data associated with the target. Not passed to `Rustc` actions, except for `proc-macro` targets where `Rustc` is the runtime.",
+        "deps": "depset[DepVariantInfo]: This crate's direct (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
+        "extra_named_deps": "depset[AliasableDepInfo]: Extra named dependencies.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
@@ -36,6 +37,7 @@ CrateInfo = provider(
         "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        "root_path": "str: If root is a directory, path to the source entrypoint under it.",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
@@ -136,6 +138,7 @@ StdLibInfo = provider(
         "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
+        "has_profiler_builtins": "bool: Whether the sysroot contains the profiler_builtins rlib, required for -Cinstrument-coverage.",
         "memchr_files": "Depset[File]: `.a` files associated with the `memchr` module.",
         "panic_files": "Depset[File]: `.a` files associated with `panic_unwind` and `panic_abort`.",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
@@ -227,4 +230,9 @@ AllocatorLibrariesImplInfo = provider(
     fields = {
         "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
     },
+)
+
+UnstableRustFeaturesInfo = provider(
+    doc = "UnstableRustFeaturesInfo contains a function mapping build targets to unstable features approved for use. Only works on nightly toolchains. May return the special value \"__all__\" to allow all unstable features for the target.",
+    fields = {"unstable_rust_features_config": "Callable[[Label], List[string]] Returns a list of unstable features approved for use for the given build target."},
 )

@@ -18,7 +18,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load(":compat.bzl", "abs")
 load(
     ":providers.bzl",
     "AlwaysEnableMetadataOutputGroupsInfo",
@@ -287,6 +286,26 @@ def _expand_location_for_build_script_runner(ctx, v, data, known_variables):
         if directive in v:
             # build script runner will expand pwd to execroot for us
             v = v.replace(directive, "$${pwd}/" + directive)
+
+    for directive in ("$(execpaths ", "$(locations "):
+        if directive in v:
+            # Plural forms expand to multiple space-separated paths, so we must
+            # expand each macro individually and prefix every resulting path.
+            # Split on the opening directive; each subsequent part begins with
+            # "label)rest", letting us reconstruct and expand one macro at a time.
+            parts = v.split(directive)
+            result = parts[0]
+            for part in parts[1:]:
+                end = part.find(")")
+                if end == -1:
+                    result += directive + part
+                    continue
+                macro = directive + part[:end] + ")"
+                expanded = ctx.expand_location(macro, data)
+                prefixed = " ".join(["$${pwd}/" + p for p in expanded.split(" ")])
+                result += prefixed + part[end + 1:]
+            v = result
+
     return ctx.expand_make_variables(
         v,
         ctx.expand_location(v, data),
@@ -296,11 +315,14 @@ def _expand_location_for_build_script_runner(ctx, v, data, known_variables):
 def expand_dict_value_locations(ctx, env, data, known_variables):
     """Performs location-macro expansion on string values.
 
-    $(execroot ...) and $(location ...) are prefixed with ${pwd},
-    which process_wrapper and build_script_runner will expand at run time
-    to the absolute path. This is necessary because include_str!() is relative
-    to the currently compiled file, and build scripts run relative to the
-    manifest dir, so we can not use execroot-relative paths.
+    $(execpath ...), $(execpaths ...), $(location ...) and $(locations ...) are
+    prefixed with ${pwd}, which process_wrapper and build_script_runner will
+    expand at run time to the absolute path.
+    This is necessary because include_str!() is relative to the currently
+    compiled file, and build scripts run relative to the manifest dir, so we
+    can not use execroot-relative paths.
+    Plural forms (execpaths/locations) expand to multiple space-separated paths;
+    each path receives its own ${pwd}/ prefix.
 
     $(rootpath ...) is unmodified, and is useful for passing in paths via
     rustc_env that are encoded in the binary with env!(), but utilized at
@@ -531,23 +553,22 @@ def transform_deps(deps):
         crate_group_info = dep[CrateGroupInfo] if CrateGroupInfo in dep else None,
     ) for dep in deps]
 
-def get_import_macro_deps(ctx):
-    """Returns a list of targets to be added to proc_macro_deps.
+def transform_link_deps(link_deps):
+    """Transforms a [Target] into [DepVariantInfo] for native symbol linkage.
 
     Args:
-        ctx (struct): the ctx of the current target.
+        link_deps (list of Targets): Dependencies coming from ctx.attr.link_deps
 
     Returns:
-        list of Targets. Either empty (if the fake import macro implementation
-        is being used), or a singleton list with the real implementation.
+        list of DepVariantInfos with only CcInfo populated.
     """
-    if not hasattr(ctx.attr, "_import_macro_dep"):
-        return []
-
-    if ctx.attr._import_macro_dep.label.name == "fake_import_macro_impl":
-        return []
-
-    return [ctx.attr._import_macro_dep]
+    return [DepVariantInfo(
+        crate_info = None,
+        dep_info = None,
+        build_info = None,
+        cc_info = dep[CcInfo] if CcInfo in dep else None,
+        crate_group_info = None,
+    ) for dep in link_deps]
 
 def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
@@ -980,3 +1001,32 @@ def is_std_dylib(file):
         # for windows
         basename.startswith("std-") and basename.endswith(".dll")
     )
+
+def matches_prefix_filter(label, crate_root_path, pattern):
+    """Determines if a target matches a prefix filter pattern.
+
+    Matching works by comparing against the target's label or its execution path.
+
+    Args:
+        label (Label): The target's label.
+        crate_root_path (str): The target's execution path (e.g. crate root path).
+        pattern (str): The prefix pattern to match against.
+
+    Returns:
+        bool: True if the target matches the pattern, False otherwise.
+    """
+    if not pattern:
+        return True
+
+    label_string = str(label)
+    if label_string.startswith("@//"):
+        target_label = label_string[1:]
+    elif label_string.startswith(
+        # buildifier: disable=canonical-repository
+        "@@//",
+    ):
+        target_label = label_string[2:]
+    else:
+        target_label = label_string
+
+    return target_label.startswith(pattern) or crate_root_path.startswith(pattern)

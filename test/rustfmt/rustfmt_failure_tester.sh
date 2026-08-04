@@ -35,7 +35,10 @@ function check_build_result() {
 
 function test_all_and_apply() {
   local -r TEST_OK=0
-  local -r TEST_FAILED=3
+  # `rustfmt_test` runs `rustfmt --check` at build time via the
+  # `rustfmt_aspect` requires-chain. A formatting failure fails the build
+  # (exit 1), not the test binary (which would have been exit 3 under a test).
+  local -r TEST_FAILED=1
   local -r VARIANTS=(rust_binary rust_library rust_shared_library rust_static_library)
 
   temp_dir="$(mktemp -d -t ci-XXXXXXXXXX)"
@@ -64,8 +67,6 @@ rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 EOF
-  # See github.com/bazelbuild/rules_rust/issues/2317.
-  echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
 
   if [[ -f "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" ]]; then
     cp "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" "${new_workspace}/.bazelversion"

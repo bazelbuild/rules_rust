@@ -1,5 +1,5 @@
     maybe(
-        new_git_repository,
+        git_repository,
         name = "{{ crate_repository(name = crate.name, version = crate.version) }}",
     {%- for type, commitish in attrs.commitish %}
     {%- if type in ["Rev"] %}

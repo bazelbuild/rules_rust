@@ -2,13 +2,13 @@
 
 module(
     name = "rules_rust_wasm_bindgen",
-    version = "0.69.0",
+    version = "0.73.0",
 )
 
-bazel_dep(name = "rules_rust", version = "0.69.0")
+bazel_dep(name = "rules_rust", version = "0.73.0")
 bazel_dep(name = "bazel_features", version = "1.32.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "apple_support", version = "1.24.1")
 
@@ -46,16 +46,14 @@ use_repo(
     "geckodriver_win64",
     "rrwbd",
     "rrwbd__serde_json-1.0.145",
-    "rrwbd__wasm-bindgen-0.2.105",
-    "rrwbd__wasm-bindgen-cli-0.2.105",
-    "rrwbd__wasm-bindgen-test-0.3.55",
+    "rrwbd__wasm-bindgen-0.2.121",
+    "rrwbd__wasm-bindgen-cli-0.2.121",
+    "rrwbd__wasm-bindgen-test-0.3.71",
     "safaridriver",
 )
 
 register_toolchains(
     "//:default_wasm_bindgen_toolchain",
-    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain",
-    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm64_toolchain",
 )
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)

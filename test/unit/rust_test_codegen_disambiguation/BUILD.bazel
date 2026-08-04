@@ -1,0 +1,4 @@
+load(":codegen_disambiguation_test.bzl", "codegen_disambiguation_test_suite")
+
+############################ UNIT TESTS #############################
+codegen_disambiguation_test_suite(name = "codegen_disambiguation_test_suite")

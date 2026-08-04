@@ -1,0 +1,8 @@
+[book]
+authors = ["Plugin Test"]
+language = "en"
+src = "src"
+title = "Plugin Test Book"
+
+[preprocessor.test-preprocessor]
+command = "mdbook-test-preprocessor"
