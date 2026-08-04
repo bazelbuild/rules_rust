@@ -1,0 +1,43 @@
+name: Release source archive
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: source-release-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          commit="${GITHUB_SHA}"
+          tag="source-${commit}"
+          archive="rules_rust-${commit}.tar.gz"
+
+          git archive --format=tar --prefix="rules_rust-${commit}/" "${commit}" |
+            gzip -n > "${archive}"
+
+          if gh release view "${tag}" > /dev/null 2>&1; then
+            echo "Source release ${tag} already exists."
+            exit 0
+          fi
+
+          gh release create "${tag}" "${archive}" \
+            --target "${commit}" \
+            --latest=false \
+            --title "rules_rust source ${commit}" \
+            --notes "Source archive for rules_rust commit ${commit}."
