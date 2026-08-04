@@ -185,8 +185,8 @@ _FISSION_COMPATIBILITY = ["@platforms//os:linux"] + select({
 })
 
 # `-Zsplit-dwarf-out-dir` requires nightly. When testing split debug info,
-# stable and beta should error out unless `skip_fission_for_rust` is set.
-not_nightly_fission_test = analysistest.make(
+# `skip_fission_for_rust` skips fission on both nightly and non-nightly toolchains.
+skip_fission_test = analysistest.make(
     _no_fission_test_impl,
     config_settings = {
         "//command_line_option:features": ["per_object_debug_info"],
@@ -326,10 +326,15 @@ def debug_info_analysis_test_suite(name):
         name = "lib_no_fission_test",
         target_under_test = ":mylib",
     )
-    not_nightly_fission_test(
-        name = "lib_not_nightly_fission_test",
+    skip_fission_test(
+        name = "lib_skip_fission_test",
         target_under_test = ":mylib",
         target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
+    )
+    skip_fission_test(
+        name = "lib_skip_fission_nightly_test",
+        target_under_test = ":mylib",
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     not_nightly_fission_error_test(
         name = "lib_not_nightly_fission_error_test",
@@ -346,10 +351,15 @@ def debug_info_analysis_test_suite(name):
         name = "bin_no_fission_test",
         target_under_test = ":myrustbin",
     )
-    not_nightly_fission_test(
-        name = "bin_not_nightly_fission_test",
+    skip_fission_test(
+        name = "bin_skip_fission_test",
         target_under_test = ":myrustbin",
         target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
+    )
+    skip_fission_test(
+        name = "bin_skip_fission_nightly_test",
+        target_under_test = ":myrustbin",
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     not_nightly_fission_error_test(
         name = "bin_not_nightly_fission_error_test",
@@ -366,10 +376,15 @@ def debug_info_analysis_test_suite(name):
         name = "test_no_fission_test",
         target_under_test = ":myrusttest",
     )
-    not_nightly_fission_test(
-        name = "test_not_nightly_fission_test",
+    skip_fission_test(
+        name = "test_skip_fission_test",
         target_under_test = ":myrusttest",
         target_compatible_with = _NOT_NIGHTLY_COMPATIBILITY,
+    )
+    skip_fission_test(
+        name = "test_skip_fission_nightly_test",
+        target_under_test = ":myrusttest",
+        target_compatible_with = _FISSION_COMPATIBILITY,
     )
     not_nightly_fission_error_test(
         name = "test_not_nightly_fission_error_test",
@@ -385,15 +400,18 @@ def debug_info_analysis_test_suite(name):
             ":test_dsym_test",
             ":lib_fission_test",
             ":lib_no_fission_test",
-            ":lib_not_nightly_fission_test",
+            ":lib_skip_fission_test",
+            ":lib_skip_fission_nightly_test",
             ":lib_not_nightly_fission_error_test",
             ":bin_fission_test",
             ":bin_no_fission_test",
-            ":bin_not_nightly_fission_test",
+            ":bin_skip_fission_test",
+            ":bin_skip_fission_nightly_test",
             ":bin_not_nightly_fission_error_test",
             ":test_fission_test",
             ":test_no_fission_test",
-            ":test_not_nightly_fission_test",
+            ":test_skip_fission_test",
+            ":test_skip_fission_nightly_test",
             ":test_not_nightly_fission_error_test",
         ] + [
             ":lib_pdb_test_{}".format(compilation_mode)

@@ -1784,11 +1784,10 @@ def rustc_compile_action(
         cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and
         ctx.fragments.cpp.fission_active_for_current_compilation_mode()
     ):
-        # `-Zsplit-dwarf-out-dir` is only available on nightly.
-        if toolchain.channel == "nightly":
-            use_split_debuginfo = True
-        elif toolchain._skip_fission_for_rust:
+        if toolchain._skip_fission_for_rust:
             use_split_debuginfo = False
+        elif toolchain.channel == "nightly":
+            use_split_debuginfo = True
         else:
             fail(
                 "Split debug info (fission) was requested, but `-Zsplit-dwarf-out-dir` requires a nightly Rust toolchain " +
