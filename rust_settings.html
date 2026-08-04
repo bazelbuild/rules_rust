@@ -445,6 +445,12 @@ features by default, with the possibility to explicitly re-enable them selective
 </pre>
 <p>This setting is used by the rustfmt rules. See https://bazelbuild.github.io/rules_rust/rust_fmt.html</p>
 <p>Note that this setting is actually called <code>rustfmt.toml</code>.</p>
+<p><a id="skip_fission_for_rust"></a></p>
+<h2 id="skip_fission_for_rust"><a class="header" href="#skip_fission_for_rust">skip_fission_for_rust</a></h2>
+<pre>
+--@rules_rust//rust/settings:skip_fission_for_rust
+</pre>
+<p>A flag to skip split debug info (Fission) for Rust objects when using a non-nightly toolchain.</p>
 <p><a id="third_party_dir"></a></p>
 <h2 id="third_party_dir"><a class="header" href="#third_party_dir">third_party_dir</a></h2>
 <pre>
