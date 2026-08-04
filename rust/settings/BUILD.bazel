@@ -36,6 +36,7 @@ load(
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
     "rustfmt_toml",
+    "skip_fission_for_rust",
     "third_party_dir",
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
@@ -140,3 +141,5 @@ toolchain_linker_preference()
 unpretty()
 
 zself_profile_events()
+
+skip_fission_for_rust()

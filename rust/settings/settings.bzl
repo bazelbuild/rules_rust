@@ -584,3 +584,11 @@ def zself_profile_events(name = "zself_profile_events"):
         name = name,
         build_setting_default = [],
     )
+
+def skip_fission_for_rust():
+    """A flag to skip split debug info (Fission) for Rust objects when using a non-nightly toolchain.
+    """
+    bool_flag(
+        name = "skip_fission_for_rust",
+        build_setting_default = False,
+    )
