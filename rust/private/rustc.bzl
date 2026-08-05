@@ -925,6 +925,22 @@ def _args_map_bin_dir(file):
     """
     return "/".join(file.path.split("/", 3)[:3])
 
+def dlltool_path_from_linker_path(linker_path):
+    """Derives the path to `dlltool`, which MinGW ships next to the linker.
+
+    Args:
+        linker_path (str): Path to the cc_toolchain's linker executable.
+
+    Returns:
+        str: The derived path, or None if `linker_path` has no directory component.
+    """
+    sep = max(linker_path.rfind("/"), linker_path.rfind("\\"))
+    if sep < 0:
+        return None
+
+    suffix = linker_path[-4:].lower()
+    return "{}dlltool{}".format(linker_path[:sep + 1], suffix if suffix == ".exe" else "")
+
 def construct_arguments(
         *,
         ctx,
@@ -1290,6 +1306,17 @@ def construct_arguments(
     # Use linker_type to determine whether to use direct or indirect linker invocation
     # If linker_type is not explicitly set, infer from which linker is actually being used
     ld_is_direct_driver = False
+
+    # gcc runs dlltool internally when acting as the linker, but rustc drives the linker directly so
+    # it needs dlltool's path: apply outside the link-emit gate below since rlib compiles need it too.
+    if cc_toolchain and toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
+        linker_path = cc_common.get_tool_for_action(
+            feature_configuration = feature_configuration,
+            action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        )
+        dlltool_path = dlltool_path_from_linker_path(linker_path)
+        if dlltool_path:
+            rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
