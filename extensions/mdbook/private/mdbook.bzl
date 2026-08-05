@@ -23,6 +23,14 @@ def _map_inputs(file):
 def _mdbook_impl(ctx):
     output = ctx.actions.declare_directory(ctx.label.name)
 
+    book = ctx.file.book
+    if book == None:
+        book = ctx.actions.declare_file("{}.book.toml".format(ctx.label.name))
+        ctx.actions.write(
+            output = book,
+            content = "",
+        )
+
     toolchain = ctx.toolchains["@rules_rust_mdbook//:toolchain_type"]
 
     plugin_paths = depset([
@@ -33,7 +41,7 @@ def _mdbook_impl(ctx):
     path_sep = ";" if is_windows else ":"
     plugin_path = path_sep.join(plugin_paths.to_list())
 
-    inputs = depset([ctx.file.book] + ctx.files.srcs)
+    inputs = depset([book] + ctx.files.srcs)
 
     inputs_map_args = ctx.actions.args()
     inputs_map_args.use_param_file("%s", use_always = True)
@@ -45,7 +53,7 @@ def _mdbook_impl(ctx):
     args.add(output.path)
     args.add(toolchain.mdbook)
     args.add("build")
-    args.add("${{pwd}}/{}".format(ctx.file.book.dirname))
+    args.add("${{pwd}}/{}".format(book.dirname))
 
     ctx.actions.run(
         mnemonic = "MdBookBuild",
@@ -64,7 +72,7 @@ def _mdbook_impl(ctx):
         ),
         MdBookInfo(
             srcs = depset(ctx.files.srcs),
-            config = ctx.file.book,
+            config = book,
             plugins = depset(ctx.files.plugins),
         ),
     ]
@@ -74,9 +82,11 @@ mdbook = rule(
     doc = "Rules to create book from markdown files using `mdBook`.",
     attrs = {
         "book": attr.label(
-            doc = "The `book.toml` file.",
+            doc = (
+                "The optional `book.toml` file. An empty default configuration is "
+                "used when omitted."
+            ),
             allow_single_file = ["book.toml"],
-            mandatory = True,
         ),
         "plugins": attr.label_list(
             doc = (

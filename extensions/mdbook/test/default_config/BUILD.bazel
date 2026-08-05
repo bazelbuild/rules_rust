@@ -1,0 +1,12 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//:defs.bzl", "mdbook")
+
+mdbook(
+    name = "default_config",
+    srcs = glob(["src/**/*.md"]),
+)
+
+build_test(
+    name = "default_config_test",
+    targets = [":default_config"],
+)
