@@ -618,6 +618,67 @@ pub(crate) fn write_manifest(path: &Path, manifest: &cargo_toml::Manifest) -> Re
     fs::write(path, content).context(format!("Failed to write manifest to {}", path.display()))
 }
 
+/// Returns whether `basename` is ignored by `pattern`, per the same glob-lite
+/// syntax as `IGNORE_LIST` (an exact match, or a `prefix*` match).
+fn ignore_pattern_matches(pattern: &str, basename: &str) -> bool {
+    match pattern.strip_suffix('*') {
+        Some(prefix) => basename.starts_with(prefix),
+        None => pattern == basename,
+    }
+}
+
+/// Parses `.bazelignore` contents into a list of ignored top-level names.
+/// Blank lines, comments (`#`), and a trailing path separator are ignored.
+fn parse_bazelignore(content: &str) -> Vec<String> {
+    content
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(|line| line.trim_end_matches('/').to_string())
+        .collect()
+}
+
+/// Parses `ignore_directories(...)` call(s) out of a `REPO.bazel` file's contents,
+/// returning the string arguments passed to it. This is a light-weight scan rather
+/// than a full Starlark parse, but is sufficient for the simple literal argument
+/// lists `ignore_directories` is documented to take.
+fn parse_repo_bazel_ignore_directories(content: &str) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut rest = content;
+    while let Some(call_start) = rest.find("ignore_directories") {
+        rest = &rest[call_start + "ignore_directories".len()..];
+        let Some(open) = rest.find('(') else { break };
+        let Some(close) = rest[open..].find(')') else {
+            break;
+        };
+        let args = &rest[open + 1..open + close];
+        for arg in args.split(',') {
+            let arg = arg.trim().trim_matches(|c| c == '"' || c == '\'');
+            if !arg.is_empty() {
+                result.push(arg.trim_end_matches('/').to_string());
+            }
+        }
+        rest = &rest[open + close..];
+    }
+    result
+}
+
+/// Collects the additional entries `source` itself asks Bazel to ignore, via a
+/// `.bazelignore` file and/or `REPO.bazel`'s `ignore_directories()`, if present.
+fn bazel_ignored_entries(source: &Path) -> Vec<String> {
+    let mut entries = Vec::new();
+
+    if let Ok(content) = fs::read_to_string(source.join(".bazelignore")) {
+        entries.extend(parse_bazelignore(&content));
+    }
+
+    if let Ok(content) = fs::read_to_string(source.join("REPO.bazel")) {
+        entries.extend(parse_repo_bazel_ignore_directories(&content));
+    }
+
+    entries
+}
+
 /// Symlinks the root contents of a source directory into a destination directory
 pub(crate) fn symlink_roots(
     source: &Path,
@@ -636,24 +697,25 @@ pub(crate) fn symlink_roots(
 
     fs::create_dir_all(dest)?;
 
+    // In addition to the static `ignore_list`, honor whatever `source` itself
+    // tells Bazel to ignore via `.bazelignore`/`REPO.bazel`.
+    let bazel_ignored = bazel_ignored_entries(source);
+
     // Link each directory entry from the source dir to the dest
     for entry in (source.read_dir()?).flatten() {
         let basename = entry.file_name();
 
         // Ignore certain directories that may lead to confusion
         if let Some(base_str) = basename.to_str() {
-            if let Some(list) = ignore_list {
-                for item in list.iter() {
-                    // Handle optional glob patterns here. This allows us to ignore `bazel-*` patterns.
-                    if item.ends_with('*') && base_str.starts_with(item.trim_end_matches('*')) {
-                        continue;
-                    }
-
-                    // Finally, simply compare the string
-                    if *item == base_str {
-                        continue;
-                    }
-                }
+            let statically_ignored = ignore_list
+                .unwrap_or_default()
+                .iter()
+                .any(|item| ignore_pattern_matches(item, base_str));
+            let bazel_ignored = bazel_ignored
+                .iter()
+                .any(|item| ignore_pattern_matches(item, base_str));
+            if statically_ignored || bazel_ignored {
+                continue;
             }
         }
 
@@ -1697,6 +1759,140 @@ mod test {
         assert!(err_str.starts_with("A Cargo config file was found in a parent directory"));
         assert!(err_str.contains(&format!("Workspace = {}", workspace_root)));
         assert!(err_str.contains(&format!("Cargo config = {}", external_config)));
+    }
+
+    #[test]
+    fn symlink_roots_respects_ignore_list() {
+        let source_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // Entries that `IGNORE_LIST` should cause `symlink_roots` to skip.
+        fs::create_dir_all(source_dir.as_ref().join(".git")).unwrap();
+        fs::write(
+            source_dir.as_ref().join(".git").join("HEAD"),
+            "ref: refs/heads/main",
+        )
+        .unwrap();
+        fs::create_dir_all(source_dir.as_ref().join("bazel-out")).unwrap();
+        fs::create_dir_all(source_dir.as_ref().join(".svn")).unwrap();
+
+        // Entries that should still be linked.
+        fs::create_dir_all(source_dir.as_ref().join("src")).unwrap();
+        fs::write(source_dir.as_ref().join("Cargo.toml"), "[package]").unwrap();
+
+        symlink_roots(source_dir.as_ref(), dest_dir.as_ref(), Some(IGNORE_LIST)).unwrap();
+
+        assert!(
+            !dest_dir.as_ref().join(".git").exists(),
+            "`.git` is in `IGNORE_LIST` and should not have been symlinked"
+        );
+        assert!(
+            !dest_dir.as_ref().join("bazel-out").exists(),
+            "`bazel-out` matches the `bazel-*` glob in `IGNORE_LIST` and should not have been symlinked"
+        );
+        assert!(
+            !dest_dir.as_ref().join(".svn").exists(),
+            "`.svn` is in `IGNORE_LIST` and should not have been symlinked"
+        );
+        assert!(dest_dir.as_ref().join("src").exists());
+        assert!(dest_dir.as_ref().join("Cargo.toml").exists());
+    }
+
+    #[test]
+    fn symlink_roots_honors_bazelignore_file() {
+        let source_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // A `.bazelignore` file, colocated with the directory being spliced, listing
+        // directories that Bazel itself ignores. Comments, blank lines, and trailing
+        // slashes should all be tolerated.
+        fs::write(
+            source_dir.as_ref().join(".bazelignore"),
+            textwrap::dedent(
+                r#"
+                # a comment
+                generated
+
+                vendor/
+                "#,
+            ),
+        )
+        .unwrap();
+
+        fs::create_dir_all(source_dir.as_ref().join("generated")).unwrap();
+        fs::create_dir_all(source_dir.as_ref().join("vendor")).unwrap();
+        fs::create_dir_all(source_dir.as_ref().join("src")).unwrap();
+
+        symlink_roots(source_dir.as_ref(), dest_dir.as_ref(), Some(IGNORE_LIST)).unwrap();
+
+        assert!(
+            !dest_dir.as_ref().join("generated").exists(),
+            "`generated` is listed in `.bazelignore` and should not have been symlinked"
+        );
+        assert!(
+            !dest_dir.as_ref().join("vendor").exists(),
+            "`vendor/` is listed in `.bazelignore` and should not have been symlinked"
+        );
+        assert!(dest_dir.as_ref().join("src").exists());
+        // The `.bazelignore` file itself is a normal file and should still be linked.
+        assert!(dest_dir.as_ref().join(".bazelignore").exists());
+    }
+
+    #[test]
+    fn symlink_roots_honors_repo_bazel_ignore_directories() {
+        let source_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // A `REPO.bazel` file declaring ignored directories via `ignore_directories()`.
+        fs::write(
+            source_dir.as_ref().join("REPO.bazel"),
+            r#"ignore_directories("generated", "vendor")"#,
+        )
+        .unwrap();
+
+        fs::create_dir_all(source_dir.as_ref().join("generated")).unwrap();
+        fs::create_dir_all(source_dir.as_ref().join("vendor")).unwrap();
+        fs::create_dir_all(source_dir.as_ref().join("src")).unwrap();
+
+        symlink_roots(source_dir.as_ref(), dest_dir.as_ref(), Some(IGNORE_LIST)).unwrap();
+
+        assert!(
+            !dest_dir.as_ref().join("generated").exists(),
+            "`generated` is passed to `ignore_directories()` in `REPO.bazel` and should not have been symlinked"
+        );
+        assert!(
+            !dest_dir.as_ref().join("vendor").exists(),
+            "`vendor` is passed to `ignore_directories()` in `REPO.bazel` and should not have been symlinked"
+        );
+        assert!(dest_dir.as_ref().join("src").exists());
+    }
+
+    #[test]
+    fn splice_workspace_honors_bazelignore() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_workspace_in_root();
+
+        // An untracked directory that lives alongside the workspace's `Cargo.toml` but is
+        // excluded from Bazel via `.bazelignore`. If the splicer doesn't honor the ignore
+        // file, this directory (and its unparsable manifest) would get symlinked into the
+        // spliced workspace right along with the real workspace members.
+        let ignored_dir = cache_dir.as_ref().join("ignored_pkg");
+        fs::create_dir_all(&ignored_dir).unwrap();
+        fs::write(ignored_dir.join("Cargo.toml"), "this is not valid toml {{{").unwrap();
+        fs::write(cache_dir.as_ref().join(".bazelignore"), "ignored_pkg\n").unwrap();
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
+            .unwrap()
+            .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
+            .unwrap();
+
+        assert!(
+            !workspace_root.as_ref().join("ignored_pkg").exists(),
+            "`ignored_pkg` is listed in `.bazelignore` and should not have been symlinked into the spliced workspace"
+        );
+        assert!(workspace_root.as_ref().join("sub_pkg_a").exists());
+        assert!(workspace_root.as_ref().join("sub_pkg_b").exists());
     }
 
     fn syn_dependency_detail() -> cargo_toml::DependencyDetail {
