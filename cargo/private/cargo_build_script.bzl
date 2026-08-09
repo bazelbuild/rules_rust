@@ -227,6 +227,14 @@ def _pwd_flags_B(args):
     """Prefix execroot-relative paths in -B arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-B"])
 
+def _pwd_flags_compiler_response_file(args):
+    """Prefix execroot-relative compiler response file paths with ${pwd}."""
+
+    # Only the path *to* the response file is fixed. Its contents are left untouched
+    # and won't be resolved by the compiler if they contain execroot-relative paths.
+    # Fixing its content requires reading the file at exec time from cargo_build_script_runner/bin.rs.
+    return _prefix_pwd_to_flag(args, ["@"])
+
 def _pwd_flags_resource_dir(args):
     """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-resource-dir=", "-resource-dir"])
@@ -271,6 +279,7 @@ _PWD_FLAG_PASSES = [
     _pwd_flags_resource_dir,
     _pwd_flags_B,
     _pwd_flags_L,
+    _pwd_flags_compiler_response_file,
     _pwd_flags_isystem,
     _pwd_flags_fsanitize_ignorelist,
     _pwd_flags_imacros,

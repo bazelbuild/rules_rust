@@ -509,6 +509,17 @@ def bindir_malformed_missing_value_test(name):
         expected_cflags = ["-B", "-Wall"],
     )
 
+def compiler_response_file_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["@test/relative/compiler.params"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["@${pwd}/test/relative/compiler.params"],
+    )
+
 def fsanitize_ignorelist_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
