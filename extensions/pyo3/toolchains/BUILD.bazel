@@ -3,6 +3,7 @@ load("//:defs.bzl", "pyo3_toolchain", "rust_pyo3_toolchain")
 
 rust_library_group(
     name = "pyo3",
+    visibility = ["//visibility:public"],
     deps = [
         "@rpyo3c//:pyo3",
     ],
