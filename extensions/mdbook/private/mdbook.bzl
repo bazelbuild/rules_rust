@@ -86,8 +86,8 @@ mdbook = rule(
     attrs = {
         "book": attr.label(
             doc = (
-                "The optional `book.toml` file. An empty default configuration is "
-                + "used when omitted."
+                "The optional `book.toml` file. An empty default configuration is " +
+                "used when omitted."
             ),
             allow_single_file = ["book.toml"],
         ),
