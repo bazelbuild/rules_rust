@@ -101,15 +101,17 @@ def _rustdoc_link_args_analysis_test_impl(ctx):
     )
 
     if action:
-        for expected in ctx.attr.expected_args:
-            asserts.true(
-                env,
-                expected in action.argv,
-                "error: expected '{}' in the rustdoc test link args: '{}'".format(
-                    expected,
-                    action.argv,
-                ),
-            )
+        # Any one of the accepted spellings is enough: `rustdoc.bzl` omits the
+        # `-l` prefix when the target ABI is msvc, where link.exe takes bare
+        # library names.
+        asserts.true(
+            env,
+            any([expected in action.argv for expected in ctx.attr.expected_any_of]),
+            "error: expected one of {} in the rustdoc test link args: '{}'".format(
+                ctx.attr.expected_any_of,
+                action.argv,
+            ),
+        )
 
     return analysistest.end(env)
 
@@ -124,7 +126,7 @@ rustdoc_link_args_analysis_test = analysistest.make(
     fails to link against a toolchain that supplies its own unwinder.
     """,
     attrs = {
-        "expected_args": attr.string_list(),
+        "expected_any_of": attr.string_list(),
     },
 )
 
@@ -199,7 +201,8 @@ def runtime_libs_test(name):
     )
 
     # A doc test links like a binary, so it needs the static runtime lib named
-    # on the command line. `dummy.a` yields `-ldummy` via `get_lib_name`.
+    # on the command line. `dummy.a` yields `dummy` via `get_lib_name`, spelled
+    # `-ldummy` everywhere except msvc.
     rust_library(
         name = "%s/__doctest_library" % name,
         edition = "2018",
@@ -225,5 +228,9 @@ def runtime_libs_test(name):
     rustdoc_link_args_analysis_test(
         name = "%s/doc_test" % name,
         target_under_test = "%s/_doc_test" % name,
-        expected_args = ["-Clink-arg=-ldummy"],
+        expected_any_of = [
+            "-Clink-arg=-ldummy",
+            # msvc: link.exe takes bare library names, no `-l`.
+            "-Clink-arg=dummy",
+        ],
     )
