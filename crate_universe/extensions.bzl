@@ -1056,7 +1056,7 @@ def _crate_impl(module_ctx):
 
             # Process the override targets for the annotation.
             # In the non-bzlmod approach, this is given as a dict
-            # with the possible keys "`proc_macro`, `build_script`, `lib`, `bin`".
+            # with the possible keys "`proc-macro`, `custom-build`, `lib`, `bin`".
             # With the tag-based approach used in Bzlmod, we run into an issue
             # where there is no dict type that takes a string as a key and a Label as the value.
             # To work around this, we split the override option into four, and reconstruct the
@@ -1068,11 +1068,11 @@ def _crate_impl(module_ctx):
 
             replacement = annotation_dict.pop("override_target_proc_macro")
             if replacement:
-                annotation_dict["override_targets"]["proc_macro"] = str(replacement)
+                annotation_dict["override_targets"]["proc-macro"] = str(replacement)
 
             replacement = annotation_dict.pop("override_target_build_script")
             if replacement:
-                annotation_dict["override_targets"]["build_script"] = str(replacement)
+                annotation_dict["override_targets"]["custom-build"] = str(replacement)
 
             replacement = annotation_dict.pop("override_target_bin")
             if replacement:
