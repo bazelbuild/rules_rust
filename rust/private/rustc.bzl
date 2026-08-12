@@ -446,6 +446,11 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         ld = toolchain.linker.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
 
+        # Make sure we include RPATHs for Rust ABI dylibs even when no cc_toolchain.
+        if not cc_toolchain and rpaths:
+            for rpath in rpaths.to_list():
+                link_args.append("-Wl,-rpath,$ORIGIN/" + rpath)
+
         # When using rust-lld directly, we still need library search paths from cc_toolchain
         # to find system libraries that rustc's stdlib depends on (like -lgcc_s, -lutil, etc.)
         # Filter link_args to only include flags that help locate libraries.
@@ -1311,7 +1316,7 @@ def construct_arguments(
                     compilation_mode = compilation_mode,
                     toolchain = toolchain,
                 )
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib)
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, crate_info.output, ctx.workspace_name)
             else:
                 rpaths = depset()
 
@@ -2069,7 +2074,11 @@ def rustc_compile_action(
 
     runfiles = ctx.runfiles(
         files = getattr(ctx.files, "data", []) +
-                ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
+                ([] if experimental_use_coverage_metadata_files else coverage_runfiles) +
+                # Include any generated Rust ABI dylibs as required runfiles.
+                ([crate_info.output] if crate_info.type == "dylib" else []) +
+                # Include the stdlib dylib when dynamically linking the standard library.
+                ([f for f in toolchain.rust_std.to_list() if is_std_dylib(f)] if link_std_dylib else []),
     )
     transitive_runfiles = []
     crate_attr = getattr(ctx.attr, "crate", None)
@@ -2522,7 +2531,7 @@ def _process_build_scripts(
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
 
-def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib):
+def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, output_file = None, workspace_name = ""):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
     Args:
@@ -2531,6 +2540,8 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib):
         dep_info (DepInfo): The current target's dependency info
         use_pic: If set, prefers pic_static_library over static_library.
         link_std_dylib (bool): If the current target should link the stdlib as a dynamic library.
+        output_file (File): The output binary file, used for runfiles-tree RPATHs.
+        workspace_name (str): The workspace name, used for runfiles-tree RPATHs.
 
     Returns:
         depset: A set of relative paths from the output directory to each dependency
@@ -2570,11 +2581,48 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib):
             dep_info.transitive_noncrates,
         ))
 
-    # Multiple dylibs can be present in the same directory, so deduplicate them.
-    return depset([
+    # RPATHs must cover three execution scenarios:
+    #
+    # A) Binary runs from exec root (local, sandboxed, or as symlink).
+    # $ORIGIN is the exec-root dir. Exec-root-relative RPATHs resolve.
+    #
+    # B) Binary runs from exec root but dylibs are only in the runfiles tree.
+    #  $ORIGIN is the exec-root dir, and the runfiles tree is at
+    # $ORIGIN/<basename>.runfiles/.
+    #
+    # C) Binary runs from inside the runfiles tree. $ORIGIN is inside
+    # <basename>.runfiles/<workspace>/pkg/. Short-path-relative RPATHs
+    # navigate within the runfiles tree.
+
+    # (A) Exec-root RPATHs.
+    rpaths = [
         relativize(lib_dir, output_dir)
         for lib_dir in _get_dir_names(dylibs)
-    ])
+    ]
+
+    if output_file and workspace_name:
+        # (B) Runfiles-from-outside RPATHs.
+        runfiles_base = output_file.basename + ".runfiles"
+        runfiles_dirs = {}
+        for f in dylibs:
+            short_dir = paths.dirname(f.short_path)
+            if f.short_path.startswith("../"):
+                # External repo: short_path is "../<repo>/<path>", runfiles
+                # tree places it at "<repo>/<path>" at the runfiles root.
+                runfiles_dirs[paths.join(runfiles_base, short_dir[3:])] = None
+            else:
+                # Main repo: runfiles tree places it under "<workspace>/".
+                runfiles_dirs[paths.join(runfiles_base, workspace_name, short_dir)] = None
+        rpaths.extend(runfiles_dirs.keys())
+
+        # (C) Short-path RPATHs (binary running inside runfiles tree).
+        output_short_dir = paths.dirname(output_file.short_path)
+        for f in dylibs:
+            rpath = relativize(paths.dirname(f.short_path), output_short_dir)
+            if rpath not in rpaths:
+                rpaths.append(rpath)
+
+    return depset(rpaths)
 
 def _get_dir_names(files):
     """Returns a list of directory names from the given list of File objects
