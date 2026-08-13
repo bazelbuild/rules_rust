@@ -471,6 +471,10 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
                 elif processed_arg.startswith("-L"):
                     filtered_args.append(processed_arg)
+                    if processed_arg == "-L" and i + 1 < len(link_args):
+                        filtered_args.append(link_args[i + 1])
+                        skip_next = True
+
                     # Keep sysroot flags (as single or two-part arguments)
 
                 elif processed_arg == "--sysroot" or processed_arg.startswith("--sysroot="):
@@ -1413,9 +1417,26 @@ def construct_arguments(
 
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 
+            # rustc emits -Lnative before -C link-arg, regardless of argv order.
+            # Preserve cc_toolchain precedence over cargo:rustc-link-search.
+            remaining_link_args = []
+            skip_next = False
+            for i, arg in enumerate(link_args):
+                if skip_next:
+                    skip_next = False
+                    continue
+
+                if arg == "-L" and i + 1 < len(link_args):
+                    rustc_flags.add(link_args[i + 1], format = "-Lnative=%s")
+                    skip_next = True
+                elif arg.startswith("-L") and arg != "-L" and not arg.startswith("-LIBPATH"):
+                    rustc_flags.add(arg[2:], format = "-Lnative=%s")
+                else:
+                    remaining_link_args.append(arg)
+
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574
-            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
+            rustc_flags.add_all(remaining_link_args, format_each = "--codegen=link-arg=%s")
 
             if remap_path_prefix != None and _should_add_oso_prefix(
                 toolchain,
