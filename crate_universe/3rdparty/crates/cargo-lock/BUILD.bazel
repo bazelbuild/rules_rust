@@ -10,6 +10,6 @@ package(default_visibility = ["//visibility:public"])
 
 alias(
     name = "cargo-lock",
-    actual = "@cui__cargo-lock-10.1.0//:cargo_lock",
+    actual = "@cui__cargo-lock-11.1.0//:cargo_lock",
     tags = ["manual"],
 )
