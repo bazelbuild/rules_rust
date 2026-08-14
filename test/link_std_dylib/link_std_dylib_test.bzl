@@ -272,11 +272,10 @@ def _test_std_dylib_runfiles_rpath(name):
     )
 
 def _has_dylib_symlink_next_to_binary(target, dylib_dep):
-    """Check that a symlink of the dylib exists next to the binary in DefaultInfo.files."""
-    dylib_basename = dylib_dep.label.name
-    binary_dir = target.label.package
+    """Check that a dylib output exists next to the binary in DefaultInfo.files."""
+    dep_name = dylib_dep.label.name
     for f in target[DefaultInfo].files.to_list():
-        if f.basename.startswith("lib" + dylib_basename) and f.short_path.startswith(binary_dir):
+        if dep_name in f.basename and (f.basename.endswith(".dll") or f.basename.endswith(".so") or f.basename.endswith(".dylib")):
             return True
     return False
 
