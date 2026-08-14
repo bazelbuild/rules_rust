@@ -162,8 +162,15 @@ def _rust_static_library_impl(ctx):
 def _rust_dylib_library_impl(ctx):
     """The implementation of the `rust_dylib_library` rule.
 
-    This rule provides CcInfo, so it can be used everywhere Bazel
-    expects rules_cc.
+    This rule provides CcInfo, so it can be used everywhere Bazel expects
+    rules_cc. 
+    
+    **Note**: When dynamic libraries are listed as dependencies for other Rust
+    binaries they can induce errors from multiply defined symbols, causing
+    linker errors in rustc. Some libraries in the dependency graph may need to
+    be converted to dynamic libraries, and/or have the standard library
+    dynamically linked (`link_std_dylib`) to avoid this. These rules do not
+    attempt to resolve these linking issues automatically.
 
     Args:
         ctx (ctx): The rule's context object
@@ -1134,15 +1141,21 @@ rust_dylib_library = rule(
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
-        Builds a Rust ABI shared library.
+        Builds a shared library using the unstable Rust ABI.
 
-        This shared library will contain all transitively reachable crates and native objects.
-        It is meant to be used when producing an artifact that is then consumed by some other build system
-        (for example to produce a shared library that Python program links against).
+        This library can be depended on by other Rust targets via --extern,
+        making it suitable for splitting a Rust project into separately compiled
+        dynamic libraries. Note that the Rust ABI is not stable across compiler
+        versions.
 
         This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
 
-        When building the whole binary in Bazel, use `rust_library` instead.
+        *Note**: When dynamic libraries are listed as dependencies for other Rust
+        binaries they can induce errors from multiply defined symbols, causing
+        linker errors in rustc. Some libraries in the dependency graph may need to
+        be converted to dynamic libraries, and/or have the standard library
+        dynamically linked (`link_std_dylib`) to avoid this. These rules do not
+        attempt to resolve these linking issues automatically.
         """),
 )
 
