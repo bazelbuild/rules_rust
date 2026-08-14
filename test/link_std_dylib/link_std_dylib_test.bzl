@@ -289,18 +289,10 @@ def _test_windows_dylib_symlink_impl(env, targets):
         .equals(True)
 
 def _test_windows_dylib_symlink(name):
-    rust_dylib_library(
-        name = name + "_rust_dylib",
-        srcs = ["lib.rs"],
-        edition = "2021",
-        tags = ["manual"],
-        target_compatible_with = ["@platforms//os:windows"],
-    )
-
     rust_binary(
         name = name + "_rust_binary",
         srcs = ["main.rs"],
-        deps = [name + "_rust_dylib"],
+        deps = ["//test/rust_dylib:rust_dylib_lib"],
         edition = "2021",
         tags = ["manual"],
         target_compatible_with = ["@platforms//os:windows"],
@@ -311,7 +303,7 @@ def _test_windows_dylib_symlink(name):
         impl = _test_windows_dylib_symlink_impl,
         targets = {
             "binary_with_dylib_dep": name + "_rust_binary",
-            "dylib_dep": name + "_rust_dylib",
+            "dylib_dep": "//test/rust_dylib:rust_dylib_lib",
         },
     )
 

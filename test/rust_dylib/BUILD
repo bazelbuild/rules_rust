@@ -15,7 +15,7 @@ rust_dylib_library(
     srcs = ["lib.rs"],
     edition = "2021",
     link_std_dylib = True,
-    target_compatible_with = NOT_WINDOWS,
+    visibility = ["//test:__subpackages__"],
 )
 
 rust_binary(

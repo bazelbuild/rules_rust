@@ -1360,6 +1360,11 @@ def construct_arguments(
             include_link_flags = include_link_flags,
         )
 
+        # On macOS, set the dylib install name to @rpath/<basename> so that
+        # consumers find it via RPATH rather than the exec-root build path.
+        if crate_info.type == "dylib" and toolchain.target_os in ["macos", "darwin"]:
+            rustc_flags.add("--codegen=link-arg=-Wl,-install_name,@rpath/" + crate_info.output.basename)
+
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
     # These always need to be added, even if not linking this crate.
