@@ -182,17 +182,17 @@ def _test_rust_test_with_attr(name):
     )
 
 def _has_runfiles_rpath(argv, binary_basename):
-    """Check that at least one RPATH entry points into the runfiles tree."""
+    """Check that at least one link arg contains a path into the runfiles tree."""
     runfiles_marker = binary_basename + ".runfiles/"
     for arg in argv:
-        if runfiles_marker in arg:
+        if "link-arg=" in arg and runfiles_marker in arg:
             return True
     return False
 
 def _has_short_path_rpath(argv):
-    """Check that at least one RPATH value uses short-path-relative navigation (for inside-runfiles execution)."""
+    """Check that at least one link arg uses short-path-relative navigation (for inside-runfiles execution)."""
     for arg in argv:
-        if "../" in arg and ".runfiles" not in arg and "$ORIGIN" in arg:
+        if "link-arg=" in arg and "../" in arg and ".runfiles" not in arg:
             return True
     return False
 
@@ -200,10 +200,17 @@ def _test_runfiles_rpath_impl(env, targets):
     action = targets.binary_with_dylib_dep.actions[0]
     binary_basename = targets.binary_with_dylib_dep.label.name
 
-    # Verify runfiles-from-outside RPATHs are present (scenario B).
+    # Verify runfiles-from-outside RPATHs are present.
     env.expect \
         .that_bool(_has_runfiles_rpath(action.argv, binary_basename)) \
         .equals(True)
+
+def _not_windows():
+    return select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    })
 
 def _test_runfiles_rpath(name):
     rust_dylib_library(
@@ -211,6 +218,7 @@ def _test_runfiles_rpath(name):
         srcs = ["lib.rs"],
         edition = "2021",
         tags = ["manual"],
+        target_compatible_with = _not_windows(),
     )
 
     rust_binary(
@@ -219,6 +227,7 @@ def _test_runfiles_rpath(name):
         deps = [name + "_rust_dylib"],
         edition = "2021",
         tags = ["manual"],
+        target_compatible_with = _not_windows(),
     )
 
     analysis_test(
@@ -233,12 +242,12 @@ def _test_std_dylib_runfiles_rpath_impl(env, targets):
     action = targets.binary_with_std_dylib.actions[0]
     binary_basename = targets.binary_with_std_dylib.label.name
 
-    # Verify runfiles-from-outside RPATHs for stdlib are present (scenario B).
+    # Verify runfiles-from-outside RPATHs for stdlib are present.
     env.expect \
         .that_bool(_has_runfiles_rpath(action.argv, binary_basename)) \
         .equals(True)
 
-    # Verify short-path RPATHs for stdlib are present (scenario C).
+    # Verify short-path RPATHs for stdlib are present.
     # The stdlib is from an external repo, so its short-path RPATH uses "../".
     env.expect \
         .that_bool(_has_short_path_rpath(action.argv)) \
@@ -251,6 +260,7 @@ def _test_std_dylib_runfiles_rpath(name):
         edition = "2021",
         link_std_dylib = True,
         tags = ["manual"],
+        target_compatible_with = _not_windows(),
     )
 
     analysis_test(
