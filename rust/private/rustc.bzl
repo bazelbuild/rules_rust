@@ -2111,9 +2111,10 @@ def rustc_compile_action(
         if link_std_dylib:
             win_dylibs.extend([f for f in toolchain.rust_std.to_list() if is_std_dylib(f)])
         for dylib in win_dylibs:
-            symlink = ctx.actions.declare_file(dylib.basename, sibling = crate_info.output)
-            ctx.actions.symlink(output = symlink, target_file = dylib)
-            outputs.append(symlink)
+            if dylib.dirname != crate_info.output.dirname:
+                symlink = ctx.actions.declare_file(dylib.basename, sibling = crate_info.output)
+                ctx.actions.symlink(output = symlink, target_file = dylib)
+                outputs.append(symlink)
 
     runfiles = runfiles.merge_all(transitive_runfiles)
 
