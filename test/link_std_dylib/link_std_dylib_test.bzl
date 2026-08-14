@@ -181,6 +181,86 @@ def _test_rust_test_with_attr(name):
         },
     )
 
+def _has_runfiles_rpath(argv, binary_basename):
+    """Check that at least one RPATH entry points into the runfiles tree."""
+    runfiles_marker = binary_basename + ".runfiles/"
+    for arg in argv:
+        if runfiles_marker in arg:
+            return True
+    return False
+
+def _has_short_path_rpath(argv):
+    """Check that at least one RPATH value uses short-path-relative navigation (for inside-runfiles execution)."""
+    for arg in argv:
+        if "../" in arg and ".runfiles" not in arg and "$ORIGIN" in arg:
+            return True
+    return False
+
+def _test_runfiles_rpath_impl(env, targets):
+    action = targets.binary_with_dylib_dep.actions[0]
+    binary_basename = targets.binary_with_dylib_dep.label.name
+
+    # Verify runfiles-from-outside RPATHs are present (scenario B).
+    env.expect \
+        .that_bool(_has_runfiles_rpath(action.argv, binary_basename)) \
+        .equals(True)
+
+def _test_runfiles_rpath(name):
+    rust_dylib_library(
+        name = name + "_rust_dylib",
+        srcs = ["lib.rs"],
+        edition = "2021",
+        tags = ["manual"],
+    )
+
+    rust_binary(
+        name = name + "_rust_binary",
+        srcs = ["main.rs"],
+        deps = [name + "_rust_dylib"],
+        edition = "2021",
+        tags = ["manual"],
+    )
+
+    analysis_test(
+        name = name,
+        impl = _test_runfiles_rpath_impl,
+        targets = {
+            "binary_with_dylib_dep": name + "_rust_binary",
+        },
+    )
+
+def _test_std_dylib_runfiles_rpath_impl(env, targets):
+    action = targets.binary_with_std_dylib.actions[0]
+    binary_basename = targets.binary_with_std_dylib.label.name
+
+    # Verify runfiles-from-outside RPATHs for stdlib are present (scenario B).
+    env.expect \
+        .that_bool(_has_runfiles_rpath(action.argv, binary_basename)) \
+        .equals(True)
+
+    # Verify short-path RPATHs for stdlib are present (scenario C).
+    # The stdlib is from an external repo, so its short-path RPATH uses "../".
+    env.expect \
+        .that_bool(_has_short_path_rpath(action.argv)) \
+        .equals(True)
+
+def _test_std_dylib_runfiles_rpath(name):
+    rust_binary(
+        name = name + "_rust_binary",
+        srcs = ["main.rs"],
+        edition = "2021",
+        link_std_dylib = True,
+        tags = ["manual"],
+    )
+
+    analysis_test(
+        name = name,
+        impl = _test_std_dylib_runfiles_rpath_impl,
+        targets = {
+            "binary_with_std_dylib": name + "_rust_binary",
+        },
+    )
+
 def link_std_dylib_test_suite(name):
     test_suite(
         name = name,
@@ -190,5 +270,7 @@ def link_std_dylib_test_suite(name):
             _test_rust_binary_with_attr_dylib,
             _test_rust_dylib_with_attr,
             _test_rust_test_with_attr,
+            _test_runfiles_rpath,
+            _test_std_dylib_runfiles_rpath,
         ],
     )
