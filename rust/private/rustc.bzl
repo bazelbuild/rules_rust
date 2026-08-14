@@ -2092,16 +2092,29 @@ def rustc_compile_action(
             continue
         for target in runfiles_attr:
             transitive_runfiles.append(target[DefaultInfo].default_runfiles)
-    if crate_info.type in ["bin", "cdylib", "staticlib"]:
-        dynamic_libraries = ctx.runfiles(files = [
+    dep_dylib_files = []
+    if crate_info.type in ["bin", "cdylib", "dylib", "staticlib"]:
+        dep_dylib_files = [
             library_to_link.dynamic_library
             for dep in getattr(ctx.attr, "deps", [])
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
             if _is_dylib(library_to_link) and library_to_link.dynamic_library
-        ])
-        transitive_runfiles.append(dynamic_libraries)
+        ]
+        transitive_runfiles.append(ctx.runfiles(files = dep_dylib_files))
+
+    # On Windows there is no RPATH equivalent. Create symlinks of dylib files
+    # next to the binary so the Windows loader can find them.
+    if toolchain.target_os == "windows" and (crate_info.type == "bin" or crate_info.is_test):
+        win_dylibs = list(dep_dylib_files)
+        if link_std_dylib:
+            win_dylibs.extend([f for f in toolchain.rust_std.to_list() if is_std_dylib(f)])
+        for dylib in win_dylibs:
+            symlink = ctx.actions.declare_file(dylib.basename, sibling = crate_info.output)
+            ctx.actions.symlink(output = symlink, target_file = dylib)
+            outputs.append(symlink)
+
     runfiles = runfiles.merge_all(transitive_runfiles)
 
     executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None

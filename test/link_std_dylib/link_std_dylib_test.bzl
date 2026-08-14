@@ -271,6 +271,50 @@ def _test_std_dylib_runfiles_rpath(name):
         },
     )
 
+def _has_dylib_symlink_next_to_binary(target, dylib_dep):
+    """Check that a symlink of the dylib exists next to the binary in DefaultInfo.files."""
+    dylib_basename = dylib_dep.label.name
+    binary_dir = target.label.package
+    for f in target[DefaultInfo].files.to_list():
+        if f.basename.startswith("lib" + dylib_basename) and f.short_path.startswith(binary_dir):
+            return True
+    return False
+
+def _test_windows_dylib_symlink_impl(env, targets):
+    env.expect \
+        .that_bool(_has_dylib_symlink_next_to_binary(
+        targets.binary_with_dylib_dep,
+        targets.dylib_dep,
+    )) \
+        .equals(True)
+
+def _test_windows_dylib_symlink(name):
+    rust_dylib_library(
+        name = name + "_rust_dylib",
+        srcs = ["lib.rs"],
+        edition = "2021",
+        tags = ["manual"],
+        target_compatible_with = ["@platforms//os:windows"],
+    )
+
+    rust_binary(
+        name = name + "_rust_binary",
+        srcs = ["main.rs"],
+        deps = [name + "_rust_dylib"],
+        edition = "2021",
+        tags = ["manual"],
+        target_compatible_with = ["@platforms//os:windows"],
+    )
+
+    analysis_test(
+        name = name,
+        impl = _test_windows_dylib_symlink_impl,
+        targets = {
+            "binary_with_dylib_dep": name + "_rust_binary",
+            "dylib_dep": name + "_rust_dylib",
+        },
+    )
+
 def link_std_dylib_test_suite(name):
     test_suite(
         name = name,
@@ -282,5 +326,6 @@ def link_std_dylib_test_suite(name):
             _test_rust_test_with_attr,
             _test_runfiles_rpath,
             _test_std_dylib_runfiles_rpath,
+            _test_windows_dylib_symlink,
         ],
     )
