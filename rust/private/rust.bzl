@@ -1150,7 +1150,7 @@ rust_dylib_library = rule(
 
         This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
 
-        *Note**: When dynamic libraries are listed as dependencies for other Rust
+        **Note**: When dynamic libraries are listed as dependencies for other Rust
         binaries they can induce errors from multiply defined symbols, causing
         linker errors in rustc. Some libraries in the dependency graph may need to
         be converted to dynamic libraries, and/or have the standard library

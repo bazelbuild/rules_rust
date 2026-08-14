@@ -1,5 +1,5 @@
 //! An example binary that depends on a dynamically linked library.
-//! 
+
 extern crate rust_dylib_lib;
 
 fn main() {
