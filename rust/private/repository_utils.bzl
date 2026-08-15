@@ -114,7 +114,7 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
     """
     content = [_build_file_for_compiler_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         target_triple = target_triple.str,
     )]
@@ -123,7 +123,7 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
         content.append(
             _build_file_for_linker_template.format(
                 binary_ext = system_to_binary_ext(target_triple.system),
-                staticlib_ext = system_to_staticlib_ext(target_triple.system),
+                staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
                 dylib_ext = system_to_dylib_ext(target_triple.system),
                 target_triple = target_triple.str,
             ),
@@ -330,7 +330,7 @@ def BUILD_for_stdlib(target_triple):
     """
     return _build_file_for_stdlib_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         target_triple = target_triple.str,
     )
@@ -462,7 +462,7 @@ def BUILD_for_rust_toolchain(
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         allocator_library = repr(allocator_library_label),
         global_allocator_library = repr(global_allocator_library_label),

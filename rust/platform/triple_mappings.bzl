@@ -435,7 +435,9 @@ def triple_to_abi(target_triple):
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]
 
-def system_to_staticlib_ext(system):
+def system_to_staticlib_ext(system, abi = None):
+    if system == "windows" and abi in ("gnu", "gnullvm"):
+        return ".a"
     return _SYSTEM_TO_STATICLIB_EXT[system]
 
 def system_to_binary_ext(system):
