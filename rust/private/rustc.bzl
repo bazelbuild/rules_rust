@@ -2044,6 +2044,7 @@ def rustc_compile_action(
             cc_toolchain = cc_toolchain,
             linking_contexts = linking_contexts,
             compilation_outputs = compilation_outputs,
+            link_deps_statically = ctx.fragments.cpp.dynamic_mode() != "FULLY",
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
             main_output = crate_info.output,
