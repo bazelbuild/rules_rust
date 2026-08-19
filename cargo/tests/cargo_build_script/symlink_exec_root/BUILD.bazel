@@ -37,21 +37,63 @@ cargo_build_script(
 
 # This is an empty test file, it is only needed to trigger the build script.
 write_file(
-    name = "test_exec_root_access_rs",
-    out = "test_exec_root_access.rs",
+    name = "empty",
+    out = "empty.rs",
     content = [""],
 )
 
 rust_test(
     name = "test_exec_root_access_feature_enabled",
-    srcs = ["test_exec_root_access.rs"],
+    srcs = ["empty.rs"],
     edition = "2021",
     deps = [":test_exec_root_access.build.feature_enabled"],
 )
 
 rust_test(
     name = "test_exec_root_access_feature_disabled",
-    srcs = ["test_exec_root_access.rs"],
+    srcs = ["empty.rs"],
     edition = "2021",
     deps = [":test_exec_root_access.build.feature_disabled"],
+)
+
+###############################################################################
+# Test that a CARGO_MANIFEST_DIR entry which collides with an exec root entry
+# survives the run.
+#
+# The data file below puts a real `external` directory in CARGO_MANIFEST_DIR,
+# and `external` is always a top-level exec root entry, so the runner cannot
+# symlink it. It must then leave that directory alone rather than deleting it
+# along with the symlinks it did create.
+###############################################################################
+
+write_file(
+    name = "exec_root_collision_file",
+    out = "external/exec_root_collision.txt",
+    content = ["This file makes 'external' a real directory in CARGO_MANIFEST_DIR."],
+)
+
+symlink_execroot_cargo_build_script(
+    name = "test_exec_root_collision.build.feature_enabled",
+    script = ":test_exec_root_collision.build.feature_disabled",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+cargo_build_script(
+    name = "test_exec_root_collision.build.feature_disabled",
+    srcs = ["test_exec_root_collision.build.rs"],
+    crate_name = "test_exec_root_collision",
+    data = [
+        ":exec_root_collision_file",
+    ],
+    edition = "2021",
+)
+
+rust_test(
+    name = "test_exec_root_collision_feature_enabled",
+    srcs = ["empty.rs"],
+    edition = "2021",
+    deps = [":test_exec_root_collision.build.feature_enabled"],
 )
