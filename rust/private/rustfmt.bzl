@@ -17,7 +17,7 @@ def _get_rustfmt_ready_crate_info(target):
         target (Target): The target the aspect is running on.
 
     Returns:
-        CrateInfo, optional: A `CrateInfo` provider if clippy should be run or `None`.
+        CrateInfo, optional: A `CrateInfo` provider if rustfmt should be run or `None`.
     """
 
     # Ignore external targets

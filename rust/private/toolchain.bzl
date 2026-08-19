@@ -694,7 +694,7 @@ rust_toolchain = rule(
             cfg = "exec",
         ),
         "debug_info": attr.string_dict(
-            doc = "Rustc debug info levels per opt level",
+            doc = "Rustc debug info levels per compilation mode (keyed by `dbg`, `fastbuild`, `opt`).",
             default = {
                 "dbg": "2",
                 "fastbuild": "0",
