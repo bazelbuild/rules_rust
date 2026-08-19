@@ -1,12 +1,12 @@
 """Analysistests for Windows-specific library naming and link flags."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "portable_link_flags", "symlink_for_ambiguous_lib")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "get_lib_name_default", "get_lib_name_for_windows")
+load("//rust/private:utils.bzl", "determine_lib_name", "get_lib_name_default", "get_lib_name_for_windows")
 
 # buildifier: disable=provider-params
 LinkFlagsInfo = provider(fields = {"flags": "List[str]"})
@@ -125,6 +125,72 @@ def _symlink_name_windows_msvc_test_impl(ctx):
 
 symlink_name_windows_msvc_test = analysistest.make(_symlink_name_windows_msvc_test_impl)
 
+def _windows_toolchain(abi, staticlib_ext):
+    return struct(
+        dylib_ext = ".dll",
+        staticlib_ext = staticlib_ext,
+        target_abi = abi,
+        target_arch = "x86_64",
+        target_os = "windows",
+        target_triple = "x86_64-pc-windows-{}".format(abi),
+    )
+
+def _staticlib_name_windows_gnu_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    actual = determine_lib_name(
+        name = "native_dep",
+        crate_type = "staticlib",
+        toolchain = _windows_toolchain("gnu", ".a"),
+    )
+
+    asserts.equals(env, "libnative_dep.a", actual)
+    return unittest.end(env)
+
+staticlib_name_windows_gnu_test = unittest.make(_staticlib_name_windows_gnu_test_impl)
+
+def _staticlib_name_windows_gnullvm_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    actual = determine_lib_name(
+        name = "native_dep",
+        crate_type = "staticlib",
+        toolchain = _windows_toolchain("gnullvm", ".a"),
+    )
+
+    asserts.equals(env, "libnative_dep.a", actual)
+    return unittest.end(env)
+
+staticlib_name_windows_gnullvm_test = unittest.make(_staticlib_name_windows_gnullvm_test_impl)
+
+def _staticlib_name_windows_msvc_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    actual = determine_lib_name(
+        name = "native_dep",
+        crate_type = "staticlib",
+        toolchain = _windows_toolchain("msvc", ".lib"),
+    )
+
+    asserts.equals(env, "native_dep.lib", actual)
+    return unittest.end(env)
+
+staticlib_name_windows_msvc_test = unittest.make(_staticlib_name_windows_msvc_test_impl)
+
+def _cdylib_name_windows_gnu_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    actual = determine_lib_name(
+        name = "native_dep",
+        crate_type = "cdylib",
+        toolchain = _windows_toolchain("gnu", ".a"),
+    )
+
+    asserts.equals(env, "native_dep.dll", actual)
+    return unittest.end(env)
+
+cdylib_name_windows_gnu_test = unittest.make(_cdylib_name_windows_gnu_test_impl)
+
 def _define_targets():
     portable_link_flags_probe(
         name = "portable_link_flags_windows_gnu_probe",
@@ -172,6 +238,18 @@ def windows_lib_name_test_suite(name):
         name = "symlink_name_windows_msvc_test",
         target_under_test = ":symlink_windows_msvc_probe",
     )
+    staticlib_name_windows_gnu_test(
+        name = "staticlib_name_windows_gnu_test",
+    )
+    staticlib_name_windows_gnullvm_test(
+        name = "staticlib_name_windows_gnullvm_test",
+    )
+    staticlib_name_windows_msvc_test(
+        name = "staticlib_name_windows_msvc_test",
+    )
+    cdylib_name_windows_gnu_test(
+        name = "cdylib_name_windows_gnu_test",
+    )
 
     native.test_suite(
         name = name,
@@ -180,5 +258,9 @@ def windows_lib_name_test_suite(name):
             ":portable_link_flags_windows_msvc_test",
             ":symlink_name_windows_gnu_test",
             ":symlink_name_windows_msvc_test",
+            ":staticlib_name_windows_gnu_test",
+            ":staticlib_name_windows_gnullvm_test",
+            ":staticlib_name_windows_msvc_test",
+            ":cdylib_name_windows_gnu_test",
         ],
     )
