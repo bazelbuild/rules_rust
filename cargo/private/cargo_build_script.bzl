@@ -110,11 +110,17 @@ def _should_prefix_pwd(path):
     if paths.is_absolute(path):
         return False
 
+    if path.startswith("${pwd}"):
+        return False
+
     for placeholder in _BAZEL_PATH_PLACEHOLDERS:
         if path.startswith(placeholder):
             return False
 
     return True
+
+def _expects_space_separated_arg(flag):
+    return not (flag.endswith("=") or flag.endswith(":"))
 
 def _prefix_pwd_to_flag(args, flag_variations):
     """Prefix execroot-relative paths for flags that support both concatenated and space-separated forms (unless it ends with `=` or `:`).
@@ -144,18 +150,16 @@ def _prefix_pwd_to_flag(args, flag_variations):
         handled = False
         new_prefix_next_arg = False
 
-        for flag in flag_variations:
+        for flag in sorted(flag_variations, key = len, reverse = True):
             # Check for exact match first
             if arg == flag:
-                if flag.endswith("=") or flag.endswith(":"):
-                    # Flag ending with '=' or ':' and empty path: keep as-is
-                    res.append(arg)
-                    handled = True
-                    break
-                else:
+                if _expects_space_separated_arg(flag):
                     # Flag without '=' or ':': next arg might be space-separated path
                     new_prefix_next_arg = True
-                continue
+
+                res.append(arg)
+                handled = True
+                break
 
             # Check for concatenated form (flag with path)
             if arg.startswith(flag):
@@ -168,8 +172,10 @@ def _prefix_pwd_to_flag(args, flag_variations):
                 handled = True
                 break
 
-            # Check for space-separated form (only for flags without '=' or ':')
-            if not flag.endswith("=") and not flag.endswith(":") and prefix_next_arg and _should_prefix_pwd(arg.strip()):
+            # Check for space-separated form (only for flags without '=' or ':').
+            # A leading '-' means the flag's value was omitted and this is
+            # actually the next flag, not a path; leave it untouched.
+            if _expects_space_separated_arg(flag) and prefix_next_arg and not arg.strip().startswith("-") and _should_prefix_pwd(arg.strip()):
                 res.append("${{pwd}}/{}".format(arg.strip()))
                 handled = True
                 break
@@ -260,8 +266,21 @@ def _pwd_paths(args):
     """Prefix execroot-relative paths with ${pwd}."""
     return _prefix_pwd_to_paths(args)
 
+_PWD_FLAG_PASSES = [
+    _pwd_flags_sysroot,
+    _pwd_flags_resource_dir,
+    _pwd_flags_B,
+    _pwd_flags_L,
+    _pwd_flags_isystem,
+    _pwd_flags_fsanitize_ignorelist,
+    _pwd_flags_imacros,
+    _pwd_flags_direct_libs,
+]
+
 def _pwd_flags(args):
-    return _pwd_flags_direct_libs(_pwd_flags_imacros(_pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))))
+    for pwd_flags_pass in _PWD_FLAG_PASSES:
+        args = pwd_flags_pass(args)
+    return args
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
