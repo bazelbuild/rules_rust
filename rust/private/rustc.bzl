@@ -733,9 +733,10 @@ def collect_inputs(
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
+    is_linking_action = crate_info.type not in ("lib", "rlib") or include_linker_inputs
     libs_from_linker_inputs = []
     ambiguous_libs = {}
-    if crate_info.type not in ("lib", "rlib") or include_linker_inputs:
+    if is_linking_action:
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
@@ -789,7 +790,7 @@ def collect_inputs(
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
             toolchain.all_files,
-        ] + ([] if experimental_use_cc_common_link else [
+        ] + ([] if experimental_use_cc_common_link or not is_linking_action else [
             runtime_libs,
             linker_depset,
         ]),
