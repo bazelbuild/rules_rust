@@ -192,6 +192,10 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     link_args = _extract_linker_args(action.argv)
     bin_dir = get_bin_dir_from_action(action)
 
+    # Native linking must retain the same output root as its declared output.
+    output_bin_dir = action.outputs.to_list()[0].path.split("/bin/", 1)[0] + "/bin"
+    asserts.equals(env, output_bin_dir, bin_dir)
+
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
 

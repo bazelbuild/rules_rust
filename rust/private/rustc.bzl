@@ -918,12 +918,16 @@ def has_location_expansion(values):
     return False
 
 def _args_map_bin_dir(file):
-    """Extract `bazel-out/<config>/bin` from a File whose path lives in the configuration's bin directory.
+    """Return a generated File's output root in its consuming action's layout.
 
-    Evaluated at action-execution time so that Bazel's path mapping (`--experimental_output_paths=strip`) can
-    rewrite the `<config>` segment to `cfg` before we slice it off.
+    `File.root.path` provides the root depth, including sibling repositories;
+    `File.path` carries the configuration selected by the action's path mapper.
     """
-    return "/".join(file.path.split("/", 3)[:3])
+    return "/".join(file.path.split("/")[:len(file.root.path.split("/"))])
+
+def _args_map_output_configuration(file):
+    """Return the output configuration in the consuming action's path layout."""
+    return _args_map_bin_dir(file).split("/")[-2]
 
 def construct_arguments(
         *,
@@ -1052,6 +1056,16 @@ def construct_arguments(
 
     for build_env_file in build_env_files:
         process_wrapper_flags.add("--env-file", build_env_file)
+
+        # Source env files have no output configuration to substitute.
+        if not build_env_file.is_source:
+            process_wrapper_flags.add_all(
+                [build_env_file],
+                before_each = "--subst",
+                format_each = "rustc_env_file:" + build_env_file.short_path.replace("%", "%25").replace("=", "%3D") + "=%s",
+                map_each = _args_map_output_configuration,
+                expand_directories = False,
+            )
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
 
@@ -1291,8 +1305,14 @@ def construct_arguments(
     # If linker_type is not explicitly set, infer from which linker is actually being used
     ld_is_direct_driver = False
 
+    # Metadata does not link, so avoid expanding string-valued linker flags.
+    adds_linker_args = not build_metadata and (
+        ("link" in emit and crate_info.type not in ["rlib", "lib"]) or
+        add_flags_for_binary
+    )
+
     # Link!
-    if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
+    if adds_linker_args:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         compilation_mode = ctx.var["COMPILATION_MODE"]
@@ -1540,7 +1560,16 @@ def construct_arguments(
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
         extra_rustc_flags = rust_flags_args,
-        supports_path_mapping = not target_has_location_expansion,
+        # Native linker selection and C/C++ feature expansion flatten generated
+        # paths into strings that Bazel cannot remap. Pure Wasm remains mappable.
+        supports_path_mapping = not target_has_location_expansion and not (
+            adds_linker_args and
+            (include_link_flags or force_depend_on_objects) and
+            (
+                toolchain.target_arch not in ("wasm32", "wasm64") or
+                bool(dep_info.transitive_noncrates)
+            )
+        ),
         all = all_args,
     )
 

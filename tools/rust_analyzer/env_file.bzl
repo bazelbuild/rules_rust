@@ -1,32 +1,27 @@
-"""A `rustc_env_files`-format rule whose VALUE is a path-mapping-aware file path."""
-
-load("@bazel_features//:features.bzl", "bazel_features")
-
-def _arg_map_pair(value):
-    key, file = value
-    return "{}=${{pwd}}/{}".format(key, file.path)
+"""A `rustc_env_files`-format rule whose file paths follow the consuming action."""
 
 def _env_file_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".rustc_env")
-    content = ctx.actions.args()
-    content.set_param_file_format("multiline")
-    content.add_all(
-        [(ctx.attr.key, ctx.file.src)],
-        map_each = _arg_map_pair,
-        expand_directories = False,
-    )
 
-    if bazel_features.rules.write_action_has_execution_requirements:
-        ctx.actions.write(
-            output = out,
-            content = content,
-            execution_requirements = {"supports-path-mapping": ""},
+    # ':' reserves this namespace; escape '%' first to keep keys injective.
+    substitution = "rustc_env_file:" + out.short_path.replace("%", "%25").replace("=", "%3D")
+    source_root = ctx.file.src.root.path
+    root_components = source_root.split("/")
+
+    # Generated inputs share this rule's configuration; defer that component to
+    # the consuming action while preserving their repository and output root.
+    source_path = (
+        ctx.file.src.path if ctx.file.src.is_source else "{}/${{{}}}/{}/{}".format(
+            "/".join(root_components[:-2]),
+            substitution,
+            root_components[-1],
+            ctx.file.src.path[len(source_root) + 1:],
         )
-    else:
-        ctx.actions.write(
-            output = out,
-            content = content,
-        )
+    )
+    ctx.actions.write(
+        output = out,
+        content = "{}=${{pwd}}/{}\n".format(ctx.attr.key, source_path),
+    )
     return [DefaultInfo(files = depset([out]))]
 
 env_file = rule(
@@ -43,11 +38,10 @@ env_file = rule(
         ),
     },
     doc = """\
-Emit a one-line `KEY=${pwd}/<src.path>\\n` file suitable for `rust_library`'s
-`rustc_env_files` attribute. The path is generated through `Args.add_all`'s
-`format_each` so Bazel's path mapping (`--experimental_output_paths=strip`)
-rewrites it before the action runs, and the `${pwd}` prefix is later resolved
-to the exec_root by `process_wrapper`'s env-block substitution.
+Emit a `KEY=${pwd}/<source-path>\\n` file suitable for `rustc_env_files`.
+Generated inputs share this rule's configuration. A File-backed substitution
+selects the consuming action's mapped or unmapped configuration while preserving
+the input's repository and output root.
 
 Pair with a matching `compile_data = [src]` on the consumer crate and use
 `include_str!(env!("KEY"))` in Rust to embed the file's content at compile
