@@ -60,7 +60,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imac-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
-    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
     "sparc64-unknown-linux-gnu": _support(std = True, host_tools = False),
