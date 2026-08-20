@@ -17,6 +17,7 @@ mod options;
 mod output;
 mod rustc;
 mod util;
+mod worker;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -118,11 +119,29 @@ fn process_line(
 }
 
 fn main() -> Result<(), ProcessWrapperError> {
+    let argv: Vec<String> = std::env::args().collect();
+    if let Some(worker_arg_index) = argv.iter().position(|arg| arg == "--persistent_worker") {
+        let mut startup_argv = argv;
+        startup_argv.truncate(worker_arg_index);
+        return worker::run(startup_argv).map_err(|e| ProcessWrapperError(e.to_string()));
+    }
+
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
+
+    let incremental_cache = if opts.rustc_incremental {
+        opts.rustc_incremental_dir
+    } else {
+        None
+    };
 
     let mut command = Command::new(opts.executable);
     command
         .args(opts.child_arguments)
+        .args(
+            incremental_cache
+                .as_ref()
+                .map(|cache| format!("-Cincremental={cache}")),
+        )
         .env_clear()
         .envs(opts.child_environment)
         .stdout(if let Some(stdout_file) = opts.stdout_file {
