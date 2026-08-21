@@ -37,10 +37,7 @@ stardoc(
     out = "src/cargo.md",
     input = "@rules_rust//cargo:defs.bzl",
     symbol_names = [
-        "cargo_bootstrap_repository",
         "cargo_build_script",
-        "cargo_dep_env",
-        "cargo_env",
         "extract_cargo_lints",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
