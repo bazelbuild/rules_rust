@@ -471,10 +471,12 @@ fn query_label_for(
     let package = find_owning_package(workspace, file_rel).with_context(|| {
         format!("no BUILD.bazel found above {saved_file} — is this file part of a Bazel target?")
     })?;
-    let file_basename = file_rel
-        .file_name()
-        .with_context(|| format!("saved file {saved_file} has no file name"))?;
-    let pattern = format!("//{package}:{file_basename}");
+
+    // Generate a label that preserves the package-relative file path.
+    let file_in_package = file_rel.strip_prefix(&package).with_context(|| {
+        format!("saved file {saved_file} is not under Bazel package //{package}")
+    })?;
+    let pattern = format!("//{package}:{file_in_package}");
     let query = format!("attr(srcs, {pattern:?}, //{package}:*)");
     let output = Command::new(bazel.as_str())
         .current_dir(workspace)
