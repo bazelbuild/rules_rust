@@ -19,7 +19,7 @@ build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build --output_groups=+clippy_checks
 ```
 
-This will enable clippy on all [Rust targets](./defs.md).
+This will enable clippy on all [Rust targets](./rust.md).
 
 Note that targets tagged with `no-clippy` will not perform clippy checks
 
