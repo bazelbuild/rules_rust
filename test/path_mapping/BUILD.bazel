@@ -1,0 +1,7 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "no_sandbox_test",
+    srcs = ["no_sandbox_test.rs"],
+    tags = ["no-sandbox"],
+)
