@@ -231,6 +231,13 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     env["CLIPPY_CONF_DIR"] = "${{pwd}}/{}".format(config.dirname)
     compile_inputs = depset([config], transitive = [compile_inputs])
 
+    # `CLIPPY_CONF_DIR` is an env var, so it is not rewritten by Bazel's
+    # path mapping. When the config is a generated file, advertising
+    # `supports-path-mapping` would stage it under the mapped `bazel-out/`
+    # prefix while the env var keeps the unmapped path, and clippy would
+    # fail to find the config. Source files have no config segment to map.
+    supports_path_mapping = args.supports_path_mapping and config.is_source
+
     ctx.actions.run(
         executable = process_wrapper,
         inputs = compile_inputs,
@@ -241,7 +248,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
-        execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
+        execution_requirements = {"supports-path-mapping": ""} if supports_path_mapping else None,
     )
 
 def _clippy_aspect_impl(target, ctx):
@@ -283,13 +290,17 @@ def _clippy_aspect_impl(target, ctx):
     if ctx.attr._clippy_output_diagnostics[ClippyOutputDiagnosticsInfo].output_diagnostics:
         clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
 
+    # Prefer a per-target clippy.toml when the underlying rule sets one,
+    # otherwise fall back to the global //rust/settings:clippy.toml flag.
+    config = getattr(ctx.rule.file, "clippy_config", None) or ctx.file._config
+
     # Run clippy using the extracted function
     rust_clippy_action(
         ctx = ctx,
         clippy_executable = toolchain.clippy_driver,
         process_wrapper = ctx.executable._process_wrapper,
         crate_info = crate_info,
-        config = ctx.file._config,
+        config = config,
         output = clippy_out,
         cap_at_warnings = clippy_out != None or clippy_diagnostics != None,  # Collecting output for a tool -> cap so the build continues.
         success_marker = clippy_success_marker,

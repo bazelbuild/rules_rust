@@ -57,7 +57,7 @@ function test_all() {
   local -r BUILD_OK=0
   local -r BUILD_FAILED=1
   local -r CAPTURE_OUTPUT="--@rules_rust//rust/settings:capture_clippy_output=True --@rules_rust//rust/settings:error_format=json"
-  local -r BAD_CLIPPY_TOML="--@rules_rust//rust/settings:clippy.toml=//too_many_args:clippy.toml"
+  local -r BAD_CLIPPY_TOML="--@rules_rust//rust/settings:clippy.toml=//test/clippy/too_many_args:clippy.toml"
 
   mkdir -p "${NEW_WORKSPACE}/test/clippy" && \
   cp -r test/clippy/* "${NEW_WORKSPACE}/test/clippy/" && \
@@ -103,6 +103,7 @@ EOF
   check_build_result $BUILD_OK ok_static_library_clippy
   check_build_result $BUILD_OK ok_test_clippy
   check_build_result $BUILD_OK ok_proc_macro_clippy
+  check_build_result $BUILD_OK ok_library_with_clippy_config_clippy
   check_build_result $BUILD_FAILED bad_binary_clippy
   check_build_result $BUILD_FAILED bad_library_clippy
   check_build_result $BUILD_FAILED bad_shared_library_clippy
@@ -123,6 +124,20 @@ EOF
   # Test that we can make the ok_library_clippy fail when using an extra config file.
   # Proves that the config file is used and overrides default settings.
   check_build_result $BUILD_FAILED ok_library_clippy $BAD_CLIPPY_TOML
+
+  # Test that a per-target clippy_config attribute is honored. The library
+  # passes with the default config but its clippy_config attribute points at
+  # too_many_args/clippy.toml, which lowers the threshold so clippy fails.
+  check_build_result $BUILD_FAILED bad_library_with_clippy_config_clippy
+
+  # Test that a per-target clippy_config attribute takes precedence over the
+  # global label_flag. The global flag would fail this library, but the
+  # per-target config raises the threshold so clippy passes.
+  check_build_result $BUILD_OK ok_library_with_clippy_config_clippy $BAD_CLIPPY_TOML
+
+  # Test that a generated clippy_config (output under bazel-out/) is wired
+  # through correctly via CLIPPY_CONF_DIR.
+  check_build_result $BUILD_FAILED bad_library_with_generated_clippy_config_clippy
 }
 
 test_all

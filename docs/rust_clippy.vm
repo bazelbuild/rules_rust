@@ -30,3 +30,20 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 ```text
 build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
 ```
+
+Individual targets may also point at their own configuration file via the
+`clippy_config` attribute, which overrides the build setting above for that
+target only. This is useful in large workspaces where different subtrees need
+different `disallowed-methods`, `disallowed-types`, or other clippy options.
+
+```python
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+    clippy_config = "//path/to:clippy.toml",
+)
+```
+
+Note that `rust_test` targets which use the `crate` attribute to test a library
+do not inherit that library's `clippy_config`. Set `clippy_config` explicitly on
+the `rust_test` target if it should use the same configuration.
