@@ -2376,7 +2376,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         fail("Unexpected case")
 
     link_input = cc_common.create_linker_input(
-        owner = ctx.label,
+        owner = crate_info.owner or ctx.label,
         libraries = depset([library_to_link]) if library_to_link else depset(),
     )
 
