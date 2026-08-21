@@ -185,6 +185,7 @@ fn apply_rustfmt(options: &Config, editions_and_targets: &HashMap<String, Vec<St
             .arg(&options.rustfmt_config.config)
             .arg("--config")
             .arg("skip_children=true")
+            .args(&options.rustfmt_args)
             .args(sources)
             .status()
             .expect("Failed to run rustfmt");
@@ -212,11 +213,52 @@ struct Config {
     /// to be formatted. If empty, all targets in the workspace will
     /// be formatted.
     pub packages: Vec<String>,
+
+    /// Extra arguments to pass down to rustfmt (e.g. `--check`, `--verbose`).
+    pub rustfmt_args: Vec<String>,
+}
+
+/// Parse command line arguments into target packages and extra arguments for rustfmt.
+fn parse_cli_args(args: impl IntoIterator<Item = String>) -> (Vec<String>, Vec<String>) {
+    let mut packages = Vec::new();
+    let mut rustfmt_args = Vec::new();
+    let mut iter = args.into_iter();
+
+    while let Some(arg) = iter.next() {
+        if arg == "--" {
+            // Everything after `--` is passed directly to rustfmt.
+            rustfmt_args.extend(iter);
+            break;
+        } else if arg.starts_with('-') {
+            // It's a flag for rustfmt.
+            let takes_value = matches!(
+                arg.as_str(),
+                "--config-path"
+                    | "--config"
+                    | "--edition"
+                    | "--color"
+                    | "--print-config"
+                    | "--emit"
+            );
+            rustfmt_args.push(arg);
+            if takes_value {
+                if let Some(val) = iter.next() {
+                    rustfmt_args.push(val);
+                }
+            }
+        } else {
+            packages.push(arg);
+        }
+    }
+
+    (packages, rustfmt_args)
 }
 
 /// Parse command line arguments and environment variables to
 /// produce config data for running rustfmt.
 fn parse_args() -> Config {
+    let (packages, rustfmt_args) = parse_cli_args(env::args().skip(1));
+
     Config{
         workspace: PathBuf::from(
             env::var("BUILD_WORKSPACE_DIRECTORY")
@@ -227,6 +269,69 @@ fn parse_args() -> Config {
             .unwrap_or_else(|_| "bazel".to_owned())
         ),
         rustfmt_config: parse_rustfmt_config(),
-        packages: env::args().skip(1).collect(),
+        packages,
+        rustfmt_args,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_cli_args_packages_only() {
+        let args = vec!["//foo/...".to_string(), "//bar:bar".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/...", "//bar:bar"]);
+        assert!(rustfmt_args.is_empty());
+    }
+
+    #[test]
+    fn test_parse_cli_args_flags_before_packages() {
+        let args = vec!["--check".to_string(), "//foo/...".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_flags_after_packages() {
+        let args = vec!["//foo/...".to_string(), "--check".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_double_dash_escape() {
+        let args = vec![
+            "//foo/...".to_string(),
+            "--".to_string(),
+            "--check".to_string(),
+            "--verbose".to_string(),
+        ];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--check", "--verbose"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_double_dash_only() {
+        let args = vec!["--".to_string(), "--check".to_string()];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert!(packages.is_empty());
+        assert_eq!(rustfmt_args, vec!["--check"]);
+    }
+
+    #[test]
+    fn test_parse_cli_args_flag_with_value() {
+        let args = vec![
+            "--edition".to_string(),
+            "2021".to_string(),
+            "//foo/...".to_string(),
+        ];
+        let (packages, rustfmt_args) = parse_cli_args(args);
+        assert_eq!(packages, vec!["//foo/..."]);
+        assert_eq!(rustfmt_args, vec!["--edition", "2021"]);
     }
 }

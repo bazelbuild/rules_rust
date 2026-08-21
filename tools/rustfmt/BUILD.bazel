@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_clippy")
+load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
 load("//tools/private:tool_utils.bzl", "aspect_repository")
 
 exports_files(
@@ -35,6 +35,22 @@ rust_binary(
     },
     toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
     visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+        "//util/label",
+    ],
+)
+
+rust_test(
+    name = "target_aware_rustfmt_unit_test",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+        "RUSTFMT": "",
+        "RUSTFMT_CONFIG": "",
+        "RUST_DEFAULT_EDITION": "",
+    },
     deps = [
         "//rust/runfiles",
         "//util/label",
