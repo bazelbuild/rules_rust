@@ -476,7 +476,7 @@ def dedent(doc_string):
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
 
-def make_static_lib_symlink(ctx_package, actions, rlib_file):
+def make_static_lib_symlink(ctx_package, actions, rlib_file, remove_metadata = False, cc_toolchain = None):
     """Add a .a symlink to an .rlib file.
 
     The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
@@ -491,9 +491,11 @@ def make_static_lib_symlink(ctx_package, actions, rlib_file):
         ctx_package (string): The rule's context package name.
         actions (actions): The rule's context actions object.
         rlib_file (File): The file to symlink, which must end in .rlib.
+        remove_metadata (bool): If True, copy the file and remove metadata instead of symlinking.
+        cc_toolchain (CcToolchainInfo): The current cc toolchain. Required if remove_metadata is True.
 
     Returns:
-        The symlink's File.
+        The symlink's (or copied file's) File.
     """
 
     if not rlib_file.basename.endswith(".rlib"):
@@ -513,8 +515,44 @@ def make_static_lib_symlink(ctx_package, actions, rlib_file):
         actions.symlink(output = new_rlib_file, target_file = rlib_file)
         rlib_file = new_rlib_file
 
-    dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
-    actions.symlink(output = dot_a, target_file = rlib_file)
+    if not remove_metadata:
+        dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+        actions.symlink(output = dot_a, target_file = rlib_file)
+        return dot_a
+
+    if not cc_toolchain:
+        fail("cc_toolchain is required when remove_metadata is True")
+
+    # If windows, use the .lib extension. Otherwise, use .a.
+    if ("windows" in cc_toolchain.target_gnu_system_name):
+        dot_a = actions.declare_file(basename + ".lib", sibling = rlib_file)
+    else:
+        dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
+
+    if ("wasm" in cc_toolchain.target_gnu_system_name or
+        "apple" in cc_toolchain.target_gnu_system_name or
+        "windows" in cc_toolchain.target_gnu_system_name):
+        actions.symlink(output = dot_a, target_file = rlib_file)
+    else:
+        # TODO: As of writing this comment Bazel used Java CcToolchainInfo.
+        # However there is ongoing work to rewrite provider in Starlark.
+        # rules_rust is not coupled with Bazel release. Remove conditional and change to
+        # _linker_files once Starlark CcToolchainInfo is visible to Bazel.
+        # https://github.com/bazelbuild/rules_rust/issues/2425
+        if hasattr(cc_toolchain, "_linker_files"):
+            linker_depset = cc_toolchain._linker_files
+        else:
+            linker_depset = cc_toolchain.linker_files()
+        actions.run_shell(
+            inputs = depset(direct = [rlib_file]),
+            tools = depset(transitive = [linker_depset, cc_toolchain.all_files]),
+            outputs = [dot_a],
+            mnemonic = "CopyStaticLibWithoutRmeta",
+            progress_message = "Copy %s to %s without lib.rmeta" % (rlib_file.short_path, dot_a.short_path),
+            command = "cp '%s' '%s' && chmod 0644 '%s' && %s -d '%s' lib.rmeta" % (rlib_file.path, dot_a.path, dot_a.path, cc_toolchain.ar_executable, dot_a.path),
+            toolchain = "@bazel_tools//tools/cpp:toolchain_type",
+        )
+
     return dot_a
 
 def is_exec_configuration(ctx):

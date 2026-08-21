@@ -115,6 +115,17 @@ def pipelined_compilation():
         build_setting_default = False,
     )
 
+def remove_metadata_from_staticlib():
+    """A flag to control whether to remove metadata from static libraries.
+
+    If enabled, the metadata (.rmeta) will be removed from static libraries (usually .rlib renamed to .a)
+    to avoid linker errors when using alwayslink.
+    """
+    bool_flag(
+        name = "remove_metadata_from_staticlib",
+        build_setting_default = False,
+    )
+
 # buildifier: disable=unnamed-macro
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \

@@ -32,6 +32,7 @@ load(
     "no_std",
     "per_crate_rustc_flag",
     "pipelined_compilation",
+    "remove_metadata_from_staticlib",
     "rename_first_party_crates",
     "require_explicit_unstable_features",
     "rustc_output_diagnostics",
@@ -123,6 +124,8 @@ no_std()
 per_crate_rustc_flag()
 
 pipelined_compilation()
+
+remove_metadata_from_staticlib()
 
 rename_first_party_crates()
 
