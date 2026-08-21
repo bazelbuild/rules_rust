@@ -1,0 +1,20 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "junit_runner",
+    srcs = ["junit_runner.rs"],
+    edition = "2021",
+    rustc_flags = select({
+        "@platforms//os:linux": ["-Cstrip=debuginfo"],
+        "@platforms//os:macos": ["-Cstrip=symbols"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "junit_runner_test",
+    srcs = ["junit_runner.rs"],
+    edition = "2021",
+    junit = False,
+)
