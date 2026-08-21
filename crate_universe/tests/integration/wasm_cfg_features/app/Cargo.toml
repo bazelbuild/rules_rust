@@ -1,0 +1,13 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+# `app` is the wasm-targeted library. It uses tokio on all targets (including
+# wasm32) but only enables the `sync` feature, which compiles for wasm32. The
+# fix must preserve `sync` on wasm32 while removing the leaked `net` stack.
+[dependencies]
+tokio = { version = "=1.52.0", features = ["sync"] }

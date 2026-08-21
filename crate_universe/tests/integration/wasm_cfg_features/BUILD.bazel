@@ -1,0 +1,28 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_shared_library")
+
+# Builds a tiny driver that depends on tokio, with a platform transition to
+# wasm32-unknown-unknown. This forces tokio (and any unconditional transitive
+# deps in its rendered BUILD.bazel) to be compiled for wasm32.
+#
+# Workspace member `server` requests tokio's `net` feature unconditionally, so
+# whole-workspace feature unification would otherwise leak `net` (and its
+# optional `mio`/`socket2` deps) into tokio's wasm32 entry and this target
+# would fail to compile. The `crate.annotation_select` for tokio in
+# //:MODULE.bazel strips those from the wasm32 configuration, so the build
+# succeeds while `net` stays available on the other supported triples.
+rust_shared_library(
+    name = "build_for_wasm32",
+    srcs = ["src/lib.rs"],
+    crate_name = "build_for_wasm32",
+    edition = "2021",
+    platform = "//platforms:wasm32-unknown-unknown",
+    deps = ["@crate_index_wasm_cfg_features//:tokio"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":build_for_wasm32",
+    ],
+)

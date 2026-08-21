@@ -107,6 +107,13 @@ where
         (self.common, self.selects)
     }
 
+    pub(crate) fn from_parts(
+        common: T::CommonType,
+        selects: BTreeMap<String, T::SelectsType>,
+    ) -> Self {
+        Self { common, selects }
+    }
+
     pub(crate) fn merge(lhs: Self, rhs: Self) -> Self {
         T::merge(lhs, rhs)
     }
