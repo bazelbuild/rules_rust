@@ -354,7 +354,7 @@ rust_unpretty(
         ":hello_lib",
         ":greeting_test",
     ],
-    mode = "expand",
+    mode = "expanded",
 )
 ```
 """,

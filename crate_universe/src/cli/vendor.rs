@@ -155,8 +155,14 @@ struct BazelInfo {
 impl BazelInfo {
     /// Construct a new struct based on the current binary and workspace paths provided.
     fn try_new(bazel: &Path, workspace_dir: &Path) -> anyhow::Result<Self> {
-        let output = process::Command::new(bazel)
-            .current_dir(workspace_dir)
+        let mut cmd = process::Command::new(bazel);
+        cmd.current_dir(workspace_dir);
+        // Pass --output_base as a Bazel startup flag so it never touches the
+        // default (possibly non-writable) output_base path.
+        if let Ok(output_base) = env::var("OUTPUT_BASE") {
+            cmd.arg("--output_base").arg(output_base);
+        }
+        let output = cmd
             .arg("info")
             .arg("release")
             .arg("output_base")
@@ -168,7 +174,12 @@ impl BazelInfo {
         }
 
         let output = String::from_utf8_lossy(output.stdout.as_slice());
-        let mut bazel_info: HashMap<String, String> = output
+        Self::parse_bazel_info(&output)
+    }
+
+    /// Parse `bazel info` output into a `BazelInfo`.
+    fn parse_bazel_info(output: &str) -> anyhow::Result<Self> {
+        let bazel_info: HashMap<String, String> = output
             .trim()
             .split('\n')
             .map(|line| {
@@ -179,12 +190,6 @@ impl BazelInfo {
                 Ok((k.to_string(), (v[1..]).trim().to_string()))
             })
             .collect::<anyhow::Result<HashMap<_, _>>>()?;
-
-        // Allow a predefined environment variable to take precedent. This
-        // solves for the specific needs of Bazel CI on Github.
-        if let Ok(path) = env::var("OUTPUT_BASE") {
-            bazel_info.insert("output_base".to_owned(), format!("output_base: {}", path));
-        };
 
         BazelInfo::try_from(bazel_info)
     }

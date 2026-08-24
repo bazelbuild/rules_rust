@@ -712,7 +712,7 @@ RUSTC_ATTRS = {
         default = Label("//rust/settings:extra_rustc_flags"),
     ),
     "_per_crate_rustc_flag": attr.label(
-        default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
+        default = Label("//rust/settings:per_crate_rustc_flag"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",

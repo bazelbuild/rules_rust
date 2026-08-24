@@ -297,7 +297,7 @@ rust_allocator_libraries = rule(
             providers = [AllocatorLibrariesImplInfo],
         ),
         "global_allocator_library": attr.label(
-            doc = "An optional library to provide when a default rust allocator is used.",
+            doc = "An optional library to provide when a global rust allocator is used.",
             providers = [AllocatorLibrariesImplInfo],
         ),
     },

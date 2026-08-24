@@ -63,8 +63,18 @@ def _build_for_rust_toolchain_windows_flags_test_impl(ctx):
     )
     asserts.true(
         env,
+        'staticlib_ext = ".lib",' in rendered_msvc,
+        "MSVC toolchain should render a .lib staticlib extension:\n%s" % rendered_msvc,
+    )
+    asserts.true(
+        env,
         'stdlib_linkflags = ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],' in rendered_gnu,
         "GNU toolchain should render -l stdlib linkflags:\n%s" % rendered_gnu,
+    )
+    asserts.true(
+        env,
+        'staticlib_ext = ".a",' in rendered_gnu,
+        "GNU toolchain should render a .a staticlib extension:\n%s" % rendered_gnu,
     )
 
     return analysistest.end(env)

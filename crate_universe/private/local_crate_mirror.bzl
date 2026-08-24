@@ -57,7 +57,7 @@ This is effectively a `local_repository` rule implementation, but where the `BUI
         ),
         "path": attr.string(
             # TODO: Verify what happens if this is not an absolute path.
-            doc = "Absolute path to the BUILD.bazel file to generate.",
+            doc = "Absolute path to the crate source directory whose contents will be copied into the mirror repository.",
         ),
         "quiet": attr.bool(
             doc = "If stdout and stderr should not be printed to the terminal.",

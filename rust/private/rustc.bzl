@@ -1794,11 +1794,22 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
-    use_split_debuginfo = (
+    use_split_debuginfo = False
+    if (
         feature_configuration and
         cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and
         ctx.fragments.cpp.fission_active_for_current_compilation_mode()
-    )
+    ):
+        if toolchain._skip_fission_for_rust:
+            use_split_debuginfo = False
+        elif toolchain.channel == "nightly":
+            use_split_debuginfo = True
+        else:
+            fail(
+                "Split debug info (fission) was requested, but `-Zsplit-dwarf-out-dir` requires a nightly Rust toolchain " +
+                "(current toolchain channel is \"{}\"). ".format(toolchain.channel) +
+                "To skip fission for Rust objects and suppress this error, set `--@rules_rust//rust/settings:skip_fission_for_rust`.",
+            )
     if use_split_debuginfo:
         rust_flags = rust_flags + [
             "--codegen=split-debuginfo=unpacked",
@@ -2090,6 +2101,7 @@ def rustc_compile_action(
     for runfiles_attr in (
         getattr(ctx.attr, "srcs", []),
         getattr(ctx.attr, "deps", []),
+        getattr(ctx.attr, "link_deps", []),
         getattr(ctx.attr, "data", []),
         [crate_attr] if crate_attr else [],
     ):
@@ -2101,7 +2113,7 @@ def rustc_compile_action(
     if crate_info.type in ["bin", "cdylib", "dylib", "staticlib"]:
         dep_dylib_files = [
             library_to_link.dynamic_library
-            for dep in getattr(ctx.attr, "deps", [])
+            for dep in getattr(ctx.attr, "deps", []) + getattr(ctx.attr, "link_deps", [])
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
@@ -2291,20 +2303,24 @@ def _is_dylib(dep):
     """
     return not bool(dep.static_library or dep.pic_static_library)
 
-def _collect_nonstatic_linker_inputs(cc_info):
-    shared_linker_inputs = []
+def _collect_nonstatic_linker_inputs(cc_info, include_final_link_requirements):
+    nonstatic_linker_inputs = []
     for linker_input in cc_info.linking_context.linker_inputs.to_list():
         dylibs = [
             lib
             for lib in linker_input.libraries
             if _is_dylib(lib)
         ]
-        if dylibs:
-            shared_linker_inputs.append(cc_common.create_linker_input(
+        user_link_flags = linker_input.user_link_flags if include_final_link_requirements else []
+        additional_inputs = linker_input.additional_inputs if include_final_link_requirements else []
+        if dylibs or user_link_flags or additional_inputs:
+            nonstatic_linker_inputs.append(cc_common.create_linker_input(
                 owner = linker_input.owner,
                 libraries = depset(dylibs),
+                user_link_flags = depset(user_link_flags),
+                additional_inputs = depset(additional_inputs),
             ))
-    return shared_linker_inputs
+    return nonstatic_linker_inputs
 
 def _add_lto_flags(ctx, toolchain, args, crate):
     """Adds flags to an Args object to configure LTO for 'rustc'.
@@ -2446,13 +2462,16 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     # Flattening is okay since crate_info.deps only records direct deps.
     for dep in crate_info.deps.to_list():
         if dep.cc_info:
-            # A Rust staticlib or shared library doesn't need to propagate linker inputs
-            # of its dependencies, except for shared libraries.
+            # Static dependencies are bundled into both crate types. Shared libraries
+            # remain final-link dependencies, as do a staticlib's user link flags.
             if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
-                if shared_linker_inputs:
+                nonstatic_linker_inputs = _collect_nonstatic_linker_inputs(
+                    dep.cc_info,
+                    include_final_link_requirements = crate_info.type == "staticlib",
+                )
+                if nonstatic_linker_inputs:
                     linking_context = cc_common.create_linking_context(
-                        linker_inputs = depset(shared_linker_inputs),
+                        linker_inputs = depset(nonstatic_linker_inputs),
                     )
                     cc_infos.append(CcInfo(linking_context = linking_context))
             else:
@@ -3271,11 +3290,11 @@ def _per_crate_rustc_flag_impl(ctx):
 
 per_crate_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`. " +
-        "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
-        "The label matching uses the canonical form of the label (i.e //package:label_name)." +
-        "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
-        "This flag is only applied to the exec configuration (proc-macros, cargo_build_script, etc)." +
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:per_crate_rustc_flag`. " +
+        "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag. " +
+        "The label matching uses the canonical form of the label (i.e //package:label_name). " +
+        "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root. " +
+        "This flag is not applied to the exec configuration (proc-macros, cargo_build_script, etc). " +
         "Multiple uses are accumulated."
     ),
     implementation = _per_crate_rustc_flag_impl,

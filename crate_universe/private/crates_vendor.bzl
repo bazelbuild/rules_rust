@@ -293,7 +293,7 @@ def generate_config_file(
         mode (str): The vendoring mode.
         annotations: Any annotations provided.
         generate_binaries (bool): Whether to generate binaries for the crates.
-        generate_build_scripts (bool): Whether to generate BUILD.bazel files.
+        generate_build_scripts (bool): Whether to generate `cargo_build_script` targets for crates that have build scripts.
         generate_target_compatible_with (bool): DEPRECATED: Moved to `render_config`.
         supported_platform_triples (str): The platform triples to support in
             the generated BUILD.bazel files.
@@ -572,7 +572,7 @@ CRATES_VENDOR_ATTRS = {
     ),
     "splicing_config": attr.string(
         doc = (
-            "The configuration flags to use for splicing Cargo manifests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
+            "The configuration flags to use for splicing Cargo manifests. Use `//crate_universe:defs.bzl\\%splicing_config` to " +
             "generate the value for this field. If unset, the defaults defined there will be used."
         ),
     ),
