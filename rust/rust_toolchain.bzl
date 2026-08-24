@@ -1,8 +1,4 @@
-"""# Rust Toolchain
-
-Public entry point for the [rust_toolchain](#rust_toolchain) rule.
-Implementation lives in `//rust/private:toolchain.bzl`.
-"""
+"""# rust_toolchain.bzl"""
 
 load(
     "//rust/private:toolchain.bzl",

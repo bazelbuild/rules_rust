@@ -89,6 +89,21 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
         if dep_cc_info:
             _collect_library_roots(roots, dep_cc_info.linking_context.linker_inputs)
 
+    # The cc_toolchain runtime libs (see rustdoc.bzl) are built in their own
+    # configuration, so their root differs from every crate root collected
+    # above. Without stripping it too, the `-Lnative=` search path rustc emits
+    # for them stays an execroot path that does not exist under runfiles, and
+    # the linker reports "unable to find library".
+    #
+    # Source files have an empty root, and they need no stripping: their
+    # `-Lnative=` path is already workspace-relative. Skip them -- an empty
+    # root would add `--strip_substring=/`, and the writer applies these as
+    # plain string replacements, so that would delete every `/` in every
+    # argument.
+    for lib in action.static_runtime_libs:
+        if lib.root.path:
+            roots.append(lib.root.path)
+
     writer_args.add_all(roots, format_each = "--strip_substring=%s/", uniquify = True)
 
     # Indicate that the rustdoc_test args are over.

@@ -1,4 +1,4 @@
-"""rust_test"""
+"""# rust_test.bzl"""
 
 load(
     "//rust/private:rust.bzl",

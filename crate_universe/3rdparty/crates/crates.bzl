@@ -323,7 +323,7 @@ _NORMAL_DEPENDENCIES = {
         _COMMON_CONDITION: {
             "anyhow": Label("@cui//anyhow-1.0.98"),
             "camino": Label("@cui//camino-1.1.9"),
-            "cargo-lock": Label("@cui//cargo-lock-10.1.0"),
+            "cargo-lock": Label("@cui//cargo-lock-11.1.0"),
             "cargo-platform": Label("@cui//cargo-platform-0.1.9"),
             "cargo_metadata": Label("@cui//cargo_metadata-0.19.2"),
             "cargo_toml": Label("@cui//cargo_toml-0.22.3"),
@@ -338,7 +338,7 @@ _NORMAL_DEPENDENCIES = {
             "pathdiff": Label("@cui//pathdiff-0.2.3"),
             "regex": Label("@cui//regex-1.11.1"),
             "semver": Label("@cui//semver-1.0.26"),
-            "serde": Label("@cui//serde-1.0.219"),
+            "serde": Label("@cui//serde-1.0.229"),
             "serde_json": Label("@cui//serde_json-1.0.140"),
             "serde_starlark": Label("@cui//serde_starlark-0.1.17"),
             "sha2": Label("@cui//sha2-0.10.8"),
@@ -789,12 +789,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo-lock-10.1.0",
-        sha256 = "c06acb4f71407ba205a07cb453211e0e6a67b21904e47f6ba1f9589e38f2e454",
+        name = "cui__cargo-lock-11.1.0",
+        sha256 = "50524592e6bfbb1bf6f94e8184a786f637faeaf1cf37bbe65502b9a2c5c48939",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cargo-lock/10.1.0/download"],
-        strip_prefix = "cargo-lock-10.1.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-lock-10.1.0.bazel"),
+        urls = ["https://static.crates.io/crates/cargo-lock/11.1.0/download"],
+        strip_prefix = "cargo-lock-11.1.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-lock-11.1.0.bazel"),
     )
 
     maybe(
@@ -1649,12 +1649,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__hashbrown-0.15.0",
-        sha256 = "1e087f84d4f86bf4b218b927129862374b72199ae7d8657835f1e89000eea4fb",
+        name = "cui__hashbrown-0.17.1",
+        sha256 = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/hashbrown/0.15.0/download"],
-        strip_prefix = "hashbrown-0.15.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.hashbrown-0.15.0.bazel"),
+        urls = ["https://static.crates.io/crates/hashbrown/0.17.1/download"],
+        strip_prefix = "hashbrown-0.17.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.hashbrown-0.17.1.bazel"),
     )
 
     maybe(
@@ -1819,12 +1819,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__indexmap-2.6.0",
-        sha256 = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da",
+        name = "cui__indexmap-2.14.0",
+        sha256 = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/indexmap/2.6.0/download"],
-        strip_prefix = "indexmap-2.6.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.indexmap-2.6.0.bazel"),
+        urls = ["https://static.crates.io/crates/indexmap/2.14.0/download"],
+        strip_prefix = "indexmap-2.14.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.indexmap-2.14.0.bazel"),
     )
 
     maybe(
@@ -2339,22 +2339,32 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__serde-1.0.219",
-        sha256 = "5f0e2c6ed6606019b4e29e69dbaba95b11854410e5347d525002456dbbb786b6",
+        name = "cui__serde-1.0.229",
+        sha256 = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde/1.0.219/download"],
-        strip_prefix = "serde-1.0.219",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde-1.0.219.bazel"),
+        urls = ["https://static.crates.io/crates/serde/1.0.229/download"],
+        strip_prefix = "serde-1.0.229",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde-1.0.229.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__serde_derive-1.0.219",
-        sha256 = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00",
+        name = "cui__serde_core-1.0.229",
+        sha256 = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_derive/1.0.219/download"],
-        strip_prefix = "serde_derive-1.0.219",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_derive-1.0.219.bazel"),
+        urls = ["https://static.crates.io/crates/serde_core/1.0.229/download"],
+        strip_prefix = "serde_core-1.0.229",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_core-1.0.229.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__serde_derive-1.0.229",
+        sha256 = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/serde_derive/1.0.229/download"],
+        strip_prefix = "serde_derive-1.0.229",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_derive-1.0.229.bazel"),
     )
 
     maybe(
@@ -2379,12 +2389,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__serde_spanned-1.0.0",
-        sha256 = "40734c41988f7306bb04f0ecf60ec0f3f1caa34290e4e8ea471dcd3346483b83",
+        name = "cui__serde_spanned-1.1.1",
+        sha256 = "6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_spanned/1.0.0/download"],
-        strip_prefix = "serde_spanned-1.0.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_spanned-1.0.0.bazel"),
+        urls = ["https://static.crates.io/crates/serde_spanned/1.1.1/download"],
+        strip_prefix = "serde_spanned-1.1.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_spanned-1.1.1.bazel"),
     )
 
     maybe(
@@ -2529,6 +2539,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__syn-3.0.3",
+        sha256 = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/syn/3.0.3/download"],
+        strip_prefix = "syn-3.0.3",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.syn-3.0.3.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__synstructure-0.13.1",
         sha256 = "c8af7666ab7b6390ab78131fb5b0fce11d6b7a6951602017c35fa82800708971",
         type = "tar.gz",
@@ -2669,6 +2689,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__toml-1.1.0-spec-1.1.0",
+        sha256 = "f8195ca05e4eb728f4ba94f3e3291661320af739c4e43779cbdfae82ab239fcc",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/toml/1.1.0+spec-1.1.0/download"],
+        strip_prefix = "toml-1.1.0+spec-1.1.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.toml-1.1.0+spec-1.1.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__toml_datetime-0.6.9",
         sha256 = "3da5db5a963e24bc68be8b17b6fa82814bb22ee8660f192bb182771d498f09a3",
         type = "tar.gz",
@@ -2685,6 +2715,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/toml_datetime/0.7.0/download"],
         strip_prefix = "toml_datetime-0.7.0",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.toml_datetime-0.7.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__toml_datetime-1.1.1-spec-1.1.0",
+        sha256 = "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/toml_datetime/1.1.1+spec-1.1.0/download"],
+        strip_prefix = "toml_datetime-1.1.1+spec-1.1.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.toml_datetime-1.1.1+spec-1.1.0.bazel"),
     )
 
     maybe(
@@ -3371,7 +3411,7 @@ def crate_repositories():
         struct(repo = "cui", is_dev_dep = False),
         struct(repo = "cui__anyhow-1.0.98", is_dev_dep = False),
         struct(repo = "cui__camino-1.1.9", is_dev_dep = False),
-        struct(repo = "cui__cargo-lock-10.1.0", is_dev_dep = False),
+        struct(repo = "cui__cargo-lock-11.1.0", is_dev_dep = False),
         struct(repo = "cui__cargo-platform-0.1.9", is_dev_dep = False),
         struct(repo = "cui__cargo_metadata-0.19.2", is_dev_dep = False),
         struct(repo = "cui__cargo_toml-0.22.3", is_dev_dep = False),
@@ -3387,7 +3427,7 @@ def crate_repositories():
         struct(repo = "cui__pathdiff-0.2.3", is_dev_dep = False),
         struct(repo = "cui__regex-1.11.1", is_dev_dep = False),
         struct(repo = "cui__semver-1.0.26", is_dev_dep = False),
-        struct(repo = "cui__serde-1.0.219", is_dev_dep = False),
+        struct(repo = "cui__serde-1.0.229", is_dev_dep = False),
         struct(repo = "cui__serde_json-1.0.140", is_dev_dep = False),
         struct(repo = "cui__serde_starlark-0.1.17", is_dev_dep = False),
         struct(repo = "cui__sha2-0.10.8", is_dev_dep = False),

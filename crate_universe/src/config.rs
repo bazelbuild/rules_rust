@@ -225,6 +225,7 @@ impl From<GitReference> for Commitish {
             GitReference::Tag(v) => Self::Tag(v),
             GitReference::Branch(v) => Self::Branch(v),
             GitReference::Rev(v) => Self::Rev(v),
+            GitReference::DefaultBranch => Self::Branch("HEAD".to_owned()),
         }
     }
 }

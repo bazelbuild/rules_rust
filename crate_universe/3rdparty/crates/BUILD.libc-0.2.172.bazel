@@ -244,7 +244,7 @@ rust_library(
     }),
     version = "0.2.172",
     deps = [
-        "@cui__libc-0.2.172//:build_script_build",
+        ":build_script_build",
     ],
 )
 
@@ -254,6 +254,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

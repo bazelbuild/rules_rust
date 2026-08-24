@@ -70,7 +70,7 @@ anyhow = "1.0.98"
 camino = "1.1.9"
 cargo_metadata = "0.19.2"
 cargo_toml = "0.22.3"
-cargo-lock = "10.1.0"
+cargo-lock = "11.1.0"
 cargo-platform = "0.1.9"
 cfg-expr = "0.18.0"
 clap = { version = "4.5.37", features = ["derive", "env"] }

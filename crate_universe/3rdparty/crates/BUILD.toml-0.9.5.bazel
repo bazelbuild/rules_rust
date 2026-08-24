@@ -115,8 +115,8 @@ rust_library(
     }),
     version = "0.9.5",
     deps = [
-        "@cui__serde-1.0.219//:serde",
-        "@cui__serde_spanned-1.0.0//:serde_spanned",
+        "@cui__serde-1.0.229//:serde",
+        "@cui__serde_spanned-1.1.1//:serde_spanned",
         "@cui__toml_datetime-0.7.0//:toml_datetime",
         "@cui__toml_parser-1.1.0-spec-1.1.0//:toml_parser",
         "@cui__toml_writer-1.1.0-spec-1.1.0//:toml_writer",
