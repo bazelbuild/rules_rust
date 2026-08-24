@@ -10,6 +10,8 @@
         - [rust_library](./rust_library.md)
         - [rust_library_group](./rust_library_group.md)
         - [rust_lint_config](./rust_lint_config.md)
+        - [rust_cdylib_library](./rust_cdylib_library.md)
+        - [rust_dylib_library](./rust_dylib_library.md)
         - [rust_proc_macro](./rust_proc_macro.md)
         - [rust_shared_library](./rust_shared_library.md)
         - [rust_static_library](./rust_static_library.md)
