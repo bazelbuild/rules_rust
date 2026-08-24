@@ -1126,11 +1126,11 @@ rust_dylib_library = rule(
         ),
         "link_std_dylib": attr.bool(
             mandatory = False,
-            default = False,
+            default = True,
             doc = dedent("""\
                 Flag to dynamically link the standard library as a Rust dylib .so object when building this library.
 
-                Default is false. This is typically required for Rust ABI dylibs so that the stdlib is shared
+                Default is true. This is typically required for Rust ABI dylibs so that the stdlib is shared
                 with the binary that loads them, avoiding duplicate symbols.
             """),
         ),

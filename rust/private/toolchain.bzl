@@ -121,8 +121,13 @@ rust_stdlib_filegroup = rule(
 )
 
 def _experimental_link_std_dylib(ctx):
+    per_toolchain = ctx.attr.link_std_dylib
+    if per_toolchain == -1:
+        enabled = ctx.attr._link_std_dylib_setting[BuildSettingInfo].value
+    else:
+        enabled = bool(per_toolchain)
     return not is_exec_configuration(ctx) and \
-           ctx.attr._link_std_dylib[BuildSettingInfo].value and \
+           enabled and \
            ctx.attr.rust_std[rust_common.stdlib_info].std_dylib != None
 
 def _symlink_sysroot_tree(ctx, name, target, target_files = None):
@@ -910,9 +915,20 @@ rust_toolchain = rule(
             default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
             doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
         ),
-        "_link_std_dylib": attr.label(
+        "link_std_dylib": attr.int(
+            doc = (
+                "Whether to link libstd dynamically. Possible values: [-1, 0, 1]. " +
+                "-1 means to use the value of the build setting " +
+                "//rust/settings:experimental_link_std_dylib. " +
+                "0 means do not link libstd dynamically. " +
+                "1 means link libstd dynamically."
+            ),
+            values = [-1, 0, 1],
+            default = -1,
+        ),
+        "_link_std_dylib_setting": attr.label(
             default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
-            doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
+            doc = "Label to a boolean build setting that controls whether to link libstd dynamically.",
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),

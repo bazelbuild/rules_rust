@@ -70,10 +70,11 @@ def _test_rust_binary_with_attr_dylib(name):
 
 def _test_rust_dylib_with_attr(name):
     rust_dylib_library(
-        name = name + "_rust_dylib",
+        name = name + "_rust_dylib_no_std_dylib",
         srcs = ["lib.rs"],
         edition = "2021",
         tags = ["manual"],
+        link_std_dylib = False,
     )
 
     rust_dylib_library(
@@ -88,7 +89,7 @@ def _test_rust_dylib_with_attr(name):
         name = name,
         impl = _test_prefer_dynamic_impl,
         targets = {
-            "default_target": name + "_rust_dylib",
+            "default_target": name + "_rust_dylib_no_std_dylib",
             "target_with_std_dylib": name + "_rust_dylib_link_std",
         },
     )
