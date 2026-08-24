@@ -1,0 +1,300 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>cargo_build_script - rules_rust</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">rules_rust</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/bazelbuild/rules_rust" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="cargo_build_scriptbzl"><a class="header" href="#cargo_build_scriptbzl">cargo_build_script.bzl</a></h1>
+<p><a id="cargo_build_script"></a></p>
+<h2 id="cargo_build_script"><a class="header" href="#cargo_build_script">cargo_build_script</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_build_script.bzl", "cargo_build_script")
+
+cargo_build_script(*, <a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
+                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-build_script_env_files">build_script_env_files</a>,
+                   <a href="#cargo_build_script-emit_warnings">emit_warnings</a>, <a href="#cargo_build_script-use_cc_toolchain">use_cc_toolchain</a>, <a href="#cargo_build_script-use_default_shell_env">use_default_shell_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>,
+                   <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>,
+                   <a href="#cargo_build_script-pkg_name">pkg_name</a>, <a href="#cargo_build_script-kwargs">**kwargs</a>)
+</pre>
+<p>Compile and execute a rust build script to generate build attributes</p>
+<p>This rules take the same arguments as rust_binary.</p>
+<p>Example:</p>
+<p>Suppose you have a crate with a cargo build script <code>build.rs</code>:</p>
+<pre><code class="language-output">[workspace]/
+    hello_lib/
+        BUILD
+        build.rs
+        src/
+            lib.rs
+</code></pre>
+<p>Then you want to use the build script in the following:</p>
+<p><code>hello_lib/BUILD</code>:</p>
+<pre><code class="language-python">package(default_visibility = ["//visibility:public"])
+
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+
+# This will run the build script from the root of the workspace, and
+# collect the outputs.
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    # Optional environment variables passed during build.rs compilation
+    rustc_env = {
+       "CARGO_PKG_VERSION": "0.1.2",
+    },
+    # Optional environment variables passed during build.rs execution.
+    # Note that as the build script's working directory is not execroot,
+    # execpath/location will return an absolute path, instead of a relative
+    # one.
+    build_script_env = {
+        "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
+    },
+    # Optional data/tool dependencies
+    data = ["@tool//:binary"],
+)
+
+rust_library(
+    name = "hello_lib",
+    srcs = [
+        "src/lib.rs",
+    ],
+    deps = [":build_script"],
+)
+</code></pre>
+<p>The <code>hello_lib</code> target will be build with the flags and the environment variables declared by the     build script in addition to the file generated by it.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="cargo_build_script-name"></a>name</td><td style="text-align: left">The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of <code>_bs</code>. Otherwise, you can set the package name via <code>pkg_name</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-edition"></a>edition</td><td style="text-align: left">The rust edition to use for the internal binary crate.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-crate_name"></a>crate_name</td><td style="text-align: left">Crate name to use for build script.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-crate_root"></a>crate_root</td><td style="text-align: left">The file that will be passed to rustc to be used for building this crate.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-srcs"></a>srcs</td><td style="text-align: left">Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-crate_features"></a>crate_features</td><td style="text-align: left">A list of features to enable for the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-version"></a>version</td><td style="text-align: left">The semantic version (semver) of the crate.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-deps"></a>deps</td><td style="text-align: left">The build-dependencies of the crate.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-link_deps"></a>link_deps</td><td style="text-align: left">The subset of the (normal) dependencies of the crate that have the links attribute and therefore provide environment variables to this build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of rust_proc_macro targets used to build the script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-build_script_env"></a>build_script_env</td><td style="text-align: left">Environment variables for build scripts.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-build_script_env_files"></a>build_script_env_files</td><td style="text-align: left">Files containing additional environment variables to set when running the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-emit_warnings"></a>emit_warnings</td><td style="text-align: left">Whether to forward <code>cargo::warning=</code> lines from the build script to stderr. Honored only when <code>@rules_rust//cargo/settings:emit_build_script_warnings</code> is <code>auto</code> (the default); set the flag to <code>on</code> or <code>off</code> to override every target.</td><td style="text-align: left"><code>True</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-use_cc_toolchain"></a>use_cc_toolchain</td><td style="text-align: left">Whether or not to pull in the resolved <code>cc_toolchain</code> when running the build script.<br><br>When enabled, the resolved <code>cc_toolchain</code>'s <code>all_files</code> are added to the action inputs and the <code>CC</code>, <code>CXX</code>, <code>AR</code>, <code>CFLAGS</code>, <code>CXXFLAGS</code>, <code>LDFLAGS</code>, and <code>INCLUDE</code> environment variables are populated from that toolchain (matching Cargo's normal behavior). Disabling this can significantly shrink build script action input trees (particularly with hermetic sysroots) but breaks any build script that needs to compile C/C++ code. If unset the global setting <code>@rules_rust//cargo/settings:use_cc_toolchain</code> will be used to determine this value.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-use_default_shell_env"></a>use_default_shell_env</td><td style="text-align: left">Whether or not to include the default shell environment for the build script action. If unset the global setting <code>@rules_rust//cargo/settings:use_default_shell_env</code> will be used to determine this value.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-data"></a>data</td><td style="text-align: left">Files needed by the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-compile_data"></a>compile_data</td><td style="text-align: left">Files needed for the compilation of the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-tools"></a>tools</td><td style="text-align: left">Tools (executables) needed by the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-links"></a>links</td><td style="text-align: left">Name of the native library this crate links against.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-rundir"></a>rundir</td><td style="text-align: left">A directory to <code>cd</code> to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to <code>.</code>, the cargo build script will run in the exec root.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-rustc_env"></a>rustc_env</td><td style="text-align: left">Environment variables to set in rustc when compiling the build script.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-rustc_env_files"></a>rustc_env_files</td><td style="text-align: left">Files containing additional environment variables to set for rustc when building the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-visibility"></a>visibility</td><td style="text-align: left">Visibility to apply to the generated build script output.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-tags"></a>tags</td><td style="text-align: left">(list of str, optional): Tags to apply to the generated build script output.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-aliases"></a>aliases</td><td style="text-align: left">Remap crates to a new name or moniker for linkage to this target.             These are other <code>rust_library</code> targets and will be presented as the new name given.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-pkg_name"></a>pkg_name</td><td style="text-align: left">Override the package name used for the build script. This is useful if the build target name gets too long otherwise.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_build_script-kwargs"></a>kwargs</td><td style="text-align: left">Forwards to the underlying <code>rust_binary</code> rule. An exception is the <code>compatible_with</code> attribute, which shouldn't be forwarded to the <code>rust_binary</code>, as the <code>rust_binary</code> is only built and used in <code>exec</code> mode. We propagate the <code>compatible_with</code> attribute to the <code>_build_script_run</code> target.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="cargo.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="cargo_env.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="cargo.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="cargo_env.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

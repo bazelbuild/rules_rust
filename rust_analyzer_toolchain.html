@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>rustfmt - rules_rust</title>
+        <title>rust_analyzer_toolchain - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,119 +155,37 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p><a href="https://github.com/rust-lang/rustfmt#readme">Rustfmt</a> is a tool for formatting Rust code according to style guidelines.
-By default, Rustfmt uses a style which conforms to the <a href="https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md">Rust style guide</a> that
-has been formalized through the <a href="https://github.com/rust-lang-nursery/fmt-rfcs">style RFC process</a>. A complete list of all
-configuration options can be found in the <a href="https://rust-lang.github.io/rustfmt/">Rustfmt GitHub Pages</a>.</p>
-<h3 id="setup"><a class="header" href="#setup">Setup</a></h3>
-<p>Formatting your Rust targets' source code requires no setup outside of loading <code>rules_rust</code>
-in your workspace. Simply run <code>bazel run @rules_rust//:rustfmt</code> to format source code.</p>
-<p>In addition to this formatter, a simple check can be performed using the <a href="#rustfmt-aspect">rustfmt_aspect</a> aspect by running</p>
-<pre><code class="language-text">bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
-</code></pre>
-<p>Add the following to a <code>.bazelrc</code> file to enable this check during the build phase.</p>
-<pre><code class="language-text">build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
-build --output_groups=+rustfmt_checks
-</code></pre>
-<p>It's recommended to only enable this aspect in your CI environment so formatting issues do not
-impact user's ability to rapidly iterate on changes.</p>
-<p>The <code>rustfmt_aspect</code> also uses a <code>--@rules_rust//rust/settings:rustfmt.toml</code> setting which determines the
-<a href="https://rust-lang.github.io/rustfmt/">configuration file</a> used by the formatter (<code>@rules_rust//tools/rustfmt</code>) and the aspect
-(<code>rustfmt_aspect</code>). This flag can be added to your <code>.bazelrc</code> file to ensure a consistent config
-file is used whenever <code>rustfmt</code> is run:</p>
-<pre><code class="language-text">build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
-</code></pre>
-<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
-<ul>
-<li><a href="#rustfmt_test">rustfmt_test</a></li>
-</ul>
-<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
-<ul>
-<li><a href="#rustfmt_aspect">rustfmt_aspect</a></li>
-</ul>
-<p><a id="rustfmt_test"></a></p>
-<h2 id="rustfmt_test"><a class="header" href="#rustfmt_test">rustfmt_test</a></h2>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rust_analyzer_toolchainbzl"><a class="header" href="#rust_analyzer_toolchainbzl">rust_analyzer_toolchain.bzl</a></h1>
+<p><a id="rust_analyzer_toolchain"></a></p>
+<h2 id="rust_analyzer_toolchain"><a class="header" href="#rust_analyzer_toolchain">rust_analyzer_toolchain</a></h2>
 <pre>
-load("@rules_rust//rust:defs.bzl", "rustfmt_test")
+load("@rules_rust//rust:rust_analyzer_toolchain.bzl", "rust_analyzer_toolchain")
 
-rustfmt_test(<a href="#rustfmt_test-name">name</a>, <a href="#rustfmt_test-platform">platform</a>, <a href="#rustfmt_test-targets">targets</a>, <a href="#rustfmt_test-transitive">transitive</a>)
+rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-proc_macro_srv">proc_macro_srv</a>, <a href="#rust_analyzer_toolchain-rust_analyzer">rust_analyzer</a>, <a href="#rust_analyzer_toolchain-rustc">rustc</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>, <a href="#rust_analyzer_toolchain-rustc_srcs_path">rustc_srcs_path</a>,
+                        <a href="#rust_analyzer_toolchain-version">version</a>)
 </pre>
-<p>A test rule that runs <code>rustfmt --check</code> over a set of Rust targets.</p>
-<p>By default (<code>transitive = False</code>), only the exact targets listed are checked. Set
-<code>transitive = True</code> to walk <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code> so that listing a
-top-level target checks its whole crate graph.</p>
-<p>The <code>rustfmt</code> actions run during the build phase, so a formatting failure fails <code>bazel test</code>
-before the test executable is invoked. The rule also exposes the collected markers under the
-<code>rustfmt_checks</code> output group, so <code>bazel build //x:my_fmt_test --output_groups=rustfmt_checks</code>
-drives the rustfmt actions without running the test.</p>
-<p>An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform before running
-<code>rustfmt</code>.</p>
-<p>Example:</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rustfmt_test")
-
-rust_library(
-    name = "lib",
-    srcs = ["src/lib.rs"],
-    edition = "2021",
-)
-
-rust_binary(
-    name = "app",
-    srcs = ["src/main.rs"],
-    edition = "2021",
-    deps = [":lib"],
-)
-
-rustfmt_test(
-    name = "fmt_app_only_test",
-    targets = [":app"]
-)
-
-rustfmt_test(
-    name = "fmt_tree_test",
-    targets = [":app"],
-    transitive = True,
-)
-</code></pre>
-<p>Targets tagged <code>no_format</code>, <code>no_rustfmt</code>, or <code>norustfmt</code> are skipped.</p>
+<p>A toolchain for <a href="https://rust-analyzer.github.io/">rust-analyzer</a>.</p>
 <p><strong>ATTRIBUTES</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rustfmt_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rustfmt_test-platform"></a>platform</td><td style="text-align: left">Optional platform to transition <code>targets</code> to before running the aspect. When set, <code>--platforms</code> is switched to this label for the duration of this rule's aspect actions.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rustfmt_test-targets"></a>targets</td><td style="text-align: left">Rust targets to run <code>rustfmt --check</code> on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rustfmt_test-transitive"></a>transitive</td><td style="text-align: left">If True, lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-proc_macro_srv"></a>proc_macro_srv</td><td style="text-align: left">The path to a <code>rust_analyzer_proc_macro_srv</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rust_analyzer"></a>rust_analyzer</td><td style="text-align: left">The path to a <code>rust-analyzer</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc"></a>rustc</td><td style="text-align: left">The path to a <code>rustc</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc_srcs"></a>rustc_srcs</td><td style="text-align: left">The source code of rustc.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc_srcs_path"></a>rustc_srcs_path</td><td style="text-align: left">The direct path to rustc srcs relative to rustc_srcs package root.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"library"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-version"></a>version</td><td style="text-align: left">The rust-analyzer version (e.g. <code>1.96.0</code>). Optional. When set, consumers (e.g. the discover binary) can gate newer rust-analyzer features that older versions reject. Left empty for user-supplied toolchains where the version isn't known statically; consumers should treat the empty value as 'assume oldest supported'.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 </tbody></table>
 </div>
-<p><a id="rustfmt_aspect"></a></p>
-<h2 id="rustfmt_aspect"><a class="header" href="#rustfmt_aspect">rustfmt_aspect</a></h2>
-<pre>
-load("@rules_rust//rust:defs.bzl", "rustfmt_aspect")
-
-rustfmt_aspect()
-</pre>
-<p>This aspect is used to gather information about a crate for use in rustfmt and perform rustfmt checks</p>
-<p>Output Groups:</p>
-<ul>
-<li><code>rustfmt_checks</code>: Executes <code>rustfmt --check</code> on the specified target.</li>
-</ul>
-<p>The build setting <code>@rules_rust//rust/settings:rustfmt.toml</code> is used to control the Rustfmt <a href="https://rust-lang.github.io/rustfmt/">configuration settings</a>
-used at runtime.</p>
-<p>This aspect is executed on any target which provides the <code>CrateInfo</code> provider. However
-users may tag a target with <code>no-rustfmt</code> or <code>no-format</code> to have it skipped. Additionally,
-generated source files are also ignored by this aspect.</p>
-<p><strong>ASPECT ATTRIBUTES</strong></p>
-<p><strong>ATTRIBUTES</strong></p>
-
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="rust_clippy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="rustfmt_toolchain.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_doc.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rust_stdlib_filegroup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -277,11 +195,11 @@ generated source files are also ignored by this aspect.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="rust_clippy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="rustfmt_toolchain.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_doc.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rust_stdlib_filegroup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

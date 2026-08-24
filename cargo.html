@@ -155,217 +155,33 @@
 
                 <div id="content" class="content">
                     <main>
-                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-<h1 id="cargo"><a class="header" href="#cargo">Cargo</a></h1>
-<p>Common definitions for the <code>@rules_rust//cargo</code> package</p>
+                        <h1 id="cargo"><a class="header" href="#cargo">Cargo</a></h1>
+<p>Rules for interoperating with tooling from the <a href="https://doc.rust-lang.org/cargo/">Cargo</a> ecosystem — most
+importantly, Cargo <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html"><code>build.rs</code> scripts</a>. These rules let a Bazel
+build consume the same crate-side conventions that Cargo uses (build scripts,
+generated env vars, <code>[lints]</code> tables) without switching build systems.</p>
 <h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
 <ul>
-<li><a href="#cargo_dep_env">cargo_dep_env</a></li>
-<li><a href="#extract_cargo_lints">extract_cargo_lints</a></li>
+<li><a href="./cargo_build_script.html">cargo_build_script</a> — Compile and run a crate's
+<code>build.rs</code> at build time, then feed the emitted <code>cargo:*</code> directives (env vars,
+link args, rerun-if-changed inputs) into consumers of the crate.</li>
+<li><a href="./cargo_env.html">cargo_env</a> — Helper that returns Cargo's standard
+<code>CARGO_*</code> env-var dict, used by rules that need to reproduce Cargo's
+compilation environment.</li>
+<li><a href="./extract_cargo_lints.html">extract_cargo_lints</a> — Read the <code>[lints]</code> table
+from a <code>Cargo.toml</code> and produce a <a href="./rust_lint_config.html"><code>rust_lint_config</code></a>
+target from it, so Cargo-defined lints apply to Bazel-built crates.</li>
 </ul>
-<h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
-<ul>
-<li><a href="#cargo_build_script">cargo_build_script</a></li>
-<li><a href="#cargo_env">cargo_env</a></li>
-</ul>
-<h2 id="repository-rules"><a class="header" href="#repository-rules">Repository Rules</a></h2>
-<ul>
-<li><a href="#cargo_bootstrap_repository">cargo_bootstrap_repository</a></li>
-</ul>
-<p><a id="cargo_dep_env"></a></p>
-<h2 id="cargo_dep_env"><a class="header" href="#cargo_dep_env">cargo_dep_env</a></h2>
-<pre>
-load("@rules_rust//cargo:defs.bzl", "cargo_dep_env")
 
-cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-src">src</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>)
-</pre>
-<p>A rule for generating variables for dependent <code>cargo_build_script</code>s without a build script. This is useful for using Bazel rules instead of a build script, while also generating configuration information for build scripts which depend on this crate.</p>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="cargo_dep_env-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="cargo_dep_env-src"></a>src</td><td style="text-align: left">File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints <code>cargo:VAR=VALUE</code> lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="cargo_dep_env-out_dir"></a>out_dir</td><td style="text-align: left">Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints puts files into <code>$OUT_DIR</code>, but without requiring a build script.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="extract_cargo_lints"></a></p>
-<h2 id="extract_cargo_lints"><a class="header" href="#extract_cargo_lints">extract_cargo_lints</a></h2>
-<pre>
-load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
-
-extract_cargo_lints(<a href="#extract_cargo_lints-name">name</a>, <a href="#extract_cargo_lints-manifest">manifest</a>, <a href="#extract_cargo_lints-workspace">workspace</a>)
-</pre>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="extract_cargo_lints-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="extract_cargo_lints-manifest"></a>manifest</td><td style="text-align: left">Cargo.toml to read lints from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="extract_cargo_lints-workspace"></a>workspace</td><td style="text-align: left">Workspace Cargo.toml that the manifest Cargo.toml inherits from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="cargo_build_script"></a></p>
-<h2 id="cargo_build_script"><a class="header" href="#cargo_build_script">cargo_build_script</a></h2>
-<pre>
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-
-cargo_build_script(*, <a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
-                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-build_script_env_files">build_script_env_files</a>,
-                   <a href="#cargo_build_script-emit_warnings">emit_warnings</a>, <a href="#cargo_build_script-use_cc_toolchain">use_cc_toolchain</a>, <a href="#cargo_build_script-use_default_shell_env">use_default_shell_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>,
-                   <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>,
-                   <a href="#cargo_build_script-pkg_name">pkg_name</a>, <a href="#cargo_build_script-kwargs">**kwargs</a>)
-</pre>
-<p>Compile and execute a rust build script to generate build attributes</p>
-<p>This rules take the same arguments as rust_binary.</p>
-<p>Example:</p>
-<p>Suppose you have a crate with a cargo build script <code>build.rs</code>:</p>
-<pre><code class="language-output">[workspace]/
-    hello_lib/
-        BUILD
-        build.rs
-        src/
-            lib.rs
-</code></pre>
-<p>Then you want to use the build script in the following:</p>
-<p><code>hello_lib/BUILD</code>:</p>
-<pre><code class="language-python">package(default_visibility = ["//visibility:public"])
-
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-
-# This will run the build script from the root of the workspace, and
-# collect the outputs.
-cargo_build_script(
-    name = "build_script",
-    srcs = ["build.rs"],
-    # Optional environment variables passed during build.rs compilation
-    rustc_env = {
-       "CARGO_PKG_VERSION": "0.1.2",
-    },
-    # Optional environment variables passed during build.rs execution.
-    # Note that as the build script's working directory is not execroot,
-    # execpath/location will return an absolute path, instead of a relative
-    # one.
-    build_script_env = {
-        "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
-    },
-    # Optional data/tool dependencies
-    data = ["@tool//:binary"],
-)
-
-rust_library(
-    name = "hello_lib",
-    srcs = [
-        "src/lib.rs",
-    ],
-    deps = [":build_script"],
-)
-</code></pre>
-<p>The <code>hello_lib</code> target will be build with the flags and the environment variables declared by the     build script in addition to the file generated by it.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="cargo_build_script-name"></a>name</td><td style="text-align: left">The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of <code>_bs</code>. Otherwise, you can set the package name via <code>pkg_name</code>.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-edition"></a>edition</td><td style="text-align: left">The rust edition to use for the internal binary crate.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-crate_name"></a>crate_name</td><td style="text-align: left">Crate name to use for build script.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-crate_root"></a>crate_root</td><td style="text-align: left">The file that will be passed to rustc to be used for building this crate.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-srcs"></a>srcs</td><td style="text-align: left">Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-crate_features"></a>crate_features</td><td style="text-align: left">A list of features to enable for the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-version"></a>version</td><td style="text-align: left">The semantic version (semver) of the crate.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-deps"></a>deps</td><td style="text-align: left">The build-dependencies of the crate.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-link_deps"></a>link_deps</td><td style="text-align: left">The subset of the (normal) dependencies of the crate that have the links attribute and therefore provide environment variables to this build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of rust_proc_macro targets used to build the script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-build_script_env"></a>build_script_env</td><td style="text-align: left">Environment variables for build scripts.</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-build_script_env_files"></a>build_script_env_files</td><td style="text-align: left">Files containing additional environment variables to set when running the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-emit_warnings"></a>emit_warnings</td><td style="text-align: left">Whether to forward <code>cargo::warning=</code> lines from the build script to stderr. Honored only when <code>@rules_rust//cargo/settings:emit_build_script_warnings</code> is <code>auto</code> (the default); set the flag to <code>on</code> or <code>off</code> to override every target.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-use_cc_toolchain"></a>use_cc_toolchain</td><td style="text-align: left">Whether or not to pull in the resolved <code>cc_toolchain</code> when running the build script.<br><br>When enabled, the resolved <code>cc_toolchain</code>'s <code>all_files</code> are added to the action inputs and the <code>CC</code>, <code>CXX</code>, <code>AR</code>, <code>CFLAGS</code>, <code>CXXFLAGS</code>, <code>LDFLAGS</code>, and <code>INCLUDE</code> environment variables are populated from that toolchain (matching Cargo's normal behavior). Disabling this can significantly shrink build script action input trees (particularly with hermetic sysroots) but breaks any build script that needs to compile C/C++ code. If unset the global setting <code>@rules_rust//cargo/settings:use_cc_toolchain</code> will be used to determine this value.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-use_default_shell_env"></a>use_default_shell_env</td><td style="text-align: left">Whether or not to include the default shell environment for the build script action. If unset the global setting <code>@rules_rust//cargo/settings:use_default_shell_env</code> will be used to determine this value.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-data"></a>data</td><td style="text-align: left">Files needed by the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-compile_data"></a>compile_data</td><td style="text-align: left">Files needed for the compilation of the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-tools"></a>tools</td><td style="text-align: left">Tools (executables) needed by the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-links"></a>links</td><td style="text-align: left">Name of the native library this crate links against.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-rundir"></a>rundir</td><td style="text-align: left">A directory to <code>cd</code> to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to <code>.</code>, the cargo build script will run in the exec root.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-rustc_env"></a>rustc_env</td><td style="text-align: left">Environment variables to set in rustc when compiling the build script.</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-rustc_env_files"></a>rustc_env_files</td><td style="text-align: left">Files containing additional environment variables to set for rustc when building the build script.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-visibility"></a>visibility</td><td style="text-align: left">Visibility to apply to the generated build script output.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-tags"></a>tags</td><td style="text-align: left">(list of str, optional): Tags to apply to the generated build script output.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-aliases"></a>aliases</td><td style="text-align: left">Remap crates to a new name or moniker for linkage to this target.             These are other <code>rust_library</code> targets and will be presented as the new name given.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-pkg_name"></a>pkg_name</td><td style="text-align: left">Override the package name used for the build script. This is useful if the build target name gets too long otherwise.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_build_script-kwargs"></a>kwargs</td><td style="text-align: left">Forwards to the underlying <code>rust_binary</code> rule. An exception is the <code>compatible_with</code> attribute, which shouldn't be forwarded to the <code>rust_binary</code>, as the <code>rust_binary</code> is only built and used in <code>exec</code> mode. We propagate the <code>compatible_with</code> attribute to the <code>_build_script_run</code> target.</td><td style="text-align: left">none</td></tr>
-</tbody></table>
-</div>
-<p><a id="cargo_env"></a></p>
-<h2 id="cargo_env"><a class="header" href="#cargo_env">cargo_env</a></h2>
-<pre>
-load("@rules_rust//cargo:defs.bzl", "cargo_env")
-
-cargo_env(<a href="#cargo_env-env">env</a>)
-</pre>
-<p>A helper for generating platform specific environment variables</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_common")
-load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository", "cargo_env")
-
-cargo_bootstrap_repository(
-    name = "bootstrapped_bin",
-    cargo_lockfile = "//:Cargo.lock",
-    cargo_toml = "//:Cargo.toml",
-    srcs = ["//:resolver_srcs"],
-    version = rust_common.default_version,
-    binary = "my-crate-binary",
-    env = {
-        "x86_64-unknown-linux-gnu": cargo_env({
-            "FOO": "BAR",
-        }),
-    },
-    env_label = {
-        "aarch64-unknown-linux-musl": cargo_env({
-            "DOC": "//:README.md",
-        }),
-    }
-)
-</code></pre>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="cargo_env-env"></a>env</td><td style="text-align: left">A map of environment variables</td><td style="text-align: left">none</td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>str: A json encoded string of the environment variables</p>
-<p><a id="cargo_bootstrap_repository"></a></p>
-<h2 id="cargo_bootstrap_repository"><a class="header" href="#cargo_bootstrap_repository">cargo_bootstrap_repository</a></h2>
-<pre>
-load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository")
-
-cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_config">cargo_config</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>,
-                           <a href="#cargo_bootstrap_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>,
-                           <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>,
-                           <a href="#cargo_bootstrap_repository-version">version</a>)
-</pre>
-<p>A rule for bootstrapping a Rust binary using <a href="https://doc.rust-lang.org/cargo/">Cargo</a></p>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-name"></a>name</td><td style="text-align: left">A unique name for this repository.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-srcs"></a>srcs</td><td style="text-align: left">Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-binary"></a>binary</td><td style="text-align: left">The binary to build (the <code>--bin</code> parameter for Cargo). If left empty, the repository name will be used.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-build_mode"></a>build_mode</td><td style="text-align: left">The build mode the binary should be built with</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"release"</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-cargo_config"></a>cargo_config</td><td style="text-align: left">The path of the Cargo configuration (<code>Config.toml</code>) file.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile</td><td style="text-align: left">The lockfile of the crate_universe resolver</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml</td><td style="text-align: left">The path of the <code>Cargo.toml</code> file.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-compressed_windows_toolchain_names"></a>compressed_windows_toolchain_names</td><td style="text-align: left">Whether or not the toolchain names of windows toolchains are expected to be in a <code>compressed</code> format.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-env"></a>env</td><td style="text-align: left">A mapping of platform triple to a set of environment variables. See <a href="#cargo_env">cargo_env</a> for usage details. Additionally, the platform triple <code>*</code> applies to all platforms.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-env_label"></a>env_label</td><td style="text-align: left">A mapping of platform triple to a set of environment variables. This attribute differs from <code>env</code> in that all variables passed here must be fully qualified labels of files. See <a href="#cargo_env">cargo_env</a> for usage details. Additionally, the platform triple <code>*</code> applies to all platforms.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template</td><td style="text-align: left">The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template</td><td style="text-align: left">The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-timeout"></a>timeout</td><td style="text-align: left">Maximum duration of the Cargo build command in seconds</td><td style="text-align: left">Integer</td><td style="text-align: left">optional</td><td style="text-align: left"><code>600</code></td></tr>
-<tr><td style="text-align: left"><a id="cargo_bootstrap_repository-version"></a>version</td><td style="text-align: left">The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"1.97.1"</code></td></tr>
-</tbody></table>
-</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="rust_doc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="rust_doc_test.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_analyzer.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="cargo_build_script.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -375,11 +191,11 @@ cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, 
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="rust_doc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="rust_doc_test.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_analyzer.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="cargo_build_script.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

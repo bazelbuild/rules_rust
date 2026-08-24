@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Toolchains - rules_rust</title>
+        <title>unpretty - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,42 +155,32 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="toolchains"><a class="header" href="#toolchains">Toolchains</a></h1>
-<p>A Rust build in Bazel selects its compiler, standard library, and companion tools
-through a set of registered <a href="https://bazel.build/extending/toolchains">Bazel toolchains</a>. <code>rules_rust</code>
-ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>, and
-<code>rustfmt</code> can be resolved independently.</p>
-<p>Most users register toolchains via the <code>rust</code> module extension (see
-<a href="./rust_bzlmod.html">Bzlmod</a>) rather than declaring these rules directly. The rules
-below exist for users who need to define custom toolchains — for example, to point
-at a locally built <code>rustc</code> or to add a target triple that the extension doesn't
-cover.</p>
-<h2 id="toolchain-rules"><a class="header" href="#toolchain-rules">Toolchain rules</a></h2>
+                        <h1 id="unpretty"><a class="header" href="#unpretty">Unpretty</a></h1>
+<p>The unpretty rules expose <code>rustc</code>'s <a href="https://doc.rust-lang.org/nightly/unstable-book/compiler-flags/unpretty.html"><code>-Zunpretty=&lt;mode&gt;</code></a> flag as a
+Bazel action. Given a Rust target, they emit an alternate textual representation
+of it — the fully macro-expanded source, the HIR, the MIR CFG, etc. — useful for
+inspecting what the compiler sees after macro expansion, lowering, or
+optimization.</p>
+<p>Because <code>-Zunpretty</code> is a nightly-only compiler flag, these rules require a
+nightly <code>rust_toolchain</code> to be registered.</p>
+<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
 <ul>
-<li><a href="./rust_toolchain.html">rust_toolchain</a> — Declare a Rust compilation toolchain: the
-<code>rustc</code> binary, standard library, linker, and per-target compilation settings.</li>
-<li><a href="./rustfmt_toolchain.html">rustfmt_toolchain</a> — Declare a toolchain providing the
-<code>rustfmt</code> binary used by <a href="./rustfmt.html">rustfmt</a> rules.</li>
-<li><a href="./rust_analyzer_toolchain.html">rust_analyzer_toolchain</a> — Declare a toolchain
-providing the <code>rust-analyzer</code> binary and proc-macro server used by the
-<a href="./rust_analyzer.html">rust_analyzer</a> integration.</li>
-</ul>
-<h2 id="data-rules"><a class="header" href="#data-rules">Data rules</a></h2>
-<ul>
-<li><a href="./rust_stdlib_filegroup.html">rust_stdlib_filegroup</a> — Group the files of a Rust
-standard library archive into a target that can be attached to a
-<code>rust_toolchain</code> via the <code>rust_std</code> attribute.</li>
+<li><a href="./rust_unpretty.html">rust_unpretty</a> — Rule form. Explicitly declare an unpretty
+target that emits the chosen representation for a specific crate.</li>
+<li><a href="./rust_unpretty_aspect.html">rust_unpretty_aspect</a> — Aspect form. Attach at the
+command line (<code>--aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect --output_groups=+rust_unpretty</code>) to emit the representation for every Rust
+target in the build without adding rule instances.</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="cargo_settings.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="rust_analyzer.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_toolchain.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rust_unpretty.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -200,11 +190,11 @@ standard library archive into a target that can be attached to a
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="cargo_settings.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="rust_analyzer.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_toolchain.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rust_unpretty.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>unpretty - rules_rust</title>
+        <title>rust_unpretty - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -156,19 +156,11 @@
                 <div id="content" class="content">
                     <main>
                         <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-<p>Public entry point to all Rust rules and supported APIs.</p>
-<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
-<ul>
-<li><a href="#rust_unpretty">rust_unpretty</a></li>
-</ul>
-<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
-<ul>
-<li><a href="#rust_unpretty_aspect">rust_unpretty_aspect</a></li>
-</ul>
+<h1 id="rust_unprettybzl"><a class="header" href="#rust_unprettybzl">rust_unpretty.bzl</a></h1>
 <p><a id="rust_unpretty"></a></p>
 <h2 id="rust_unpretty"><a class="header" href="#rust_unpretty">rust_unpretty</a></h2>
 <pre>
-load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+load("@rules_rust//rust:rust_unpretty.bzl", "rust_unpretty")
 
 rust_unpretty(<a href="#rust_unpretty-name">name</a>, <a href="#rust_unpretty-deps">deps</a>, <a href="#rust_unpretty-mode">mode</a>)
 </pre>
@@ -198,7 +190,7 @@ rust_unpretty(
         ":hello_lib",
         ":greeting_test",
     ],
-    mode = "expand",
+    mode = "expanded",
 )
 </code></pre>
 <p><strong>ATTRIBUTES</strong></p>
@@ -208,46 +200,15 @@ rust_unpretty(
 <tr><td style="text-align: left"><a id="rust_unpretty-mode"></a>mode</td><td style="text-align: left">The value to pass to <code>--unpretty</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"expanded"</code></td></tr>
 </tbody></table>
 </div>
-<p><a id="rust_unpretty_aspect"></a></p>
-<h2 id="rust_unpretty_aspect"><a class="header" href="#rust_unpretty_aspect">rust_unpretty_aspect</a></h2>
-<pre>
-load("@rules_rust//rust:defs.bzl", "rust_unpretty_aspect")
-
-rust_unpretty_aspect()
-</pre>
-<p>Executes Rust expand on specified targets.</p>
-<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
-<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-
-rust_library(
-    name = "hello_lib",
-    srcs = ["src/lib.rs"],
-)
-
-rust_test(
-    name = "greeting_test",
-    srcs = ["tests/greeting.rs"],
-    deps = [":hello_lib"],
-)
-</code></pre>
-<p>Then the targets can be expanded with the following command:</p>
-<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
-              --output_groups=rust_unpretty_expanded \
-              //hello_lib:all
-</code></pre>
-<p><strong>ASPECT ATTRIBUTES</strong></p>
-<p><strong>ATTRIBUTES</strong></p>
-
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="rust_analyzer.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="unpretty.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="settings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rust_unpretty_aspect.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -257,11 +218,11 @@ rust_test(
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="rust_analyzer.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="unpretty.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="settings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rust_unpretty_aspect.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -209,8 +209,8 @@ rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href=
 </pre>
 <p>The tools required for the <code>rust_bindgen</code> rule.</p>
 <p>This rule depends on the <a href="https://crates.io/crates/bindgen"><code>bindgen</code></a> binary crate, and it
-in turn depends on both a clang binary and the clang library. To obtain these dependencies,
-<code>rust_bindgen_dependencies</code> imports bindgen and its dependencies.</p>
+in turn depends on both a clang binary and the clang library. These dependencies are provided
+by the <code>@rules_rust_bindgen</code> module extension when using Bzlmod.</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(

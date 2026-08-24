@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Toolchains - rules_rust</title>
+        <title>rust_doc_test - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,42 +155,60 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="toolchains"><a class="header" href="#toolchains">Toolchains</a></h1>
-<p>A Rust build in Bazel selects its compiler, standard library, and companion tools
-through a set of registered <a href="https://bazel.build/extending/toolchains">Bazel toolchains</a>. <code>rules_rust</code>
-ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>, and
-<code>rustfmt</code> can be resolved independently.</p>
-<p>Most users register toolchains via the <code>rust</code> module extension (see
-<a href="./rust_bzlmod.html">Bzlmod</a>) rather than declaring these rules directly. The rules
-below exist for users who need to define custom toolchains — for example, to point
-at a locally built <code>rustc</code> or to add a target triple that the extension doesn't
-cover.</p>
-<h2 id="toolchain-rules"><a class="header" href="#toolchain-rules">Toolchain rules</a></h2>
-<ul>
-<li><a href="./rust_toolchain.html">rust_toolchain</a> — Declare a Rust compilation toolchain: the
-<code>rustc</code> binary, standard library, linker, and per-target compilation settings.</li>
-<li><a href="./rustfmt_toolchain.html">rustfmt_toolchain</a> — Declare a toolchain providing the
-<code>rustfmt</code> binary used by <a href="./rustfmt.html">rustfmt</a> rules.</li>
-<li><a href="./rust_analyzer_toolchain.html">rust_analyzer_toolchain</a> — Declare a toolchain
-providing the <code>rust-analyzer</code> binary and proc-macro server used by the
-<a href="./rust_analyzer.html">rust_analyzer</a> integration.</li>
-</ul>
-<h2 id="data-rules"><a class="header" href="#data-rules">Data rules</a></h2>
-<ul>
-<li><a href="./rust_stdlib_filegroup.html">rust_stdlib_filegroup</a> — Group the files of a Rust
-standard library archive into a target that can be attached to a
-<code>rust_toolchain</code> via the <code>rust_std</code> attribute.</li>
-</ul>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rust_doc_testbzl"><a class="header" href="#rust_doc_testbzl">rust_doc_test.bzl</a></h1>
+<p><a id="rust_doc_test"></a></p>
+<h2 id="rust_doc_test"><a class="header" href="#rust_doc_test">rust_doc_test</a></h2>
+<pre>
+load("@rules_rust//rust:rust_doc_test.bzl", "rust_doc_test")
 
+rust_doc_test(<a href="#rust_doc_test-name">name</a>, <a href="#rust_doc_test-deps">deps</a>, <a href="#rust_doc_test-crate">crate</a>, <a href="#rust_doc_test-crate_features">crate_features</a>, <a href="#rust_doc_test-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_doc_test-rustdoc_flags">rustdoc_flags</a>)
+</pre>
+<p>Runs Rust documentation tests.</p>
+<p>Example:</p>
+<p>Suppose you have the following directory structure for a Rust library crate:</p>
+<pre><code class="language-output">[workspace]/
+WORKSPACE
+hello_lib/
+    BUILD
+    src/
+        lib.rs
+</code></pre>
+<p>To run <a href="https://doc.rust-lang.org/book/documentation.html#documentation-as-tests">documentation tests</a> for the <code>hello_lib</code> crate, define a <code>rust_doc_test</code>         target that depends on the <code>hello_lib</code> <code>rust_library</code> target:</p>
+<pre><code class="language-python">package(default_visibility = ["//visibility:public"])
+
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_doc_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_doc_test(
+    name = "hello_lib_doc_test",
+    crate = ":hello_lib",
+)
+</code></pre>
+<p>Running <code>bazel test //hello_lib:hello_lib_doc_test</code> will run all documentation tests for the <code>hello_lib</code> library crate.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_doc_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-deps"></a>deps</td><td style="text-align: left">List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-crate"></a>crate</td><td style="text-align: left">The label of the target to generate code documentation for. <code>rust_doc_test</code> can generate HTML code documentation for the source files of <code>rust_library</code> or <code>rust_binary</code> targets.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-crate_features"></a>crate_features</td><td style="text-align: left">List of features to enable for the crate being documented.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of <code>rust_proc_macro</code> targets used to help build this library target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-rustdoc_flags"></a>rustdoc_flags</td><td style="text-align: left">List of flags passed to <code>rustdoc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="cargo_settings.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="rust_doc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_toolchain.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="cargo.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -200,11 +218,11 @@ standard library archive into a target that can be attached to a
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="cargo_settings.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="rust_doc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_toolchain.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="cargo.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

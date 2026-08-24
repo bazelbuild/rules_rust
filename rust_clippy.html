@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>clippy - rules_rust</title>
+        <title>rust_clippy - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,34 +155,12 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p><a href="https://github.com/rust-lang/rust-clippy#readme">Clippy</a> is a tool for catching common mistakes in Rust code and improving it. An
-expansive list of lints and the justification can be found in their <a href="https://rust-lang.github.io/rust-clippy/">documentation</a>.</p>
-<h3 id="setup"><a class="header" href="#setup">Setup</a></h3>
-<p>Simply add the following to the <code>.bazelrc</code> file in the root of your workspace:</p>
-<pre><code class="language-text">build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
-build --output_groups=+clippy_checks
-</code></pre>
-<p>This will enable clippy on all <a href="./defs.html">Rust targets</a>.</p>
-<p>Note that targets tagged with <code>no-clippy</code> will not perform clippy checks</p>
-<p>To use a local clippy.toml, add the following flag to your <code>.bazelrc</code>. Note that due to
-the upstream implementation of clippy, this file must be named either <code>.clippy.toml</code> or
-<code>clippy.toml</code>. Using a custom config file requires Rust 1.34.0 or newer.</p>
-<pre><code class="language-text">build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
-</code></pre>
-<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
-<ul>
-<li><a href="#rust_clippy">rust_clippy</a></li>
-<li><a href="#rust_clippy_test">rust_clippy_test</a></li>
-</ul>
-<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
-<ul>
-<li><a href="#rust_clippy_aspect">rust_clippy_aspect</a></li>
-</ul>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rust_clippybzl"><a class="header" href="#rust_clippybzl">rust_clippy.bzl</a></h1>
 <p><a id="rust_clippy"></a></p>
 <h2 id="rust_clippy"><a class="header" href="#rust_clippy">rust_clippy</a></h2>
 <pre>
-load("@rules_rust//rust:defs.bzl", "rust_clippy")
+load("@rules_rust//rust:rust_clippy.bzl", "rust_clippy")
 
 rust_clippy(<a href="#rust_clippy-name">name</a>, <a href="#rust_clippy-deps">deps</a>)
 </pre>
@@ -220,100 +198,15 @@ rust_clippy(
 <tr><td style="text-align: left"><a id="rust_clippy-deps"></a>deps</td><td style="text-align: left">Rust targets to run clippy on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 </tbody></table>
 </div>
-<p><a id="rust_clippy_test"></a></p>
-<h2 id="rust_clippy_test"><a class="header" href="#rust_clippy_test">rust_clippy_test</a></h2>
-<pre>
-load("@rules_rust//rust:defs.bzl", "rust_clippy_test")
-
-rust_clippy_test(<a href="#rust_clippy_test-name">name</a>, <a href="#rust_clippy_test-platform">platform</a>, <a href="#rust_clippy_test-targets">targets</a>, <a href="#rust_clippy_test-transitive">transitive</a>)
-</pre>
-<p>A test rule that runs <code>clippy</code> over a set of Rust targets.</p>
-<p>By default (<code>transitive = False</code>), only the exact targets listed are checked. Set
-<code>transitive = True</code> to walk <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code> so that listing a
-top-level target checks its whole crate graph.</p>
-<p>The clippy actions run during the build phase, so a clippy failure fails <code>bazel test</code> before
-the test executable is invoked. The rule also exposes the collected markers under the
-<code>clippy_checks</code> output group, so <code>bazel build //x:my_clippy_test --output_groups=clippy_checks</code>
-drives the clippy actions without running the test.</p>
-<p>When <code>capture_clippy_output</code> or <code>clippy_output_diagnostics</code> is set globally clippy exits 0
-even on real issues; in that case the runner inspects the captured stderr / JSON diagnostics
-and reports the verdict.</p>
-<p>An optional <code>platform</code> attribute transitions <code>targets</code> to the given platform before running
-clippy.</p>
-<p>Example:</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library")
-
-rust_library(
-    name = "lib",
-    srcs = ["src/lib.rs"],
-    edition = "2021",
-)
-
-rust_binary(
-    name = "app",
-    srcs = ["src/main.rs"],
-    edition = "2021",
-    deps = [":lib"],
-)
-
-rust_clippy_test(
-    name = "clippy_app_only_test",
-    targets = [":app"],
-)
-
-rust_clippy_test(
-    name = "clippy_tree_test",
-    targets = [":app"],
-    transitive = True,
-)
-</code></pre>
-<p>Targets tagged <code>no_clippy</code>, <code>no_lint</code>, <code>nolint</code>, or <code>noclippy</code> are skipped.</p>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_clippy_test-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_clippy_test-platform"></a>platform</td><td style="text-align: left">Optional platform to transition <code>targets</code> to before running the aspect. When set, <code>--platforms</code> is switched to this label for the duration of this rule's aspect actions.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_clippy_test-targets"></a>targets</td><td style="text-align: left">Rust targets to run clippy on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_clippy_test-transitive"></a>transitive</td><td style="text-align: left">If True, lint <code>targets</code> and every crate reachable via <code>deps</code>, <code>proc_macro_deps</code>, and <code>crate</code>. If False, lint only the exact targets listed.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="rust_clippy_aspect"></a></p>
-<h2 id="rust_clippy_aspect"><a class="header" href="#rust_clippy_aspect">rust_clippy_aspect</a></h2>
-<pre>
-load("@rules_rust//rust:defs.bzl", "rust_clippy_aspect")
-
-rust_clippy_aspect()
-</pre>
-<p>Executes the clippy checker on specified targets.</p>
-<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
-<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-
-rust_library(
-    name = "hello_lib",
-    srcs = ["src/lib.rs"],
-)
-
-rust_test(
-    name = "greeting_test",
-    srcs = ["tests/greeting.rs"],
-    deps = [":hello_lib"],
-)
-</code></pre>
-<p>Then the targets can be analyzed with clippy using the following command:</p>
-<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect               --output_groups=clippy_checks //hello_lib:all
-</code></pre>
-<p><strong>ASPECT ATTRIBUTES</strong></p>
-<p><strong>ATTRIBUTES</strong></p>
-
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="rust.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="clippy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_fmt.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rust_clippy_aspect.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -323,11 +216,11 @@ rust_test(
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="rust.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="clippy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_fmt.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rust_clippy_aspect.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
