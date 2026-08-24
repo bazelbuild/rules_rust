@@ -120,7 +120,7 @@ rust_stdlib_filegroup = rule(
     },
 )
 
-def _experimental_link_std_dylib(ctx):
+def _resolve_link_std_dylib(ctx):
     per_toolchain = ctx.attr.link_std_dylib
     if per_toolchain == -1:
         enabled = ctx.attr._link_std_dylib_setting[BuildSettingInfo].value
@@ -649,7 +649,7 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
-        _link_std_dylib = _experimental_link_std_dylib(ctx),
+        _link_std_dylib = _resolve_link_std_dylib(ctx),
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_compile_rustdoc_tests = ctx.attr._experimental_compile_rustdoc_tests[BuildSettingInfo].value,
