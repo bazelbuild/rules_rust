@@ -87,11 +87,58 @@ def _std_libs_support_srcs_outside_package_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _std_libs_support_srcs_outside_package_remove_metadata_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+
+    is_apple = ctx.target_platform_has_constraint(ctx.attr._apple[platform_common.ConstraintValueInfo])
+    is_windows = ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
+
+    symlinks = [a for a in actions if a.mnemonic == "Symlink"]
+
+    if is_apple or is_windows:
+        asserts.equals(env, 2, len(symlinks))
+        rlib_symlink = symlinks[0].outputs.to_list()[0]
+        asserts.equals(env, tut.label.package + "/core.rlib", rlib_symlink.short_path)
+        a_symlink = symlinks[1].outputs.to_list()[0]
+        if is_windows:
+            asserts.equals(env, tut.label.package + "/libcore.lib", a_symlink.short_path)
+        else:
+            asserts.equals(env, tut.label.package + "/libcore.a", a_symlink.short_path)
+    else:
+        asserts.equals(env, 1, len(symlinks))
+        rlib_symlink = symlinks[0].outputs.to_list()[0]
+        asserts.equals(env, tut.label.package + "/core.rlib", rlib_symlink.short_path)
+
+        copy_actions = [a for a in actions if a.mnemonic == "CopyStaticLibWithoutRmeta"]
+        asserts.equals(env, 1, len(copy_actions))
+        a_file = copy_actions[0].outputs.to_list()[0]
+        asserts.equals(env, tut.label.package + "/libcore.a", a_file.short_path)
+
+    return analysistest.end(env)
+
 toolchain_specifies_target_triple_test = analysistest.make(_toolchain_specifies_target_triple_test_impl)
 toolchain_specifies_target_json_test = analysistest.make(_toolchain_specifies_target_json_test_impl)
 toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_location_expands_linkflags_impl)
 toolchain_location_expands_extra_rustc_flags_test = analysistest.make(_toolchain_location_expands_extra_rustc_flags_impl)
-std_libs_support_srcs_outside_package_test = analysistest.make(_std_libs_support_srcs_outside_package_test_impl)
+std_libs_support_srcs_outside_package_test = analysistest.make(
+    _std_libs_support_srcs_outside_package_test_impl,
+    config_settings = {
+        str(Label("//rust/settings:remove_metadata_from_staticlib")): False,
+    },
+)
+std_libs_support_srcs_outside_package_remove_metadata_test = analysistest.make(
+    _std_libs_support_srcs_outside_package_remove_metadata_test_impl,
+    config_settings = {
+        str(Label("//rust/settings:remove_metadata_from_staticlib")): True,
+    },
+    attrs = {
+        "_apple": attr.label(default = Label("@platforms//os:macos")),
+        "_windows": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
+
 
 def _define_test_targets():
     native.filegroup(
@@ -233,6 +280,10 @@ def toolchain_test_suite(name):
         name = "std_libs_support_srcs_outside_package_test",
         target_under_test = ":std_libs_with_srcs_outside_package",
     )
+    std_libs_support_srcs_outside_package_remove_metadata_test(
+        name = "std_libs_support_srcs_outside_package_remove_metadata_test",
+        target_under_test = ":std_libs_with_srcs_outside_package",
+    )
 
     native.test_suite(
         name = name,
@@ -243,5 +294,6 @@ def toolchain_test_suite(name):
             ":toolchain_location_expands_linkflags_test",
             ":toolchain_location_expands_extra_rustc_flags_test",
             ":std_libs_support_srcs_outside_package_test",
+            ":std_libs_support_srcs_outside_package_remove_metadata_test",
         ],
     )
