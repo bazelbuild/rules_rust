@@ -1,0 +1,33 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//:defs.bzl", "rust_cbindgen_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "defs.bzl",
+    "MODULE.bazel",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//3rdparty:bzl_lib",
+        "//private:bzl_lib",
+    ],
+)
+
+rust_cbindgen_toolchain(
+    name = "default_cbindgen_toolchain_impl",
+    cbindgen = "//3rdparty:cbindgen",
+)
+
+toolchain(
+    name = "default_cbindgen_toolchain",
+    toolchain = "default_cbindgen_toolchain_impl",
+    toolchain_type = "//:toolchain_type",
+)

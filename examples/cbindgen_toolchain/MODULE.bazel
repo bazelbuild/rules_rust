@@ -1,0 +1,28 @@
+module(name = "cbindgen_toolchain_example")
+
+bazel_dep(name = "rules_rust_cbindgen")
+local_path_override(
+    module_name = "rules_rust_cbindgen",
+    path = "../../extensions/cbindgen",
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.9")
+bazel_dep(name = "rules_rust")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    package = "cbindgen",
+    version = "0.29.4",
+)
+crate.annotation(
+    crate = "cbindgen",
+    gen_binaries = ["cbindgen"],
+)
+crate.from_specs()
+use_repo(crate, "crates")
+
+register_toolchains("//:my_cbindgen_toolchain")

@@ -1,6 +1,7 @@
 moduleRoots:
   - "."
   - "extensions/bindgen"
+  - "extensions/cbindgen"
   - "extensions/mdbook"
   - "extensions/prost"
   - "extensions/pyo3"
