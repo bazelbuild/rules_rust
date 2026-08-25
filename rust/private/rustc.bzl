@@ -230,7 +230,7 @@ def collect_deps(
             crate_deps.append(dep)
 
     aliases = {
-        k[rust_common.crate_info].owner if rust_common.crate_info in k else k.label: v
+        (k[rust_common.crate_info].owner if rust_common.crate_info in k else k.label): v
         for k, v in aliases.items()
     }
     for dep in crate_deps:
