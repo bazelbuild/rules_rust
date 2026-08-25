@@ -622,6 +622,7 @@ def _rust_toolchain_impl(ctx):
         make_variables = make_variable_info,
         rust_doc = sysroot.rustdoc,
         rust_std = sysroot.rust_std,
+        rust_std_dylib = ctx.attr.rust_std[rust_common.stdlib_info].std_dylib,
         rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
         rustc = sysroot.rustc,
         rustc_lib = sysroot.rustc_lib,

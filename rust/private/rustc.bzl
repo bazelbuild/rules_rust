@@ -2094,7 +2094,7 @@ def rustc_compile_action(
                 # Include any generated Rust ABI dylibs as required runfiles.
                 ([crate_info.output] if crate_info.type == "dylib" else []) +
                 # Include the stdlib dylib when dynamically linking the standard library.
-                ([f for f in toolchain.rust_std.to_list() if is_std_dylib(f)] if link_std_dylib else []),
+                ([toolchain.rust_std_dylib] if link_std_dylib and toolchain.rust_std_dylib else []),
     )
     transitive_runfiles = []
     crate_attr = getattr(ctx.attr, "crate", None)
@@ -2127,7 +2127,8 @@ def rustc_compile_action(
     if toolchain.target_os == "windows" and (crate_info.type == "bin" or crate_info.is_test):
         win_dylibs = list(dep_dylib_files)
         if link_std_dylib:
-            win_dylibs.extend([f for f in toolchain.rust_std.to_list() if is_std_dylib(f)])
+            if toolchain.rust_std_dylib:
+                win_dylibs.append(toolchain.rust_std_dylib)
         for dylib in win_dylibs:
             if dylib.dirname != crate_info.output.dirname:
                 symlink = ctx.actions.declare_file(dylib.basename, sibling = crate_info.output)
@@ -2603,9 +2604,8 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, ou
         # TODO: Make toolchain.rust_std to only include libstd.so
         # When dylib linkage is enabled, toolchain.rust_std should only need to
         # include libstd.so. Hence, no filtering needed.
-        for file in toolchain.rust_std.to_list():
-            if is_std_dylib(file):
-                dylibs.append(file)
+        if toolchain.rust_std_dylib:
+            dylibs.append(toolchain.rust_std_dylib)
 
     if not dylibs:
         return depset([])
