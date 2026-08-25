@@ -21,17 +21,17 @@ rust_dylib_library(
 rust_binary(
     name = "dylib_dep_binary",
     srcs = ["main.rs"],
-    deps = [":rust_dylib_lib"],
     edition = "2021",
     link_std_dylib = True,
     target_compatible_with = NOT_WINDOWS,
+    deps = [":rust_dylib_lib"],
 )
 
 rust_test(
     name = "dylib_dep_test",
     srcs = ["main.rs"],
-    deps = [":rust_dylib_lib"],
     edition = "2021",
     link_std_dylib = True,
     target_compatible_with = NOT_WINDOWS,
+    deps = [":rust_dylib_lib"],
 )

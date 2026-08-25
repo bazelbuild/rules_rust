@@ -51,7 +51,6 @@ load(
     "get_lib_name_for_windows",
     "get_preferred_artifact",
     "is_exec_configuration",
-    "is_std_dylib",
     "make_static_lib_symlink",
     "matches_prefix_filter",
     "parse_env_strings",
@@ -2122,7 +2121,7 @@ def rustc_compile_action(
         transitive_runfiles.append(ctx.runfiles(files = dep_dylib_files))
 
     # On Windows there is no RPATH equivalent. Create symlinks of dylib files
-    # next to the binary so the Windows loader can find them. Bazel deduplicates 
+    # next to the binary so the Windows loader can find them. Bazel deduplicates
     # identical symlink actions when multiple binaries in a package share a dylib dep.
     if toolchain.target_os == "windows" and (crate_info.type == "bin" or crate_info.is_test):
         win_dylibs = list(dep_dylib_files)

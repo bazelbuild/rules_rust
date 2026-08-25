@@ -762,6 +762,17 @@ rust_toolchain = rule(
             doc = "The ISO date of the nightly or beta release (e.g. `2026-03-26`). Empty for stable releases.",
             default = "",
         ),
+        "link_std_dylib": attr.int(
+            doc = (
+                "Whether to link libstd dynamically. Possible values: [-1, 0, 1]. " +
+                "-1 means to use the value of the build setting " +
+                "`@rules_rust//rust/settings:experimental_link_std_dylib`. " +
+                "0 means do not link libstd dynamically. " +
+                "1 means link libstd dynamically."
+            ),
+            values = [-1, 0, 1],
+            default = -1,
+        ),
         "linker": attr.label(
             doc = "The label to an explicit linker to use (e.g. rust-lld, ld, link-ld.exe, etc.). Linker binaries must be runnable in the exec configuration, so cfg = \"exec\" is used. To choose a linker based on the target platform, use a select() when providing this attribute. The select() will be evaluated against the target platform before the exec transition is applied, allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.",
             cfg = "exec",
@@ -916,17 +927,6 @@ rust_toolchain = rule(
         "_incompatible_do_not_include_transitive_data_in_compile_inputs": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
             doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
-        ),
-        "link_std_dylib": attr.int(
-            doc = (
-                "Whether to link libstd dynamically. Possible values: [-1, 0, 1]. " +
-                "-1 means to use the value of the build setting " +
-                "`@rules_rust//rust/settings:experimental_link_std_dylib`. " +
-                "0 means do not link libstd dynamically. " +
-                "1 means link libstd dynamically."
-            ),
-            values = [-1, 0, 1],
-            default = -1,
         ),
         "_link_std_dylib_setting": attr.label(
             default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),

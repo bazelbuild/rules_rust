@@ -163,8 +163,8 @@ def _rust_dylib_library_impl(ctx):
     """The implementation of the `rust_dylib_library` rule.
 
     This rule provides CcInfo, so it can be used everywhere Bazel expects
-    rules_cc. 
-    
+    rules_cc.
+
     **Note**: When dynamic libraries are listed as dependencies for other Rust
     binaries they can induce errors from multiply defined symbols, causing
     linker errors in rustc. Some libraries in the dependency graph may need to
