@@ -457,14 +457,8 @@ fn resolve_label_for(
     query_label_for(bazel, workspace, saved_file)
 }
 
-/// `bazel query 'attr(srcs, "<file>", //<package>:*)'` scoped to the
-/// nearest `BUILD.bazel`. Returns the first match — if a file belongs
-/// to several targets, any is correct.
-fn query_label_for(
-    bazel: &Utf8Path,
-    workspace: &Utf8Path,
-    saved_file: &Utf8Path,
-) -> Result<String> {
+/// Produces the query string used by `query_label_for`
+fn query_string_for(workspace: &Utf8Path, saved_file: &Utf8Path) -> Result<String> {
     let file_rel = saved_file
         .strip_prefix(workspace)
         .with_context(|| format!("saved file {saved_file} is not under workspace {workspace}"))?;
@@ -477,7 +471,18 @@ fn query_label_for(
         format!("saved file {saved_file} is not under Bazel package //{package}")
     })?;
     let pattern = format!("//{package}:{file_in_package}");
-    let query = format!("attr(srcs, {pattern:?}, //{package}:*)");
+    Ok(format!("attr(srcs, {pattern:?}, //{package}:*)"))
+}
+
+/// `bazel query 'attr(srcs, "<file>", //<package>:*)'` scoped to the
+/// nearest `BUILD.bazel`. Returns the first match — if a file belongs
+/// to several targets, any is correct.
+fn query_label_for(
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    saved_file: &Utf8Path,
+) -> Result<String> {
+    let query = query_string_for(workspace, saved_file)?;
     let output = Command::new(bazel.as_str())
         .current_dir(workspace)
         .arg("query")
@@ -494,7 +499,7 @@ fn query_label_for(
         .lines()
         .find(|l| !l.is_empty())
         .map(str::to_owned)
-        .with_context(|| format!("bazel query returned no targets for {pattern}"))
+        .with_context(|| format!("bazel query {query:?} returned no targets"))
 }
 
 /// Walk up looking for `BUILD.bazel` or `BUILD`. Returns the
@@ -545,6 +550,26 @@ mod tests {
         assert_eq!(
             find_owning_package(&workspace, &Utf8PathBuf::from(&rust_src_path)).unwrap(),
             pkg_path
+        );
+    }
+
+    #[test]
+    fn query_test() {
+        let pkg_path = "example/library";
+        let build_path = format!("{pkg_path}/BUILD.bazel");
+        let rust_src_path = format!("{pkg_path}/src/main.rs");
+        let workspace = make_workspace(
+            "query_test",
+            &[
+                ("MODULE.bazel", ""),
+                (&build_path, "package()"),
+                (&rust_src_path, "fn main() {}"),
+            ],
+        );
+
+        assert_eq!(
+            query_string_for(&workspace, &workspace.join(&rust_src_path)).unwrap(),
+            r#"attr(srcs, "//example/library:src/main.rs", //example/library:*)"#
         );
     }
 
