@@ -171,9 +171,13 @@ directly to the crate types Cargo produces.</p>
 other Rust targets can depend on.</li>
 <li><a href="./rust_static_library.html">rust_static_library</a> — Build a <code>staticlib</code>
 (<code>--crate-type=staticlib</code>) for linking Rust code into a C/C++ binary.</li>
-<li><a href="./rust_shared_library.html">rust_shared_library</a> — Build a <code>cdylib</code>
+<li><a href="./rust_cdylib_library.html">rust_cdylib_library</a> — Build a <code>cdylib</code>
 (<code>--crate-type=cdylib</code>) for use as a shared library from C/C++ or other
 languages.</li>
+<li><a href="./rust_dylib_library.html">rust_dylib_library</a> — Build a <code>dylib</code>
+(<code>--crate-type=dylib</code>) for use as a shared library with the unstable Rust ABI.</li>
+<li><a href="./rust_shared_library.html">rust_shared_library</a> — Convenience alias over
+<code>rust_cdylib_library</code>.</li>
 <li><a href="./rust_proc_macro.html">rust_proc_macro</a> — Build a procedural macro crate
 (<code>--crate-type=proc-macro</code>) that other Rust targets can consume as a compile-time
 plugin.</li>
