@@ -525,7 +525,28 @@ fn scopeguard(path: Utf8PathBuf) -> impl Drop {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gen_rust_project_lib::make_workspace;
     use serde_json::json;
+
+    #[test]
+    fn find_owning_package_test() {
+        let pkg_path = "example/library";
+        let build_path = format!("{pkg_path}/BUILD.bazel");
+        let rust_src_path = format!("{pkg_path}/src/main.rs");
+        let workspace = make_workspace(
+            "find_owning_package_test",
+            &[
+                ("MODULE.bazel", ""),
+                (&build_path, "package()"),
+                (&rust_src_path, "fn main() {}"),
+            ],
+        );
+
+        assert_eq!(
+            find_owning_package(&workspace, &Utf8PathBuf::from(&rust_src_path)).unwrap(),
+            pkg_path
+        );
+    }
 
     #[test]
     fn relative_file_names_become_absolute() {
