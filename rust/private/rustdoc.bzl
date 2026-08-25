@@ -144,6 +144,10 @@ def rustdoc_compile_action(
     # back to the crate root, which is always a `File` per the provider contract.
     rustdoc_crate_info = _rustdoc_crate_info(crate_info, output if output != None else crate_info.root)
 
+    # Runtime libs contributed by the cc_toolchain, tracked so `rust_doc_test`
+    # can strip their (separately configured) root from the runfiles paths.
+    static_runtime_libs = []
+
     # rustdoc does not understand linker flags like -lstatic that
     # `include_link_flags` generates. So we manually build flags that only apply
     # to rustdoc.
@@ -163,6 +167,33 @@ def rustdoc_compile_action(
                 if not (lib.static_library or lib.pic_static_library):
                     continue
                 arg = get_lib_name(get_preferred_artifact(lib, use_pic))
+                if not for_windows:
+                    arg = "-l" + arg
+                if type(rustdoc_flags) == "Args":
+                    rustdoc_flags.add("-Clink-arg=%s" % arg)
+                else:
+                    rustdoc_flags.append("-Clink-arg=%s" % arg)
+
+        # The cc_toolchain's runtime libs (libc++ / libunwind on any toolchain
+        # enabling `static_link_cpp_runtimes`) are NOT part of
+        # transitive_noncrates: Bazel injects them into C++ link actions, and
+        # rustdoc never runs one -- it drives the link itself.
+        # `add_native_link_flags` emits their `-Lnative=` search path
+        # unconditionally but gates the matching `-lstatic=` behind
+        # `include_link_flags`, which is False for rustdoc. Without the `-l`
+        # below the archives sit on the search path with nothing referencing
+        # them, and every doc test fails to link with undefined `_Unwind_*`.
+        #
+        # Mirrors the crate-type split in `collect_inputs`, so the libs named
+        # here are the ones that were added to the action inputs.
+        if cc_toolchain:
+            if crate_info.type in ["dylib", "cdylib"]:
+                runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+            else:
+                runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+            for lib in runtime_libs.to_list():
+                static_runtime_libs.append(lib)
+                arg = get_lib_name(lib)
                 if not for_windows:
                     arg = "-l" + arg
                 if type(rustdoc_flags) == "Args":
@@ -214,6 +245,7 @@ def rustdoc_compile_action(
         arguments = args.all,
         supports_path_mapping = args.supports_path_mapping,
         tools = [toolchain.rust_doc],
+        static_runtime_libs = static_runtime_libs,
     )
 
 def _zip_action(ctx, input_dir, output_zip, crate_label):

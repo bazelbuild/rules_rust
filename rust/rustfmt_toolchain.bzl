@@ -1,4 +1,4 @@
-"""# Rustfmt Toolchain"""
+"""# rustfmt_toolchain.bzl"""
 
 load(
     "//rust/private:rustfmt.bzl",

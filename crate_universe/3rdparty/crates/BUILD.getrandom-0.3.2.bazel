@@ -112,8 +112,8 @@ rust_library(
     }),
     version = "0.3.2",
     deps = [
+        ":build_script_build",
         "@cui__cfg-if-1.0.0//:cfg_if",
-        "@cui__getrandom-0.3.2//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__libc-0.2.172//:libc",  # cfg(any(target_os = "macos", target_os = "openbsd", target_os = "vita", target_os = "emscripten"))
@@ -224,6 +224,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
