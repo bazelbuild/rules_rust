@@ -15,6 +15,20 @@ configuration options can be found in the [Rustfmt GitHub Pages][rgp].
 Formatting your Rust targets' source code requires no setup outside of loading `rules_rust`
 in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source code.
 
+The runner accepts two sets of arguments separated by a trailing `--`:
+
+```text
+bazel run @rules_rust//:rustfmt -- <runner args> -- <rustfmt args>
+```
+
+Arguments before the separator scope which packages/targets are formatted (e.g.
+`//my/pkg/...`). Arguments after the separator are forwarded directly to
+`rustfmt`. To pass only `rustfmt` flags, use an empty runner arg list:
+
+```text
+bazel run @rules_rust//:rustfmt -- -- --check
+```
+
 In addition to this formatter, a simple check can be performed using the
 [rustfmt_aspect](./rustfmt_aspect.md) aspect by running:
 
