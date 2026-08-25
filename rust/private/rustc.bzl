@@ -917,6 +917,12 @@ def has_location_expansion(values):
                 return True
     return False
 
+_WORKER_RESPONSE_FILE_ARG = "--rules-rust-response-file="
+
+def _worker_request_arg(arg):
+    """Prevent Bazel from recursively expanding rustc response files in a WorkRequest."""
+    return _WORKER_RESPONSE_FILE_ARG + arg[1:] if arg.startswith("@") else arg
+
 def _args_map_bin_dir(file):
     """Extract `bazel-out/<config>/bin` from a File whose path lives in the configuration's bin directory.
 
@@ -956,7 +962,8 @@ def construct_arguments(
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        use_persistent_worker = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1028,6 +1035,7 @@ def construct_arguments(
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
+        use_persistent_worker (bool): Whether Bazel will construct worker requests from the rustc param file.
 
     Returns:
         tuple: A tuple of the following items
@@ -1457,6 +1465,8 @@ def construct_arguments(
         # require_explicit_unstable_features makes no sense when all features are allowed anyway
         if require_explicit_unstable_features:
             process_wrapper_flags.add("--require-explicit-unstable-features", "true")
+    if use_persistent_worker:
+        extra_rustc_flags = [_worker_request_arg(flag) for flag in extra_rustc_flags]
     rustc_flags.add_all(extra_rustc_flags, map_each = map_flag)
 
     if is_no_std(ctx, toolchain, crate_info.is_test):
@@ -1486,26 +1496,32 @@ def construct_arguments(
     elif rust_flags:
         for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
             if type(flag) in ["tuple", "list"] and len(flag) == 2:
+                flag_format = _worker_request_arg(flag[0]) if use_persistent_worker else flag[0]
                 rustc_flags.add_all(
                     [flag[1]],
-                    format_each = flag[0],
+                    format_each = flag_format,
                     expand_directories = False,
                 )
             else:
                 if map_flag:
                     flag = map_flag(flag)
                 if flag != None:
+                    if use_persistent_worker:
+                        flag = _worker_request_arg(flag)
                     rustc_flags.add(flag)
 
     # Add target specific flags last, so they can override previous flags
     authored_rustc_flags = getattr(attr, "rustc_flags", [])
+    expanded_authored_rustc_flags = expand_list_element_locations(
+        ctx,
+        authored_rustc_flags,
+        data_paths,
+        {},
+    )
+    if use_persistent_worker:
+        expanded_authored_rustc_flags = [_worker_request_arg(flag) for flag in expanded_authored_rustc_flags]
     rustc_flags.add_all(
-        expand_list_element_locations(
-            ctx,
-            authored_rustc_flags,
-            data_paths,
-            {},
-        ),
+        expanded_authored_rustc_flags,
         map_each = map_flag,
     )
 
@@ -1713,6 +1729,10 @@ def rustc_compile_action(
     #
     # Exclude lints if we're building in the exec configuration to prevent crates
     # used in build scripts from generating warnings.
+    opaque_rust_flags = rust_flags if type(rust_flags) == "Args" else None
+    if opaque_rust_flags != None:
+        rust_flags = []
+
     lint_files = []
     if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
         rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
@@ -1805,6 +1825,14 @@ def rustc_compile_action(
         dwo_outputs = ctx.actions.declare_directory(fission_directory, sibling = crate_info.output)
         rust_flags.append(("-Zsplit-dwarf-out-dir=%s", dwo_outputs))
 
+    use_persistent_worker = (
+        bool(ctx.executable._process_wrapper) and
+        hasattr(ctx.attr, "_experimental_persistent_worker") and
+        ctx.attr._experimental_persistent_worker[BuildSettingInfo].value and
+        opaque_rust_flags == None
+    )
+    use_incremental = use_persistent_worker and ctx.var["COMPILATION_MODE"] != "opt" and not _will_emit_object_file(emit)
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1829,7 +1857,12 @@ def rustc_compile_action(
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
+        use_persistent_worker = use_persistent_worker,
     )
+    if opaque_rust_flags != None:
+        args.all.append(opaque_rust_flags)
+    if use_incremental:
+        args.process_wrapper_flags.add("--rustc-incremental", "true")
 
     args_metadata = None
     if build_metadata:
@@ -1857,7 +1890,10 @@ def rustc_compile_action(
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
             allowed_unstable_rust_features = allowed_unstable_rust_features,
+            use_persistent_worker = use_persistent_worker,
         )
+        if opaque_rust_flags != None:
+            args_metadata.all.append(opaque_rust_flags)
 
     env = dict(ctx.configuration.default_shell_env)
 
@@ -1904,6 +1940,15 @@ def rustc_compile_action(
         action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
     if ctx.executable._process_wrapper:
+        execution_requirements = {}
+        if args.supports_path_mapping:
+            execution_requirements["supports-path-mapping"] = ""
+        if use_persistent_worker:
+            execution_requirements.update({
+                "requires-worker-protocol": "proto",
+                "supports-workers": "1",
+            })
+
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
@@ -1921,7 +1966,7 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
-            execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
+            execution_requirements = execution_requirements,
         )
         if args_metadata:
             ctx.actions.run(
@@ -1939,7 +1984,7 @@ def rustc_compile_action(
                     "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
-                execution_requirements = {"supports-path-mapping": ""} if args_metadata.supports_path_mapping else None,
+                execution_requirements = execution_requirements,
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
@@ -1950,7 +1995,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = [args.rustc_path, args.rustc_flags],
+            arguments = [args.rustc_path, args.rustc_flags] + ([opaque_rust_flags] if opaque_rust_flags != None else []),
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} file{})".format(
                 crate_info.type,
