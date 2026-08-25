@@ -921,7 +921,7 @@ rust_toolchain = rule(
             doc = (
                 "Whether to link libstd dynamically. Possible values: [-1, 0, 1]. " +
                 "-1 means to use the value of the build setting " +
-                "//rust/settings:experimental_link_std_dylib. " +
+                "`@rules_rust//rust/settings:experimental_link_std_dylib`. " +
                 "0 means do not link libstd dynamically. " +
                 "1 means link libstd dynamically."
             ),
