@@ -403,6 +403,8 @@ def _cargo_build_script_impl(ctx):
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
+    cdylib_link_flags = ctx.actions.declare_file(ctx.label.name + ".cdyliblinkflags")  # rustc-cdylib-link-arg, applied to cdylib crates (incl. transitively)
+    bin_link_flags = ctx.actions.declare_file(ctx.label.name + ".binlinkflags")  # rustc-link-arg-bins, applied to binary crates
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
     script_data = []
@@ -623,6 +625,8 @@ def _cargo_build_script_impl(ctx):
     args.add(flags_out, format = "--flags_out=%s")
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
+    args.add(cdylib_link_flags, format = "--cdylib_link_flags=%s")
+    args.add(bin_link_flags, format = "--bin_link_flags=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
     args.add(ctx.attr.rundir, format = "--rundir=%s")
 
@@ -697,6 +701,8 @@ def _cargo_build_script_impl(ctx):
             flags_out,
             link_flags,
             link_search_paths,
+            cdylib_link_flags,
+            bin_link_flags,
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
@@ -724,6 +730,8 @@ def _cargo_build_script_impl(ctx):
             flags = flags_out,
             linker_flags = link_flags,
             link_search_paths = link_search_paths,
+            cdylib_link_flags = cdylib_link_flags,
+            bin_link_flags = bin_link_flags,
             compile_data = depset([runfiles_dir] + extra_output, transitive = script_data),
         ),
         OutputGroupInfo(
