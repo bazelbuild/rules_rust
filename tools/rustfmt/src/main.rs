@@ -185,6 +185,7 @@ fn apply_rustfmt(options: &Config, editions_and_targets: &HashMap<String, Vec<St
             .arg(&options.rustfmt_config.config)
             .arg("--config")
             .arg("skip_children=true")
+            .args(&options.rustfmt_args)
             .args(sources)
             .status()
             .expect("Failed to run rustfmt");
@@ -212,11 +213,27 @@ struct Config {
     /// to be formatted. If empty, all targets in the workspace will
     /// be formatted.
     pub packages: Vec<String>,
+
+    /// Extra arguments to forward to the `rustfmt` invocation. These
+    /// come from anything after a trailing `--` on the command line, e.g.
+    /// `bazel run @rules_rust//:rustfmt -- <runner args> -- <rustfmt args>`.
+    pub rustfmt_args: Vec<String>,
 }
 
 /// Parse command line arguments and environment variables to
 /// produce config data for running rustfmt.
 fn parse_args() -> Config {
+    let mut args = env::args().skip(1);
+    let mut packages = Vec::new();
+    let mut rustfmt_args = Vec::new();
+    for arg in args.by_ref() {
+        if arg == "--" {
+            rustfmt_args.extend(args.by_ref());
+            break;
+        }
+        packages.push(arg);
+    }
+
     Config{
         workspace: PathBuf::from(
             env::var("BUILD_WORKSPACE_DIRECTORY")
@@ -227,6 +244,7 @@ fn parse_args() -> Config {
             .unwrap_or_else(|_| "bazel".to_owned())
         ),
         rustfmt_config: parse_rustfmt_config(),
-        packages: env::args().skip(1).collect(),
+        packages,
+        rustfmt_args,
     }
 }
