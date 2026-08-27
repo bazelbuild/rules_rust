@@ -9,6 +9,12 @@ pub(crate) const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crate
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+/// A `serde` `skip_serializing_if` predicate for `bool` fields that default to
+/// `false`, so they stay out of serialized lockfiles unless actually set.
+pub(crate) fn is_false(value: &bool) -> bool {
+    !*value
+}
+
 /// Convert a string into a valid crate module name by applying transforms to invalid characters
 pub(crate) fn sanitize_module_name(name: &str) -> String {
     name.replace('-', "_")

@@ -132,6 +132,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
+                workspace_member: false,
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
@@ -191,6 +192,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
+                workspace_member: false,
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
@@ -278,6 +280,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
+                workspace_member: false,
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
@@ -345,6 +348,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
+                workspace_member: false,
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,

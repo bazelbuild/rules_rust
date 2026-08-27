@@ -170,6 +170,7 @@ mod test {
             got_pkg_a.normal_deps().values(),
             vec![
                 CrateDependency {
+                    workspace_member: false,
                     id: CrateId {
                         name: String::from("anyhow"),
                         version: Version::new(1, 0, 69),
@@ -179,6 +180,7 @@ mod test {
                     local_path: None,
                 },
                 CrateDependency {
+                    workspace_member: false,
                     id: CrateId {
                         name: String::from("reqwest"),
                         version: Version::new(0, 11, 14),

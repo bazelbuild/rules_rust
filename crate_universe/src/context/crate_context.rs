@@ -12,8 +12,8 @@ use crate::metadata::{
     CrateAnnotation, Dependency, PairedExtras, SourceAnnotation, TreeResolverMetadata,
 };
 use crate::select::Select;
-use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, Label};
+use crate::utils::{is_false, sanitize_module_name};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
@@ -32,6 +32,12 @@ pub struct CrateDependency {
     /// `[dependencies]` table and the `[patches]` table so they can be used in rendering.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) local_path: Option<Utf8PathBuf>,
+
+    /// Whether the dependency is another member of the same Cargo workspace. The
+    /// rendered dependency maps keep these separate from third-party crates so
+    /// `all_crate_deps(first_party = True)` can opt into them.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub workspace_member: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -409,6 +415,7 @@ impl CrateContext {
                 id: CrateId::new(pkg.name.clone(), pkg.version.clone()),
                 target,
                 alias: dep.alias,
+                workspace_member: dep.workspace_member,
                 local_path: match source_annotations.get(&dep.package_id) {
                     Some(SourceAnnotation::Path { path }) => Some(path.clone()),
                     _ => None,

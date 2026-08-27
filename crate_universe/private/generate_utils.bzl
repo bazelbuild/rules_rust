@@ -218,12 +218,15 @@ def _read_cargo_config(repository_ctx):
         return repository_ctx.read(config)
     return None
 
-def _update_render_config(config, repository_name):
-    """Add the repository name to the render config
+def _update_render_config(config, repository_name, cargo_lockfile_label):
+    """Add rendering details that come from the rule rather than the user
 
     Args:
         config (dict): A `render_config` struct
         repository_name (str): The name of the repository that owns the config
+        cargo_lockfile_label (str): The label of the rule's `cargo_lockfile`, or None. Its
+            repository is what `all_crate_deps(first_party = True)` renders labels against,
+            since that is the Bazel repository holding the Cargo workspace's own crates.
 
     Returns:
         struct: An updated `render_config`.
@@ -231,6 +234,9 @@ def _update_render_config(config, repository_name):
 
     # Add the repository name as it's very relevant to rendering.
     config.update({"repository_name": repository_name})
+
+    if cargo_lockfile_label:
+        config.update({"cargo_lockfile_label": cargo_lockfile_label})
 
     return struct(**config)
 
@@ -256,6 +262,7 @@ def compile_config(
         render_config,
         supported_platform_triples,
         repository_name,
+        cargo_lockfile_label = None,
         repository_ctx = None):
     """Create a config file for generating crate targets
 
@@ -271,6 +278,9 @@ def compile_config(
         render_config (dict): The deserialized dict of the `render_config` function.
         supported_platform_triples (list): A list of platform triples
         repository_name (str): The name of the repository being generated
+        cargo_lockfile_label (str, optional): The label of the rule's `cargo_lockfile`. Used to
+            locate the Bazel repository that owns the Cargo workspace's own crates when
+            rendering `all_crate_deps(first_party = True)`.
         repository_ctx (repository_ctx, optional): A repository context object used for enabling
             certain functionality.
 
@@ -310,6 +320,7 @@ def compile_config(
         rendering = _update_render_config(
             config = render_config,
             repository_name = repository_name,
+            cargo_lockfile_label = cargo_lockfile_label,
         ),
         supported_platform_triples = supported_platform_triples,
     )
@@ -335,6 +346,9 @@ def generate_config(repository_ctx):
         render_config = _get_render_config(repository_ctx),
         supported_platform_triples = repository_ctx.attr.supported_platform_triples,
         repository_name = repository_ctx.name,
+        # The hub repository's `crates.bzl` lives outside the workspace being
+        # generated for, so first-party labels need an explicit repository.
+        cargo_lockfile_label = str(repository_ctx.attr.cargo_lockfile),
         repository_ctx = repository_ctx,
     )
 

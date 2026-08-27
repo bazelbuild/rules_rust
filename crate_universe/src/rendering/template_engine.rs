@@ -20,6 +20,10 @@ use crate::utils::target_triple::TargetTriple;
 pub(crate) struct TemplateEngine {
     engine: tera::Tera,
     context: tera::Context,
+
+    /// Retained so `crates.bzl` can tell whether first-party labels are
+    /// renderable at all. See [`RenderConfig::cargo_lockfile_label`].
+    cargo_lockfile_label: Option<Label>,
 }
 
 impl TemplateEngine {
@@ -112,6 +116,10 @@ impl TemplateEngine {
             module_label_fn_generator(render_config.crates_module_template.clone()),
         );
         tera.register_function(
+            "first_party_label",
+            first_party_label_fn_generator(render_config.cargo_lockfile_label.clone()),
+        );
+        tera.register_function(
             "local_crate_mirror_options_json",
             local_crate_mirror_options_json_fn_generator(
                 Arc::clone(&render_config),
@@ -137,6 +145,7 @@ impl TemplateEngine {
         Self {
             engine: tera,
             context,
+            cargo_lockfile_label: render_config.cargo_lockfile_label.clone(),
         }
     }
 
@@ -166,6 +175,10 @@ impl TemplateEngine {
         context.insert("context", data);
         context.insert("platforms", platforms);
         context.insert("generator", &generator);
+        context.insert(
+            "render_first_party_deps",
+            &matches!(self.cargo_lockfile_label, Some(Label::Absolute { .. })),
+        );
 
         self.engine
             .render("module_bzl.j2", &context)
@@ -278,6 +291,41 @@ fn crate_alias_fn_generator(template: String, repository_name: String) -> impl t
             )) {
                 Ok(v) => Ok(v),
                 Err(_) => Err(tera::Error::msg("Failed to generate crate's label")),
+            }
+        },
+    )
+}
+
+/// Renders the label of a first-party target, meaning a crate that is a member
+/// of the same Cargo workspace as the crate depending on it. The `package` comes
+/// from the member's location in the Bazel workspace
+/// ([`crate::context::Context::workspace_members`]) and the `target` from the
+/// dependency's library target name. The repository is taken from the rule's
+/// `cargo_lockfile` label, which is what ties the generated hub back to the
+/// workspace that owns those targets.
+fn first_party_label_fn_generator(cargo_lockfile_label: Option<Label>) -> impl tera::Function {
+    Box::new(
+        move |args: &HashMap<String, Value>| -> tera::Result<Value> {
+            let package = parse_tera_param!("package", String, args);
+            let target = parse_tera_param!("target", String, args);
+
+            let repository = match &cargo_lockfile_label {
+                Some(Label::Absolute { repository, .. }) => repository.clone(),
+                _ => return Err(tera::Error::msg(
+                    "Cannot render a first party label without an absolute `cargo_lockfile` label",
+                )),
+            };
+
+            match to_value(
+                Label::Absolute {
+                    repository,
+                    package,
+                    target,
+                }
+                .to_string(),
+            ) {
+                Ok(v) => Ok(v),
+                Err(_) => Err(tera::Error::msg("Failed to generate first party label")),
             }
         },
     )
