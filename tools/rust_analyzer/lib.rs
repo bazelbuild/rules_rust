@@ -496,7 +496,16 @@ where
         .replace("__WORKSPACE__", workspace.as_str())
         .replace("${pwd}", execution_root.as_str())
         .replace("__EXEC_ROOT__", execution_root.as_str())
-        .replace("__OUTPUT_BASE__", output_base.as_str());
+        .replace("__OUTPUT_BASE__", output_base.as_str())
+        // External repository sources live at `{output_base}/external/`, not inside
+        // the execution root. The `{execution_root}/external/` symlinks are ephemeral
+        // (only guaranteed to exist while an action is running), so paths through the
+        // execution root break once the build finishes, leaving rust-analyzer unable
+        // to read external crate sources.
+        .replace(
+            &format!("{execution_root}/external/"),
+            &format!("{output_base}/external/"),
+        );
 
     serde_json::from_str(&content).context("failed to deserialize after template substitution")
 }
@@ -556,6 +565,36 @@ pub struct ToolchainInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn substitution_rewrites_external_paths_to_output_base() {
+        let output_base = Utf8Path::new("/output_base");
+        let workspace = Utf8Path::new("/workspace");
+        let execution_root = Utf8Path::new("/output_base/execroot/_main");
+
+        let content = r#"[
+            "__EXEC_ROOT__/external/rules_rust+crate+anyhow-1.0.0/src/lib.rs",
+            "__EXEC_ROOT__/bazel-out/k8-fastbuild/bin/proto/gen.rs",
+            "__OUTPUT_BASE__/external/toolchain/lib/rustlib/src",
+            "__WORKSPACE__/mylib/src/lib.rs"
+        ]"#;
+
+        let paths: Vec<String> =
+            deserialize_with_substitution(content, output_base, workspace, execution_root).unwrap();
+
+        assert_eq!(
+            paths,
+            vec![
+                // `external/` paths must resolve via the output base; the
+                // execroot symlinks are gone after the build.
+                "/output_base/external/rules_rust+crate+anyhow-1.0.0/src/lib.rs",
+                // `bazel-out/` paths stay under the execution root.
+                "/output_base/execroot/_main/bazel-out/k8-fastbuild/bin/proto/gen.rs",
+                "/output_base/external/toolchain/lib/rustlib/src",
+                "/workspace/mylib/src/lib.rs",
+            ],
+        );
+    }
 
     #[test]
     fn dir_to_bazel_package_normalizes_backslashes() {
