@@ -163,6 +163,14 @@ configuration options can be found in the <a href="https://rust-lang.github.io/r
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
 <p>Formatting your Rust targets' source code requires no setup outside of loading <code>rules_rust</code>
 in your workspace. Simply run <code>bazel run @rules_rust//:rustfmt</code> to format source code.</p>
+<p>The runner accepts two sets of arguments separated by a trailing <code>--</code>:</p>
+<pre><code class="language-text">bazel run @rules_rust//:rustfmt -- &lt;runner args&gt; -- &lt;rustfmt args&gt;
+</code></pre>
+<p>Arguments before the separator scope which packages/targets are formatted (e.g.
+<code>//my/pkg/...</code>). Arguments after the separator are forwarded directly to
+<code>rustfmt</code>. To pass only <code>rustfmt</code> flags, use an empty runner arg list:</p>
+<pre><code class="language-text">bazel run @rules_rust//:rustfmt -- -- --check
+</code></pre>
 <p>In addition to this formatter, a simple check can be performed using the
 <a href="./rustfmt_aspect.html">rustfmt_aspect</a> aspect by running:</p>
 <pre><code class="language-text">bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
