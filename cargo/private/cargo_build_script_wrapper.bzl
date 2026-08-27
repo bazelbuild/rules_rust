@@ -32,6 +32,7 @@ def cargo_build_script(
         edition = None,
         crate_name = None,
         crate_root = None,
+        root_path = None,
         srcs = [],
         crate_features = [],
         version = None,
@@ -120,6 +121,7 @@ def cargo_build_script(
         edition (str): The rust edition to use for the internal binary crate.
         crate_name (str): Crate name to use for build script.
         crate_root (label): The file that will be passed to rustc to be used for building this crate.
+        root_path (str, optional): The path to the crate root within a directory artifact passed in `srcs`.
         srcs (list of label): Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
@@ -209,6 +211,7 @@ def cargo_build_script(
         crate_name = crate_name,
         srcs = srcs,
         crate_root = crate_root,
+        root_path = root_path,
         crate_features = crate_features,
         deps = deps,
         proc_macro_deps = proc_macro_deps,
