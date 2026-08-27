@@ -112,7 +112,7 @@ rust_proc_macro(
     }),
     version = "1.1.1",
     deps = [
-        "@rmdbi__defmt-macros-1.1.1//:build_script_build",
+        ":build_script_build",
         "@rmdbi__defmt-parser-1.0.0//:defmt_parser",
         "@rmdbi__proc-macro2-1.0.107//:proc_macro2",
         "@rmdbi__quote-1.0.47//:quote",
@@ -126,6 +126,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

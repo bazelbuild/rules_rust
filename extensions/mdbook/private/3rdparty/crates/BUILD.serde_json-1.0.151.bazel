@@ -40,8 +40,6 @@ rust_library(
     ),
     crate_features = [
         "default",
-        "indexmap",
-        "preserve_order",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -118,11 +116,10 @@ rust_library(
     }),
     version = "1.0.151",
     deps = [
-        "@rmdbi__indexmap-2.14.0//:indexmap",
+        ":build_script_build",
         "@rmdbi__itoa-1.0.18//:itoa",
         "@rmdbi__memchr-2.8.3//:memchr",
         "@rmdbi__serde_core-1.0.229//:serde_core",
-        "@rmdbi__serde_json-1.0.151//:build_script_build",
         "@rmdbi__zmij-1.0.23//:zmij",
     ],
 )
@@ -133,6 +130,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
@@ -148,8 +148,6 @@ cargo_build_script(
     ),
     crate_features = [
         "default",
-        "indexmap",
-        "preserve_order",
         "std",
     ],
     crate_name = "build_script_build",

@@ -116,10 +116,10 @@ rust_library(
     }),
     version = "1.0.149",
     deps = [
+        ":build_script_build",
         "@rrra__itoa-1.0.18//:itoa",
         "@rrra__memchr-2.8.0//:memchr",
         "@rrra__serde_core-1.0.228//:serde_core",
-        "@rrra__serde_json-1.0.149//:build_script_build",
         "@rrra__zmij-1.0.21//:zmij",
     ],
 )
@@ -130,6 +130,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

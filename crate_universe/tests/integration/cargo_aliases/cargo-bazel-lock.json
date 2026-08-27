@@ -1,5 +1,5 @@
 {
-  "checksum": "74a8ac34e576c3cbccaa73f8e3005720a63fbdec3a8d0afa013f15d8030adbb7",
+  "checksum": "c31053e1ff264215403e493268b186e1e1e346745cfd8327816e987456febfd3",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -977,11 +977,13 @@
             {
               "id": "hashbrown 0.12.3",
               "target": "hashbrown"
-            },
-            {
-              "id": "indexmap 1.9.2",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1154,12 +1156,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "libc 0.2.139",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1291,11 +1290,13 @@
             {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
-            },
-            {
-              "id": "log 0.4.14",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1368,12 +1369,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "memchr 2.5.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1457,13 +1455,15 @@
               "target": "clap"
             },
             {
-              "id": "names 0.12.1-dev",
-              "target": "build_script_build"
-            },
-            {
               "id": "rand 0.8.5",
               "target": "rand"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1543,13 +1543,15 @@
               "target": "clap"
             },
             {
-              "id": "names 0.13.0",
-              "target": "build_script_build"
-            },
-            {
               "id": "rand 0.8.5",
               "target": "rand"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1764,10 +1766,6 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro-error 1.0.4",
-              "target": "build_script_build"
-            },
-            {
               "id": "proc-macro2 1.0.93",
               "target": "proc_macro2"
             },
@@ -1779,6 +1777,12 @@
               "id": "syn 1.0.109",
               "target": "syn"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1865,10 +1869,6 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro-error-attr 1.0.4",
-              "target": "build_script_build"
-            },
-            {
               "id": "proc-macro2 1.0.93",
               "target": "proc_macro2"
             },
@@ -1876,6 +1876,12 @@
               "id": "quote 1.0.38",
               "target": "quote"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1960,13 +1966,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.93",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.6",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -2444,12 +2452,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "serde 1.0.217",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -2708,13 +2713,15 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.109",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.6",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -3153,12 +3160,7 @@
           "selects": {}
         },
         "deps": {
-          "common": [
-            {
-              "id": "winapi 0.3.9",
-              "target": "build_script_build"
-            }
-          ],
+          "common": [],
           "selects": {
             "i686-pc-windows-gnu": [
               {
@@ -3173,6 +3175,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2015",
         "version": "0.3.9"
@@ -3236,12 +3244,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -3357,12 +3362,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
