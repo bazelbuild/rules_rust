@@ -120,9 +120,9 @@ rust_library(
     version = "0.14.32",
     deps = [
         "@rmdbi__bytes-1.12.1//:bytes",
-        "@rmdbi__futures-channel-0.3.33//:futures_channel",
-        "@rmdbi__futures-core-0.3.33//:futures_core",
-        "@rmdbi__futures-util-0.3.33//:futures_util",
+        "@rmdbi__futures-channel-0.3.34//:futures_channel",
+        "@rmdbi__futures-core-0.3.34//:futures_core",
+        "@rmdbi__futures-util-0.3.34//:futures_util",
         "@rmdbi__h2-0.3.27//:h2",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__http-body-0.4.6//:http_body",

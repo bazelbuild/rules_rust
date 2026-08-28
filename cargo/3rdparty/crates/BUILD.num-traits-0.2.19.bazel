@@ -103,7 +103,7 @@ rust_library(
     }),
     version = "0.2.19",
     deps = [
-        "@rrc__num-traits-0.2.19//:build_script_build",
+        ":build_script_build",
     ],
 )
 

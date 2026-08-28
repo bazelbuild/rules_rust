@@ -1,5 +1,5 @@
 {
-  "checksum": "f29fa17fb4a73f5887dddd2cd3707c13d358336c77aae1686d980ccfe86ff5d4",
+  "checksum": "f31e3003db13c5546b3de32778c2100bf6042bf450136a516fe00addc4d69405",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -522,13 +522,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.106",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.11",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -619,11 +621,13 @@
             {
               "id": "proc-macro2 1.0.106",
               "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.45",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -692,13 +696,15 @@
         "deps": {
           "common": [
             {
-              "id": "serde 1.0.228",
-              "target": "build_script_build"
-            },
-            {
               "id": "serde_core 1.0.228",
               "target": "serde_core"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -764,12 +770,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "serde_core 1.0.228",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1177,12 +1180,7 @@
           "selects": {}
         },
         "deps": {
-          "common": [
-            {
-              "id": "winapi 0.3.9",
-              "target": "build_script_build"
-            }
-          ],
+          "common": [],
           "selects": {
             "i686-pc-windows-gnu": [
               {
@@ -1197,6 +1195,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2015",
         "version": "0.3.9"
@@ -1260,12 +1264,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1381,12 +1382,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },

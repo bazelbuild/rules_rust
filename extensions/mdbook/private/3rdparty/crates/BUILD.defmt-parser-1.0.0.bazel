@@ -108,6 +108,6 @@ rust_library(
     }),
     version = "1.0.0",
     deps = [
-        "@rmdbi__thiserror-2.0.19//:thiserror",
+        "@rmdbi__thiserror-2.0.20//:thiserror",
     ],
 )

@@ -119,9 +119,9 @@ rust_library(
     }),
     version = "0.2.121",
     deps = [
+        ":build_script_build",
         "@rrwbd__cfg-if-1.0.4//:cfg_if",
         "@rrwbd__once_cell-1.21.3//:once_cell",
-        "@rrwbd__wasm-bindgen-0.2.121//:build_script_build",
         "@rrwbd__wasm-bindgen-shared-0.2.121//:wasm_bindgen_shared",
     ],
 )
@@ -135,6 +135,9 @@ cargo_build_script(
     aliases = {
         "@rrwbd__rustversion-1.0.22//:rustversion": "rustversion_compat",
     },
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
