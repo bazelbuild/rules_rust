@@ -39,7 +39,9 @@ pub(crate) fn lock_context(
 
 /// Write a [crate::context::Context] to disk
 pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
-    let content = serde_json::to_string_pretty(&lockfile)?;
+    let mut value = serde_json::to_value(&lockfile)?;
+    compact_lockfile_value(&mut value);
+    let content = serde_json::to_string_pretty(&value)?;
 
     if dry_run {
         println!("{content:#?}");
@@ -53,6 +55,49 @@ pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> R
     }
 
     Ok(())
+}
+
+/// Recursively rewrite `{"common": X, "selects": {}}` patterns in a lockfile
+/// JSON value to just `X`.
+///
+/// [`crate::select::Select`] always serializes to the verbose two-field shape
+/// because the Tera-based rendering templates (see
+/// `src/rendering/templates/`) index `deps_set.common` / `deps_set.selects`
+/// directly on a `serde_json::Value` and would break if handed a bare array.
+/// The on-disk lockfile has no such consumer — its readers all go through
+/// `Select`'s own `Deserialize` impl, which accepts both shapes — so we
+/// collapse the empty-`selects` case here for a substantial size win. The
+/// verbose shape is preserved when `selects` is non-empty because that shape
+/// is meaningful (multiple platform-specific values).
+pub(crate) fn compact_lockfile_value(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            // Only collapse when the object is exactly `{"common": _, "selects": {}}`.
+            // Extra keys (or a missing key) mean this isn't a `Select` and we
+            // must leave it alone.
+            let is_empty_select = map.len() == 2
+                && map.contains_key("common")
+                && map
+                    .get("selects")
+                    .and_then(|s| s.as_object())
+                    .is_some_and(|s| s.is_empty());
+            if is_empty_select {
+                let mut common = map.remove("common").unwrap();
+                compact_lockfile_value(&mut common);
+                *value = common;
+            } else {
+                for v in map.values_mut() {
+                    compact_lockfile_value(v);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                compact_lockfile_value(item);
+            }
+        }
+        _ => {}
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -291,7 +336,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("8c404322a9233ae973beca7ab04300fc61d60380153a36d0e23e70ba2d42f39a".to_owned()),
+            Digest("6154c8de88bb971f8b94365716f437c005c43ee3bb16190fa7c3b8282757504b".to_owned()),
             digest,
         );
     }
@@ -336,7 +381,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("4e15466c65fbe0069462f551062a2e71fcc1b7a2f614c5df14eed322aa6f90a4".to_owned()),
+            Digest("f65772987e8f02b9a0a5978bed38ce660694a89b7c7723d3ad7c25c0f260e604".to_owned()),
             digest,
         );
     }
@@ -367,7 +412,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("7856b140b5609a1678609b07152908987245f78cf08cb0e7a500fef2d8be4b5d".to_owned()),
+            Digest("652b70ca28db1763146554856913308e68547119367e9a5799fce7d9931152c4".to_owned()),
             digest,
         );
     }
@@ -416,7 +461,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("764098259279ccd2dd6bf978bc82819464fe45da3eb0a03d8b796ac7913e8982".to_owned()),
+            Digest("75883a7020d457b9c886fd185688c2e698139f52f4382d82a9261e7ecdc1abc5".to_owned()),
             digest,
         );
     }
@@ -571,5 +616,63 @@ mod test {
             digest_root, digest_dep,
             "Digests should be identical for WORKSPACE root (@@//...) and dep (@@repo_name//...) contexts"
         );
+    }
+
+    #[test]
+    fn compact_collapses_empty_selects() {
+        let mut value = serde_json::json!({
+            "crates": {
+                "anyhow 1.0.69": {
+                    "common_attrs": {
+                        "crate_features": {
+                            "common": ["default", "std"],
+                            "selects": {}
+                        },
+                        "deps": {
+                            "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                            "selects": {
+                                "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        compact_lockfile_value(&mut value);
+
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "crates": {
+                    "anyhow 1.0.69": {
+                        "common_attrs": {
+                            // Empty `selects` collapsed to just the common list.
+                            "crate_features": ["default", "std"],
+                            // Non-empty `selects` preserved as-is.
+                            "deps": {
+                                "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                                "selects": {
+                                    "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+        );
+    }
+
+    // Guard against false positives: unrelated `{common, selects}`-shaped objects
+    // with extra keys (or a non-object `selects`) must not be collapsed.
+    #[test]
+    fn compact_leaves_non_select_objects_alone() {
+        let original = serde_json::json!({
+            "common": [1, 2],
+            "selects": {},
+            "extra_key": "value"
+        });
+        let mut value = original.clone();
+        compact_lockfile_value(&mut value);
+        assert_eq!(value, original);
     }
 }

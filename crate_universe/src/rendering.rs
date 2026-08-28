@@ -77,9 +77,9 @@ impl Renderer {
         Ok(self.render_hub(context, generator)?.files)
     }
 
-    /// Like [`render`], but also returns the names of the per-alias hub
+    /// Like [`Renderer::render`], but also returns the names of the per-alias hub
     /// subpackages produced. Tests usually want just the files and call
-    /// [`render`].
+    /// [`Renderer::render`].
     pub(crate) fn render_hub(
         &self,
         context: &Context,
@@ -810,7 +810,7 @@ impl Renderer {
                 platforms,
             ),
             toolchains: attrs.map_or_else(BTreeSet::new, |attrs| attrs.toolchains.clone()),
-            version: krate.common_attrs.version.clone(),
+            version: krate.version.to_string(),
             visibility: BTreeSet::from(["//visibility:private".to_owned()]),
         })
     }
@@ -971,7 +971,7 @@ impl Renderer {
                         .collect(),
                 )
             }),
-            version: krate.common_attrs.version.clone(),
+            version: krate.version.to_string(),
         })
     }
 
