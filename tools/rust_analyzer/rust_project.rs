@@ -1,5 +1,5 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
-//! See official documentation of file format at https://rust-analyzer.github.io/manual.html
+//! See official documentation of file format at https://rust-analyzer.github.io/book/non_cargo_based_projects.html
 
 use core::fmt;
 use std::{
@@ -57,7 +57,7 @@ impl FromStr for RustAnalyzerArg {
 
 /// The format that `rust_analyzer` expects as a response when automatically invoked.
 /// See [rust-analyzer documentation][rd] for a thorough description of this interface.
-/// [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
+/// [rd]: <https://rust-analyzer.github.io/book/configuration.html#workspace.discoverConfig>.
 // `Progress` carries an `&fmt::Arguments` for in-flight log lines, which can't
 // be deserialized; the cache stores the inner `RustProject`, never the
 // discovery envelope, so Serialize is all we need here.
@@ -80,7 +80,7 @@ pub enum DiscoverProject<'a> {
 
 /// A `rust-project.json` workspace representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
-/// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
+/// [rd]: https://rust-analyzer.github.io/book/non_cargo_based_projects.html
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RustProject {
     /// The path to a Rust sysroot.
@@ -103,7 +103,7 @@ pub struct RustProject {
 
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
-/// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
+/// [rd]: https://rust-analyzer.github.io/book/non_cargo_based_projects.html
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Crate {
     /// A name used in the package's project declaration
