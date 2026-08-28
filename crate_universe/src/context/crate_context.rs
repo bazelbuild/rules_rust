@@ -979,6 +979,25 @@ mod test {
         .unwrap()
     }
 
+    /// `crate.annotation` takes these keys verbatim, and `extensions.bzl`
+    /// spells them out by hand. An unknown key is silently ignored, so pin the
+    /// exact strings.
+    #[test]
+    fn override_target_keys() {
+        let attrs = TargetAttributes::default();
+        let rules = [
+            Rule::Library(attrs.clone()),
+            Rule::ProcMacro(attrs.clone()),
+            Rule::Binary(attrs.clone()),
+            Rule::BuildScript(attrs),
+        ];
+
+        assert_eq!(
+            rules.map(|rule| rule.override_target_key()),
+            ["lib", "proc-macro", "bin", "custom-build"],
+        );
+    }
+
     #[test]
     fn new_context() {
         let annotations = common_annotations();

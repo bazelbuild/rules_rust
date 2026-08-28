@@ -1,0 +1,47 @@
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro", "rust_test")
+
+# Replaces the `proc-macro` target generated for `paste`.
+rust_proc_macro(
+    name = "proc_macro",
+    srcs = ["proc_macro.rs"],
+    crate_name = "paste",
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+# Replaces the `custom-build` target generated for `anyhow`.
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build_script.rs"],
+    crate_name = "build_script_build",
+    edition = "2021",
+    pkg_name = "anyhow",
+    visibility = ["//visibility:public"],
+)
+
+# `paste` is never compiled from source once its proc macro is overridden, so
+# this only links if the alias generated for it points at `:proc_macro`.
+rust_test(
+    name = "override_test",
+    srcs = ["override_test.rs"],
+    edition = "2021",
+    proc_macro_deps = ["@override_target//paste"],
+)
+
+# The build script override has no runtime signal -- `anyhow` builds either way
+# -- and compiling it from source would pull ~60 crates into this workspace, so
+# assert on the generated dependency graph instead.
+genquery(
+    name = "anyhow_deps",
+    expression = "deps(@override_target//anyhow)",
+    scope = ["@override_target//anyhow"],
+)
+
+genrule(
+    name = "build_script_is_overridden",
+    srcs = [":anyhow_deps"],
+    outs = ["build_script_is_overridden.txt"],
+    # Fails if `anyhow` still depends on its own generated build script.
+    cmd = "grep '//overrides:build_script$$' $< > $@",
+)

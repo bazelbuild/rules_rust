@@ -1385,6 +1385,100 @@ mod test {
         assert!(build_file_content.contains("name = \"_bs\""));
     }
 
+    /// Renders a crate exposing one target of every [`Rule`] kind, so that any
+    /// `override_targets` key has something to match against.
+    fn render_override_targets_build_file(override_targets: BTreeMap<String, Label>) -> String {
+        fn target(crate_name: &str) -> TargetAttributes {
+            TargetAttributes {
+                crate_name: crate_name.to_owned(),
+                ..mock_target_attributes()
+            }
+        }
+
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([
+                    Rule::Library(target("mock_crate")),
+                    Rule::ProcMacro(target("mock_crate_proc_macro")),
+                    Rule::Binary(target("mock_crate_bin")),
+                    Rule::BuildScript(target("build_script_build")),
+                ]),
+                library_target_name: Some("mock_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: Some(BuildScriptAttributes::default()),
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets,
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let mut output = renderer.render(&context, None).unwrap();
+
+        output
+            .remove(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap()
+    }
+
+    /// Every key returned by [`Rule::override_target_key`] must swap the
+    /// generated rule out for an `alias`. `crate.annotation` accepts these
+    /// strings verbatim, so this is the contract `crate_universe/extensions.bzl`
+    /// has to spell correctly.
+    #[test]
+    fn render_override_targets() {
+        // Overrides are applied one at a time so a key can only pass by
+        // aliasing its own target.
+        for (key, target_name, rule) in [
+            ("lib", "mock_crate", "rust_library("),
+            ("proc-macro", "mock_crate_proc_macro", "rust_proc_macro("),
+            ("bin", "mock_crate_bin", "rust_binary("),
+            ("custom-build", "build_script_build", "cargo_build_script("),
+        ] {
+            let content = render_override_targets_build_file(BTreeMap::from([(
+                key.to_owned(),
+                Label::from_str("@//custom:override").unwrap(),
+            )]));
+
+            assert!(
+                content.contains(&format!("name = \"{target_name}\""))
+                    && content.contains("actual = \"@//custom:override\""),
+                "`{key}` did not alias `{target_name}`\n```\n{content}```\n",
+            );
+            assert!(
+                !content.contains(rule),
+                "`{rule}` should have been overridden by `{key}`\n```\n{content}```\n",
+            );
+        }
+    }
+
+    /// Keys that aren't produced by [`Rule::override_target_key`] are silently
+    /// ignored rather than rejected, which is why the underscored spelling
+    /// `extensions.bzl` used to emit went unnoticed.
+    #[test]
+    fn render_override_targets_ignores_unknown_keys() {
+        let content = render_override_targets_build_file(BTreeMap::from([(
+            "proc_macro".to_owned(),
+            Label::from_str("@//custom:override").unwrap(),
+        )]));
+
+        assert!(
+            !content.contains("@//custom:override"),
+            "```\n{content}```\n"
+        );
+    }
+
     #[test]
     fn render_cargo_build_script_complex() {
         let mut context = Context::default();
