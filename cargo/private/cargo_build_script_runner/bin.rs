@@ -113,10 +113,12 @@ fn run_buildrs() -> Result<(), String> {
                 .ok_or_else(|| "Failed while getting file name".to_string())?;
             let link = manifest_dir.join(file_name);
 
-            symlink_if_not_exists(&path, &link)
-                .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?;
-
-            exec_root_links.push(link)
+            // An entry that already exists belongs to CARGO_MANIFEST_DIR and must not be cleaned.
+            if symlink_if_not_exists(&path, &link)
+                .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?
+            {
+                exec_root_links.push(link)
+            }
         }
     }
 
@@ -383,10 +385,14 @@ fn set_script_runfiles_env(script_path: &Path, command: &mut Command) {
 }
 
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.
-fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
-    symlink(original, link)
-        .or_else(swallow_already_exists)
-        .map_err(|err| format!("Failed to create symlink: {err}"))
+///
+/// Returns whether the symlink was created.
+fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<bool, String> {
+    match symlink(original, link) {
+        Ok(()) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(false),
+        Err(err) => Err(format!("Failed to create symlink: {err}")),
+    }
 }
 
 fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result<PathBuf, String> {
@@ -404,14 +410,6 @@ fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result
         return Err(format!("rundir must not contain .. but was {:?}", rundir));
     }
     Ok(exec_root.join(rundir_path))
-}
-
-fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
-    if err.kind() == std::io::ErrorKind::AlreadyExists {
-        Ok(())
-    } else {
-        Err(err)
-    }
 }
 
 /// A representation of expected command line arguments.
