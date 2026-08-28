@@ -77,6 +77,8 @@ def rust_bindgen_library(
     for shared in (
         "target_compatible_with",
         "exec_compatible_with",
+        "compatible_with",
+        "restricted_to",
     ):
         if shared in kwargs:
             bindgen_kwargs.update({shared: kwargs[shared]})
