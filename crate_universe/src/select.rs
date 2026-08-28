@@ -4,6 +4,14 @@ use std::fmt::Debug;
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
 /// A wrapper around values where some values may be conditionally included (e.g. only on a certain platform), and others are unconditional.
+///
+/// Always serialized in the verbose `{common, selects}` shape so consumers of
+/// the intermediate `serde_json::Value` (notably the Tera-based rendering
+/// templates in `src/rendering/templates/`) can access `.common` and `.selects`
+/// uniformly. The on-disk lockfile is post-processed by
+/// [`crate::lockfile::compact_lockfile_value`] to collapse `{common: X,
+/// selects: {}}` down to just `X` for size — the `Deserialize` impl below
+/// accepts both forms so no reader change is needed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Select<T>
 where
@@ -480,5 +488,39 @@ where
         }
 
         result
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    // Direct serialization always uses the verbose {common, selects} shape so
+    // downstream `serde_json::Value` consumers (Tera templates) can look up
+    // `.common` / `.selects` uniformly. The on-disk lockfile is compacted
+    // separately by `crate::lockfile::compact_lockfile_value`.
+    #[test]
+    fn select_serializes_verbose_form() {
+        let mut sel: Select<BTreeSet<String>> = Select::new();
+        sel.insert("default".to_owned(), None);
+        sel.insert("std".to_owned(), None);
+
+        let json = serde_json::to_string(&sel).unwrap();
+        assert_eq!(json, r#"{"common":["default","std"],"selects":{}}"#);
+    }
+
+    // The compact form (a bare common value) that the lockfile writer
+    // produces must still deserialize into the same in-memory value as the
+    // verbose form. This guards against a regression that would break
+    // reads of lockfiles emitted by post-compaction writers.
+    #[test]
+    fn select_deserializes_compact_form() {
+        let verbose = r#"{"common":["default","std"],"selects":{}}"#;
+        let compact = r#"["default","std"]"#;
+
+        let from_verbose: Select<BTreeSet<String>> = serde_json::from_str(verbose).unwrap();
+        let from_compact: Select<BTreeSet<String>> = serde_json::from_str(compact).unwrap();
+
+        assert_eq!(from_verbose, from_compact);
     }
 }

@@ -26,6 +26,22 @@ impl Glob {
         // Note: self.exclude intentionally not considered. A glob is empty if
         // there are no included globs. A glob cannot have only excludes.
     }
+
+    /// True when this glob matches the `srcs` value generated for every Rust
+    /// target when sources aren't present on disk — the common
+    /// `crates_repository` / `crate.from_cargo` path. Elided from the lockfile
+    /// and reinstated on load via [`Glob::default_rust_srcs`]. The local-vendor
+    /// variant (`allow_empty = false`) is kept in the lockfile explicitly so
+    /// its "sources must exist" check is preserved.
+    pub(crate) fn is_default_rust_srcs(&self) -> bool {
+        self == &Glob::new_rust_srcs(true)
+    }
+
+    /// The default `srcs` value used when a `TargetAttributes` entry is
+    /// deserialized without an explicit `srcs` field.
+    pub(crate) fn default_rust_srcs() -> Self {
+        Glob::new_rust_srcs(true)
+    }
 }
 
 impl Serialize for Glob {
