@@ -1,5 +1,5 @@
 {
-  "checksum": "7d5767d1359cc00019567dbdfd419681fe4f78dce0ad422aee748871edc6d847",
+  "checksum": "27987c7724d655b00b054967c061dc039ccf13f81b05e97c525dc04a8a78d303",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -215,12 +215,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "libc 0.2.146",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -292,12 +289,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "memoffset 0.7.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },

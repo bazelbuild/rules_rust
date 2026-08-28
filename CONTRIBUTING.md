@@ -46,6 +46,7 @@ Rules used to compile Rust code.
 * `rust_binary`
 * `rust_test`
 * `rust_static_library`
+* `rust_dylib_library`
 * `rust_shared_library`
 * `rust_proc_macro`
 * `cargo_build_script`

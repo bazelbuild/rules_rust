@@ -1,9 +1,9 @@
-"""Analysistests for Windows-specific library naming and link flags."""
+"""Tests for Windows-specific library naming, link flags, and dlltool derivation."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "portable_link_flags", "symlink_for_ambiguous_lib")
+load("//rust/private:rustc.bzl", "dlltool_path_from_linker_path", "portable_link_flags", "symlink_for_ambiguous_lib")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "determine_lib_name", "get_lib_name_default", "get_lib_name_for_windows")
@@ -191,6 +191,30 @@ def _cdylib_name_windows_gnu_test_impl(ctx):
 
 cdylib_name_windows_gnu_test = unittest.make(_cdylib_name_windows_gnu_test_impl)
 
+def _dlltool_path_from_linker_path_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Cross-compiling from a Unix host (e.g. llvm-mingw or a Debian mingw-w64 package):
+    asserts.equals(
+        env,
+        "/usr/x86_64-w64-mingw32/bin/dlltool",
+        dlltool_path_from_linker_path("/usr/x86_64-w64-mingw32/bin/x86_64-w64-mingw32-gcc"),
+    )
+
+    # Windows-style linker path (native MinGW toolchain):
+    asserts.equals(
+        env,
+        "C:\\mingw64\\bin\\dlltool.exe",
+        dlltool_path_from_linker_path("C:\\mingw64\\bin\\GCC.EXE"),
+    )
+
+    # No directory component: nothing to derive from:
+    asserts.equals(env, None, dlltool_path_from_linker_path("gcc"))
+
+    return unittest.end(env)
+
+dlltool_path_from_linker_path_test = unittest.make(_dlltool_path_from_linker_path_test_impl)
+
 def _define_targets():
     portable_link_flags_probe(
         name = "portable_link_flags_windows_gnu_probe",
@@ -250,6 +274,9 @@ def windows_lib_name_test_suite(name):
     cdylib_name_windows_gnu_test(
         name = "cdylib_name_windows_gnu_test",
     )
+    dlltool_path_from_linker_path_test(
+        name = "dlltool_path_from_linker_path_test",
+    )
 
     native.test_suite(
         name = name,
@@ -262,5 +289,6 @@ def windows_lib_name_test_suite(name):
             ":staticlib_name_windows_gnullvm_test",
             ":staticlib_name_windows_msvc_test",
             ":cdylib_name_windows_gnu_test",
+            ":dlltool_path_from_linker_path_test",
         ],
     )

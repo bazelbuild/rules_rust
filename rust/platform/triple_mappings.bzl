@@ -60,7 +60,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imac-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
-    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
     "sparc64-unknown-linux-gnu": _support(std = True, host_tools = False),
@@ -430,7 +430,7 @@ def triple_to_abi(target_triple):
     """
     if type(target_triple) == "string":
         target_triple = triple(target_triple)
-    return target_triple.system
+    return target_triple.abi
 
 def system_to_dylib_ext(system):
     return _SYSTEM_TO_DYLIB_EXT[system]
@@ -444,14 +444,14 @@ def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
 
 def system_to_stdlib_linkflags(system, abi = None):
-    """_summary_
+    """Return the stdlib linker flags for the given system (and optional abi).
 
     Args:
-        system (_type_): _description_
-        abi (_type_, optional): _description_. Defaults to None.
+        system (str): The system component of a Rust target triple (e.g. `linux`, `windows`, `darwin`).
+        abi (str, optional): The ABI component of the triple, used to select flag variants on systems (like `windows`) whose stdlib flags depend on the ABI.
 
     Returns:
-        _type_: _description_
+        list: A list of linker flag strings to pass to the linker for the given system/abi.
     """
     flags = _SYSTEM_TO_STDLIB_LINKFLAGS[system]
     if type(flags) == "list":

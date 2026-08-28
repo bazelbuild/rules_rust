@@ -1,5 +1,5 @@
 {
-  "checksum": "1eafc01078680317d53967c1fb199b406d0124a9dabd7e3e864acc8874878a77",
+  "checksum": "a73d6e077c2b1f84b9c7501abbe736cd5b1faeab1f1f360b75789acf630bf1a7",
   "crates": {
     "cc 1.2.59": {
       "name": "cc",
@@ -663,12 +663,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "link-cplusplus 1.0.12",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -754,13 +751,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.106",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.11",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -838,11 +837,13 @@
             {
               "id": "proc-macro2 1.0.106",
               "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.45",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -908,12 +909,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "scratch 1.0.9",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -982,13 +980,15 @@
         "deps": {
           "common": [
             {
-              "id": "serde 1.0.228",
-              "target": "build_script_build"
-            },
-            {
               "id": "serde_core 1.0.228",
               "target": "serde_core"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1054,12 +1054,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "serde_core 1.0.228",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },

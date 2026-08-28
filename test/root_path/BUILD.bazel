@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_library", "rust_test")
 load(":defs.bzl", "package_dir_artifact")
 
@@ -12,6 +13,19 @@ package_dir_artifact(
     ],
 )
 
+package_dir_artifact(
+    name = "cbs_dir_artifact",
+    srcs = [
+        "src/build.rs",
+    ],
+)
+
+cargo_build_script(
+    name = "my_cbs",
+    srcs = [":cbs_dir_artifact"],
+    root_path = "src/build.rs",
+)
+
 rust_library(
     name = "my_lib",
     srcs = [":dir_artifact"],
@@ -23,9 +37,24 @@ rust_test(
     crate = ":my_lib",
 )
 
+rust_library(
+    name = "my_cbs_lib",
+    srcs = [":dir_artifact"],
+    root_path = "src/lib.rs",
+    deps = [":my_cbs"],
+)
+
+rust_test(
+    name = "my_cbs_lib_test",
+    crate = ":my_cbs_lib",
+    rustc_flags = ["--cfg=test_cbs"],
+)
+
 build_test(
     name = "build_test",
     targets = [
+        ":my_cbs",
+        ":my_cbs_lib",
         ":my_lib",
     ],
 )

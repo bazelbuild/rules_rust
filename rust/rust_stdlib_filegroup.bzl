@@ -1,8 +1,4 @@
-"""# Rust Stdlib Filegroup
-
-Public entry point for the [rust_stdlib_filegroup](#rust_stdlib_filegroup) rule.
-Implementation lives in `//rust/private:toolchain.bzl`.
-"""
+"""# rust_stdlib_filegroup.bzl"""
 
 load(
     "//rust/private:toolchain.bzl",

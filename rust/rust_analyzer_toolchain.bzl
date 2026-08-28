@@ -1,4 +1,4 @@
-"""# Rust Analyzer Toolchain"""
+"""# rust_analyzer_toolchain.bzl"""
 
 load(
     "//rust/private:rust_analyzer.bzl",

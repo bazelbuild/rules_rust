@@ -122,8 +122,8 @@ rust_library(
     }),
     version = "0.29.0",
     deps = [
+        ":build_script_build",
         "@rpyo3c__libc-0.2.176//:libc",
-        "@rpyo3c__pyo3-ffi-0.29.0//:build_script_build",
     ],
 )
 
@@ -141,6 +141,9 @@ cargo_build_script(
         "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
         "PYO3_PYTHON": "$(PYO3_PYTHON)",
     },
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

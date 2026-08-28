@@ -20,7 +20,6 @@ load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
-    "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
@@ -52,7 +51,6 @@ load(
     "get_lib_name_for_windows",
     "get_preferred_artifact",
     "is_exec_configuration",
-    "is_std_dylib",
     "make_static_lib_symlink",
     "matches_prefix_filter",
     "parse_env_strings",
@@ -231,7 +229,10 @@ def collect_deps(
         else:
             crate_deps.append(dep)
 
-    aliases = {k.label: v for k, v in aliases.items()}
+    aliases = {
+        (k[rust_common.crate_info].owner if rust_common.crate_info in k else k.label): v
+        for k, v in aliases.items()
+    }
     for dep in crate_deps:
         crate_info = dep.crate_info
         dep_info = dep.dep_info
@@ -290,6 +291,11 @@ def collect_deps(
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
             transitive_build_infos.append(dep_info.transitive_build_infos)
+
+            # If the dep is a dylib, include its own CcInfo in transitive_noncrates
+            # so downstream binaries get the RPATH and runfiles for the .so
+            if crate_info.type == "dylib" and cc_info:
+                transitive_noncrates.append(cc_info.linking_context.linker_inputs)
         elif cc_info or dep_build_info:
             if cc_info:
                 # This dependency is a cc_library
@@ -402,7 +408,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
         elif crate_type in ("dylib"):
             is_linking_dynamic_library = True
-            action_name = CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME
+            action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
         elif crate_type in ("staticlib"):
             is_linking_dynamic_library = False
             action_name = CPP_LINK_STATIC_LIBRARY_ACTION_NAME
@@ -441,6 +447,11 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     if not ld or toolchain.linker_preference == "rust":
         ld = toolchain.linker.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
+
+        # Make sure we include RPATHs for Rust ABI dylibs even when no cc_toolchain.
+        if not cc_toolchain and rpaths:
+            for rpath in rpaths.to_list():
+                link_args.append("-Wl,-rpath,$ORIGIN/" + rpath)
 
         # When using rust-lld directly, we still need library search paths from cc_toolchain
         # to find system libraries that rustc's stdlib depends on (like -lgcc_s, -lutil, etc.)
@@ -925,6 +936,22 @@ def _args_map_bin_dir(file):
     """
     return "/".join(file.path.split("/", 3)[:3])
 
+def dlltool_path_from_linker_path(linker_path):
+    """Derives the path to `dlltool`, which MinGW ships next to the linker.
+
+    Args:
+        linker_path (str): Path to the cc_toolchain's linker executable.
+
+    Returns:
+        str: The derived path, or None if `linker_path` has no directory component.
+    """
+    sep = max(linker_path.rfind("/"), linker_path.rfind("\\"))
+    if sep < 0:
+        return None
+
+    suffix = linker_path[-4:].lower()
+    return "{}dlltool{}".format(linker_path[:sep + 1], suffix if suffix == ".exe" else "")
+
 def construct_arguments(
         *,
         ctx,
@@ -956,7 +983,8 @@ def construct_arguments(
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        link_std_dylib = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1028,6 +1056,7 @@ def construct_arguments(
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
+        link_std_dylib (bool): Whether to dynamically link the Rust standard library using `--prefer-dynamic`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1291,6 +1320,17 @@ def construct_arguments(
     # If linker_type is not explicitly set, infer from which linker is actually being used
     ld_is_direct_driver = False
 
+    # gcc runs dlltool internally when acting as the linker, but rustc drives the linker directly so
+    # it needs dlltool's path: apply outside the link-emit gate below since rlib compiles need it too.
+    if cc_toolchain and toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
+        linker_path = cc_common.get_tool_for_action(
+            feature_configuration = feature_configuration,
+            action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+        )
+        dlltool_path = dlltool_path_from_linker_path(linker_path)
+        if dlltool_path:
+            rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
+
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
@@ -1305,7 +1345,7 @@ def construct_arguments(
                     compilation_mode = compilation_mode,
                     toolchain = toolchain,
                 )
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, crate_info.output, ctx.workspace_name)
             else:
                 rpaths = depset()
 
@@ -1348,6 +1388,11 @@ def construct_arguments(
             ld_is_direct_driver,
             include_link_flags = include_link_flags,
         )
+
+        # On macOS, set the dylib install name to @rpath/<basename> so that
+        # consumers find it via RPATH rather than the exec-root build path.
+        if crate_info.type == "dylib" and toolchain.target_os in ["macos", "darwin"]:
+            rustc_flags.add("--codegen=link-arg=-Wl,-install_name,@rpath/" + crate_info.output.basename)
 
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
@@ -1392,7 +1437,7 @@ def construct_arguments(
                 map_each = _args_map_bin_dir,
             )
 
-    if toolchain._experimental_link_std_dylib:
+    if link_std_dylib:
         rustc_flags.add("--codegen=prefer-dynamic")
 
     # Make bin crate data deps available to tests.
@@ -1805,6 +1850,11 @@ def rustc_compile_action(
         dwo_outputs = ctx.actions.declare_directory(fission_directory, sibling = crate_info.output)
         rust_flags.append(("-Zsplit-dwarf-out-dir=%s", dwo_outputs))
 
+    if hasattr(ctx.attr, "link_std_dylib"):
+        link_std_dylib = toolchain._link_std_dylib or ctx.attr.link_std_dylib
+    else:
+        link_std_dylib = toolchain._link_std_dylib
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1829,6 +1879,7 @@ def rustc_compile_action(
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
+        link_std_dylib = link_std_dylib,
     )
 
     args_metadata = None
@@ -1857,6 +1908,7 @@ def rustc_compile_action(
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
             allowed_unstable_rust_features = allowed_unstable_rust_features,
+            link_std_dylib = link_std_dylib,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -1984,7 +2036,7 @@ def rustc_compile_action(
         # Collect the linking contexts of the standard library and dependencies.
         linking_contexts = [
             malloc_library[CcInfo].linking_context,
-            _get_std_and_alloc_info(ctx, toolchain, crate_info).linking_context,
+            _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib).linking_context,
             toolchain.stdlib_linkflags.linking_context,
         ]
 
@@ -2067,7 +2119,11 @@ def rustc_compile_action(
 
     runfiles = ctx.runfiles(
         files = getattr(ctx.files, "data", []) +
-                ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
+                ([] if experimental_use_coverage_metadata_files else coverage_runfiles) +
+                # Include any generated Rust ABI dylibs as required runfiles.
+                ([crate_info.output] if crate_info.type == "dylib" else []) +
+                # Include the stdlib dylib when dynamically linking the standard library.
+                ([toolchain.rust_std_dylib] if link_std_dylib and toolchain.rust_std_dylib else []),
     )
     transitive_runfiles = []
     crate_attr = getattr(ctx.attr, "crate", None)
@@ -2082,16 +2138,32 @@ def rustc_compile_action(
             continue
         for target in runfiles_attr:
             transitive_runfiles.append(target[DefaultInfo].default_runfiles)
-    if crate_info.type in ["bin", "cdylib", "staticlib"]:
-        dynamic_libraries = ctx.runfiles(files = [
+    dep_dylib_files = []
+    if crate_info.type in ["bin", "cdylib", "dylib", "staticlib"]:
+        dep_dylib_files = [
             library_to_link.dynamic_library
             for dep in getattr(ctx.attr, "deps", []) + getattr(ctx.attr, "link_deps", [])
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
             if _is_dylib(library_to_link) and library_to_link.dynamic_library
-        ])
-        transitive_runfiles.append(dynamic_libraries)
+        ]
+        transitive_runfiles.append(ctx.runfiles(files = dep_dylib_files))
+
+    # On Windows there is no RPATH equivalent. Create symlinks of dylib files
+    # next to the binary so the Windows loader can find them. Bazel deduplicates
+    # identical symlink actions when multiple binaries in a package share a dylib dep.
+    if toolchain.target_os == "windows" and (crate_info.type == "bin" or crate_info.is_test):
+        win_dylibs = list(dep_dylib_files)
+        if link_std_dylib:
+            if toolchain.rust_std_dylib:
+                win_dylibs.append(toolchain.rust_std_dylib)
+        for dylib in win_dylibs:
+            if dylib.dirname != crate_info.output.dirname:
+                symlink = ctx.actions.declare_file(dylib.basename, sibling = crate_info.output)
+                ctx.actions.symlink(output = symlink, target_file = dylib)
+                outputs.append(symlink)
+
     runfiles = runfiles.merge_all(transitive_runfiles)
 
     executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None
@@ -2197,10 +2269,12 @@ def _should_use_rustc_allocator_libraries(toolchain):
         return toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting
     return bool(use_or_default)
 
-def _get_std_and_alloc_info(ctx, toolchain, crate_info):
+def _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib):
     # Handles standard libraries and allocator shims.
     #
-    # The standard libraries vary between "std" and "nostd" flavors.
+    # The standard libraries vary across two dimensions:
+    # * "std" vs "nostd" flavors,
+    # * dynamically vs statically linked.
     #
     # The allocator libraries vary along two dimensions:
     # * the type of rust allocator used (default or global)
@@ -2210,6 +2284,9 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
     #
     # When provided, the allocator_libraries attribute takes precedence over the
     # toolchain allocator attributes.
+    if link_std_dylib and not toolchain.libstd_dylib_and_allocator_ccinfo:
+        fail("link_std_dylib was requested but no std dylib is available for this toolchain target.")
+
     libs = None
     attr_allocator_library = None
     attr_global_allocator_library = None
@@ -2219,7 +2296,11 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
         attr_global_allocator_library = libs.global_allocator_library
     if is_exec_configuration(ctx):
         if attr_allocator_library:
+            if link_std_dylib:
+                return libs.libstd_dylib_and_allocator_ccinfo
             return libs.libstd_and_allocator_ccinfo
+        if link_std_dylib:
+            return toolchain.libstd_dylib_and_allocator_ccinfo
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
         if is_no_std(ctx, toolchain, crate_info.is_test):
@@ -2228,10 +2309,18 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
             return toolchain.nostd_and_global_allocator_ccinfo
         else:
             if attr_global_allocator_library:
+                if link_std_dylib:
+                    return libs.libstd_dylib_and_global_allocator_ccinfo
                 return libs.libstd_and_global_allocator_ccinfo
+            if link_std_dylib:
+                return toolchain.libstd_dylib_and_global_allocator_ccinfo
             return toolchain.libstd_and_global_allocator_ccinfo
     if attr_allocator_library:
+        if link_std_dylib:
+            return libs.libstd_dylib_and_allocator_ccinfo
         return libs.libstd_and_allocator_ccinfo
+    if link_std_dylib:
+        return toolchain.libstd_dylib_and_allocator_ccinfo
     return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
@@ -2245,20 +2334,24 @@ def _is_dylib(dep):
     """
     return not bool(dep.static_library or dep.pic_static_library)
 
-def _collect_nonstatic_linker_inputs(cc_info):
-    shared_linker_inputs = []
+def _collect_nonstatic_linker_inputs(cc_info, include_final_link_requirements):
+    nonstatic_linker_inputs = []
     for linker_input in cc_info.linking_context.linker_inputs.to_list():
         dylibs = [
             lib
             for lib in linker_input.libraries
             if _is_dylib(lib)
         ]
-        if dylibs:
-            shared_linker_inputs.append(cc_common.create_linker_input(
+        user_link_flags = linker_input.user_link_flags if include_final_link_requirements else []
+        additional_inputs = linker_input.additional_inputs if include_final_link_requirements else []
+        if dylibs or user_link_flags or additional_inputs:
+            nonstatic_linker_inputs.append(cc_common.create_linker_input(
                 owner = linker_input.owner,
                 libraries = depset(dylibs),
+                user_link_flags = depset(user_link_flags),
+                additional_inputs = depset(additional_inputs),
             ))
-    return shared_linker_inputs
+    return nonstatic_linker_inputs
 
 def _add_lto_flags(ctx, toolchain, args, crate):
     """Adds flags to an Args object to configure LTO for 'rustc'.
@@ -2318,7 +2411,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         return []
 
     # Only generate CcInfo for particular crate types
-    if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
+    if crate_info.type not in ("dylib", "staticlib", "cdylib", "rlib", "lib"):
         return []
 
     dot_a = None
@@ -2368,11 +2461,19 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
                 dynamic_library = crate_info.output,
                 interface_library = interface_library,
             )
+    elif crate_info.type == "dylib":
+        if cc_toolchain:
+            library_to_link = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                dynamic_library = crate_info.output,
+            )
     else:
         fail("Unexpected case")
 
     link_input = cc_common.create_linker_input(
-        owner = ctx.label,
+        owner = crate_info.owner or ctx.label,
         libraries = depset([library_to_link]) if library_to_link else depset(),
     )
 
@@ -2392,20 +2493,24 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     # Flattening is okay since crate_info.deps only records direct deps.
     for dep in crate_info.deps.to_list():
         if dep.cc_info:
-            # A Rust staticlib or shared library doesn't need to propagate linker inputs
-            # of its dependencies, except for shared libraries.
+            # Static dependencies are bundled into both crate types. Shared libraries
+            # remain final-link dependencies, as do a staticlib's user link flags.
             if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
-                if shared_linker_inputs:
+                nonstatic_linker_inputs = _collect_nonstatic_linker_inputs(
+                    dep.cc_info,
+                    include_final_link_requirements = crate_info.type == "staticlib",
+                )
+                if nonstatic_linker_inputs:
                     linking_context = cc_common.create_linking_context(
-                        linker_inputs = depset(shared_linker_inputs),
+                        linker_inputs = depset(nonstatic_linker_inputs),
                     )
                     cc_infos.append(CcInfo(linking_context = linking_context))
             else:
                 cc_infos.append(dep.cc_info)
 
     if crate_info.type in ("rlib", "lib"):
-        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info)
+        # We're an rlib or lib, which uses the default toolchain setting for std dylib linking.
+        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info, toolchain._link_std_dylib)
         if libstd_and_allocator_cc_info:
             # TODO: if we already have an rlib in our deps, we could skip this
             cc_infos.append(libstd_and_allocator_cc_info)
@@ -2483,7 +2588,6 @@ def _process_build_scripts(
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
         transitive_inputs.append(dep_build_info.compile_data)
-
     out_dir_compile_inputs = depset(
         direct_inputs,
         transitive = transitive_inputs,
@@ -2496,7 +2600,7 @@ def _process_build_scripts(
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
 
-def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
+def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, output_file = None, workspace_name = ""):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
     Args:
@@ -2504,6 +2608,9 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
         output_dir (str): The output directory of the current target
         dep_info (DepInfo): The current target's dependency info
         use_pic: If set, prefers pic_static_library over static_library.
+        link_std_dylib (bool): If the current target should link the stdlib as a dynamic library.
+        output_file (File): The output binary file, used for runfiles-tree RPATHs.
+        workspace_name (str): The workspace name, used for runfiles-tree RPATHs.
 
     Returns:
         depset: A set of relative paths from the output directory to each dependency
@@ -2522,13 +2629,12 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
     ]
 
     # Include std dylib if dylib linkage is enabled
-    if toolchain._experimental_link_std_dylib:
+    if link_std_dylib:
         # TODO: Make toolchain.rust_std to only include libstd.so
         # When dylib linkage is enabled, toolchain.rust_std should only need to
         # include libstd.so. Hence, no filtering needed.
-        for file in toolchain.rust_std.to_list():
-            if is_std_dylib(file):
-                dylibs.append(file)
+        if toolchain.rust_std_dylib:
+            dylibs.append(toolchain.rust_std_dylib)
 
     if not dylibs:
         return depset([])
@@ -2543,11 +2649,48 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
             dep_info.transitive_noncrates,
         ))
 
-    # Multiple dylibs can be present in the same directory, so deduplicate them.
-    return depset([
+    # RPATHs must cover three execution scenarios:
+    #
+    # A) Binary runs from exec root (local, sandboxed, or as symlink).
+    # $ORIGIN is the exec-root dir. Exec-root-relative RPATHs resolve.
+    #
+    # B) Binary runs from exec root but dylibs are only in the runfiles tree.
+    #  $ORIGIN is the exec-root dir, and the runfiles tree is at
+    # $ORIGIN/<basename>.runfiles/.
+    #
+    # C) Binary runs from inside the runfiles tree. $ORIGIN is inside
+    # <basename>.runfiles/<workspace>/pkg/. Short-path-relative RPATHs
+    # navigate within the runfiles tree.
+
+    # (A) Exec-root RPATHs.
+    rpaths = [
         relativize(lib_dir, output_dir)
         for lib_dir in _get_dir_names(dylibs)
-    ])
+    ]
+
+    if output_file and workspace_name:
+        # (B) Runfiles-from-outside RPATHs.
+        runfiles_base = output_file.basename + ".runfiles"
+        runfiles_dirs = {}
+        for f in dylibs:
+            short_dir = paths.dirname(f.short_path)
+            if f.short_path.startswith("../"):
+                # External repo: short_path is "../<repo>/<path>", runfiles
+                # tree places it at "<repo>/<path>" at the runfiles root.
+                runfiles_dirs[paths.join(runfiles_base, short_dir[3:])] = None
+            else:
+                # Main repo: runfiles tree places it under "<workspace>/".
+                runfiles_dirs[paths.join(runfiles_base, workspace_name, short_dir)] = None
+        rpaths.extend(runfiles_dirs.keys())
+
+        # (C) Short-path RPATHs (binary running inside runfiles tree).
+        output_short_dir = paths.dirname(output_file.short_path)
+        for f in dylibs:
+            rpath = relativize(paths.dirname(f.short_path), output_short_dir)
+            if rpath not in rpaths:
+                rpaths.append(rpath)
+
+    return depset(rpaths)
 
 def _get_dir_names(files):
     """Returns a list of directory names from the given list of File objects

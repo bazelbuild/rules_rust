@@ -8,6 +8,7 @@ load(
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
+load("//rust/private:rustc.bzl", "establish_cc_info")  # buildifier: disable=bzl-visibility
 
 def _is_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
@@ -362,6 +363,121 @@ def _cc_info_test():
         target_under_test = ":rust_dylib_with_interface_lib_dep",
     )
 
+    mock_rust_library_with_custom_owner(
+        name = "custom_owner_target",
+        owner = ":rlib",
+    )
+
+    linker_input_owner_test(
+        name = "linker_input_owner_test",
+        target_under_test = ":custom_owner_target",
+        expected_owner = ":rlib",
+    )
+
+    mock_rust_library_with_custom_owner(
+        name = "none_owner_target",
+        set_owner_to_none = True,
+    )
+
+    linker_input_owner_test(
+        name = "none_owner_test",
+        target_under_test = ":none_owner_target",
+    )
+
+    mock_rust_library_with_custom_owner(
+        name = "absent_owner_target",
+    )
+
+    linker_input_owner_test(
+        name = "absent_owner_test",
+        target_under_test = ":absent_owner_target",
+    )
+
+def _mock_rust_library_with_custom_owner_impl(ctx):
+    output = ctx.actions.declare_file(ctx.label.name + ".rlib")
+    ctx.actions.write(output, "")
+
+    owner = ctx.attr.owner
+
+    crate_info_kwargs = dict(
+        name = "mock_crate",
+        type = "rlib",
+        root = output,
+        srcs = depset([output]),
+        deps = depset(),
+        proc_macro_deps = depset(),
+        aliases = {},
+        output = output,
+        edition = "2021",
+        is_test = False,
+    )
+    if ctx.attr.set_owner_to_none:
+        crate_info_kwargs["owner"] = None
+    elif owner:
+        crate_info_kwargs["owner"] = owner.label
+
+    crate_info = rust_common.create_crate_info(
+        **crate_info_kwargs
+    )
+
+    mock_toolchain = struct(
+        stdlib_linkflags = CcInfo(),
+        libstd_and_allocator_ccinfo = CcInfo(),
+        _experimental_use_global_allocator = False,
+        _experimental_use_allocator_libraries_with_mangled_symbols = 0,
+        _no_std = "off",
+        _link_std_dylib = False,
+    )
+
+    providers = establish_cc_info(
+        ctx = ctx,
+        attr = ctx.attr,
+        crate_info = crate_info,
+        toolchain = mock_toolchain,
+        cc_toolchain = None,
+        feature_configuration = None,
+        interface_library = None,
+        use_pic = False,
+    )
+
+    return providers
+
+mock_rust_library_with_custom_owner = rule(
+    implementation = _mock_rust_library_with_custom_owner_impl,
+    attrs = {
+        "owner": attr.label(mandatory = False),
+        "set_owner_to_none": attr.bool(default = False),
+    },
+)
+
+def _linker_input_owner_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    asserts.true(env, CcInfo in tut, "Target should provide CcInfo")
+    cc_info = tut[CcInfo]
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    asserts.equals(env, 1, len(linker_inputs))
+
+    linker_input = linker_inputs[0]
+
+    expected_owner = ctx.attr.expected_owner
+    if expected_owner:
+        expected_owner_label = expected_owner.label
+    else:
+        expected_owner_label = tut.label
+
+    asserts.equals(env, expected_owner_label, linker_input.owner)
+
+    return analysistest.end(env)
+
+linker_input_owner_test = analysistest.make(
+    _linker_input_owner_test_impl,
+    attrs = {
+        "expected_owner": attr.label(mandatory = False),
+    },
+)
+
 def cc_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -383,5 +499,8 @@ def cc_info_test_suite(name):
             ":is_cc_interface_library_test",
             ":rust_lib_with_interface_lib_dep_test",
             ":rust_dylib_with_interface_lib_dep_test",
+            ":linker_input_owner_test",
+            ":none_owner_test",
+            ":absent_owner_test",
         ],
     )

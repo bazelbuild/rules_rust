@@ -7,7 +7,7 @@ load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "feature")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
-load("//rust:defs.bzl", "rust_shared_library", "rust_static_library")
+load("//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library")
 
 def _test_cc_config_impl(ctx):
     config_info = cc_common.create_cc_toolchain_config_info(
@@ -81,6 +81,55 @@ inputs_analysis_test = analysistest.make(
     },
 )
 
+def _rustdoc_link_args_analysis_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    actions = tut[DepActionsInfo].actions
+    action = None
+    for candidate in actions:
+        if candidate.mnemonic in ["RustdocTestWriter", "RustdocTestCompile"]:
+            action = candidate
+            break
+
+    asserts.true(
+        env,
+        action != None,
+        "error: no rustdoc test action found among: {}".format(
+            [candidate.mnemonic for candidate in actions],
+        ),
+    )
+
+    if action:
+        # Any one of the accepted spellings is enough: `rustdoc.bzl` omits the
+        # `-l` prefix when the target ABI is msvc, where link.exe takes bare
+        # library names.
+        asserts.true(
+            env,
+            any([expected in action.argv for expected in ctx.attr.expected_any_of]),
+            "error: expected one of {} in the rustdoc test link args: '{}'".format(
+                ctx.attr.expected_any_of,
+                action.argv,
+            ),
+        )
+
+    return analysistest.end(env)
+
+rustdoc_link_args_analysis_test = analysistest.make(
+    impl = _rustdoc_link_args_analysis_test_impl,
+    doc = """An analysistest to examine the link args of a rust_doc_test target.
+
+    rustdoc drives the doc test link itself rather than running a Bazel C++
+    link action, so the cc_toolchain's runtime libs never arrive through
+    `static_link_cpp_runtimes` the way they do for a rust_library. They have to
+    be named explicitly on the rustdoc command line instead, or the doc test
+    fails to link against a toolchain that supplies its own unwinder.
+    """,
+    attrs = {
+        "expected_any_of": attr.string_list(),
+    },
+)
+
 def runtime_libs_test(name):
     """Produces test shared and static library targets that are set up to use a custom cc_toolchain with custom runtime libs.
 
@@ -149,4 +198,39 @@ def runtime_libs_test(name):
         name = "%s/static_library" % name,
         target_under_test = "%s/_static_library" % name,
         expected_inputs = ["dummy.a"],
+    )
+
+    # A doc test links like a binary, so it needs the static runtime lib named
+    # on the command line. `dummy.a` yields `dummy` via `get_lib_name`, spelled
+    # `-ldummy` everywhere except msvc.
+    rust_library(
+        name = "%s/__doctest_library" % name,
+        edition = "2018",
+        srcs = ["lib.rs"],
+        tags = ["manual", "nobuild"],
+    )
+
+    rust_doc_test(
+        name = "%s/__doc_test" % name,
+        crate = ":%s/__doctest_library" % name,
+        tags = ["manual", "nobuild"],
+    )
+
+    with_extra_toolchain(
+        name = "%s/_doc_test" % name,
+        extra_toolchain = ":%s/test_cc_toolchain" % name,
+        target = "%s/__doc_test" % name,
+        tags = ["manual"],
+        # rust_doc_test is a test rule, so it is testonly.
+        testonly = True,
+    )
+
+    rustdoc_link_args_analysis_test(
+        name = "%s/doc_test" % name,
+        target_under_test = "%s/_doc_test" % name,
+        expected_any_of = [
+            "-Clink-arg=-ldummy",
+            # msvc: link.exe takes bare library names, no `-l`.
+            "-Clink-arg=dummy",
+        ],
     )
