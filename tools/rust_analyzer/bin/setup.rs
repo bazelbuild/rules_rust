@@ -1273,6 +1273,7 @@ fn generate_settings_json(ctx: &SetupCtx, launcher_dir: &Utf8Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gen_rust_project_lib::make_workspace;
 
     fn dummy_toolchain() -> ToolchainBinaries {
         ToolchainBinaries {
@@ -1828,20 +1829,6 @@ mod tests {
     // -----------------------------------------------------------------
     // `.code-workspace` support
     // -----------------------------------------------------------------
-
-    /// Build a workspace dir in $TMPDIR, populated with the listed
-    /// files. Returns the dir path; caller is responsible for cleanup
-    /// (use `remove_dir_all` in a `_guard`-style drop, or accept the
-    /// leak — TMPDIR gets cleaned eventually).
-    fn make_workspace(tag: &str, files: &[(&str, &str)]) -> Utf8PathBuf {
-        let tmp = std::env::temp_dir().join(format!("setup_{tag}_{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&tmp);
-        std::fs::create_dir_all(&tmp).unwrap();
-        for (name, content) in files {
-            std::fs::write(tmp.join(name), content).unwrap();
-        }
-        Utf8PathBuf::try_from(tmp).unwrap()
-    }
 
     #[test]
     fn merge_under_settings_key_preserves_top_level_keys() {

@@ -4,7 +4,7 @@ mod cache;
 mod rust_project;
 pub mod user_config;
 
-use std::{collections::BTreeMap, fs, process::Command};
+use std::{collections::BTreeMap, convert::TryFrom, fs, process::Command};
 
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -558,6 +558,22 @@ pub struct ToolchainInfo {
     /// reject.
     #[serde(default)]
     pub version: String,
+}
+
+/// Build a workspace dir in $TMPDIR, populated with the listed
+/// files. Returns the dir path; caller is responsible for cleanup
+/// (use `remove_dir_all` in a `_guard`-style drop, or accept the
+/// leak — TMPDIR gets cleaned eventually).
+pub fn make_workspace(tag: &str, files: &[(&str, &str)]) -> Utf8PathBuf {
+    let tmp = std::env::temp_dir().join(format!("setup_{tag}_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+    for (name, content) in files {
+        let abs_path = tmp.join(name);
+        std::fs::create_dir_all(abs_path.parent().unwrap()).unwrap();
+        std::fs::write(abs_path, content).unwrap();
+    }
+    Utf8PathBuf::try_from(tmp).unwrap()
 }
 
 #[cfg(test)]
