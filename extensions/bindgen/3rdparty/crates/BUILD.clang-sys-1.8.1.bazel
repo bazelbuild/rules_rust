@@ -135,7 +135,7 @@ rust_library(
     }),
     version = "1.8.1",
     deps = [
-        "@rules_rust_bindgen_deps__clang-sys-1.8.1//:build_script_build",
+        ":build_script_build",
         "@rules_rust_bindgen_deps__glob-0.3.2//:glob",
         "@rules_rust_bindgen_deps__libc-0.2.171//:libc",
         "@rules_rust_bindgen_deps__libloading-0.8.6//:libloading",
@@ -148,6 +148,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

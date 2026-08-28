@@ -103,7 +103,7 @@ rust_library(
     }),
     version = "1.0.69",
     deps = [
-        "@rrc__thiserror-1.0.69//:build_script_build",
+        ":build_script_build",
     ],
 )
 

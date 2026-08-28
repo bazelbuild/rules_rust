@@ -112,8 +112,8 @@ rust_library(
     }),
     version = "0.2.121",
     deps = [
+        ":build_script_build",
         "@rrwbd__unicode-ident-1.0.20//:unicode_ident",
-        "@rrwbd__wasm-bindgen-shared-0.2.121//:build_script_build",
     ],
 )
 
@@ -123,6 +123,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

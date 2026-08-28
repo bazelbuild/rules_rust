@@ -118,8 +118,8 @@ rust_library(
     }),
     version = "0.71.1",
     deps = [
+        ":build_script_build",
         "@rules_rust_bindgen_deps__annotate-snippets-0.11.5//:annotate_snippets",
-        "@rules_rust_bindgen_deps__bindgen-0.71.1//:build_script_build",
         "@rules_rust_bindgen_deps__bitflags-2.9.0//:bitflags",
         "@rules_rust_bindgen_deps__cexpr-0.6.0//:cexpr",
         "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
@@ -142,6 +142,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

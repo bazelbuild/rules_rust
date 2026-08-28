@@ -115,7 +115,7 @@ rust_library(
     }),
     version = "0.4.3",
     deps = [
-        "@rrprd__axum-core-0.4.3//:build_script_build",
+        ":build_script_build",
         "@rrprd__bytes-1.7.1//:bytes",
         "@rrprd__futures-util-0.3.30//:futures_util",
         "@rrprd__http-1.1.0//:http",
@@ -135,6 +135,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

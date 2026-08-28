@@ -116,7 +116,7 @@ rust_library(
     }),
     version = "0.4.12",
     deps = [
-        "@rrprd__lock_api-0.4.12//:build_script_build",
+        ":build_script_build",
         "@rrprd__scopeguard-1.2.0//:scopeguard",
     ],
 )
@@ -127,6 +127,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
