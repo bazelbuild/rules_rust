@@ -22,23 +22,23 @@ mod tests {
         include_dirs: Vec<String>,
     }
 
+    /// `{output_base}/external/.../library` → `{output_base}`
+    fn output_base(p: &Project) -> &str {
+        p.sysroot_src
+            .rsplitn(2, "/external/")
+            .last()
+            .expect("sysroot_src should contain /external/")
+    }
+
     #[test]
     fn test_generated_srcs() {
         let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
-        let content = std::fs::read_to_string(&rust_project_path)
-            .unwrap_or_else(|_| panic!("couldn't open {:?}", rust_project_path));
+        let content = std::fs::read_to_string(&rust_project_path).unwrap();
         let project: Project =
-            serde_json::from_str(&content).expect("Failed to deserialize project JSON");
+            serde_json::from_str(&content).expect("project JSON should deserialize correctly");
 
-        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/_bazel
-        let output_base = project
-            .sysroot_src
-            .rsplitn(2, "/external/")
-            .last()
-            .unwrap()
-            .rsplitn(2, '/')
-            .last()
-            .unwrap();
+        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/_bazel/12345678
+        let output_base = output_base(&project);
         println!("output_base: {output_base}");
 
         let with_gen = project
@@ -57,5 +57,29 @@ mod tests {
 
         // The second entry is the output base, where the generated files are located.
         assert!(include_dirs[1].starts_with(output_base));
+    }
+
+    #[test]
+    fn test_external_root_paths() {
+        let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
+        let content = std::fs::read_to_string(&rust_project_path).unwrap();
+        let project: Project =
+            serde_json::from_str(&content).expect("project JSON should deserialize correctly");
+        let output_base = output_base(&project);
+        let mut external_roots = project
+            .crates
+            .iter()
+            .map(|c| &c.root_module)
+            .filter(|p| p.contains("/external/"))
+            .peekable();
+
+        assert!(external_roots.peek().is_some());
+
+        let output_base_external = format!("{output_base}/external/");
+
+        for root in external_roots {
+            assert!(root.starts_with(&output_base_external));
+            assert!(!root.contains("execroot"));
+        }
     }
 }
