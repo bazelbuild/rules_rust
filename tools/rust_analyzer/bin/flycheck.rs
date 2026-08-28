@@ -457,9 +457,9 @@ fn resolve_label_for(
     query_label_for(bazel, workspace, saved_file)
 }
 
-/// `bazel query 'attr(srcs, "<file>", //<package>:*)'` scoped to the
-/// nearest `BUILD.bazel`. Returns the first match — if a file belongs
-/// to several targets, any is correct.
+/// `bazel query 'attr(srcs, "//<package>:<file>", //<package>:*)'`
+/// scoped to the nearest `BUILD.bazel`. Returns the first match — if a
+/// file belongs to several targets, any is correct.
 fn query_label_for(
     bazel: &Utf8Path,
     workspace: &Utf8Path,
@@ -471,11 +471,11 @@ fn query_label_for(
     let package = find_owning_package(workspace, file_rel).with_context(|| {
         format!("no BUILD.bazel found above {saved_file} — is this file part of a Bazel target?")
     })?;
-    let file_basename = file_rel
-        .file_name()
-        .with_context(|| format!("saved file {saved_file} has no file name"))?;
-    let pattern = format!("//{package}:{file_basename}");
-    let query = format!("attr(srcs, {pattern:?}, //{package}:*)");
+    let pattern = source_file_label(&package, file_rel).with_context(|| {
+        format!("saved file {saved_file} is not under its own package //{package}")
+    })?;
+    let package = package_label(&package);
+    let query = format!("attr(srcs, {pattern:?}, {package}:*)");
     let output = Command::new(bazel.as_str())
         .current_dir(workspace)
         .arg("query")
@@ -493,6 +493,27 @@ fn query_label_for(
         .find(|l| !l.is_empty())
         .map(str::to_owned)
         .with_context(|| format!("bazel query returned no targets for {pattern}"))
+}
+
+/// `//<package>` for a workspace-relative package path. Labels are
+/// always `/`-separated, so normalize the `\` a Windows `Utf8Path`
+/// carries through.
+fn package_label(package: &Utf8Path) -> String {
+    format!("//{}", package.as_str().replace('\\', "/"))
+}
+
+/// `//<package>:<path/within/package>` for a workspace-relative source
+/// file. The target name of a source file is its path relative to the
+/// package, not its basename: a file at `foo/src/lib.rs` in package
+/// `foo` is `//foo:src/lib.rs`, and querying `//foo:lib.rs` matches
+/// nothing. Returns `None` if `file_rel` is not under `package`.
+fn source_file_label(package: &Utf8Path, file_rel: &Utf8Path) -> Option<String> {
+    let within = file_rel.strip_prefix(package).ok()?;
+    Some(format!(
+        "{}:{}",
+        package_label(package),
+        within.as_str().replace('\\', "/"),
+    ))
 }
 
 /// Walk up looking for `BUILD.bazel` or `BUILD`. Returns the
@@ -698,6 +719,47 @@ mod tests {
         assert_eq!(
             workspace_dir(Some(sidecar_ws)).unwrap(),
             Utf8Path::new("/from/env"),
+        );
+    }
+
+    #[test]
+    fn source_file_label_keeps_the_path_within_the_package() {
+        let package = Utf8Path::new("foo/bar");
+        // A file in a subdirectory keeps that subdirectory: using the
+        // basename here yields `//foo/bar:publisher.rs`, which
+        // matches no target.
+        assert_eq!(
+            source_file_label(
+                package,
+                Utf8Path::new("foo/bar/src/frobulator/frobulate.rs")
+            ),
+            Some("//foo/bar:src/frobulator/frobulate.rs".to_owned()),
+        );
+        // A file next to the BUILD.bazel is just its name.
+        assert_eq!(
+            source_file_label(package, Utf8Path::new("foo/bar/build.rs")),
+            Some("//foo/bar:build.rs".to_owned()),
+        );
+        // Root package: no leading slash doubling.
+        assert_eq!(
+            source_file_label(Utf8Path::new(""), Utf8Path::new("src/lib.rs")),
+            Some("//:src/lib.rs".to_owned()),
+        );
+        // Not under the package at all.
+        assert_eq!(
+            source_file_label(package, Utf8Path::new("base/src/lib.rs")),
+            None,
+        );
+    }
+
+    #[test]
+    fn labels_are_forward_slashed_on_every_platform() {
+        let package = Utf8Path::new("foo").join("bar");
+        let file_rel = package.join("src").join("frobulator").join("frobulate.rs");
+        assert_eq!(package_label(&package), "//foo/bar");
+        assert_eq!(
+            source_file_label(&package, &file_rel),
+            Some("//foo/bar:src/frobulator/frobulate.rs".to_owned()),
         );
     }
 
