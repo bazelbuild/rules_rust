@@ -112,7 +112,7 @@ rust_library(
     }),
     version = "0.8.11",
     deps = [
-        "@cui__ahash-0.8.11//:build_script_build",
+        ":build_script_build",
         "@cui__cfg-if-1.0.0//:cfg_if",
         "@cui__zerocopy-0.7.35//:zerocopy",
     ] + select({
@@ -270,6 +270,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

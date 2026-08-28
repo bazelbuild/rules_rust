@@ -441,6 +441,62 @@ def xclang_isystem_absolute_test(name):
         expected_cflags = ["-Xclang", "-internal-isystem", "-Xclang", "/test/absolute/path"],
     )
 
+def clang_cl_paths_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = [
+            "/imsvctest/relative/include",
+            "/imsvc",
+            "test/relative/include2",
+            "/clang:-isystem",
+            "/clang:test/relative/include3",
+            "/clang:-resource-dir=test/relative/resources",
+            "/clang:-ivfsoverlay",
+            "/clang:test/relative/headers.yaml",
+            "/clang:/vfsoverlay:test/relative/libraries.yaml",
+            "/clang:/LIBPATH:test/relative/lib",
+        ],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = [
+            "/imsvc${pwd}/test/relative/include",
+            "/imsvc",
+            "${pwd}/test/relative/include2",
+            "/clang:-isystem",
+            "/clang:${pwd}/test/relative/include3",
+            "/clang:-resource-dir=${pwd}/test/relative/resources",
+            "/clang:-ivfsoverlay",
+            "/clang:${pwd}/test/relative/headers.yaml",
+            "/clang:/vfsoverlay:${pwd}/test/relative/libraries.yaml",
+            "/clang:/LIBPATH:${pwd}/test/relative/lib",
+        ],
+    )
+
+def clang_cl_paths_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = [
+            "/imsvc/test/absolute/include",
+            "/clang:-ivfsoverlay",
+            "/clang:/test/absolute/headers.yaml",
+            "/clang:/vfsoverlay:/test/absolute/libraries.yaml",
+            "/clang:/LIBPATH:/test/absolute/lib",
+        ],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = [
+            "/imsvc/test/absolute/include",
+            "/clang:-ivfsoverlay",
+            "/clang:/test/absolute/headers.yaml",
+            "/clang:/vfsoverlay:/test/absolute/libraries.yaml",
+            "/clang:/LIBPATH:/test/absolute/lib",
+        ],
+    )
+
 def isystem_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
@@ -463,6 +519,18 @@ def isystem_absolute_test(name):
         expected_cflags = ["-isystem", "/test/absolute/path"],
     )
 
+def isystem_after_relative_test(name):
+    """Regression test: a longer flag spelling must win over a shorter prefix."""
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-isystem-after", "test/relative/path"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-isystem-after", "${pwd}/test/relative/path"],
+    )
+
 def bindir_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
@@ -483,6 +551,29 @@ def bindir_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["-B", "/test/absolute/path"],
+    )
+
+def bindir_malformed_missing_value_test(name):
+    """Regression test: `-B` with no path must not swallow the next, unrelated flag."""
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-B", "-Wall"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-B", "-Wall"],
+    )
+
+def compiler_response_file_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["@test/relative/compiler.params"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["@${pwd}/test/relative/compiler.params"],
     )
 
 def fsanitize_ignorelist_relative_test(name):
@@ -538,6 +629,18 @@ def libpath_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["-L/test/absolute/sysroot", "-L", "/test/absolute/sysroot2", "-LIBPATH:/test/absolute/sysroot3", "-LIBPATH=/test/absolute/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+
+def libpath_separated_relative_test(name):
+    """Regression test: bare `-LIBPATH` must not be matched as `-L` + `IBPATH`."""
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-LIBPATH", "test/relative/sysroot", "-LIBPATH", "/test/absolute/sysroot"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-LIBPATH", "${pwd}/test/relative/sysroot", "-LIBPATH", "/test/absolute/sysroot"],
     )
 
 def resource_dir_relative_test(name):
@@ -655,4 +758,16 @@ def direct_libs_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["/test/absolute/libclang_rt.builtins.static.a", "/test/absolute/obj.o", "/test/absolute/libfoo.so", "/test/absolute/libbar.dylib", "some_unrelated_arg"],
+    )
+
+def direct_libs_as_flag_operand_test(name):
+    """Regression test: an operand already rewritten must not be rewritten twice."""
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-imacros", "test/relative/libfoo.a", "-B", "test/relative/obj.o"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-imacros", "${pwd}/test/relative/libfoo.a", "-B", "${pwd}/test/relative/obj.o"],
     )

@@ -2,72 +2,38 @@
 
 Additional documentation can be found at: https://bazelbuild.github.io/rules_rust/#setup
 
-## Bzlmod
-
 ```python
 bazel_dep(name = "rules_rust", version = "{version}")
 ```
 
 ## Extensions
 
-<details>
-
 ### Bindgen
-
-<details>
-
-#### Bzlmod
 
 ```python
 bazel_dep(name = "rules_rust_bindgen", version = "{version}")
 ```
 
-</details>
-
 ### MdBook
-
-<details>
-
-#### Bzlmod
 
 ```python
 bazel_dep(name = "rules_rust_mdbook", version = "{version}")
 ```
 
-</details>
-
 ### Prost
-
-<details>
-
-#### Bzlmod
 
 ```python
 bazel_dep(name = "rules_rust_prost", version = "{version}")
 ```
 
-</details>
-
 ### PyO3
-
-<details>
 
 ```python
 bazel_dep(name = "rules_rust_pyo3", version = "{version}")
 ```
 
-</details>
-
 ### Wasm-Bindgen
-
-<details>
-
-#### Bzlmod
 
 ```python
 bazel_dep(name = "rules_rust_wasm_bindgen", version = "{version}")
 ```
-
-</details>
-
-</details>

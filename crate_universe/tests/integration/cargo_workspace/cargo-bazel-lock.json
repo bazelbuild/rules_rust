@@ -1,5 +1,5 @@
 {
-  "checksum": "0d1fb050eb87a6345ce8da4ff8f7ed41d6a12537ea25c0cb40b5916abb50df3f",
+  "checksum": "eb00998503a6755c50f9cf9c20751264ee729a0ceb599ca335147a84ef67cf34",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -419,10 +419,6 @@
             {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
-            },
-            {
-              "id": "getrandom 0.1.16",
-              "target": "build_script_build"
             }
           ],
           "selects": {
@@ -439,6 +435,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "0.1.16"
@@ -550,12 +552,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "libc 0.2.139",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1408,12 +1407,7 @@
           "selects": {}
         },
         "deps": {
-          "common": [
-            {
-              "id": "winapi 0.3.9",
-              "target": "build_script_build"
-            }
-          ],
+          "common": [],
           "selects": {
             "i686-pc-windows-gnu": [
               {
@@ -1428,6 +1422,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2015",
         "version": "0.3.9"
@@ -1491,12 +1491,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1562,12 +1559,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },

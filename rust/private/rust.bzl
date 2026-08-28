@@ -159,8 +159,29 @@ def _rust_static_library_impl(ctx):
     """
     return _rust_library_common(ctx, "staticlib")
 
-def _rust_shared_library_impl(ctx):
-    """The implementation of the `rust_shared_library` rule.
+def _rust_dylib_library_impl(ctx):
+    """The implementation of the `rust_dylib_library` rule.
+
+    This rule provides CcInfo, so it can be used everywhere Bazel expects
+    rules_cc.
+
+    **Note**: When dynamic libraries are listed as dependencies for other Rust
+    binaries they can induce errors from multiply defined symbols, causing
+    linker errors in rustc. Some libraries in the dependency graph may need to
+    be converted to dynamic libraries, and/or have the standard library
+    dynamically linked (`link_std_dylib`) to avoid this. These rules do not
+    attempt to resolve these linking issues automatically.
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list of providers.
+    """
+    return _rust_library_common(ctx, "dylib")
+
+def _rust_cdylib_library_impl(ctx):
+    """The implementation of the `rust_cdylib_library` rule.
 
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc.
@@ -987,6 +1008,15 @@ _RUST_TEST_ATTRS = {
     "env_inherit": attr.string_list(
         doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
+    "link_std_dylib": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            Flag to dynamically link the standard library as a Rust dylib .so object when building this test.
+
+            Default is false. This is often required when testing a target that depends on a Rust ABI dylib.
+        """),
+    ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
         default = True,
@@ -1082,6 +1112,53 @@ rust_library = rule(
         """),
 )
 
+rust_dylib_library = rule(
+    implementation = _rust_dylib_library_impl,
+    provides = COMMON_PROVIDERS,
+    attrs = _COMMON_ATTRS | {
+        "disable_pipelining": attr.bool(
+            default = False,
+            doc = dedent("""\
+                Disables pipelining for this rule if it is globally enabled.
+                This will cause this rule to not produce a `.rmeta` file and all the dependent
+                crates will instead use the `.rlib` file.
+            """),
+        ),
+        "link_std_dylib": attr.bool(
+            mandatory = False,
+            default = True,
+            doc = dedent("""\
+                Flag to dynamically link the standard library as a Rust dylib .so object when building this library.
+
+                Default is true. This is typically required for Rust ABI dylibs so that the stdlib is shared
+                with the binary that loads them, avoiding duplicate symbols.
+            """),
+        ),
+    },
+    fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+    doc = dedent("""\
+        Builds a shared library using the unstable Rust ABI.
+
+        This library can be depended on by other Rust targets via --extern,
+        making it suitable for splitting a Rust project into separately compiled
+        dynamic libraries. Note that the Rust ABI is not stable across compiler
+        versions.
+
+        This rule provides CcInfo, so it can be used everywhere Bazel expects `rules_cc`.
+
+        **Note**: When dynamic libraries are listed as dependencies for other Rust
+        binaries they can induce errors from multiply defined symbols, causing
+        linker errors in rustc. Some libraries in the dependency graph may need to
+        be converted to dynamic libraries, and/or have the standard library
+        dynamically linked (`link_std_dylib`) to avoid this. These rules do not
+        attempt to resolve these linking issues automatically.
+        """),
+)
+
 def _resolve_platform(settings, attr):
     """Resolve the platform label for a transition, adding @ prefix if needed.
 
@@ -1158,8 +1235,8 @@ _rust_shared_library_transition = transition(
     ],
 )
 
-rust_shared_library = rule(
-    implementation = _rust_shared_library_impl,
+rust_cdylib_library = rule(
+    implementation = _rust_cdylib_library_impl,
     attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
@@ -1172,7 +1249,7 @@ rust_shared_library = rule(
         rust_common.test_crate_info,
     ],
     doc = dedent("""\
-        Builds a Rust shared library.
+        Builds a C ABI Rust shared library.
 
         This shared library will contain all transitively reachable crates and native objects.
         It is meant to be used when producing an artifact that is then consumed by some other build system
@@ -1224,6 +1301,15 @@ _RUST_BINARY_ATTRS = {
             Execpath returns absolute path, and in order to be able to construct the absolute path we
             need to wrap the test binary in a launcher. Using a launcher comes with complications, such as
             more complicated debugger attachment.
+        """),
+    ),
+    "link_std_dylib": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            Flag to dynamically link the standard library as a Rust dylib .so object when building this binary.
+            
+            Default is false. This is often required when building a binary that depends on a Rust ABI dylib.
         """),
     ),
     "linker_script": attr.label(

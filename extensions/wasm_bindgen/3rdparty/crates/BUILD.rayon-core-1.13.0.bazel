@@ -112,9 +112,9 @@ rust_library(
     }),
     version = "1.13.0",
     deps = [
+        ":build_script_build",
         "@rrwbd__crossbeam-deque-0.8.6//:crossbeam_deque",
         "@rrwbd__crossbeam-utils-0.8.21//:crossbeam_utils",
-        "@rrwbd__rayon-core-1.13.0//:build_script_build",
     ],
 )
 
@@ -124,6 +124,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

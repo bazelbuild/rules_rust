@@ -115,8 +115,8 @@ rust_library(
     }),
     version = "0.2.7",
     deps = [
-        "@rmdbi__portable-atomic-1.14.0//:portable_atomic",
-        "@rmdbi__portable-atomic-util-0.2.7//:build_script_build",
+        ":build_script_build",
+        "@rmdbi__portable-atomic-1.15.0//:portable_atomic",
     ],
 )
 
@@ -126,6 +126,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

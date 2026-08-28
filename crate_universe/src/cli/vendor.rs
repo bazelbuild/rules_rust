@@ -94,10 +94,12 @@ pub struct VendorOptions {
 /// the file to disk before formatting. The `path` argument is passed as
 /// `--path` so buildifier can infer the file type (BUILD vs .bzl).
 ///
-/// See <https://github.com/bazelbuild/rules_rust/issues/2972>.
+/// `-config=off` disables buildifier's config discovery so the consuming
+/// repo's `.buildifier.json` (and any `BUILDIFIER_CONFIG` env var) does not
+/// apply lint policy to auto-generated vendored files.
 fn buildifier_format(bin: &Path, content: &str, path: &Path) -> anyhow::Result<String> {
     let mut child = process::Command::new(bin)
-        .args(["-lint=fix", "-mode=fix", "-warnings=all"])
+        .args(["-lint=fix", "-mode=fix", "-warnings=all", "-config=off"])
         .arg(format!("--path={}", path.display()))
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())

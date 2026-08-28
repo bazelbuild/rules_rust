@@ -173,7 +173,7 @@ _COMMON_TAG_KWARGS = {
     ),
     "edition": attr.string(
         doc = (
-            "The rust edition to be used by default (2015, 2018, or 2021). " +
+            "The rust edition to be used by default (2015, 2018, 2021, or 2024). " +
             "If absent, every rule is required to specify its `edition` attribute."
         ),
     ),
@@ -272,6 +272,7 @@ _RUST_TOOLCHAIN_TAG = tag_class(
             doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
         ),
         "extra_target_triples": attr.string_list(
+            doc = "Additional Rust target triples to fetch and register toolchains for.",
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
         ),
         "opt_level": attr.string_dict(

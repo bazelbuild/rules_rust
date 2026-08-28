@@ -1,0 +1,3 @@
+load(":aliases_test.bzl", "aliases_test_suite")
+
+aliases_test_suite(name = "aliases_test_suite")

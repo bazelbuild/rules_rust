@@ -128,9 +128,9 @@ rust_library(
     }),
     version = "0.29.0",
     deps = [
+        ":build_script_build",
         "@rpyo3c__libc-0.2.176//:libc",
         "@rpyo3c__once_cell-1.21.3//:once_cell",
-        "@rpyo3c__pyo3-0.29.0//:build_script_build",
         "@rpyo3c__pyo3-ffi-0.29.0//:pyo3_ffi",
     ] + select({
         "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
@@ -173,6 +173,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,

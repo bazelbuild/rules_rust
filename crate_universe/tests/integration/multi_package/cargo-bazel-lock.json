@@ -1,5 +1,5 @@
 {
-  "checksum": "76a2c746f6daafbd3ebba2040da24951aaf5ab4e190febded5255f1e794924c4",
+  "checksum": "a05c7de45dc8f8c0c2315231426749c272d156db986dc936cec2d4fc93f84a0b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -104,12 +104,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "anyhow 1.0.69",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -432,10 +429,6 @@
         "deps": {
           "common": [
             {
-              "id": "async-io 1.12.0",
-              "target": "build_script_build"
-            },
-            {
               "id": "async-lock 2.7.0",
               "target": "async_lock"
             },
@@ -486,6 +479,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "1.12.0"
@@ -660,10 +659,6 @@
               "target": "async_lock"
             },
             {
-              "id": "async-process 1.6.0",
-              "target": "build_script_build"
-            },
-            {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
             },
@@ -702,6 +697,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "1.6.0"
@@ -1078,10 +1079,6 @@
         "deps": {
           "common": [
             {
-              "id": "async-trait 0.1.64",
-              "target": "build_script_build"
-            },
-            {
               "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
             },
@@ -1093,6 +1090,12 @@
               "id": "syn 1.0.109",
               "target": "syn"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1742,11 +1745,13 @@
             {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
-            },
-            {
-              "id": "crossbeam-utils 0.8.15",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -1875,10 +1880,6 @@
         "deps": {
           "common": [
             {
-              "id": "curl 0.4.44",
-              "target": "build_script_build"
-            },
-            {
               "id": "curl-sys 0.4.60+curl-7.88.1",
               "target": "curl_sys"
             },
@@ -1903,6 +1904,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "0.4.44"
@@ -2361,13 +2368,15 @@
         "deps": {
           "common": [
             {
-              "id": "futures-channel 0.3.26",
-              "target": "build_script_build"
-            },
-            {
               "id": "futures-core 0.3.26",
               "target": "futures_core"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -2441,12 +2450,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "futures-core 0.3.26",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -2918,12 +2924,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "futures-task 0.3.26",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -3019,10 +3022,6 @@
               "target": "futures_task"
             },
             {
-              "id": "futures-util 0.3.26",
-              "target": "build_script_build"
-            },
-            {
               "id": "memchr 2.5.0",
               "target": "memchr"
             },
@@ -3038,6 +3037,12 @@
               "id": "slab 0.4.8",
               "target": "slab"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -3115,13 +3120,15 @@
         "deps": {
           "common": [
             {
-              "id": "generic-array 0.14.6",
-              "target": "build_script_build"
-            },
-            {
               "id": "typenum 1.16.0",
               "target": "typenum"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -3662,12 +3669,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "httparse 1.8.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -4208,11 +4212,13 @@
             {
               "id": "hashbrown 0.12.3",
               "target": "hashbrown"
-            },
-            {
-              "id": "indexmap 1.9.2",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -4439,10 +4445,6 @@
               "target": "http"
             },
             {
-              "id": "isahc 1.7.0",
-              "target": "build_script_build"
-            },
-            {
               "id": "log 0.4.17",
               "target": "log"
             },
@@ -4486,6 +4488,12 @@
               "id": "waker-fn 1.1.0",
               "target": "waker_fn"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -4778,12 +4786,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "libc 0.2.167",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -4857,11 +4862,13 @@
             {
               "id": "libc 0.2.167",
               "target": "libc"
-            },
-            {
-              "id": "libnghttp2-sys 0.1.7+1.45.0",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -4949,11 +4956,13 @@
             {
               "id": "libc 0.2.167",
               "target": "libc"
-            },
-            {
-              "id": "libz-sys 1.1.8",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -5054,13 +5063,15 @@
               "target": "cfg_if"
             },
             {
-              "id": "log 0.4.17",
-              "target": "build_script_build"
-            },
-            {
               "id": "value-bag 1.0.0-alpha.9",
               "target": "value_bag"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -5196,12 +5207,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "memchr 2.5.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -6116,10 +6124,6 @@
             {
               "id": "log 0.4.17",
               "target": "log"
-            },
-            {
-              "id": "polling 2.5.2",
-              "target": "build_script_build"
             }
           ],
           "selects": {
@@ -6140,6 +6144,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "2.5.2"
@@ -6274,13 +6284,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.51",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.6",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -6358,11 +6370,13 @@
             {
               "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.23",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -6853,10 +6867,6 @@
         "deps": {
           "common": [
             {
-              "id": "ring 0.16.20",
-              "target": "build_script_build"
-            },
-            {
               "id": "untrusted 0.7.1",
               "target": "untrusted"
             }
@@ -6911,6 +6921,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "version": "0.16.20"
@@ -7000,10 +7016,6 @@
               "target": "getrandom"
             },
             {
-              "id": "ring 0.17.8",
-              "target": "build_script_build"
-            },
-            {
               "id": "untrusted 0.9.0",
               "target": "untrusted"
             }
@@ -7028,6 +7040,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2021",
         "version": "0.17.8"
@@ -7119,10 +7137,6 @@
               "target": "ring"
             },
             {
-              "id": "rustls 0.20.8",
-              "target": "build_script_build"
-            },
-            {
               "id": "sct 0.7.0",
               "target": "sct"
             },
@@ -7130,6 +7144,12 @@
               "id": "webpki 0.22.0",
               "target": "webpki"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7225,10 +7245,6 @@
               "target": "ring"
             },
             {
-              "id": "rustls 0.21.12",
-              "target": "build_script_build"
-            },
-            {
               "id": "rustls-webpki 0.101.7",
               "target": "webpki"
             },
@@ -7236,6 +7252,12 @@
               "id": "sct 0.7.0",
               "target": "sct"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7336,10 +7358,6 @@
               "target": "rustls"
             },
             {
-              "id": "rustls-ffi 0.8.2",
-              "target": "build_script_build"
-            },
-            {
               "id": "rustls-pemfile 0.2.1",
               "target": "rustls_pemfile"
             },
@@ -7351,6 +7369,12 @@
               "id": "webpki 0.22.0",
               "target": "webpki"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7575,12 +7599,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "rustversion 1.0.11",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7794,12 +7815,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "serde 1.0.152",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7891,13 +7909,15 @@
               "target": "quote"
             },
             {
-              "id": "serde_derive 1.0.152",
-              "target": "build_script_build"
-            },
-            {
               "id": "syn 1.0.109",
               "target": "syn"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -7983,11 +8003,13 @@
             {
               "id": "serde 1.0.152",
               "target": "serde"
-            },
-            {
-              "id": "serde_json 1.0.93",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -8225,13 +8247,15 @@
               "target": "libc"
             },
             {
-              "id": "signal-hook 0.3.15",
-              "target": "build_script_build"
-            },
-            {
               "id": "signal-hook-registry 1.4.1",
               "target": "signal_hook_registry"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -8397,12 +8421,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "slab 0.4.8",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -8702,13 +8723,15 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.109",
-              "target": "build_script_build"
-            },
-            {
               "id": "unicode-ident 1.0.6",
               "target": "unicode_ident"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -8930,10 +8953,6 @@
             {
               "id": "pin-project-lite 0.2.9",
               "target": "pin_project_lite"
-            },
-            {
-              "id": "tokio 1.26.0",
-              "target": "build_script_build"
             }
           ],
           "selects": {
@@ -9050,6 +9069,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2018",
         "proc_macro_deps": {
@@ -9747,12 +9772,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "typenum 1.16.0",
-              "target": "build_script_main"
-            }
+            ":build_script_main"
           ],
           "selects": {}
         },
@@ -10098,12 +10120,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "value-bag 1.0.0-alpha.9",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -10415,11 +10434,13 @@
             {
               "id": "cfg-if 1.0.0",
               "target": "cfg_if"
-            },
-            {
-              "id": "wasm-bindgen 0.2.84",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -10763,12 +10784,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "wasm-bindgen-shared 0.2.84",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11020,12 +11038,9 @@
           ],
           "selects": {}
         },
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "wepoll-ffi 0.1.2",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11125,12 +11140,7 @@
           "selects": {}
         },
         "deps": {
-          "common": [
-            {
-              "id": "winapi 0.3.9",
-              "target": "build_script_build"
-            }
-          ],
+          "common": [],
           "selects": {
             "i686-pc-windows-gnu": [
               {
@@ -11145,6 +11155,12 @@
               }
             ]
           }
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
+          ],
+          "selects": {}
         },
         "edition": "2015",
         "version": "0.3.9"
@@ -11208,12 +11224,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11279,12 +11292,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11811,12 +11821,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_aarch64_gnullvm 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11882,12 +11889,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_aarch64_gnullvm 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -11953,12 +11957,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_aarch64_msvc 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12024,12 +12025,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_aarch64_msvc 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12095,12 +12093,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_i686_gnu 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12166,12 +12161,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_i686_gnu 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12237,12 +12229,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_i686_gnullvm 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12308,12 +12297,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_i686_msvc 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12379,12 +12365,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_i686_msvc 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12450,12 +12433,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_gnu 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12521,12 +12501,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_gnu 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12592,12 +12569,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_gnullvm 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12663,12 +12637,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_gnullvm 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12734,12 +12705,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_msvc 0.42.1",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12805,12 +12773,9 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
+        "extra_deps": {
           "common": [
-            {
-              "id": "windows_x86_64_msvc 0.52.6",
-              "target": "build_script_build"
-            }
+            ":build_script_build"
           ],
           "selects": {}
         },
@@ -12927,11 +12892,13 @@
             {
               "id": "winapi 0.3.9",
               "target": "winapi"
-            },
-            {
-              "id": "winreg 0.10.1",
-              "target": "build_script_build"
             }
+          ],
+          "selects": {}
+        },
+        "extra_deps": {
+          "common": [
+            ":build_script_build"
           ],
           "selects": {}
         },

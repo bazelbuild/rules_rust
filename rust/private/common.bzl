@@ -31,9 +31,9 @@ load(":providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.97.1"
+DEFAULT_RUST_VERSION = "1.98.0"
 
-DEFAULT_NIGHTLY_ISO_DATE = "2026-07-16"
+DEFAULT_NIGHTLY_ISO_DATE = "2026-08-20"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider
@@ -65,6 +65,8 @@ def _create_crate_info(**kwargs):
         kwargs.update({"data": depset([])})
     if not "root_path" in kwargs:
         kwargs.update({"root_path": ""})
+    if not "owner" in kwargs:
+        kwargs.update({"owner": None})
     return CrateInfo(**kwargs)
 
 rust_common = struct(

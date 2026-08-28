@@ -117,7 +117,7 @@ rust_library(
     }),
     version = "1.0.228",
     deps = [
-        "@rrra__serde_core-1.0.228//:build_script_build",
+        ":build_script_build",
     ],
 )
 
@@ -127,6 +127,9 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
