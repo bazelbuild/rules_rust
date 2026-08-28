@@ -566,6 +566,8 @@ def _cargo_build_script_impl(ctx):
     env["CARGO_ENCODED_RUSTFLAGS"] = "\\x1f".join([
         # Allow build scripts to locate the generated sysroot
         "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
+        # Keep build scripts from baking the exec root into their output
+        "--remap-path-prefix=${pwd}=.",
     ] + ctx.attr.rustc_flags)
 
     for f in ctx.attr.crate_features:
