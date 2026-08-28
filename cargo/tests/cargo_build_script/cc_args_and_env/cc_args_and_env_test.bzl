@@ -441,6 +441,62 @@ def xclang_isystem_absolute_test(name):
         expected_cflags = ["-Xclang", "-internal-isystem", "-Xclang", "/test/absolute/path"],
     )
 
+def clang_cl_paths_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = [
+            "/imsvctest/relative/include",
+            "/imsvc",
+            "test/relative/include2",
+            "/clang:-isystem",
+            "/clang:test/relative/include3",
+            "/clang:-resource-dir=test/relative/resources",
+            "/clang:-ivfsoverlay",
+            "/clang:test/relative/headers.yaml",
+            "/clang:/vfsoverlay:test/relative/libraries.yaml",
+            "/clang:/LIBPATH:test/relative/lib",
+        ],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = [
+            "/imsvc${pwd}/test/relative/include",
+            "/imsvc",
+            "${pwd}/test/relative/include2",
+            "/clang:-isystem",
+            "/clang:${pwd}/test/relative/include3",
+            "/clang:-resource-dir=${pwd}/test/relative/resources",
+            "/clang:-ivfsoverlay",
+            "/clang:${pwd}/test/relative/headers.yaml",
+            "/clang:/vfsoverlay:${pwd}/test/relative/libraries.yaml",
+            "/clang:/LIBPATH:${pwd}/test/relative/lib",
+        ],
+    )
+
+def clang_cl_paths_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = [
+            "/imsvc/test/absolute/include",
+            "/clang:-ivfsoverlay",
+            "/clang:/test/absolute/headers.yaml",
+            "/clang:/vfsoverlay:/test/absolute/libraries.yaml",
+            "/clang:/LIBPATH:/test/absolute/lib",
+        ],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = [
+            "/imsvc/test/absolute/include",
+            "/clang:-ivfsoverlay",
+            "/clang:/test/absolute/headers.yaml",
+            "/clang:/vfsoverlay:/test/absolute/libraries.yaml",
+            "/clang:/LIBPATH:/test/absolute/lib",
+        ],
+    )
+
 def isystem_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
