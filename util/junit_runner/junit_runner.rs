@@ -73,6 +73,20 @@ fn exec_passthrough(test_bin: &PathBuf, args: &[String]) -> ! {
     }
 }
 
+fn nocapture_in_args(args: &[String]) -> bool {
+    args.iter().any(|a| a == "--nocapture")
+}
+
+/// True when libtest would run with output capture disabled: either the
+/// `--nocapture` flag or the `RUST_TEST_NOCAPTURE` env var set to anything but
+/// "0", matching libtest's own precedence. In that mode libtest interleaves
+/// each test's own output into its result line, so the pretty output can no
+/// longer be parsed back into per-test results and we step aside instead of
+/// writing a broken report.
+fn wants_nocapture(args: &[String]) -> bool {
+    nocapture_in_args(args) || matches!(env::var("RUST_TEST_NOCAPTURE"), Ok(v) if v != "0")
+}
+
 #[derive(Debug, PartialEq)]
 struct TestResult {
     name: String,
@@ -447,6 +461,20 @@ fn main() {
         Err(_) => exec_passthrough(&test_bin, &args),
     };
 
+    // Under `--nocapture` libtest interleaves each test's own output into its
+    // result line, so the pretty output can't be parsed back into per-test
+    // results without dropping or mislabeling tests. Rather than write a broken
+    // report, step aside and run the test directly; Bazel then falls back to its
+    // own synthetic test.xml and the developer still sees their output.
+    if wants_nocapture(&args) {
+        eprintln!(
+            "WARNING: junit_runner: --nocapture set; skipping the JUnit report \
+             (libtest's output is not machine-parseable in this mode) and running \
+             the test binary directly"
+        );
+        exec_passthrough(&test_bin, &args);
+    }
+
     let binary_name = test_bin
         .file_name()
         .and_then(|n| n.to_str())
@@ -700,6 +728,21 @@ mod tests {
         assert_eq!(parse_test_result_line("not a test line"), None);
         assert_eq!(parse_test_result_line("test incomplete"), None);
         assert_eq!(parse_test_result_line("test bad ... unknown_status"), None);
+    }
+
+    #[test]
+    fn nocapture_flag_detected_in_args() {
+        assert!(nocapture_in_args(&["--nocapture".to_string()]));
+        assert!(nocapture_in_args(&[
+            "some::filter".to_string(),
+            "--nocapture".to_string(),
+        ]));
+        // `--show-output` prints captured output in a trailing section rather
+        // than interleaving it, so it stays parseable and must not trip this.
+        assert!(!nocapture_in_args(&[
+            "some::filter".to_string(),
+            "--show-output".to_string(),
+        ]));
     }
 
     #[test]
