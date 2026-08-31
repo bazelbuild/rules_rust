@@ -200,7 +200,12 @@ fn parse_test_result_line(line: &str) -> Option<TestResult> {
     // We split on " ... " to separate name from status.
     let after_test = line.strip_prefix("test ")?;
     let sep_pos = after_test.find(" ... ")?;
-    let name = &after_test[..sep_pos];
+    // `#[should_panic]` tests print as `test <name> - should panic ... <status>`,
+    // but the `---- <name> stdout ----` failure banner uses the bare name. Strip
+    // the suffix so the testcase name is right and the failure-body lookup in
+    // build_junit_xml (keyed on the bare name) matches.
+    let raw_name = &after_test[..sep_pos];
+    let name = raw_name.strip_suffix(" - should panic").unwrap_or(raw_name);
     let rest = &after_test[sep_pos + " ... ".len()..];
 
     // Status is the first word of rest. `#[ignore = "reason"]` prints
@@ -662,6 +667,19 @@ mod tests {
             Some(TestResult {
                 name: "skipped_test".into(),
                 status: "ignored".into()
+            }),
+        );
+    }
+
+    #[test]
+    fn parse_result_line_should_panic_suffix_stripped() {
+        // `#[should_panic]` prints `<name> - should panic` in the result line,
+        // while the failure banner uses the bare name.
+        assert_eq!(
+            parse_test_result_line("test tests::boom - should panic ... FAILED"),
+            Some(TestResult {
+                name: "tests::boom".into(),
+                status: "FAILED".into()
             }),
         );
     }
