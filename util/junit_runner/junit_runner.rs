@@ -203,8 +203,10 @@ fn parse_test_result_line(line: &str) -> Option<TestResult> {
     let name = &after_test[..sep_pos];
     let rest = &after_test[sep_pos + " ... ".len()..];
 
-    // Status is the first word of rest
-    let status = rest.split_whitespace().next()?;
+    // Status is the first word of rest. `#[ignore = "reason"]` prints
+    // `... ignored, <reason>`, so that first token carries a trailing comma;
+    // strip it before matching or the test is silently dropped from the report.
+    let status = rest.split_whitespace().next()?.trim_end_matches(',');
     match status {
         "ok" | "FAILED" | "ignored" | "bench" => Some(TestResult {
             name: name.to_string(),
@@ -295,10 +297,23 @@ fn xml_escape(s: &str) -> String {
             '>' => result.push_str("&gt;"),
             '"' => result.push_str("&quot;"),
             '\'' => result.push_str("&apos;"),
+            // Characters outside the XML 1.0 Char production (ANSI colour
+            // escapes, NUL, other C0 control bytes) cannot appear in a
+            // well-formed document even as numeric references, so drop them;
+            // otherwise a single escape byte in captured output makes the whole
+            // report unparseable and the suite fails to upload.
+            c if is_xml_illegal(c) => {}
             _ => result.push(c),
         }
     }
     result
+}
+
+/// True for characters disallowed by the XML 1.0 `Char` production. Tab,
+/// newline and carriage return are the only control characters permitted.
+fn is_xml_illegal(c: char) -> bool {
+    let u = c as u32;
+    (u < 0x20 && u != 0x09 && u != 0x0A && u != 0x0D) || u == 0xFFFE || u == 0xFFFF
 }
 
 struct Report<'a> {
@@ -640,6 +655,18 @@ mod tests {
     }
 
     #[test]
+    fn parse_result_line_ignored_with_reason() {
+        // `#[ignore = "reason"]` appends `, <reason>` after the status word.
+        assert_eq!(
+            parse_test_result_line("test skipped_test ... ignored, needs network"),
+            Some(TestResult {
+                name: "skipped_test".into(),
+                status: "ignored".into()
+            }),
+        );
+    }
+
+    #[test]
     fn parse_result_line_bench() {
         assert_eq!(
             parse_test_result_line("test bench_thing ... bench"),
@@ -825,6 +852,16 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace";
     #[test]
     fn xml_escape_no_special() {
         assert_eq!(xml_escape("hello world"), "hello world");
+    }
+
+    #[test]
+    fn xml_escape_strips_illegal_control_chars() {
+        // ANSI colour escape (ESC) and NUL are illegal in XML 1.0 and must be
+        // dropped; tab and newline are legal and must be preserved.
+        assert_eq!(
+            xml_escape("red\u{1b}[31m\u{0}text\tline\n"),
+            "red[31mtext\tline\n"
+        );
     }
 
     #[test]
