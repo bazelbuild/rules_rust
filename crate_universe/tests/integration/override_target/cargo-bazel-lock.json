@@ -1,5 +1,5 @@
 {
-  "checksum": "3f3f32d2b538dc4750bb48bf7bb274b56c8891b971e4f8d307fc699dcba4a8d5",
+  "checksum": "0fe315db50b993bdec51a927fe0192c1a5cb4205d3652cb02347f1b9811b8c17",
   "conditions": {
     "aarch64-apple-darwin": [
       "aarch64-apple-darwin"
@@ -24,15 +24,71 @@
     ]
   },
   "crates": {
+    "anyhow 1.0.104": {
+      "build_script_attrs": {},
+      "common_attrs": {
+        "crate_features": [
+          "default",
+          "std"
+        ],
+        "edition": "2021",
+        "extra_deps": [
+          ":build_script_build"
+        ]
+      },
+      "library_target_name": "anyhow",
+      "license": "MIT OR Apache-2.0",
+      "license_file": "LICENSE-APACHE",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "name": "anyhow",
+      "override_targets": {
+        "custom-build": "@@//overrides:build_script"
+      },
+      "package_url": "https://github.com/dtolnay/anyhow",
+      "repository": {
+        "Http": {
+          "sha256": "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470",
+          "url": "https://static.crates.io/crates/anyhow/1.0.104/download"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "anyhow",
+            "crate_root": "src/lib.rs"
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs"
+          }
+        }
+      ],
+      "version": "1.0.104"
+    },
     "direct-cargo-bazel-deps 0.0.1": {
       "common_attrs": {
         "deps": [
+          {
+            "id": "anyhow 1.0.104",
+            "target": "anyhow"
+          },
           {
             "id": "foo 0.0.0",
             "target": "foo"
           }
         ],
-        "edition": "2018"
+        "edition": "2018",
+        "proc_macro_deps": [
+          {
+            "id": "paste 1.0.15",
+            "target": "paste"
+          }
+        ]
       },
       "library_target_name": "direct_cargo_bazel_deps",
       "name": "direct-cargo-bazel-deps",
@@ -75,10 +131,54 @@
         }
       ],
       "version": "0.0.0"
+    },
+    "paste 1.0.15": {
+      "build_script_attrs": {},
+      "common_attrs": {
+        "edition": "2018",
+        "extra_deps": [
+          ":build_script_build"
+        ]
+      },
+      "library_target_name": "paste",
+      "license": "MIT OR Apache-2.0",
+      "license_file": "LICENSE-APACHE",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "name": "paste",
+      "override_targets": {
+        "proc-macro": "@@//overrides:proc_macro"
+      },
+      "package_url": "https://github.com/dtolnay/paste",
+      "repository": {
+        "Http": {
+          "sha256": "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a",
+          "url": "https://static.crates.io/crates/paste/1.0.15/download"
+        }
+      },
+      "targets": [
+        {
+          "ProcMacro": {
+            "crate_name": "paste",
+            "crate_root": "src/lib.rs"
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs"
+          }
+        }
+      ],
+      "version": "1.0.15"
     }
   },
   "direct_deps": [
-    "foo 0.0.0"
+    "anyhow 1.0.104",
+    "foo 0.0.0",
+    "paste 1.0.15"
   ],
   "direct_dev_deps": [],
   "workspace_members": {

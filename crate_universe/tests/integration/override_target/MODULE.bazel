@@ -25,6 +25,29 @@ crate.spec(
     repositories = ["override_target"],
     version = "0.0.0",
 )
+
+# `proc-macro` and `custom-build` overrides -- the two keys whose spelling
+# differs from the `override_target_*` attribute name.
+crate.annotation(
+    crate = "paste",
+    override_target_proc_macro = "//overrides:proc_macro",
+    repositories = ["override_target"],
+)
+crate.spec(
+    package = "paste",
+    repositories = ["override_target"],
+    version = "=1.0.15",
+)
+crate.annotation(
+    crate = "anyhow",
+    override_target_build_script = "//overrides:build_script",
+    repositories = ["override_target"],
+)
+crate.spec(
+    package = "anyhow",
+    repositories = ["override_target"],
+    version = "=1.0.104",
+)
 crate.splicing_config(
     repositories = ["override_target"],
     resolver_version = "2",
