@@ -1,6 +1,7 @@
 """Analysis test for for rust_bindgen_library rule."""
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
 load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
@@ -100,6 +101,45 @@ def _test_cc_lib_object_merging_disabled(name):
         impl = _test_cc_lib_object_merging_disabled_impl,
     )
 
+def _test_cc_lib_dynamic_only_impl(env, target):
+    env.expect.that_int(len(target.actions)).is_greater_than(2)
+    env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    env.expect.that_action(target.actions[1]).mnemonic().contains("FileWrite")
+    env.expect.that_action(target.actions[1]).content().contains("-ldylib=test_cc_lib_dynamic_only_cc_shared")
+
+def _test_cc_lib_dynamic_only(name):
+    cc_library(
+        name = name + "_cc_objects",
+        srcs = ["simple.cc"],
+        hdrs = ["simple.h"],
+        tags = ["manual"],
+    )
+    cc_shared_library(
+        name = name + "_cc_shared",
+        deps = [name + "_cc_objects"],
+        tags = ["manual"],
+    )
+    cc_import(
+        name = name + "_cc",
+        shared_library = name + "_cc_shared",
+        hdrs = ["simple.h"],
+        tags = ["manual"],
+    )
+
+    rust_bindgen_library(
+        name = name + "_rust_bindgen",
+        cc_lib = name + "_cc",
+        header = "simple.h",
+        tags = ["manual"],
+        edition = "2021",
+    )
+
+    analysis_test(
+        name = name,
+        target = name + "_rust_bindgen__bindgen",
+        impl = _test_cc_lib_dynamic_only_impl,
+    )
+
 def bindgen_test_suite(name):
     test_suite(
         name = name,
@@ -107,5 +147,6 @@ def bindgen_test_suite(name):
             _test_cc_linkopt,
             _test_cc_lib_object_merging,
             _test_cc_lib_object_merging_disabled,
+            _test_cc_lib_dynamic_only,
         ],
     )
