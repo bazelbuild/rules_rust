@@ -49,6 +49,9 @@ mod tests {
         assert!(with_gen.root_module.starts_with("/"));
         assert!(with_gen.root_module.ends_with("/lib.rs"));
 
+        // root_module isn't re-anchored to the workspace since it has a generated sibling.
+        assert!(with_gen.root_module.starts_with(output_base));
+
         let include_dirs = &with_gen.source.as_ref().unwrap().include_dirs;
         assert_eq!(include_dirs.len(), 2);
 
