@@ -16,6 +16,12 @@ rust_test(
     name = "runfiles_test",
     crate = ":runfiles",
     data = ["data/sample.txt"],
+    # These tests inspect the process's own runfiles -- the manifest layout and
+    # the repo mapping that rlocation! resolves against. The junit wrapper runs
+    # the test as a child under the wrapper's runfiles, which is a different
+    # ambient environment than the one being asserted on, so the runfiles
+    # library's own tests need to run unwrapped.
+    junit = False,
 )
 
 rust_doc(
