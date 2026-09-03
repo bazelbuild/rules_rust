@@ -266,7 +266,7 @@ def _create_single_crate(ctx, attrs, info):
 
     # We're only interested in the build info for local crates as these are the
     # only ones for which we want build file watching and code lens runnables support.
-    if not is_external and not is_generated:
+    if not is_external:
         crate["build"] = {
             "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
             # Emit canonical `//pkg:name` form. Bazel's BEP reports action
@@ -280,8 +280,16 @@ def _create_single_crate(ctx, attrs, info):
     if is_generated:
         srcs = getattr(ctx.rule.files, "srcs", [])
         src_map = {src.short_path: src for src in srcs if src.is_source}
+
+        # Only re-anchor into the workspace when every sibling src lives there too.
+        has_generated_srcs = any([
+            not src.is_source
+            for src in srcs
+            if src.short_path != info.crate.root.short_path
+        ])
         if info.crate.root.short_path in src_map:
-            crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
+            if not has_generated_srcs:
+                crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
             crate["source"]["include_dirs"].extend([
                 _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].dirname,
                 path_prefix + info.crate.root.dirname,
