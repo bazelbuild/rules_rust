@@ -16,6 +16,7 @@
 //!   coverage postprocessing mode (`--experimental_split_coverage_postprocessing`).
 //! - `TEST_BINARY`: Runfiles-relative path to the test binary (used when `RUNFILES_DIR` is absent).
 //! - `VERBOSE_COVERAGE`: Print debug info from the coverage scripts
+//! - `COVERAGE_BINARY`: The binary that should be used for coverage (optional by default uses `TEST_BINARY`)
 //!
 //! The script looks in $COVERAGE_DIR for the Rust metadata coverage files
 //! (profraw) and uses lcov to get the coverage data. The coverage data
@@ -49,9 +50,11 @@ fn find_metadata_file(execroot: &Path, runfiles_dir: &Path, path: &str) -> PathB
 }
 
 fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
+    let bin = env::var("COVERAGE_BINARY").unwrap_or_else(|_| env::var("TEST_BINARY").unwrap());
+
     let test_binary = runfiles_dir
         .join(env::var("TEST_WORKSPACE").unwrap())
-        .join(env::var("TEST_BINARY").unwrap());
+        .join(&bin);
 
     if !test_binary.exists() {
         let configuration = runfiles_dir
@@ -72,9 +75,7 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
                 path
             });
 
-        let test_binary = execroot
-            .join(configuration)
-            .join(env::var("TEST_BINARY").unwrap());
+        let test_binary = execroot.join(configuration).join(&bin);
 
         debug_log!(
             "TEST_BINARY is not found in runfiles. Falling back to: {}",
