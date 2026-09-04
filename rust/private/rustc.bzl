@@ -1580,12 +1580,16 @@ def construct_arguments(
         if rustc_env_attr:
             target_has_location_expansion = has_location_expansion(rustc_env_attr.values())
 
+    # Path mapping requires sandboxed execution, which these tags disable.
+    tags = getattr(attr, "tags", [])
+    requires_unsandboxed_execution = "no-sandbox" in tags or "local" in tags
+
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
         extra_rustc_flags = rust_flags_args,
-        supports_path_mapping = not target_has_location_expansion,
+        supports_path_mapping = not target_has_location_expansion and not requires_unsandboxed_execution,
         all = all_args,
     )
 
