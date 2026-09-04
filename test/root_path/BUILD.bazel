@@ -1,9 +1,15 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":defs.bzl", "package_dir_artifact")
 
 package(default_visibility = ["//visibility:private"])
+
+rust_binary(
+    name = "dir_artifact_packager",
+    srcs = ["dir_artifact_packager.rs"],
+    edition = "2021",
+)
 
 package_dir_artifact(
     name = "dir_artifact",
