@@ -581,10 +581,8 @@ def _rust_toolchain_impl(ctx):
             link_std_dylib,
         )
 
-    # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
+    # C++ toolchain inputs are attached to the Rust actions that use them.
     all_files_depsets = [sysroot.all_files]
-    if cc_toolchain and cc_toolchain.all_files:
-        all_files_depsets.append(cc_toolchain.all_files)
 
     # Parse the version string once so downstream rules can branch on the
     # semver components without re-parsing. `None` for empty or non-semver
