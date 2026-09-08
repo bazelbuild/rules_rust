@@ -498,7 +498,7 @@ def _cargo_build_script_impl(ctx):
         cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     else:
         cc_toolchain, feature_configuration = None, None
-    linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
+    linker, _, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
