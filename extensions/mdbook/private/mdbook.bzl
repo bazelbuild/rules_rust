@@ -4,7 +4,6 @@ MdBookInfo = provider(
     doc = "Information about a `mdbook` target.",
     fields = {
         "config": "File: The `book.toml` file.",
-        "config_dest": "String: The path of the configuration file in the staged book.",
         "plugins": "Depset[File]: TODO",
         "srcs": "Depset[File]: TODO",
     },
@@ -25,7 +24,6 @@ def _mdbook_impl(ctx):
     output = ctx.actions.declare_directory(ctx.label.name)
 
     book = ctx.file.book
-    config_dest = "{}/{}".format(ctx.label.package, book.basename) if book != None else "{}/{}.book.toml".format(ctx.label.package, ctx.label.name)
     if book == None:
         book = ctx.actions.declare_file("{}.book.toml".format(ctx.label.name))
         ctx.actions.write(
@@ -75,7 +73,6 @@ def _mdbook_impl(ctx):
         MdBookInfo(
             srcs = depset(ctx.files.srcs),
             config = book,
-            config_dest = config_dest,
             plugins = depset(ctx.files.plugins),
         ),
     ]
@@ -134,12 +131,13 @@ def _mdbook_server_impl(ctx):
     workspace_name = ctx.workspace_name
 
     args.add("--mdbook={}".format(_rlocationpath(toolchain.mdbook, workspace_name)))
-    args.add("--config={}".format(book_info.config_dest))
+    config_dest = _src_dest_path(book_info.config)
+    args.add("--config={}".format(config_dest))
     args.add("--hostname={}".format(ctx.attr.hostname))
     args.add("--port={}".format(ctx.attr.port))
 
     def _src_map(file):
-        dest = book_info.config_dest if file == book_info.config else _src_dest_path(file)
+        dest = config_dest if file == book_info.config else _src_dest_path(file)
         return "--src={}={}".format(_rlocationpath(file, workspace_name), dest)
 
     # The set of files that must be staged into the workdir for `mdbook serve` to
