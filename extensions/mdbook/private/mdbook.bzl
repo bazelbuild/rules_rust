@@ -137,8 +137,7 @@ def _mdbook_server_impl(ctx):
     args.add("--port={}".format(ctx.attr.port))
 
     def _src_map(file):
-        dest = config_dest if file == book_info.config else _src_dest_path(file)
-        return "--src={}={}".format(_rlocationpath(file, workspace_name), dest)
+        return "--src={}={}".format(_rlocationpath(file, workspace_name), _src_dest_path(file))
 
     # The set of files that must be staged into the workdir for `mdbook serve` to
     # see a consistent source tree. `book.toml` is included so that referencing it
