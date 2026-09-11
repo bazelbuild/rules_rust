@@ -368,7 +368,7 @@ rust_prost_aspect = aspect(
     attr_aspects = ["deps"],
     attrs = {
         "_collect_cc_coverage": attr.label(
-            default = Label("@rules_rust//util:collect_coverage"),
+            default = Label("@rules_rust//rust/coverage:collect_rust_coverage"),
             executable = True,
             cfg = "exec",
         ),
@@ -437,7 +437,7 @@ rust_prost_library = rule(
             mandatory = True,
         ),
         "_collect_cc_coverage": attr.label(
-            default = Label("@rules_rust//util:collect_coverage"),
+            default = Label("@rules_rust//rust/coverage:collect_rust_coverage"),
             executable = True,
             cfg = "exec",
         ),
