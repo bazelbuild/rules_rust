@@ -9,85 +9,17 @@ use std::thread;
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
 use semver::Version;
-use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use url::Url;
 
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
-use crate::select::{Select, SelectableScalar};
+use crate::metadata::tree_resolver_metadata::{
+    collapse_to_selects, group_by_cargo_triple, host_triples_with_tools, merge_tree_data,
+    CargoTreeEntry, PerTripleMetadata, TreeResolverMetadata,
+};
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
-
-/// A list platform triples that support host tools
-///
-/// [Tier 1](https://doc.rust-lang.org/nightly/rustc/platform-support.html#tier-1-with-host-tools)
-/// [Tier 2](https://doc.rust-lang.org/nightly/rustc/platform-support.html#tier-2-with-host-tools)
-const RUSTC_TRIPLES_WITH_HOST_TOOLS: [&str; 26] = [
-    // Tier 1
-    "aarch64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "i686-pc-windows-gnu",
-    "i686-pc-windows-msvc",
-    "i686-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-gnu",
-    "x86_64-pc-windows-msvc",
-    "x86_64-unknown-linux-gnu",
-    // Tier 2
-    "aarch64-pc-windows-msvc",
-    "aarch64-unknown-linux-musl",
-    "arm-unknown-linux-gnueabi",
-    "arm-unknown-linux-gnueabihf",
-    "armv7-unknown-linux-gnueabihf",
-    "loongarch64-unknown-linux-gnu",
-    "loongarch64-unknown-linux-musl",
-    "powerpc-unknown-linux-gnu",
-    "powerpc64-unknown-linux-gnu",
-    "powerpc64le-unknown-linux-gnu",
-    "riscv64gc-unknown-linux-gnu",
-    "riscv64gc-unknown-linux-musl",
-    "s390x-unknown-linux-gnu",
-    "x86_64-unknown-freebsd",
-    "x86_64-unknown-illumo",
-    "x86_64-unknown-linux-musl",
-    "x86_64-unknown-netbsd",
-];
-
-/// Feature resolver info about a given crate.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub(crate) struct CargoTreeEntry {
-    /// The set of features active on a given crate.
-    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub features: BTreeSet<String>,
-
-    /// The dependencies of a given crate based on feature resolution.
-    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub deps: BTreeSet<CrateId>,
-}
-
-impl CargoTreeEntry {
-    pub fn new() -> Self {
-        Self {
-            features: BTreeSet::new(),
-            deps: BTreeSet::new(),
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.features.is_empty() && self.deps.is_empty()
-    }
-
-    pub fn consume(&mut self, other: Self) {
-        self.features.extend(other.features);
-        self.deps.extend(other.deps);
-    }
-}
-
-impl SelectableScalar for CargoTreeEntry {}
-
-/// Feature and dependency metadata generated from [TreeResolver].
-pub(crate) type TreeResolverMetadata = BTreeMap<CrateId, Select<CargoTreeEntry>>;
 
 /// Generates metadata about a Cargo workspace tree which supplements the inaccuracies in
 /// standard [Cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html)
@@ -117,44 +49,14 @@ impl TreeResolver {
         let mut stdouts: BTreeMap<TargetTriple, BTreeMap<TargetTriple, Vec<u8>>> = BTreeMap::new();
 
         // We only want to spawn processes for unique cargo platforms
-        let mut cargo_host_triples = BTreeMap::<String, BTreeSet<&TargetTriple>>::new();
-        for triple in host_triples {
-            cargo_host_triples
-                .entry(triple.to_cargo())
-                .or_default()
-                .insert(triple);
-        }
-        let mut cargo_target_triples = BTreeMap::<String, BTreeSet<&TargetTriple>>::new();
-        for triple in target_triples {
-            cargo_target_triples
-                .entry(triple.to_cargo())
-                .or_default()
-                .insert(triple);
-        }
+        let cargo_host_triples = group_by_cargo_triple(host_triples);
+        let cargo_target_triples = group_by_cargo_triple(target_triples);
 
         // Limit the concurrency so we don't concurrently spawn `{HOST_TRIPLES} * {TARGET_TRIPLES}`
         // number of processes (which can be +400 and hit operating system limitations).
         let max_parallel = thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(4);
-
-        // Without any host triples, no `cargo tree` invocations would run and
-        // the resulting BUILD files would silently be missing `crate_features`
-        // and optional dependencies. Bail with an actionable message instead.
-        if cargo_host_triples.is_empty() {
-            bail!(
-                "`supported_platform_triples` contains no platforms with host tools, so \
-                 `cargo tree` cannot be invoked and feature resolution cannot be performed. \
-                 Bazel's execution platform triple typically should be included in \
-                 `supported_platform_triples` (e.g. `x86_64-unknown-linux-gnu`). \
-                 target_triples=[{}]",
-                cargo_target_triples
-                    .keys()
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            );
-        }
 
         // Prepare all unique jobs: (cargo_host, cargo_target)
         let mut jobs = Vec::<(String, String)>::new();
@@ -272,9 +174,9 @@ impl TreeResolver {
             for host_plat in cargo_host_triples[&cargo_host].iter() {
                 for target_plat in cargo_target_triples[&cargo_target].iter() {
                     stdouts
-                        .entry((*host_plat).clone())
+                        .entry(host_plat.clone())
                         .or_default()
-                        .insert((*target_plat).clone(), output.stdout.clone());
+                        .insert(target_plat.clone(), output.stdout.clone());
                 }
             }
         }
@@ -392,14 +294,7 @@ impl TreeResolver {
 
         let rustc_wrapper = Self::create_rustc_wrapper(tempdir.path())?;
 
-        let host_triples: BTreeSet<TargetTriple> = target_triples
-            .iter()
-            // Only query triples for platforms that have host tools.
-            .filter(|host_triple| {
-                RUSTC_TRIPLES_WITH_HOST_TOOLS.contains(&host_triple.to_cargo().as_str())
-            })
-            .cloned()
-            .collect();
+        let host_triples = host_triples_with_tools(target_triples)?;
 
         // This is a very expensive process. Here we iterate over all target triples
         // and generate tree data as though they were also the host triple
@@ -411,8 +306,7 @@ impl TreeResolver {
                 &rustc_wrapper,
             )?;
 
-        let mut metadata: BTreeMap<CrateId, BTreeMap<TargetTriple, CargoTreeEntry>> =
-            BTreeMap::new();
+        let mut metadata = PerTripleMetadata::new();
 
         for (host_triple, target_streams) in deps_tree_streams.into_iter() {
             for (target_triple, stdout) in target_streams.into_iter() {
@@ -425,75 +319,13 @@ impl TreeResolver {
 
                 let (target_tree_data, host_tree_data) = parse_cargo_tree_output(stdout.lines())?;
 
-                for (entry, tree_data) in target_tree_data {
-                    metadata
-                        .entry(entry.clone())
-                        .or_default()
-                        .entry(target_triple.clone())
-                        .or_default()
-                        .consume(tree_data);
-                }
-                for (entry, tree_data) in host_tree_data {
-                    metadata
-                        .entry(entry.clone())
-                        .or_default()
-                        .entry(host_triple.clone())
-                        .or_default()
-                        .consume(tree_data);
-                }
+                merge_tree_data(&mut metadata, &target_triple, &target_tree_data);
+                merge_tree_data(&mut metadata, &host_triple, &host_tree_data);
             }
         }
 
         // Collect all metadata into a mapping of crate to it's metadata per target.
-        let mut result = TreeResolverMetadata::new();
-        for (crate_id, tree_data) in metadata.into_iter() {
-            let common = CargoTreeEntry {
-                features: tree_data
-                    .iter()
-                    .fold(
-                        None,
-                        |common: Option<BTreeSet<String>>, (_, data)| match common {
-                            Some(common) => {
-                                Some(common.intersection(&data.features).cloned().collect())
-                            }
-                            None => Some(data.features.clone()),
-                        },
-                    )
-                    .unwrap_or_default(),
-                deps: tree_data
-                    .iter()
-                    .fold(
-                        None,
-                        |common: Option<BTreeSet<CrateId>>, (_, data)| match common {
-                            Some(common) => {
-                                Some(common.intersection(&data.deps).cloned().collect())
-                            }
-                            None => Some(data.deps.clone()),
-                        },
-                    )
-                    .unwrap_or_default(),
-            };
-            let mut select: Select<CargoTreeEntry> = Select::default();
-            for (target_triple, data) in tree_data {
-                let mut entry = CargoTreeEntry::new();
-                entry.features.extend(
-                    data.features
-                        .into_iter()
-                        .filter(|f| !common.features.contains(f)),
-                );
-                entry
-                    .deps
-                    .extend(data.deps.into_iter().filter(|d| !common.deps.contains(d)));
-                if !entry.is_empty() {
-                    select.insert(entry, Some(target_triple.to_bazel()));
-                }
-            }
-            if !common.is_empty() {
-                select.insert(common, None);
-            }
-            result.insert(crate_id, select);
-        }
-        Ok(result)
+        Ok(collapse_to_selects(metadata))
     }
 
     // Artificially inject all proc macros as dependency roots.
@@ -1650,44 +1482,6 @@ mod test {
             )]),
             target_output,
             "Failed checking target dependencies."
-        );
-    }
-
-    #[test]
-    fn execute_cargo_tree_errors_when_no_host_triples() {
-        let (_, tempdir) =
-            crate::test::test_tempdir("execute_cargo_tree_errors_when_no_host_triples");
-
-        let resolver = TreeResolver::new(Cargo::new(
-            tempdir.join("nonexistent-cargo"),
-            tempdir.join("nonexistent-rustc"),
-        ));
-
-        let target_triples: BTreeSet<TargetTriple> =
-            BTreeSet::from([TargetTriple::from_bazel("thumbv6m-none-eabi".to_owned())]);
-        let host_triples: BTreeSet<TargetTriple> = BTreeSet::new();
-
-        let err = resolver
-            .execute_cargo_tree(
-                &tempdir.join("Cargo.toml"),
-                &host_triples,
-                &target_triples,
-                &tempdir.join("rustc_wrapper"),
-            )
-            .expect_err("expected an error when no host triples are supplied");
-
-        let msg = err.to_string();
-        assert!(
-            msg.contains("supported_platform_triples"),
-            "error message should mention `supported_platform_triples`, got: {msg}",
-        );
-        assert!(
-            msg.contains("host tools"),
-            "error message should mention host tools, got: {msg}",
-        );
-        assert!(
-            msg.contains("thumbv6m-none-eabi"),
-            "error message should list the configured target triples, got: {msg}",
         );
     }
 

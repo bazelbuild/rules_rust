@@ -15,8 +15,8 @@ use clap::Parser;
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
+use crate::metadata::resolve_tree_metadata;
 use crate::metadata::CargoUpdateRequest;
-use crate::metadata::TreeResolver;
 use crate::metadata::{Annotations, Cargo, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
@@ -263,7 +263,8 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // is sanitized out of the digest hash by `Digest::new`.
     let config = Config::try_from_path(&opt.config)?;
 
-    let resolver_data = TreeResolver::new(cargo.clone()).generate(
+    let resolver_data = resolve_tree_metadata(
+        cargo.clone(),
         manifest_path.as_path_buf(),
         &config.supported_platform_triples,
     )?;

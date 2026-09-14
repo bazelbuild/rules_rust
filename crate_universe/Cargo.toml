@@ -17,6 +17,7 @@ exclude = [
     "test_data/metadata/git_repos",
     "test_data/metadata/has_package_metadata",
     "test_data/metadata/host_specific_build_deps",
+    "test_data/metadata/host_target_feature_split",
     "test_data/metadata/multi_cfg_dep",
     "test_data/metadata/multi_kind_proc_macro_dep",
     "test_data/metadata/nested_build_dependencies",
@@ -77,6 +78,7 @@ clap = { version = "4.5.37", features = ["derive", "env"] }
 crates-index = { version = "3.7.0", default-features = false, features = [
     "git",
 ] }
+guppy = "0.19.0"
 hex = "0.4.3"
 indoc = "2.0.6"
 itertools = "0.14.0"
@@ -90,6 +92,12 @@ serde_json = "1.0.140"
 serde_starlark = "0.1.17"
 sha2 = "0.10.8"
 spdx = "0.10.8"
+# Enables `custom-cfg` (building platforms from real `rustc --print=cfg` output)
+# on `guppy`'s private `target-spec` copy through feature unification, so this
+# version must match the one `guppy` depends on. Replace with
+# `guppy = { features = ["custom-cfg"] }` once a release includes
+# https://github.com/guppy-rs/guppy/pull/759
+target-spec = { version = "3.7.0", features = ["custom-cfg"] }
 tempfile = "3.19.1"
 tera = { version = "1.20.0", default-features = false }
 textwrap = "0.16.2"
