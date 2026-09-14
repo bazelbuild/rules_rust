@@ -1,7 +1,15 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@cui//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 load("//crate_universe:version.bzl", "VERSION")
+load("//crate_universe/private:bootstrap_utils.bzl", "source_installer")
+load(
+    "//rust/platform:triple_mappings.bzl",
+    "SUPPORTED_PLATFORM_TRIPLES",
+    "SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS",
+)
 
 exports_files(
     glob([
@@ -41,13 +49,47 @@ filegroup(
     name = "rust_data",
     srcs = glob([
         "src/**/*.bzl",
-        "src/**/*.j2",
-        "src/**/*.sh",
         "src/**/*.bat",
+        "src/**/*.j2",
+        "src/**/*.json",
+        "src/**/*.sh",
     ]) + [
         # The SPDX license kinds `cargo-bazel` may name, see `src/rendering.rs`.
         "//crate_universe/private/spdx:kinds.bzl",
     ],
+)
+
+# `rustc --print=cfg` of every supported platform, recorded from the registered
+# toolchain so resolution does not depend on the rustc at hand. The diff test
+# fails when a toolchain update changes the output; run the installer to update.
+genrule(
+    name = "rustc_cfgs_generated",
+    outs = ["rustc_cfgs.generated.json"],
+    cmd = "$(execpath :cargo_bazel_bin) rustc-cfgs --rustc $(RUSTC) --triples {} --output $@".format(",".join(SUPPORTED_PLATFORM_TRIPLES)),
+    cmd_bat = "$(execpath :cargo_bazel_bin) rustc-cfgs --rustc $(RUSTC) --triples {} --output $@".format(",".join(SUPPORTED_PLATFORM_TRIPLES)),
+    toolchains = ["//rust/toolchain:current_rust_toolchain"],
+    tools = [
+        ":cargo_bazel_bin",
+        "//rust/toolchain:current_rust_toolchain",
+    ],
+)
+
+diff_test(
+    name = "rustc_cfgs_diff_test",
+    failure_message = "The recorded `rustc --print=cfg` table is out of date. Run `bazel run //crate_universe:rustc_cfgs.install`.",
+    file1 = "src/metadata/rustc_cfgs.json",
+    file2 = ":rustc_cfgs_generated",
+    # The table records stable's cfgs; nightly prints its unstable ones as well.
+    target_compatible_with = select({
+        "//rust/toolchain/channel:stable": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+source_installer(
+    name = "rustc_cfgs.install",
+    dest = "src/metadata/rustc_cfgs.json",
+    input = ":rustc_cfgs_generated",
 )
 
 filegroup(
@@ -63,6 +105,18 @@ filegroup(
 MSVC_RUSTC_FLAGS = [
     "-Ctarget-feature=+crt-static",
 ]
+
+# Passed to tests through `rustc_env_files` so the triple lists, which grow with
+# every platform `rules_rust` adds, need not fit in the environment of the
+# `rustc` action.
+write_file(
+    name = "platform_triples_env",
+    out = "platform_triples.env",
+    content = [
+        "SUPPORTED_PLATFORM_TRIPLES=" + ",".join(SUPPORTED_PLATFORM_TRIPLES),
+        "SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS=" + ",".join(SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS),
+    ],
+)
 
 rust_library(
     name = "cargo_bazel",
@@ -122,6 +176,9 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//cargo:current_cargo_toolchain)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
+    # Passed through so `RUSTC_TRIPLES_WITH_HOST_TOOLS` is checked against the
+    # `host_tools` bits `rules_rust` tracks.
+    rustc_env_files = [":platform_triples_env"],
     # TODO: `crate_universe` currently does not work on Windows.
     # https://github.com/bazelbuild/rules_rust/issues/1156
     target_compatible_with = select({
@@ -153,6 +210,9 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    # Passed through so the test covers exactly the platforms `rules_rust`
+    # supports.
+    rustc_env_files = [":platform_triples_env"],
     tags = ["requires-network"],
     # TODO: `crate_universe` currently does not work on Windows.
     # https://github.com/bazelbuild/rules_rust/issues/1156

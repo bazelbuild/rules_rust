@@ -94,17 +94,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bindgen-cli"
-version = "0.71.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fded10ca0956afd0cbe5cf89cc71ae1a679e65b8216c651fca17ba7de8ac54dc"
-dependencies = [
- "bindgen",
- "proc-macro2",
- "shlex",
-]
-
-[[package]]
 name = "bitflags"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -196,7 +185,6 @@ name = "direct-cargo-bazel-deps"
 version = "0.0.1"
 dependencies = [
  "bindgen",
- "bindgen-cli",
  "clang-sys",
  "clap",
  "clap_complete",

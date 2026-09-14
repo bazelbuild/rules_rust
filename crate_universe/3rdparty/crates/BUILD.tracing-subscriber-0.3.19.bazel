@@ -126,7 +126,7 @@ rust_library(
         "@cui__sharded-slab-0.1.7//:sharded_slab",
         "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thread_local-1.1.4//:thread_local",
-        "@cui__tracing-core-0.1.33//:tracing_core",
+        "@cui__tracing-core-0.1.36//:tracing_core",
         "@cui__tracing-log-0.2.0//:tracing_log",
     ],
 )

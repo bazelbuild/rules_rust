@@ -120,7 +120,7 @@ rust_library(
     deps = [
         ":build_script_build",
         "@cui__itoa-1.0.8//:itoa",
-        "@cui__memchr-2.6.4//:memchr",
+        "@cui__memchr-2.8.3//:memchr",
         "@cui__serde_core-1.0.229//:serde_core",
         "@cui__zmij-1.0.23//:zmij",
     ],

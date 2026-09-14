@@ -116,7 +116,7 @@ rust_library(
         "@cui__aho-corasick-1.0.2//:aho_corasick",
         "@cui__bstr-1.6.0//:bstr",
         "@cui__fnv-1.0.7//:fnv",
-        "@cui__log-0.4.19//:log",
+        "@cui__log-0.4.35//:log",
         "@cui__regex-1.11.1//:regex",
     ],
 )

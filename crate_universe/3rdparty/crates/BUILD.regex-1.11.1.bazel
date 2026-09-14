@@ -129,7 +129,7 @@ rust_library(
     version = "1.11.1",
     deps = [
         "@cui__aho-corasick-1.0.2//:aho_corasick",
-        "@cui__memchr-2.6.4//:memchr",
+        "@cui__memchr-2.8.3//:memchr",
         "@cui__regex-automata-0.4.8//:regex_automata",
         "@cui__regex-syntax-0.8.5//:regex_syntax",
     ],

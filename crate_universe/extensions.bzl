@@ -623,6 +623,7 @@ def _generate_hub_and_spokes(
             output_pkg = cfg.name,
             workspace_name = cfg.name,
             generate_binaries = cfg.generate_binaries,
+            resolver = cfg.resolver,
             render_config = render_config,
             repository_ctx = module_ctx,
         ),
@@ -1307,6 +1308,7 @@ _FROM_COMMON_ATTRS = {
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
     ),
+    "resolver": CRATES_VENDOR_ATTRS["resolver"],
     "skip_cargo_lockfile_overwrite": attr.bool(
         doc = (
             "Whether to skip writing the cargo lockfile back after resolving. " +

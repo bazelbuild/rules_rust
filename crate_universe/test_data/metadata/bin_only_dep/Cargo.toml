@@ -1,0 +1,15 @@
+[package]
+name = "bin-only-dep"
+version = "0.1.0"
+edition = "2021"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+# `shellharden` ships only a binary. `cargo tree` follows the edge, but
+# `cargo metadata` drops the package with a warning, so the resolver has to
+# report it.
+[dependencies]
+shellharden = "=4.3.2"

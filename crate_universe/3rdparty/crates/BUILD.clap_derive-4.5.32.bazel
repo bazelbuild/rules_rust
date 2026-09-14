@@ -113,8 +113,8 @@ rust_proc_macro(
     version = "4.5.32",
     deps = [
         "@cui__heck-0.5.0//:heck",
-        "@cui__proc-macro2-1.0.92//:proc_macro2",
-        "@cui__quote-1.0.37//:quote",
-        "@cui__syn-2.0.90//:syn",
+        "@cui__proc-macro2-1.0.107//:proc_macro2",
+        "@cui__quote-1.0.47//:quote",
+        "@cui__syn-2.0.119//:syn",
     ],
 )

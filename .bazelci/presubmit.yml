@@ -29,6 +29,10 @@ single_rust_channel_min_version_targets: &single_rust_channel_min_version_target
   # TODO: Figure out how to do proper list inheritance.
   - "--"
   - "//..."
+  # `cargo-bazel` builds against `cargo-ext-resolver`, whose floor is the Rust of
+  # the Cargo it was extracted from (1.98.0), newer than the oldest toolchain the
+  # rules support. Releases ship the binary prebuilt.
+  - "-//crate_universe/..."
   # TODO: Remove this and replace `cargo_bootstrap_repository` with a
   # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
   - "-//crate_universe/tools/cross_installer/..."
@@ -598,10 +602,15 @@ tasks:
       - "//..."
 
   # --- cargo_workspace ---
+  # Each host platform repins and must reproduce the checked-in lockfile byte
+  # for byte: resolution must not depend on the machine it runs on.
   cu_integ_cargo_workspace_ubuntu2204:
     name: Crate Universe - cargo_workspace
     platform: ubuntu2204
     working_directory: crate_universe/tests/integration/cargo_workspace
+    shell_commands:
+      - CARGO_BAZEL_REPIN=true bazel build --nobuild //...
+      - git diff --exit-code -- cargo-bazel-lock.json
     build_targets:
       - "//..."
     test_targets:
@@ -610,6 +619,9 @@ tasks:
     name: Crate Universe - cargo_workspace
     platform: macos_arm64
     working_directory: crate_universe/tests/integration/cargo_workspace
+    shell_commands:
+      - CARGO_BAZEL_REPIN=true bazel build --nobuild //...
+      - git diff --exit-code -- cargo-bazel-lock.json
     build_targets:
       - "//..."
     test_targets:
@@ -618,6 +630,9 @@ tasks:
     name: Crate Universe - cargo_workspace
     platform: windows
     working_directory: crate_universe/tests/integration/cargo_workspace
+    shell_commands:
+      - CARGO_BAZEL_REPIN=true bazel build --nobuild //...
+      - git diff --exit-code -- cargo-bazel-lock.json
     build_targets:
       - "//..."
     test_targets:

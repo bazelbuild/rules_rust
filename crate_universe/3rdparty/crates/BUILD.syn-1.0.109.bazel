@@ -125,9 +125,9 @@ rust_library(
     version = "1.0.109",
     deps = [
         ":build_script_build",
-        "@cui__proc-macro2-1.0.92//:proc_macro2",
-        "@cui__quote-1.0.37//:quote",
-        "@cui__unicode-ident-1.0.10//:unicode_ident",
+        "@cui__proc-macro2-1.0.107//:proc_macro2",
+        "@cui__quote-1.0.47//:quote",
+        "@cui__unicode-ident-1.0.27//:unicode_ident",
     ],
 )
 

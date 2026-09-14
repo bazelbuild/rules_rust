@@ -119,7 +119,7 @@ rust_library(
     version = "4.5.37",
     deps = [
         "@cui__anstream-0.6.18//:anstream",
-        "@cui__anstyle-1.0.10//:anstyle",
+        "@cui__anstyle-1.0.14//:anstyle",
         "@cui__clap_lex-0.7.4//:clap_lex",
         "@cui__strsim-0.11.1//:strsim",
     ],

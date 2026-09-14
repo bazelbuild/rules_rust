@@ -1,5 +1,5 @@
 {
-  "checksum": "613a4e692fff63ebd26faa1ae1119bc03ad135fb63b8e557eb3ffc59e80fde40",
+  "checksum": "74796202538d1a9c70edcc124bd45c365406b209edc84fe0dd65906aa2f89796",
   "conditions": {
     "aarch64-apple-darwin": [
       "aarch64-apple-darwin"
@@ -372,28 +372,9 @@
     "proc-macro2 1.0.106": {
       "build_script_attrs": {},
       "common_attrs": {
-        "crate_features": {
-          "common": [
-            "span-locations"
-          ],
-          "selects": {
-            "aarch64-apple-darwin": [
-              "proc-macro"
-            ],
-            "aarch64-unknown-linux-gnu": [
-              "proc-macro"
-            ],
-            "x86_64-pc-windows-msvc": [
-              "proc-macro"
-            ],
-            "x86_64-unknown-linux-gnu": [
-              "proc-macro"
-            ],
-            "x86_64-unknown-nixos-gnu": [
-              "proc-macro"
-            ]
-          }
-        },
+        "crate_features": [
+          "span-locations"
+        ],
         "deps": [
           {
             "id": "unicode-ident 1.0.11",
@@ -439,26 +420,6 @@
     "quote 1.0.45": {
       "build_script_attrs": {},
       "common_attrs": {
-        "crate_features": {
-          "common": [],
-          "selects": {
-            "aarch64-apple-darwin": [
-              "proc-macro"
-            ],
-            "aarch64-unknown-linux-gnu": [
-              "proc-macro"
-            ],
-            "x86_64-pc-windows-msvc": [
-              "proc-macro"
-            ],
-            "x86_64-unknown-linux-gnu": [
-              "proc-macro"
-            ],
-            "x86_64-unknown-nixos-gnu": [
-              "proc-macro"
-            ]
-          }
-        },
         "deps": [
           {
             "id": "proc-macro2 1.0.106",
@@ -669,36 +630,12 @@
     },
     "syn 2.0.117": {
       "common_attrs": {
-        "crate_features": {
-          "common": [
-            "clone-impls",
-            "full",
-            "parsing",
-            "printing"
-          ],
-          "selects": {
-            "aarch64-apple-darwin": [
-              "derive",
-              "proc-macro"
-            ],
-            "aarch64-unknown-linux-gnu": [
-              "derive",
-              "proc-macro"
-            ],
-            "x86_64-pc-windows-msvc": [
-              "derive",
-              "proc-macro"
-            ],
-            "x86_64-unknown-linux-gnu": [
-              "derive",
-              "proc-macro"
-            ],
-            "x86_64-unknown-nixos-gnu": [
-              "derive",
-              "proc-macro"
-            ]
-          }
-        },
+        "crate_features": [
+          "clone-impls",
+          "full",
+          "parsing",
+          "printing"
+        ],
         "deps": [
           {
             "id": "proc-macro2 1.0.106",

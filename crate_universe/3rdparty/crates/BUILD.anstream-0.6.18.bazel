@@ -114,7 +114,7 @@ rust_library(
     }),
     version = "0.6.18",
     deps = [
-        "@cui__anstyle-1.0.10//:anstyle",
+        "@cui__anstyle-1.0.14//:anstyle",
         "@cui__anstyle-parse-0.2.1//:anstyle_parse",
         "@cui__anstyle-query-1.0.0//:anstyle_query",
         "@cui__colorchoice-1.0.0//:colorchoice",

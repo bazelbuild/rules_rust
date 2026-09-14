@@ -107,6 +107,10 @@ pub(crate) struct SplicingMetadata {
 
     /// The path of a Cargo config file
     pub(crate) cargo_config: Option<CargoConfig>,
+
+    /// The Cargo resolver version used for splicing, which changes what gets
+    /// resolved and so belongs in the lockfile digest.
+    pub(crate) resolver_version: cargo_toml::Resolver,
 }
 
 impl TryFrom<SplicingManifest> for SplicingMetadata {
@@ -145,6 +149,7 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             direct_packages,
             manifests,
             cargo_config,
+            resolver_version: value.resolver_version,
         })
     }
 }
@@ -384,7 +389,7 @@ impl WorkspaceMetadata {
                         unknown => {
                             return Err(anyhow!(
                                 "'{:?}' crate index type is not supported (caused by '{}')",
-                                &unknown,
+                                unknown,
                                 url
                             ));
                         }

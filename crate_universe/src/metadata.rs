@@ -1,9 +1,12 @@
 //! Tools for gathering various kinds of metadata (Cargo.lock, Cargo metadata, Crate Index info).
 
 mod cargo_bin;
+mod cargo_resolver;
 mod cargo_tree_resolver;
 mod dependency;
 mod metadata_annotation;
+pub(crate) mod rustc_cfgs;
+mod tree_resolver_metadata;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -14,9 +17,30 @@ use camino::Utf8Path;
 use tracing::debug;
 
 pub(crate) use self::cargo_bin::*;
-pub(crate) use self::cargo_tree_resolver::*;
+pub(crate) use self::cargo_resolver::*;
 pub(crate) use self::dependency::*;
 pub(crate) use self::metadata_annotation::*;
+pub(crate) use self::tree_resolver_metadata::*;
+
+use crate::config::Resolver;
+use crate::utils::target_triple::TargetTriple;
+
+use std::collections::BTreeSet;
+
+/// Computes feature and dependency metadata for a spliced workspace with the
+/// resolver the config names.
+pub(crate) fn resolve_tree_metadata(
+    cargo_bin: Cargo,
+    manifest_path: &Utf8Path,
+    target_triples: &BTreeSet<TargetTriple>,
+    resolver: Resolver,
+) -> Result<TreeResolverMetadata> {
+    match resolver {
+        Resolver::Cargo => CargoResolver::new(cargo_bin).generate(manifest_path, target_triples),
+        Resolver::CargoTree => cargo_tree_resolver::TreeResolver::new(cargo_bin)
+            .generate(manifest_path, target_triples),
+    }
+}
 
 /// A configuration describing how to invoke [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
 #[derive(Debug, Clone, PartialEq, Eq)]
