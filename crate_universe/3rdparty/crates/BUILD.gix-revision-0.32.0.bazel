@@ -121,6 +121,6 @@ rust_library(
         "@cui__gix-object-0.47.0//:gix_object",
         "@cui__gix-revwalk-0.18.0//:gix_revwalk",
         "@cui__gix-trace-0.1.12//:gix_trace",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

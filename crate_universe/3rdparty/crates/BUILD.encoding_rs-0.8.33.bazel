@@ -112,6 +112,6 @@ rust_library(
     }),
     version = "0.8.33",
     deps = [
-        "@cui__cfg-if-1.0.0//:cfg_if",
+        "@cui__cfg-if-1.0.4//:cfg_if",
     ],
 )

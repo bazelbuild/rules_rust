@@ -110,6 +110,6 @@ rust_library(
     deps = [
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-utils-0.1.14//:gix_utils",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

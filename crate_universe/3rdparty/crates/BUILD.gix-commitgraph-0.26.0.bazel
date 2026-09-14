@@ -113,6 +113,6 @@ rust_library(
         "@cui__gix-features-0.40.0//:gix_features",
         "@cui__gix-hash-0.16.0//:gix_hash",
         "@cui__memmap2-0.9.5//:memmap2",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

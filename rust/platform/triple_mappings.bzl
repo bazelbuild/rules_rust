@@ -26,7 +26,9 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
     "aarch64-unknown-linux-gnu": _support(std = True, host_tools = True),
     "aarch64-unknown-nixos-gnu": _support(std = True, host_tools = True),  # Same as `aarch64-unknown-linux-gnu` but with `@platforms//os:nixos`.
     "i686-apple-darwin": _support(std = True, host_tools = True),
-    "i686-pc-windows-msvc": _support(std = True, host_tools = True),
+    # Rust no longer ships host tools for 32-bit Windows, so this is
+    # "Tier 1 without Host Tools" upstream.
+    "i686-pc-windows-msvc": _support(std = True, host_tools = False),
     "i686-unknown-linux-gnu": _support(std = True, host_tools = True),
     "x86_64-apple-darwin": _support(std = True, host_tools = True),
     "x86_64-pc-windows-msvc": _support(std = True, host_tools = True),
@@ -51,9 +53,9 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-unknown-none": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
-    "arm-unknown-linux-musleabi": _support(std = True, host_tools = True),
+    "arm-unknown-linux-musleabi": _support(std = True, host_tools = False),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
-    "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
+    "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = False),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
     "loongarch64-unknown-linux-gnu": _support(std = True, host_tools = True),
@@ -110,6 +112,18 @@ SUPPORTED_PLATFORM_TRIPLES = sorted(
     list(SUPPORTED_T2_PLATFORM_TRIPLES.keys()) +
     list(SUPPORTED_T3_PLATFORM_TRIPLES.keys()),
 )
+
+# The subset of `SUPPORTED_PLATFORM_TRIPLES` which ship host tools, and so may act
+# as the platform a build executes on.
+SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS = sorted([
+    triple
+    for triple, support in (
+        SUPPORTED_T1_PLATFORM_TRIPLES.items() +
+        SUPPORTED_T2_PLATFORM_TRIPLES.items() +
+        SUPPORTED_T3_PLATFORM_TRIPLES.items()
+    )
+    if support.host_tools
+])
 
 # Represents all platform triples `rules_rust` is configured to handle in some way.
 # Note that with T3 platforms some artifacts may not be available which can lead to

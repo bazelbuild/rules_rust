@@ -33,6 +33,11 @@ impl Cargo {
         }
     }
 
+    /// Returns the path to the `rustc` binary paired with this cargo.
+    pub(crate) fn rustc_path(&self) -> &Path {
+        &self.rustc_path
+    }
+
     /// Returns a new `Command` for running this cargo.
     pub(crate) fn command(&self) -> Result<Command> {
         let mut command = Command::new(&self.path);

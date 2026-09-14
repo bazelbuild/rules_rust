@@ -123,8 +123,8 @@ rust_library(
         "@cui__gix-path-0.10.14//:gix_path",
         "@cui__memmap2-0.9.5//:memmap2",
         "@cui__parking_lot-0.12.1//:parking_lot",
-        "@cui__smallvec-1.15.0//:smallvec",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__smallvec-1.16.0//:smallvec",
+        "@cui__thiserror-2.0.20//:thiserror",
         "@cui__uluru-3.0.0//:uluru",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

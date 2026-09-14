@@ -119,6 +119,6 @@ rust_library(
         "@cui__gix-quote-0.4.15//:gix_quote",
         "@cui__gix-sec-0.10.11//:gix_sec",
         "@cui__gix-url-0.29.0//:gix_url",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

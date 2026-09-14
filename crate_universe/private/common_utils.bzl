@@ -12,6 +12,12 @@ CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 CARGO_BAZEL_TIMEOUT = "CARGO_BAZEL_TIMEOUT"
 REPIN = "REPIN"
 
+# Selects the `guppy` based feature resolver, which is the default. Named for the
+# new behavior and enabled unless explicitly set to a falsey value, following the
+# convention of Bazel's `--incompatible_*` flags. Set it to `0` to fall back to the
+# legacy `cargo tree` based resolver.
+RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER = "RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER"
+
 CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
 
 REPIN_ENV_VARS = [
