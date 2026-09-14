@@ -110,7 +110,7 @@ rust_library(
     deps = [
         "@cui__gix-command-0.4.1//:gix_command",
         "@cui__gix-config-value-0.14.11//:gix_config_value",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__parking_lot-0.12.1//:parking_lot",  # cfg(unix)

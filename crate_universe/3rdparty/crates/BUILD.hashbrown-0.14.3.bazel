@@ -115,7 +115,7 @@ rust_library(
     }),
     version = "0.14.3",
     deps = [
-        "@cui__ahash-0.8.11//:ahash",
+        "@cui__ahash-0.8.12//:ahash",
         "@cui__allocator-api2-0.2.18//:allocator_api2",
     ],
 )

@@ -33,7 +33,10 @@ for d in crate_universe/tests/integration/* examples/cross_compile_musl test/int
 do
   # vendor/ is handled explicitly above via bazel run of crates_vendor targets
   [[ "${d}" == */vendor ]] && continue
-  (cd "${d}" && CARGO_BAZEL_REPIN=true bazel query //... >/dev/null)
+  # Analyze rather than `bazel query //...`: a plain package query only evaluates
+  # `load()` statements, so a workspace whose BUILD files reach the crate repository
+  # purely through labels would never fetch it and would silently not be repinned.
+  (cd "${d}" && CARGO_BAZEL_REPIN=true bazel build --nobuild //...)
 done
 
 # `nix_cross_compiling` special cased as `//...` will invoke Nix.

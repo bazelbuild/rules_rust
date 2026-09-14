@@ -15,8 +15,8 @@ use clap::Parser;
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
+use crate::metadata::resolve_tree_metadata;
 use crate::metadata::CargoUpdateRequest;
-use crate::metadata::TreeResolver;
 use crate::metadata::{Annotations, Cargo, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
@@ -234,6 +234,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // Load the all config files required for splicing a workspace
     let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?
         .resolve(&opt.workspace_dir, &bazel_info.output_base);
+    let incompatible_guppy_resolver = splicing_manifest.incompatible_guppy_resolver;
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
     let temp_dir_path = Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
@@ -263,9 +264,11 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // is sanitized out of the digest hash by `Digest::new`.
     let config = Config::try_from_path(&opt.config)?;
 
-    let resolver_data = TreeResolver::new(cargo.clone()).generate(
+    let resolver_data = resolve_tree_metadata(
+        cargo.clone(),
         manifest_path.as_path_buf(),
         &config.supported_platform_triples,
+        incompatible_guppy_resolver,
     )?;
 
     // Write the registry url info to the manifest now that a lockfile has been generated
