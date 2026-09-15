@@ -372,11 +372,6 @@ rust_prost_aspect = aspect(
             executable = True,
             cfg = "exec",
         ),
-        "_grep_includes": attr.label(
-            allow_single_file = True,
-            default = Label("@bazel_tools//tools/cpp:grep-includes"),
-            cfg = "exec",
-        ),
         "_prost_process_wrapper": attr.label(
             doc = "The wrapper script for the Prost protoc plugin.",
             cfg = "exec",
