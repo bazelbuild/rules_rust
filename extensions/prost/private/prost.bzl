@@ -374,7 +374,7 @@ rust_prost_aspect = aspect(
         ),
         "_grep_includes": attr.label(
             allow_single_file = True,
-            default = Label("@bazel_tools//tools/cpp:grep-includes"),
+            default = Label("@rules_cc//cc/private/toolchain:grep-includes"),
             cfg = "exec",
         ),
         "_prost_process_wrapper": attr.label(
