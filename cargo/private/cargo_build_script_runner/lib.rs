@@ -534,7 +534,9 @@ cargo::include=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
         let buff = Cursor::new(
             "
 cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir
+cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
 cargo::rustc-link-search=/abs/exec_root/other/path
+cargo::rustc-link-search=/abs/exec_root/bazel-out/k8-opt-exec-ST-abcd/bin/external/openssl+/lib
 ",
         );
         let reader = BufReader::new(buff);
@@ -549,8 +551,33 @@ cargo::rustc-link-search=/abs/exec_root/other/path
             CompileAndLinkFlags {
                 compile_flags: "".to_owned(),
                 link_flags: "".to_owned(),
-                link_search_paths: "-L${pwd}/${pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+                link_search_paths:
+                    "-L${pwd}/${pkg/_bs.out_dir}\n-L${pwd}/${pkg/_bs.out_dir}/include\n-L${pwd}/other/path\n-L${pwd}/bazel-out/cfg/bin/external/openssl+/lib".to_owned(),
             }
+        );
+    }
+
+    #[test]
+    fn out_dir_in_flags_is_stable_across_output_configurations() {
+        let flags_for = |configuration: &str| {
+            let input = format!(
+                r"cargo::rustc-link-search=/abs/exec_root/bazel-out/{configuration}/bin/pkg/_bs.out_dir/include
+cargo::rustc-link-search=/abs/exec_root/bazel-out/{configuration}/bin/external/openssl+/lib
+"
+            );
+            let reader = BufReader::new(Cursor::new(input));
+            let result = BuildScriptOutput::outputs_from_reader(reader, true);
+            BuildScriptOutput::outputs_to_flags(
+                &result,
+                "/abs/exec_root",
+                &format!("bazel-out/{configuration}/bin/pkg/_bs.out_dir"),
+                "pkg/_bs.out_dir",
+            )
+        };
+
+        assert_eq!(
+            flags_for("k8-opt-exec-ST-abcd"),
+            flags_for("arm64-opt-exec-ST-efgh")
         );
     }
 }

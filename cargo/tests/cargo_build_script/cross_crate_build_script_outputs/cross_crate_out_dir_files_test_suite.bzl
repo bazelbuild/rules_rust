@@ -15,6 +15,11 @@ def _assert_has_out_dir_subst(env, argv, out_dir_name):
             continue
         parts = argv[i + 1].split("=", 1)
         if len(parts) == 2 and parts[0].endswith(out_dir_name) and parts[1].endswith(out_dir_name):
+            asserts.false(
+                env,
+                parts[0].startswith("bazel-out/"),
+                "Expected stable --subst key, got '{}'".format(parts[0]),
+            )
             return
     asserts.true(
         env,
