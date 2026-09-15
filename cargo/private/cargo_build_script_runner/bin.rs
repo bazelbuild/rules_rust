@@ -77,6 +77,7 @@ fn run_buildrs() -> Result<(), String> {
         progname,
         crate_links,
         out_dir,
+        out_dir_token,
         env_file,
         compile_flags_file,
         link_flags_file,
@@ -247,6 +248,7 @@ fn run_buildrs() -> Result<(), String> {
         &buildrs_outputs,
         &exec_root.to_string_lossy(),
         &out_dir,
+        &out_dir_token,
     );
 
     write(&compile_flags_file, compile_flags.as_bytes())
@@ -417,6 +419,7 @@ struct Args {
     progname: String,
     crate_links: String,
     out_dir: String,
+    out_dir_token: String,
     env_file: String,
     compile_flags_file: String,
     link_flags_file: String,
@@ -436,6 +439,8 @@ impl Args {
         let mut crate_links: Result<String, String> =
             Err("Argument `crate_links` not provided".to_owned());
         let mut out_dir: Result<String, String> = Err("Argument `out_dir` not provided".to_owned());
+        let mut out_dir_token: Result<String, String> =
+            Err("Argument `out_dir_token` not provided".to_owned());
         let mut env_file: Result<String, String> =
             Err("Argument `env_file` not provided".to_owned());
         let mut compile_flags_file: Result<String, String> =
@@ -460,6 +465,8 @@ impl Args {
                 crate_links = Ok(arg.split_off("--links=".len()));
             } else if arg.starts_with("--out_dir=") {
                 out_dir = Ok(arg.split_off("--out_dir=".len()));
+            } else if arg.starts_with("--out_dir_token=") {
+                out_dir_token = Ok(arg.split_off("--out_dir_token=".len()));
             } else if arg.starts_with("--env_out=") {
                 env_file = Ok(arg.split_off("--env_out=".len()));
             } else if arg.starts_with("--flags_out=") {
@@ -489,6 +496,7 @@ impl Args {
             progname: progname.unwrap(),
             crate_links: crate_links.unwrap(),
             out_dir: out_dir.unwrap(),
+            out_dir_token: out_dir_token.unwrap(),
             env_file: env_file.unwrap(),
             compile_flags_file: compile_flags_file.unwrap(),
             link_flags_file: link_flags_file.unwrap(),

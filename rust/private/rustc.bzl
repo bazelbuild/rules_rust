@@ -1164,14 +1164,14 @@ def construct_arguments(
             process_wrapper_flags.add_all(
                 [dep_build_info.out_dir],
                 before_each = "--subst",
-                format_each = dep_build_info.out_dir.path + "=%s",
+                format_each = dep_build_info.out_dir.short_path + "=%s",
                 expand_directories = False,
             )
     if out_dir != None:
         process_wrapper_flags.add_all(
             [out_dir],
             before_each = "--subst",
-            format_each = out_dir.path + "=%s",
+            format_each = out_dir.short_path + "=%s",
             expand_directories = False,
         )
 

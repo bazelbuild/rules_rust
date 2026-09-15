@@ -212,6 +212,7 @@ impl BuildScriptOutput {
         outputs: &[BuildScriptOutput],
         exec_root: &str,
         out_dir: &str,
+        out_dir_token: &str,
     ) -> CompileAndLinkFlags {
         let mut compile_flags = Vec::new();
         let mut link_flags = Vec::new();
@@ -230,11 +231,17 @@ impl BuildScriptOutput {
 
         CompileAndLinkFlags {
             compile_flags: compile_flags.join("\n"),
-            link_flags: Self::redact_flags(&link_flags.join("\n"), exec_root, out_dir),
+            link_flags: Self::redact_flags(
+                &link_flags.join("\n"),
+                exec_root,
+                out_dir,
+                out_dir_token,
+            ),
             link_search_paths: Self::redact_flags(
                 &link_search_paths.join("\n"),
                 exec_root,
                 out_dir,
+                out_dir_token,
             ),
         }
     }
@@ -255,19 +262,34 @@ impl BuildScriptOutput {
         }
     }
 
-    /// Redact for flags (link flags, link search paths): uses the full
-    /// `out_dir` relative path as the substitution key so each build
-    /// script gets a unique token. This avoids collisions when flag files
-    /// are consumed transitively by a target whose `--out-dir` points to
-    /// a different build script. The corresponding `--subst` entries are
-    /// added on the Starlark side for every transitive build info.
-    fn redact_flags(value: &str, exec_root: &str, out_dir: &str) -> String {
+    /// Redact flags with a stable, producer-specific substitution key.
+    /// The key is independent of the Bazel output configuration.
+    fn redact_flags(value: &str, exec_root: &str, out_dir: &str, out_dir_token: &str) -> String {
         let with_pwd = Self::redact_exec_root(value, exec_root);
-        if out_dir.is_empty() {
+        let with_out_dir = if out_dir.is_empty() {
             with_pwd
         } else {
-            with_pwd.replace(out_dir, &format!("${{{out_dir}}}"))
+            with_pwd.replace(out_dir, &format!("${{{out_dir_token}}}"))
+        };
+        Self::redact_output_configuration(&with_out_dir)
+    }
+
+    /// Match Bazel output path mapping, which presents inputs from every
+    /// configuration under the stable `bazel-out/cfg` prefix during execution.
+    fn redact_output_configuration(value: &str) -> String {
+        const BAZEL_OUT: &str = "bazel-out/";
+        let mut parts = value.split(BAZEL_OUT);
+        let mut redacted = parts.next().unwrap_or_default().to_owned();
+        for part in parts {
+            redacted.push_str(BAZEL_OUT);
+            if let Some((_, suffix)) = part.split_once('/') {
+                redacted.push_str("cfg/");
+                redacted.push_str(suffix);
+            } else {
+                redacted.push_str(part);
+            }
         }
+        redacted
     }
 
     // The process-wrapper treats trailing backslashes as escapes for following newlines.
@@ -335,7 +357,7 @@ mod tests {
             "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true".to_owned()
         );
         assert_eq!(
-            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", ""),
+            BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", "", ""),
             CompileAndLinkFlags {
                 // -Lblah was output as a rustc-flags, so even though it probably _should_ be a link
                 // flag, we don't treat it like one.
@@ -505,12 +527,10 @@ cargo::include=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
         );
     }
 
-    /// Link search paths use the full `out_dir` path as the substitution
-    /// key so each build script gets a unique token. This avoids
-    /// collisions when the flag file is consumed transitively by a target
-    /// whose `--out-dir` points to a different build script.
+    /// Link search paths use a stable producer-specific substitution key,
+    /// so different output configurations generate identical flags.
     #[test]
-    fn out_dir_in_flags_uses_full_path_as_substitution_key() {
+    fn out_dir_in_flags_uses_stable_substitution_key() {
         let buff = Cursor::new(
             "
 cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir
@@ -524,12 +544,12 @@ cargo::rustc-link-search=/abs/exec_root/other/path
                 &result,
                 "/abs/exec_root",
                 "bazel-out/cfg/bin/pkg/_bs.out_dir",
+                "pkg/_bs.out_dir",
             ),
             CompileAndLinkFlags {
                 compile_flags: "".to_owned(),
                 link_flags: "".to_owned(),
-                link_search_paths:
-                    "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+                link_search_paths: "-L${pwd}/${pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
             }
         );
     }

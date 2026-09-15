@@ -631,6 +631,7 @@ def _cargo_build_script_impl(ctx):
     args.add(script, format = "--script=%s")
     args.add(links, format = "--links=%s")
     args.add_all([out_dir], format_each = "--out_dir=%s", expand_directories = False)
+    args.add(out_dir.short_path, format = "--out_dir_token=%s")
     args.add(env_out, format = "--env_out=%s")
     args.add(flags_out, format = "--flags_out=%s")
     args.add(link_flags, format = "--link_flags=%s")
