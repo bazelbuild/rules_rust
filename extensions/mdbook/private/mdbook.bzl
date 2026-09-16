@@ -53,7 +53,8 @@ def _mdbook_impl(ctx):
     args.add(output.path)
     args.add(toolchain.mdbook)
     args.add("build")
-    args.add("${{pwd}}/{}".format(ctx.label.package))
+    book_dir = "/".join(_src_dest_path(book).split("/")[:-1])
+    args.add("${{pwd}}/{}".format(book_dir))
 
     ctx.actions.run(
         mnemonic = "MdBookBuild",
