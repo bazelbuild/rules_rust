@@ -932,7 +932,7 @@ _PLATFORM_ATTRS = {
 
 _COVERAGE_ATTRS = {
     "_collect_cc_coverage": attr.label(
-        default = Label("//util/collect_coverage"),
+        default = Label("//rust/coverage:collect_rust_coverage"),
         executable = True,
         cfg = "exec",
     ),
@@ -1308,7 +1308,7 @@ _RUST_BINARY_ATTRS = {
         default = False,
         doc = dedent("""\
             Flag to dynamically link the standard library as a Rust dylib .so object when building this binary.
-            
+
             Default is false. This is often required when building a binary that depends on a Rust ABI dylib.
         """),
     ),
