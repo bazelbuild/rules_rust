@@ -179,9 +179,13 @@ def _generate_cc_link_build_info(ctx, cc_lib):
                 rustc_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
+            elif lib.dynamic_library:
+                rustc_flags.append("-ldylib={}".format(get_lib_name_default(lib.dynamic_library)))
+                linker_search_paths.append(lib.dynamic_library.dirname)
+                compile_data.append(lib.dynamic_library)
 
     if not compile_data:
-        fail("No static libraries found in {}".format(
+        fail("No static or dynamic libraries found in {}".format(
             cc_lib.label,
         ))
 
