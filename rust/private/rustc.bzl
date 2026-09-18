@@ -375,6 +375,157 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
+def _bazel_out_relative_suffix(path):
+    """Returns the config-independent part of a `bazel-out/<config>/bin/...` path.
+
+    Args:
+        path (str): A path, typically a `File.path` or the string
+            `cc_common.get_tool_for_action()` returned.
+
+    Returns:
+        str or None: Everything after `bazel-out/<config>/bin/`, or `None`
+            if `path` isn't shaped like that (e.g. it's not under `bazel-out/`
+            at all, or uses an output root other than `bin`).
+    """
+    parts = path.split("/", 3)
+    if len(parts) == 4 and parts[0] == "bazel-out" and parts[2] == "bin":
+        return parts[3]
+    return None
+
+def _resolve_tool_file(tool_path, files):
+    """Finds the `File` backing a tool path returned by `cc_common.get_tool_for_action()`.
+
+    That function returns a plain string, which Bazel's path mapping
+    (`--experimental_output_paths=strip`) cannot rewrite -- only a path that
+    reaches `Args` as a `File` object is eligible. This recovers the
+    underlying `File` so the caller can pass it back through `Args` instead
+    and regain path mapping, including when the tool lives inside a
+    directory (tree) artifact rather than being its own `File`.
+
+    Only a path under `bazel-out/` can possibly need this: a system-absolute
+    path (the common case -- an auto-configured, non-hermetic toolchain),
+    an external-repository path, and a plain source-tree path are all
+    already configuration-independent, so path mapping has nothing to
+    rewrite for them. Bailing out before scanning `files` keeps this a
+    no-op for every build that isn't using a hermetic, Bazel-generated
+    toolchain.
+
+    An exact match is tried first; on a version where `cc_toolchain`'s own
+    files are reported under a different configuration segment than
+    `tool_path` uses for the very same toolchain (observed against Bazel
+    7.4.1 -- the same toolchain, resolved for two different configurations,
+    e.g. one target-config and one exec-config copy), falls back to
+    matching on the part of the path after `bazel-out/<config>/bin/`. Using
+    the matched `File`'s own path to render the flag either way (not
+    `tool_path`) means whichever configuration Bazel actually materializes
+    that File under is what ends up on the command line, so the two
+    disagreeing on the configuration segment doesn't matter.
+
+    Args:
+        tool_path (str): The exec path returned by `cc_common.get_tool_for_action()`.
+        files (depset[File]): Toolchain files to search, e.g. `cc_toolchain.all_files`.
+
+    Returns:
+        tuple: (File, str or None) -- the matching `File`, and, when the tool lives
+            inside a directory artifact, the relative path beneath it (`None` for an
+            exact match). `(None, None)` when no match is found.
+    """
+    if not tool_path.startswith("bazel-out/"):
+        return None, None
+
+    tool_suffix = _bazel_out_relative_suffix(tool_path)
+
+    best_dir = None
+    suffix_match = None
+    for f in files.to_list():
+        if f.path == tool_path:
+            return f, None
+        if f.is_directory and tool_path.startswith(f.path + "/"):
+            if best_dir == None or len(f.path) > len(best_dir.path):
+                best_dir = f
+        elif not f.is_directory and suffix_match == None and tool_suffix != None:
+            if _bazel_out_relative_suffix(f.path) == tool_suffix:
+                suffix_match = f
+    if best_dir:
+        return best_dir, tool_path[len(best_dir.path) + 1:]
+    if suffix_match:
+        return suffix_match, None
+    return None, None
+
+def _tool_file_path(entry):
+    """`map_each` callback rendering a tool inside a directory artifact.
+
+    `entry` is a `struct(file, suffix)` produced by `_resolve_tool_file`.
+    Accessing `entry.file.path` here (inside `map_each`) is what makes the
+    directory artifact's prefix eligible for Bazel's path mapping; `suffix`
+    is the relative path beneath it, which does not vary by configuration.
+
+    Args:
+        entry (struct): A `struct(file, suffix)` pair.
+
+    Returns:
+        str: `entry`'s full tool path.
+    """
+    return entry.file.path + "/" + entry.suffix
+
+def _wrap_sysroot_link_args(link_args, cc_toolchain):
+    """Wraps a resolvable `--sysroot=<path>` entry for path-mapping-aware rendering.
+
+    `link_args` comes from `cc_common.get_memory_inefficient_command_line()` as
+    plain strings. When a `--sysroot=` value points at a toolchain artifact
+    under `bazel-out/`, wrap it in a `struct` so `_map_each_link_arg` can
+    render it through the underlying `File` (see `_resolve_tool_file`);
+    every other entry, and any entry that fails to resolve, passes through
+    unchanged.
+
+    Args:
+        link_args (list): Flattened linker command line flags.
+        cc_toolchain (CcToolchainInfo or None): The current C++ toolchain, if any.
+
+    Returns:
+        tuple: (list, bool) -- `link_args` with resolvable `--sysroot=`
+            entries wrapped, and whether any of them needed a config-agnostic
+            or directory-relative match rather than an exact one (see
+            `_resolve_tool_file`), signalling to the caller that the
+            broader `cc_toolchain.linker_files()` safety net may be needed.
+    """
+    if not cc_toolchain:
+        return link_args, False
+
+    wrapped = []
+    needs_fallback = False
+    for arg in link_args:
+        if arg.startswith("--sysroot="):
+            path = arg[len("--sysroot="):]
+            matched_file, suffix = _resolve_tool_file(path, cc_toolchain.all_files)
+            if matched_file:
+                effective = matched_file.path if suffix == None else matched_file.path + "/" + suffix
+                if effective != path:
+                    needs_fallback = True
+                wrapped.append(struct(prefix = "--sysroot=", file = matched_file, suffix = suffix))
+                continue
+        wrapped.append(arg)
+    return wrapped, needs_fallback
+
+def _map_each_link_arg(arg):
+    """`map_each` callback for the (mostly plain-string) link args list.
+
+    A plain string passes through unchanged. A `struct(prefix, file, suffix)`
+    from `_wrap_sysroot_link_args` is rendered through `file.path` here,
+    inside `map_each`, so Bazel's path mapping applies to it.
+
+    Args:
+        arg (str or struct): One entry from a `_wrap_sysroot_link_args()` result.
+
+    Returns:
+        str: The flag's value (`format_each` in the caller adds the
+            `--codegen=link-arg=` prefix on top of this).
+    """
+    if type(arg) == "struct":
+        path = arg.file.path if arg.suffix == None else arg.file.path + "/" + arg.suffix
+        return arg.prefix + path
+    return arg
+
 def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
     """Gathers cc_common linker information
 
@@ -391,6 +542,12 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     Returns:
         tuple: A tuple of the following items:
             - (str): The tool path for given action.
+            - (File or struct or None): The linker as a `File` (or, for a tool inside
+              a directory artifact, a `struct(file, suffix)` -- see `_tool_file_path`)
+              for path-mapping-aware rendering, when resolvable. `None` when the tool
+              path could not be associated with a `File` (e.g. a non-hermetic
+              toolchain's absolute system path); callers should fall back to the
+              plain tool-path string in that case.
             - (bool): Whether or not the linker is a direct driver (e.g. `ld`) vs a wrapper (e.g. `gcc`).
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
@@ -398,6 +555,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     user_link_flags = get_cc_user_link_flags(ctx)
 
     ld = None
+    ld_file = None
     ld_is_direct_driver = False
     link_args = []
     link_env = {}
@@ -444,8 +602,20 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         )
         ld_is_direct_driver = False
 
+        # `cc_common.get_tool_for_action()` returns a plain string. Recover the
+        # backing `File`, when there is one, so `--codegen=linker=` can be
+        # passed through `Args` as a `File` and stay eligible for Bazel's path
+        # mapping (see `_resolve_tool_file`). A miss (the common case -- a
+        # non-hermetic toolchain's absolute system path) leaves `ld_file` as
+        # `None` and the caller falls back to the plain string, exactly as
+        # before this change.
+        matched_file, suffix = _resolve_tool_file(ld, cc_toolchain.all_files)
+        if matched_file:
+            ld_file = matched_file if suffix == None else struct(file = matched_file, suffix = suffix)
+
     if not ld or toolchain.linker_preference == "rust":
-        ld = toolchain.linker.path
+        ld_file = toolchain.linker
+        ld = ld_file.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
 
         # Make sure we include RPATHs for Rust ABI dylibs even when no cc_toolchain.
@@ -516,7 +686,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             for element in link_env["LIB"].split(";")
         ])
 
-    return ld, ld_is_direct_driver, link_args, link_env
+    return ld, ld_file, ld_is_direct_driver, link_args, link_env
 
 def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -1191,6 +1361,15 @@ def construct_arguments(
     # greater than 1) is used.
     map_flag = _remove_codegen_units if _will_emit_object_file(emit) else None
 
+    # Files resolved by `_resolve_tool_file` for path-mapping-aware rendering
+    # (the linker and any --sysroot= it needed): these reach the action's
+    # command line through `Args`, which does not by itself register a File
+    # as an action input. `collect_inputs`'s own `cc_toolchain.linker_files()`
+    # has not proven a reliable source for these specifically (see #4250),
+    # so they are tracked explicitly and merged into `compile_inputs` by the
+    # caller instead.
+    extra_action_inputs = []
+
     # Rustc arguments
     rustc_flags = ctx.actions.args()
     rustc_flags.set_param_file_format("multiline")
@@ -1349,7 +1528,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
+            ld, ld_file, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
                 ctx,
                 crate_info.type,
                 toolchain,
@@ -1360,11 +1539,46 @@ def construct_arguments(
             )
 
             env.update(link_env)
-            rustc_flags.add(ld, format = "--codegen=linker=%s")
+            needs_linker_files_fallback = False
+            if ld_file == None:
+                rustc_flags.add(ld, format = "--codegen=linker=%s")
+            elif type(ld_file) == "File":
+                rustc_flags.add(ld_file, format = "--codegen=linker=%s")
+                extra_action_inputs.append(ld_file)
+                needs_linker_files_fallback = ld_file.path != ld
+            else:
+                rustc_flags.add_all([ld_file], map_each = _tool_file_path, format_each = "--codegen=linker=%s")
+                extra_action_inputs.append(ld_file.file)
+                needs_linker_files_fallback = (ld_file.file.path + "/" + ld_file.suffix) != ld
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574
-            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
+            wrapped_link_args, sysroot_needs_fallback = _wrap_sysroot_link_args(link_args, cc_toolchain)
+            for wrapped_arg in wrapped_link_args:
+                if type(wrapped_arg) == "struct":
+                    extra_action_inputs.append(wrapped_arg.file)
+            rustc_flags.add_all(
+                wrapped_link_args,
+                map_each = _map_each_link_arg,
+                format_each = "--codegen=link-arg=%s",
+            )
+
+            # Belt-and-suspenders: `collect_inputs`' own
+            # `cc_toolchain.linker_files()` inclusion has not proven
+            # reliable on every supported Bazel version (see #4250's PR
+            # history). An *exact* match (the common case for a hermetic
+            # toolchain, and the only case exercised on most Bazel versions)
+            # has proven sufficient on its own; the extra flatten here is
+            # for the specific case a resolution had to fall back to a
+            # config-agnostic or directory-relative match instead --
+            # `ld_file`/a --sysroot= File's own path landing on something
+            # other than the original string is exactly that signal.
+            if cc_toolchain and (needs_linker_files_fallback or sysroot_needs_fallback):
+                # Same version-compat access pattern as collect_inputs() above.
+                if hasattr(cc_toolchain, "_linker_files"):
+                    extra_action_inputs.extend(cc_toolchain._linker_files.to_list())
+                else:
+                    extra_action_inputs.extend(cc_toolchain.linker_files().to_list())
 
             if remap_path_prefix != None and _should_add_oso_prefix(
                 toolchain,
@@ -1587,6 +1801,7 @@ def construct_arguments(
         extra_rustc_flags = rust_flags_args,
         supports_path_mapping = not target_has_location_expansion,
         all = all_args,
+        extra_action_inputs = extra_action_inputs,
     )
 
     return args, env
@@ -1955,11 +2170,18 @@ def rustc_compile_action(
     if use_split_debuginfo:
         action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
+    # `args`/`args_metadata` (built by construct_arguments) may reference a
+    # resolved linker or --sysroot= File that `compile_inputs` (built earlier
+    # by collect_inputs, from the same cc_toolchain) does not reliably carry
+    # -- see the extra_action_inputs comment in construct_arguments. Merge
+    # them in here rather than depend on that path.
+    compile_inputs_for_action = depset(args.extra_action_inputs, transitive = [compile_inputs]) if args.extra_action_inputs else compile_inputs
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
-            inputs = compile_inputs,
+            inputs = compile_inputs_for_action,
             outputs = action_outputs,
             env = env,
             arguments = args.all,
@@ -1976,9 +2198,10 @@ def rustc_compile_action(
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
         if args_metadata:
+            compile_inputs_for_metadata = depset(args_metadata.extra_action_inputs, transitive = [compile_inputs]) if args_metadata.extra_action_inputs else compile_inputs
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
-                inputs = compile_inputs,
+                inputs = compile_inputs_for_metadata,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,
@@ -1999,7 +2222,7 @@ def rustc_compile_action(
             fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
         ctx.actions.run(
             executable = ctx.executable._bootstrap_process_wrapper,
-            inputs = compile_inputs,
+            inputs = compile_inputs_for_action,
             outputs = action_outputs,
             env = env,
             arguments = [args.rustc_path, args.rustc_flags],

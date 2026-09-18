@@ -1,0 +1,90 @@
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load("//rust:defs.bzl", "rust_binary")
+load(":path_mapped_linker_test.bzl", "fake_cc_config", "linker_is_path_mappable_test")
+
+genrule(
+    name = "gen_fake_linker",
+    srcs = ["fake_gcc_template.sh"],
+    outs = ["fake_gcc"],
+    cmd = "cp $(location :fake_gcc_template.sh) $@ && chmod +x $@",
+    executable = True,
+)
+
+genrule(
+    name = "gen_fake_sysroot",
+    outs = ["fake_sysroot"],
+    cmd = "echo 'not a real sysroot' > $@",
+)
+
+filegroup(
+    name = "fake_linker_files",
+    srcs = [
+        ":gen_fake_linker",
+        ":gen_fake_sysroot",
+    ],
+)
+
+filegroup(
+    name = "empty",
+    srcs = [],
+)
+
+fake_cc_config(
+    name = "fake_cc_toolchain_config",
+    linker = ":gen_fake_linker",
+    sysroot = ":gen_fake_sysroot",
+)
+
+cc_toolchain(
+    name = "fake_cc_toolchain_impl",
+    all_files = ":fake_linker_files",
+    compiler_files = ":fake_linker_files",
+    linker_files = ":fake_linker_files",
+    dwp_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 0,
+    toolchain_config = ":fake_cc_toolchain_config",
+    toolchain_identifier = "path-mapped-fake-cc",
+)
+
+# Scopes `fake_cc_toolchain` so it can only ever be selected for this
+# package's own test target, never for an unrelated build elsewhere in the
+# graph (e.g. util/process_wrapper, a Rust tool this fake linker would
+# silently "link" -- it creates its declared output but never actually
+# links anything). `--extra_toolchains` alone makes a toolchain a candidate
+# everywhere a matching, unconstrained toolchain_type is requested;
+# target_compatible_with -- satisfied only by :fake_platform, which nothing
+# else builds under -- is what actually excludes it from every other
+# target's toolchain resolution.
+constraint_setting(name = "fake_toolchain_marker_setting")
+
+constraint_value(
+    name = "fake_toolchain_marker",
+    constraint_setting = ":fake_toolchain_marker_setting",
+)
+
+platform(
+    name = "fake_platform",
+    constraint_values = [":fake_toolchain_marker"],
+    parents = ["@platforms//host:host"],
+)
+
+toolchain(
+    name = "fake_cc_toolchain",
+    target_compatible_with = [":fake_toolchain_marker"],
+    toolchain = ":fake_cc_toolchain_impl",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+rust_binary(
+    name = "bin",
+    edition = "2018",
+    srcs = ["main.rs"],
+    tags = ["manual", "nobuild"],
+)
+
+linker_is_path_mappable_test(
+    name = "path_mapped_linker_test",
+    target_under_test = ":bin",
+)
