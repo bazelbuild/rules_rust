@@ -1,0 +1,3 @@
+load(":strip_level_select_test.bzl", "strip_level_select_test_suite")
+
+strip_level_select_test_suite(name = "strip_level_select_test_suite")
