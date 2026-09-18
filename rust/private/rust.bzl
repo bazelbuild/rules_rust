@@ -420,6 +420,22 @@ def get_rust_test_flags(attr):
 
     return rust_flags
 
+def _is_junit_enabled(ctx):
+    """Resolve whether the JUnit XML wrapper should be applied to this test.
+
+    Tri-state, mirroring `experimental_use_cc_common_link`:
+      * `experimental_junit = 1`  -> always wrap this target.
+      * `experimental_junit = 0`  -> never wrap this target.
+      * `experimental_junit = -1` (default) -> defer to the
+        `//rust/settings:experimental_emit_junit_xml` build setting.
+    """
+    junit_attr = ctx.attr.experimental_junit
+    if junit_attr == 1:
+        return True
+    if junit_attr == 0:
+        return False
+    return ctx.attr._experimental_emit_junit_xml[BuildSettingInfo].value
+
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule.
 
@@ -619,6 +635,39 @@ def _rust_test_impl(ctx):
         env["CC_CODE_COVERAGE_SCRIPT"] = ctx.executable._collect_cc_coverage.path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+
+    if _is_junit_enabled(ctx):
+        test_bin_short = output.short_path
+        if test_bin_short.startswith("../"):
+            rust_test_bin_rloc = test_bin_short[len("../"):]
+        else:
+            rust_test_bin_rloc = ctx.workspace_name + "/" + test_bin_short
+        env["RUST_TEST_BIN"] = rust_test_bin_rloc
+
+        # RUST_TEST_BIN above is a runfiles path and only resolves against
+        # RUNFILES_DIR. Coverage postprocessing may run with RUNFILES_DIR
+        # unset (--experimental_split_coverage_postprocessing), so also hand
+        # over the binary's execroot-relative path directly instead of making
+        # collect_coverage reconstruct it.
+        env["RUST_TEST_BIN_EXECROOT_PATH"] = output.path
+
+        junit_runner = ctx.actions.declare_file(ctx.label.name + "_junit_runner" + toolchain.binary_ext)
+        ctx.actions.symlink(
+            output = junit_runner,
+            target_file = ctx.executable._junit_runner,
+            is_executable = True,
+        )
+
+        original_default_info = providers[0]
+        runner_runfiles = ctx.attr._junit_runner[DefaultInfo].default_runfiles
+        test_bin_runfiles = ctx.runfiles(files = [output])
+        merged_runfiles = original_default_info.default_runfiles.merge(runner_runfiles).merge(test_bin_runfiles)
+        providers[0] = DefaultInfo(
+            files = original_default_info.files,
+            runfiles = merged_runfiles,
+            executable = junit_runner,
+        )
+
     providers.append(RunEnvironmentInfo(
         environment = env,
         inherited_environment = ctx.attr.env_inherit,
@@ -1025,6 +1074,33 @@ _RUST_TEST_ATTRS = {
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
+    ),
+    "experimental_junit": attr.int(
+        doc = (
+            "Experimental. Whether to wrap the test binary with a runner that emits a " +
+            "JUnit XML report parsed from the test's `libtest` output. " +
+            "Possible values: [-1, 0, 1]. " +
+            "-1 means use the value of the " +
+            "`--@rules_rust//rust/settings:experimental_emit_junit_xml` build setting to determine. " +
+            "0 means do not wrap the test (run it directly). " +
+            "1 means wrap the test and emit JUnit XML."
+        ),
+        values = [-1, 0, 1],
+        default = -1,
+    ),
+    "_experimental_emit_junit_xml": attr.label(
+        default = Label("//rust/settings:experimental_emit_junit_xml"),
+        doc = "The build setting consulted when `experimental_junit = -1`.",
+    ),
+    "_junit_runner": attr.label(
+        default = Label("//util/junit_runner"),
+        executable = True,
+        # Built for the exec platform, like the other test-support tools
+        # (process_wrapper, collect_coverage). This keeps the runner off the
+        # target configuration, so it doesn't inherit target-only settings such
+        # as a custom #[global_allocator] or cc_common.link, which it has no way
+        # to satisfy and which would otherwise fail to link.
+        cfg = "exec",
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 

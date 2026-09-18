@@ -1,0 +1,19 @@
+load("//rust:defs.bzl", "rust_test")
+
+# Force the JUnit wrapper on regardless of the
+# //rust/settings:experimental_emit_junit_xml build setting, so this coverage
+# runs even when the (default-off) setting is not enabled.
+rust_test(
+    name = "junit_test",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    experimental_junit = 1,
+)
+
+# Force the JUnit wrapper off regardless of the build setting.
+rust_test(
+    name = "no_junit_test",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    experimental_junit = 0,
+)
