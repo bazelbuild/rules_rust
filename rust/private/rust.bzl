@@ -420,6 +420,22 @@ def get_rust_test_flags(attr):
 
     return rust_flags
 
+def _is_junit_enabled(ctx):
+    """Resolve whether the JUnit XML wrapper should be applied to this test.
+
+    Tri-state, mirroring `experimental_use_cc_common_link`:
+      * `experimental_junit = 1`  -> always wrap this target.
+      * `experimental_junit = 0`  -> never wrap this target.
+      * `experimental_junit = -1` (default) -> defer to the
+        `//rust/settings:experimental_emit_junit_xml` build setting.
+    """
+    junit_attr = ctx.attr.experimental_junit
+    if junit_attr == 1:
+        return True
+    if junit_attr == 0:
+        return False
+    return ctx.attr._experimental_emit_junit_xml[BuildSettingInfo].value
+
 def _rust_test_impl(ctx):
     """The implementation of the `rust_test` rule.
 
@@ -620,7 +636,7 @@ def _rust_test_impl(ctx):
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
-    if ctx.attr.junit:
+    if _is_junit_enabled(ctx):
         test_bin_short = output.short_path
         if test_bin_short.startswith("../"):
             rust_test_bin_rloc = test_bin_short[len("../"):]
@@ -1059,16 +1075,22 @@ _RUST_TEST_ATTRS = {
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
     ),
-    "junit": attr.bool(
-        default = True,
-        doc = dedent("""\
-            If True (default), wrap the test binary with a JUnit XML runner that
-            parses libtest output and writes JUnit XML to `$XML_OUTPUT_FILE` when
-            run under `bazel test`. When `$XML_OUTPUT_FILE` is not set (e.g.
-            `bazel run`), the runner execs the test binary directly with zero
-            overhead. Set to False to bypass the wrapper entirely (useful for
-            debugging or attaching a debugger).
-        """),
+    "experimental_junit": attr.int(
+        doc = (
+            "Experimental. Whether to wrap the test binary with a runner that emits a " +
+            "JUnit XML report parsed from the test's `libtest` output. " +
+            "Possible values: [-1, 0, 1]. " +
+            "-1 means use the value of the " +
+            "`--@rules_rust//rust/settings:experimental_emit_junit_xml` build setting to determine. " +
+            "0 means do not wrap the test (run it directly). " +
+            "1 means wrap the test and emit JUnit XML."
+        ),
+        values = [-1, 0, 1],
+        default = -1,
+    ),
+    "_experimental_emit_junit_xml": attr.label(
+        default = Label("//rust/settings:experimental_emit_junit_xml"),
+        doc = "The build setting consulted when `experimental_junit = -1`.",
     ),
     "_junit_runner": attr.label(
         default = Label("//util/junit_runner"),

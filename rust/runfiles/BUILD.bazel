@@ -20,8 +20,9 @@ rust_test(
     # the repo mapping that rlocation! resolves against. The junit wrapper runs
     # the test as a child under the wrapper's runfiles, which is a different
     # ambient environment than the one being asserted on, so the runfiles
-    # library's own tests need to run unwrapped.
-    junit = False,
+    # library's own tests need to run unwrapped. Force off even if the
+    # //rust/settings:experimental_emit_junit_xml build setting is enabled.
+    experimental_junit = 0,
 )
 
 rust_doc(

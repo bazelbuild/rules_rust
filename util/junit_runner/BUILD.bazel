@@ -16,5 +16,7 @@ rust_test(
     name = "junit_runner_test",
     srcs = ["junit_runner.rs"],
     edition = "2021",
-    junit = False,
+    # The runner must not wrap its own unit tests. Force off regardless of the
+    # //rust/settings:experimental_emit_junit_xml build setting.
+    experimental_junit = 0,
 )

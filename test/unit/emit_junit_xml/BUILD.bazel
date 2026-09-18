@@ -1,0 +1,4 @@
+load(":emit_junit_xml_test.bzl", "emit_junit_xml_test_suite")
+
+############################ UNIT TESTS #############################
+emit_junit_xml_test_suite(name = "emit_junit_xml_test_suite")
