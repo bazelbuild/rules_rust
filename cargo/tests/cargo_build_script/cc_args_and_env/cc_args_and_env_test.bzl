@@ -24,6 +24,22 @@ _EXPECTED_CC_TOOLCHAIN_TOOLS = {
 def _test_cc_config_impl(ctx):
     features = [
         feature(
+            name = "user_compile_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = ACTION_NAME_GROUPS.all_cc_compile_actions,
+                    flag_groups = [
+                        flag_group(
+                            flags = ["%{user_compile_flags}"],
+                            iterate_over = "user_compile_flags",
+                            expand_if_available = "user_compile_flags",
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        feature(
             name = "default_compiler_flags",
             enabled = True,
             flag_sets = [
@@ -243,6 +259,13 @@ def _cc_args_and_env_analysis_test_impl(ctx):
                 "error: expected '{}' to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
             )
 
+    for env_var, forbidden_flags in {
+        "CFLAGS": ctx.attr.forbidden_cflags,
+        "CXXFLAGS": ctx.attr.forbidden_cxxflags,
+    }.items():
+        for flag in forbidden_flags:
+            asserts.false(env, flag in cargo_action.env[env_var].split(" "), "{} must not contain {}".format(env_var, flag))
+
     arflags = cargo_action.env["ARFLAGS"]
     asserts.equals(
         env,
@@ -264,15 +287,19 @@ def _cc_args_and_env_analysis_test_impl(ctx):
 
     return analysistest.end(env)
 
+_CC_ARGS_AND_ENV_TEST_ATTRS = {
+    "expected_cflags": attr.string_list(default = ["-Wall"]),
+    "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
+    "expected_include": attr.string(default = ""),
+    "legacy_cc_toolchain": attr.bool(default = False),
+    "forbidden_cflags": attr.string_list(),
+    "forbidden_cxxflags": attr.string_list(),
+}
+
 cc_args_and_env_analysis_test = analysistest.make(
     impl = _cc_args_and_env_analysis_test_impl,
     doc = """An analysistest to examine the custom cargo flags of an cargo_build_script target.""",
-    attrs = {
-        "expected_cflags": attr.string_list(default = ["-Wall"]),
-        "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
-        "expected_include": attr.string(default = ""),
-        "legacy_cc_toolchain": attr.bool(default = False),
-    },
+    attrs = _CC_ARGS_AND_ENV_TEST_ATTRS,
 )
 
 def cargo_build_script_with_extra_cc_compile_flags(
@@ -770,4 +797,26 @@ def direct_libs_as_flag_operand_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["-imacros", "${pwd}/test/relative/libfoo.a", "-B", "${pwd}/test/relative/obj.o"],
+    )
+
+user_compile_flags_analysis_test = analysistest.make(
+    impl = _cc_args_and_env_analysis_test_impl,
+    attrs = _CC_ARGS_AND_ENV_TEST_ATTRS,
+    config_settings = {
+        "//command_line_option:copt": ["-DUSER_COMMON"],
+        "//command_line_option:conlyopt": ["-DUSER_C_ONLY"],
+        "//command_line_option:cxxopt": ["-DUSER_CXX_ONLY"],
+    },
+)
+
+def user_compile_flags_test(name):
+    """Check common and language-specific user flags in build script environments."""
+    cargo_build_script_with_extra_cc_compile_flags(name = name + "/cargo_build_script")
+    user_compile_flags_analysis_test(
+        name = name,
+        target_under_test = name + "/cargo_build_script",
+        expected_cflags = ["-Wall", "-DUSER_COMMON", "-DUSER_C_ONLY"],
+        expected_cxxflags = ["-fno-rtti", "-DUSER_COMMON", "-DUSER_CXX_ONLY"],
+        forbidden_cflags = ["-DUSER_CXX_ONLY"],
+        forbidden_cxxflags = ["-DUSER_C_ONLY"],
     )

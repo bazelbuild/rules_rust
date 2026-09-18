@@ -64,10 +64,11 @@ rather than going through this rule.
     executable = True,
 )
 
-def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
+def get_cc_compile_args_and_env(ctx, cc_toolchain, feature_configuration):
     """Gather cc environment variables from the given `cc_toolchain`
 
     Args:
+        ctx (ctx): The current rule's context.
         cc_toolchain (cc_toolchain): The current rule's `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
 
@@ -77,24 +78,30 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
             - (sequence): A flattened list of CXX command line flags.
             - (dict): C environment variables to be set for this configuration.
     """
-    compile_variables = cc_common.create_compile_variables(
+    c_compile_variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
+        user_compile_flags = ctx.fragments.cpp.copts + ctx.fragments.cpp.conlyopts,
+    )
+    cxx_compile_variables = cc_common.create_compile_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        user_compile_flags = ctx.fragments.cpp.copts + ctx.fragments.cpp.cxxopts,
     )
     cc_c_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
-        variables = compile_variables,
+        variables = c_compile_variables,
     )
     cc_cxx_args = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.cpp_compile,
-        variables = compile_variables,
+        variables = cxx_compile_variables,
     )
     cc_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
-        variables = compile_variables,
+        variables = c_compile_variables,
     )
     return cc_c_args, cc_cxx_args, cc_env
 
@@ -523,7 +530,7 @@ def _cargo_build_script_impl(ctx):
 
     if cc_toolchain:
         # MSVC requires INCLUDE to be set
-        cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
+        cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(ctx, cc_toolchain, feature_configuration)
         include = cc_env.get("INCLUDE")
         if include:
             if toolchain.exec_triple.str.find("windows") > 0:
