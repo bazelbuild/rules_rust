@@ -43,7 +43,7 @@ const CACHE_DIR_REL_PREFIX: &str = ".rules_rust_analyzer";
 /// unchanged workspace would keep serving JSON assembled by an older
 /// version of the assembler. See the explanatory comment on
 /// `compute_key` for the incident that motivated this.
-const CACHE_SCHEMA_VERSION: u32 = 1;
+const CACHE_SCHEMA_VERSION: u32 = 2;
 
 /// Compute the cache key for an assembled rust-project.json from the raw
 /// spec contents plus every auxiliary input the assembler bakes into its
@@ -60,6 +60,7 @@ pub fn compute_key(
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
     launcher_dir: &str,
+    local_override_roots: &[Utf8PathBuf],
 ) -> String {
     let mut hasher = DefaultHasher::new();
     CACHE_SCHEMA_VERSION.hash(&mut hasher);
@@ -67,6 +68,13 @@ pub fn compute_key(
     workspace.as_str().hash(&mut hasher);
     execution_root.as_str().hash(&mut hasher);
     toolchain_info.hash(&mut hasher);
+    // Adding or removing a module override changes workspace membership in
+    // the assembled JSON without necessarily changing any crate spec (the
+    // canonical repo name — and thus every path — can stay identical), so
+    // the override set must invalidate the cache on its own.
+    for root in local_override_roots {
+        root.as_str().hash(&mut hasher);
+    }
     // Hashed because `flycheck_launcher_path` in `rust_project.rs` reads
     // `$RULES_RUST_RA_LAUNCHER_DIR` to bake an absolute path into the
     // assembled JSON. If we left this out, switching editors
@@ -171,8 +179,8 @@ mod tests {
                 String::from("{\"id\":\"b\"}"),
             ),
         ];
-        let k1 = compute_key(&specs, toolchain, bazel, ws, er, "");
-        let k2 = compute_key(&specs, toolchain, bazel, ws, er, "");
+        let k1 = compute_key(&specs, toolchain, bazel, ws, er, "", &[]);
+        let k2 = compute_key(&specs, toolchain, bazel, ws, er, "", &[]);
         assert_eq!(k1, k2);
     }
 
@@ -185,8 +193,8 @@ mod tests {
         let base = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         let mutated = vec![(Utf8PathBuf::from("a.json"), "b".to_string())];
         assert_ne!(
-            compute_key(&base, toolchain, bazel, ws, er, ""),
-            compute_key(&mutated, toolchain, bazel, ws, er, "")
+            compute_key(&base, toolchain, bazel, ws, er, "", &[]),
+            compute_key(&mutated, toolchain, bazel, ws, er, "", &[])
         );
     }
 
@@ -197,8 +205,8 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er, ""),
-            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er, ""),
+            compute_key(&specs, "{\"sysroot\":\"a\"}", bazel, ws, er, "", &[]),
+            compute_key(&specs, "{\"sysroot\":\"b\"}", bazel, ws, er, "", &[]),
         );
     }
 
@@ -208,8 +216,8 @@ mod tests {
         let er = Utf8Path::new("/er");
         let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
         assert_ne!(
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er, ""),
-            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er, ""),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws1"), er, "", &[]),
+            compute_key(&specs, "{}", bazel, Utf8Path::new("/ws2"), er, "", &[]),
         );
     }
 
@@ -231,6 +239,7 @@ mod tests {
                 ws,
                 er,
                 "/ws/.vscode/.rules_rust_analyzer",
+                &[],
             ),
             compute_key(
                 &specs,
@@ -239,6 +248,30 @@ mod tests {
                 ws,
                 er,
                 "/ws/.helix/.rules_rust_analyzer",
+                &[],
+            ),
+        );
+    }
+
+    #[test]
+    fn compute_key_changes_with_override_roots() {
+        // Adding/removing a module override can leave every crate spec
+        // byte-identical (the canonical repo name doesn't change), so the
+        // override set must invalidate the cache by itself.
+        let bazel = Utf8Path::new("/usr/bin/bazel");
+        let ws = Utf8Path::new("/ws");
+        let er = Utf8Path::new("/er");
+        let specs = vec![(Utf8PathBuf::from("a.json"), "a".to_string())];
+        assert_ne!(
+            compute_key(&specs, "{}", bazel, ws, er, "", &[]),
+            compute_key(
+                &specs,
+                "{}",
+                bazel,
+                ws,
+                er,
+                "",
+                &[Utf8PathBuf::from("/ob/external/mypkg+")],
             ),
         );
     }
