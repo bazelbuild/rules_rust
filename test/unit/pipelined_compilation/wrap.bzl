@@ -79,10 +79,11 @@ def _wrap_impl(ctx):
             edition = "2018",
             compile_data = depset([]),
             compile_data_targets = depset([]),
-            rustc_env = {},
+            rustc_env = ctx.attr.rustc_env,
             is_test = False,
         ),
         output_hash = output_hash,
+        skip_expanding_rustc_env = ctx.attr.skip_expanding_rustc_env,
     )
 
 wrap = rule(
@@ -90,6 +91,8 @@ wrap = rule(
     attrs = {
         "crate_name": attr.string(),
         "generate_metadata": attr.bool(default = False),
+        "rustc_env": attr.string_dict(),
+        "skip_expanding_rustc_env": attr.bool(),
         "target": attr.label(),
         "_always_enable_metadata_output_groups": attr.label(
             default = Label("//rust/settings:always_enable_metadata_output_groups"),

@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_env_value", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
 load(":wrap.bzl", "wrap")
 
 ENABLE_PIPELINING = {
@@ -258,6 +258,32 @@ def _custom_rule_test(generate_metadata, suffix):
         ":rmeta_is_used_when_building_custom_rule_test" + suffix,
     ]
 
+def _unexpanded_rustc_env_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    rust_actions = [act for act in tut.actions if act.mnemonic in ("Rustc", "RustcMetadata")]
+    asserts.equals(env, 2, len(rust_actions))
+    for action in rust_actions:
+        assert_env_value(env, action, "LITERAL", "$(not_a_make_variable)")
+    return analysistest.end(env)
+
+unexpanded_rustc_env_test = analysistest.make(_unexpanded_rustc_env_test_impl, config_settings = ENABLE_PIPELINING)
+
+def _unexpanded_rustc_env_test():
+    wrap(
+        name = "wrapper_unexpanded_env",
+        target = ":to_wrap_with_metadata",
+        generate_metadata = True,
+        rustc_env = {"LITERAL": "$(not_a_make_variable)"},
+        skip_expanding_rustc_env = True,
+    )
+    unexpanded_rustc_env_test(
+        name = "unexpanded_rustc_env_test",
+        target_under_test = ":wrapper_unexpanded_env",
+        target_compatible_with = _NO_WINDOWS,
+    )
+    return [":unexpanded_rustc_env_test"]
+
 def pipelined_compilation_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -269,6 +295,7 @@ def pipelined_compilation_test_suite(name):
     tests.extend(_disable_pipelining_test())
     tests.extend(_custom_rule_test(generate_metadata = True, suffix = "_with_metadata"))
     tests.extend(_custom_rule_test(generate_metadata = False, suffix = "_without_metadata"))
+    tests.extend(_unexpanded_rustc_env_test())
 
     native.test_suite(
         name = name,
