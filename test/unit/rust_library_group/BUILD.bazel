@@ -1,0 +1,3 @@
+load(":rust_library_group_test.bzl", "rust_library_group_test_suite")
+
+rust_library_group_test_suite(name = "rust_library_group_test_suite")
