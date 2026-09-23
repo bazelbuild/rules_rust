@@ -1125,8 +1125,20 @@ def construct_arguments(
         # `expand_directories = False` because rustdoc's `crate_info.output` is
         # a declared directory (the HTML tree) — we want its dirname, not its
         # contents.
+
+        # Certain derived targets like rust_doc_test specify outputs that are
+        # not necessarily within the same directory as where the Cargo manifest
+        # would be (i.e. the same package, based on the assumption we also
+        # make for the source-root branch above).  We hack around by forwarding
+        # the original crate's output file which matches our assumptions.
+        # Ideally, we'd know what the manifest is, optionally transform it, and
+        # use its dirname directly in both cases.
+        manifest_anchor = crate_info.crate_output
+        if manifest_anchor == None:
+            manifest_anchor = crate_info.output
+
         process_wrapper_flags.add_all(
-            [crate_info.output],
+            [manifest_anchor],
             before_each = "--subst",
             format_each = "cargo_manifest_dir=%s",
             map_each = _get_dirname,
