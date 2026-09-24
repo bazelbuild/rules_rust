@@ -18,9 +18,49 @@ NOT_MACOS = select({
     "//conditions:default": [],
 })
 
+def _with_link_settings_transition_impl(_settings, attr):
+    return {
+        "//command_line_option:action_env": attr.action_env,
+        "//command_line_option:linkopt": attr.linkopts,
+    }
+
+with_link_settings_transition = transition(
+    implementation = _with_link_settings_transition_impl,
+    inputs = [],
+    outputs = [
+        "//command_line_option:action_env",
+        "//command_line_option:linkopt",
+    ],
+)
+
+DepActionsInfo = provider(
+    "Contains information about dependencies actions.",
+    fields = {"actions": "List[Action]"},
+)
+
+def _with_link_settings_impl(ctx):
+    # Only the actions are forwarded. The `-target` flag under test is not one
+    # every host linker accepts, and `bazel coverage` builds the runfiles of a
+    # test's dependencies, so the transitioned binary must never be linked.
+    return [
+        DepActionsInfo(actions = ctx.attr.target[0].actions),
+        # Without this, coverage walks every dependency attribute for
+        # instrumented files and builds the transitioned binary after all.
+        coverage_common.instrumented_files_info(ctx, dependency_attributes = []),
+    ]
+
+with_link_settings = rule(
+    implementation = _with_link_settings_impl,
+    attrs = {
+        "action_env": attr.string_list(),
+        "linkopts": attr.string_list(),
+        "target": attr.label(cfg = with_link_settings_transition),
+    },
+)
+
 def _rustc_action(env):
     target = analysistest.target_under_test(env)
-    actions = [action for action in target.actions if action.mnemonic == "Rustc"]
+    actions = [action for action in target[DepActionsInfo].actions if action.mnemonic == "Rustc"]
     asserts.equals(env, 1, len(actions))
     return actions[0]
 
@@ -39,34 +79,11 @@ def _user_deployment_target_wins_test_impl(ctx):
     assert_env_value(env, _rustc_action(env), "MACOSX_DEPLOYMENT_TARGET", "15.0")
     return analysistest.end(env)
 
-deployment_target_from_linkopt_test = analysistest.make(
-    _deployment_target_from_linkopt_test_impl,
-    config_settings = {
-        "//command_line_option:linkopt": _MACOS_TARGET_LINKOPT,
-    },
-)
+deployment_target_from_linkopt_test = analysistest.make(_deployment_target_from_linkopt_test_impl)
 
-no_deployment_target_without_apple_target_test = analysistest.make(
-    _no_deployment_target_without_apple_target_test_impl,
-    config_settings = {
-        "//command_line_option:linkopt": ["-target", "x86_64-unknown-linux-gnu"],
-    },
-)
+no_deployment_target_without_apple_target_test = analysistest.make(_no_deployment_target_without_apple_target_test_impl)
 
-rustc_env_deployment_target_wins_test = analysistest.make(
-    _user_deployment_target_wins_test_impl,
-    config_settings = {
-        "//command_line_option:linkopt": _MACOS_TARGET_LINKOPT,
-    },
-)
-
-action_env_deployment_target_wins_test = analysistest.make(
-    _user_deployment_target_wins_test_impl,
-    config_settings = {
-        "//command_line_option:action_env": ["MACOSX_DEPLOYMENT_TARGET=15.0"],
-        "//command_line_option:linkopt": _MACOS_TARGET_LINKOPT,
-    },
-)
+user_deployment_target_wins_test = analysistest.make(_user_deployment_target_wins_test_impl)
 
 def _apple_deployment_target_env_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -106,6 +123,7 @@ def _define_test_targets():
         name = "bin",
         srcs = ["main.rs"],
         edition = "2021",
+        tags = ["manual", "nobuild"],
     )
 
     rust_binary(
@@ -113,6 +131,36 @@ def _define_test_targets():
         srcs = ["main.rs"],
         edition = "2021",
         rustc_env = {"MACOSX_DEPLOYMENT_TARGET": "15.0"},
+        tags = ["manual", "nobuild"],
+    )
+
+    with_link_settings(
+        name = "bin_with_macos_target",
+        linkopts = _MACOS_TARGET_LINKOPT,
+        tags = ["manual"],
+        target = ":bin",
+    )
+
+    with_link_settings(
+        name = "bin_with_linux_target",
+        linkopts = ["-target", "x86_64-unknown-linux-gnu"],
+        tags = ["manual"],
+        target = ":bin",
+    )
+
+    with_link_settings(
+        name = "bin_with_rustc_env_and_macos_target",
+        linkopts = _MACOS_TARGET_LINKOPT,
+        tags = ["manual"],
+        target = ":bin_with_rustc_env",
+    )
+
+    with_link_settings(
+        name = "bin_with_action_env_and_macos_target",
+        action_env = ["MACOSX_DEPLOYMENT_TARGET=15.0"],
+        linkopts = _MACOS_TARGET_LINKOPT,
+        tags = ["manual"],
+        target = ":bin",
     )
 
 def apple_deployment_target_test_suite(name):
@@ -125,24 +173,24 @@ def apple_deployment_target_test_suite(name):
 
     deployment_target_from_linkopt_test(
         name = "deployment_target_from_linkopt_test",
-        target_under_test = ":bin",
+        target_under_test = ":bin_with_macos_target",
         target_compatible_with = NOT_MACOS,
     )
 
     no_deployment_target_without_apple_target_test(
         name = "no_deployment_target_without_apple_target_test",
-        target_under_test = ":bin",
+        target_under_test = ":bin_with_linux_target",
         target_compatible_with = NOT_MACOS,
     )
 
-    rustc_env_deployment_target_wins_test(
+    user_deployment_target_wins_test(
         name = "rustc_env_deployment_target_wins_test",
-        target_under_test = ":bin_with_rustc_env",
+        target_under_test = ":bin_with_rustc_env_and_macos_target",
     )
 
-    action_env_deployment_target_wins_test(
+    user_deployment_target_wins_test(
         name = "action_env_deployment_target_wins_test",
-        target_under_test = ":bin",
+        target_under_test = ":bin_with_action_env_and_macos_target",
     )
 
     apple_deployment_target_env_test(
