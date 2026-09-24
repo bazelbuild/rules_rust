@@ -1,0 +1,9 @@
+load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
+
+# Building this from a downstream module must not load rules_rust's dev dependencies.
+# Manual check from this directory: bazel build --lockfile_mode=off //:lints
+# Root-module tests cannot reproduce the pruning of dependency dev_dependencies.
+extract_cargo_lints(
+    name = "lints",
+    manifest = "Cargo.toml",
+)
