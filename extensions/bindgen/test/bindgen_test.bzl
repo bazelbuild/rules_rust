@@ -35,6 +35,25 @@ def _fake_cc_toolchain_config_impl(ctx):
         ],
     )
 
+    # Bazel automatically enables the feature named after the current compilation mode, so this only
+    # applies to `-c opt` builds. The flags mirror the default opt flags in
+    # @rules_cc//cc/private/toolchain/unix_cc_configure.bzl, which include both an optimization
+    # level and `-D_FORTIFY_SOURCE` (`_FORTIFY_SOURCE` requires optimization).
+    opt_feature = feature(
+        name = "opt",
+        flag_sets = [
+            flag_set(
+                actions = ALL_CPP_COMPILE_ACTION_NAMES,
+                flag_groups = [
+                    flag_group(flags = [
+                        "-O2",
+                        "-D_FORTIFY_SOURCE=1",
+                    ]),
+                ],
+            ),
+        ],
+    )
+
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
         toolchain_identifier = "fake-toolchain",
@@ -45,7 +64,7 @@ def _fake_cc_toolchain_config_impl(ctx):
         compiler = "unknown",
         abi_version = "unknown",
         abi_libc_version = "unknown",
-        features = [xclang_flags_feature],
+        features = [xclang_flags_feature, opt_feature],
         # Add a known include directory to ensure that it is not removed by bindgen.
         cxx_builtin_include_directories = ["/fake/builtin/sys/include"],
     )
@@ -308,6 +327,33 @@ def _test_isystem_preservation(name):
         },
     )
 
+def _test_optimization_flags_impl(env, target):
+    env.expect.that_int(len(target.actions)).is_greater_than(0)
+    env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+
+    # The optimization level from the CC toolchain has to reach Clang. Without it, Clang
+    # predefines neither `__OPTIMIZE__` nor `__NO_INLINE__`, so headers guarded on those parse
+    # differently than they do for the rest of the build. Here that shows up via
+    # `-D_FORTIFY_SOURCE=1`, which reaches Clang as a plain `-D` and warns without `-O`.
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["-O2", "-D_FORTIFY_SOURCE=1"],
+    )
+
+def _test_optimization_flags(name):
+    _fake_cc_toolchain(name + "_toolchain")
+
+    _create_simple_rust_bindgen_library(name)
+
+    analysis_test(
+        name = name,
+        target = name + "_rust_bindgen__bindgen",
+        impl = _test_optimization_flags_impl,
+        config_settings = {
+            "//command_line_option:compilation_mode": "opt",
+            "//command_line_option:extra_toolchains": [str(native.package_relative_label(name + "_toolchain"))],
+        },
+    )
+
 def bindgen_test_suite(name):
     test_suite(
         name = name,
@@ -318,5 +364,6 @@ def bindgen_test_suite(name):
             _test_resource_dir,
             _test_strip_xclang,
             _test_isystem_preservation,
+            _test_optimization_flags,
         ],
     )

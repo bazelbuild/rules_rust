@@ -372,6 +372,17 @@ def _rust_bindgen_impl(ctx):
         "-nostdlibinc",
     )
 
+    # Flags in this tuple are matched by prefix and never accept a parameter, neither in the same
+    # argument nor in a separate one (`-O`, `-O2`, `-Og`). They deliberately don't live in
+    # `param_flags_known_to_clang`, as an exact match there would consume the following argument.
+    paramless_prefix_flags_known_to_clang = (
+        # Optimization level affects the macros Clang predefines, so dropping it makes bindgen parse
+        # headers differently than the rest of the build. This causes problems with, for example,
+        # glibc's FORTIFY_SOURCE, which requires optimization and warns if `__OPTIMIZE__` is not
+        # defined.
+        "-O",
+    )
+
     # Some forks of Clang, such as Apple's, define additional `-Xclang` flags that upstream Clang
     # (as used by bindgen) does not understand, so we want to strip them out. We list them here.
     xclang_flags_to_strip = (
@@ -397,7 +408,9 @@ def _rust_bindgen_impl(ctx):
                 open_arg = True
             continue
 
-        if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
+        if (not arg.startswith(param_flags_known_to_clang) and
+            not arg in paramless_flags_known_to_clang and
+            not arg.startswith(paramless_prefix_flags_known_to_clang)):
             continue
 
         if arg == "-Xclang" and idx + 1 < len(compile_flags) and compile_flags[idx + 1] in xclang_flags_to_strip:
