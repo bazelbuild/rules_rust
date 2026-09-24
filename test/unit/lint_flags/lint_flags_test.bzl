@@ -1,6 +1,7 @@
 """Unittest to verify compile_data (attribute) propagation"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_lint_config")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not")
 
@@ -29,15 +30,19 @@ def _extra_rustc_flags_present_test(ctx):
     target = analysistest.target_under_test(env)
     target_action_contains_flag(env, target, ctx.attr.rustc_flags)
 
-    # Check the exec configuration target does NOT contain.
     target = ctx.attr.lib_exec
-    target_action_contains_not_flag(env, target, ctx.attr.rustc_flags)
+    if ctx.attr.apply_in_exec:
+        asserts.true(env, any([action.mnemonic == "Rustc" for action in target.actions]), "expected an exec-configuration Rustc action")
+        target_action_contains_flag(env, target, ctx.attr.rustc_flags)
+    else:
+        target_action_contains_not_flag(env, target, ctx.attr.rustc_flags)
 
     return analysistest.end(env)
 
 extra_rustc_flag_present_test = analysistest.make(
     _extra_rustc_flags_present_test,
     attrs = {
+        "apply_in_exec": attr.bool(),
         "lib_exec": attr.label(
             mandatory = True,
             cfg = "exec",
@@ -60,6 +65,13 @@ def _define_test_targets():
     rust_library(
         name = "lib",
         srcs = ["lib.rs"],
+        lint_config = ":workspace_lints",
+        edition = "2018",
+    )
+
+    cargo_build_script(
+        name = "script",
+        srcs = ["build.rs"],
         lint_config = ":workspace_lints",
         edition = "2018",
     )
@@ -91,6 +103,18 @@ def lint_flags_test_suite(name):
             "--allow=unknown_lints",
             "--check-cfg=cfg(bazel)",
         ],
+        apply_in_exec = True,
+    )
+
+    extra_rustc_flag_present_test(
+        name = "build_script_lints_apply_in_exec",
+        target_under_test = ":script_",
+        lib_exec = ":script_",
+        rustc_flags = [
+            "--allow=unknown_lints",
+            "--check-cfg=cfg(bazel)",
+        ],
+        apply_in_exec = True,
     )
 
     extra_rustc_flag_present_test(
@@ -111,6 +135,7 @@ def lint_flags_test_suite(name):
         name = name,
         tests = [
             ":rustc_lints_apply_flags",
+            ":build_script_lints_apply_in_exec",
             ":clippy_lints_apply_flags",
             ":rustdoc_lints_apply_flags",
         ],
