@@ -1,0 +1,5 @@
+load(":apple_deployment_target_test.bzl", "apple_deployment_target_test_suite")
+
+apple_deployment_target_test_suite(
+    name = "apple_deployment_target_test_suite",
+)
