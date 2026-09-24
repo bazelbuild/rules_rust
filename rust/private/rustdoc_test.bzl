@@ -216,13 +216,32 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
         is_executable = True,
     )
 
+    # An rlib's runfiles need not include its native shared libraries. The
+    # persisted doctest executables still need those libraries at test time.
+    runtime_libraries = []
+    for target in [ctx.attr.crate] + ctx.attr.deps:
+        if CcInfo not in target:
+            continue
+        for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
+            for lib in linker_input.libraries:
+                if lib.static_library or lib.pic_static_library:
+                    continue
+                if lib.dynamic_library:
+                    runtime_libraries.append(lib.dynamic_library)
+                if lib.resolved_symlink_dynamic_library:
+                    runtime_libraries.append(lib.resolved_symlink_dynamic_library)
+
     return [
         DefaultInfo(
             files = depset([test_runner]),
             runfiles = ctx.runfiles(
-                files = [doctest_dir, test_metadata, ctx.executable._test_runner_bin],
-                transitive_files = action.inputs,
-            ),
+                files = [doctest_dir, test_metadata, ctx.executable._test_runner_bin] + runtime_libraries,
+                transitive_files = crate_info.compile_data,
+            ).merge_all([
+                target[DefaultInfo].default_runfiles
+                for target in [ctx.attr.crate] + ctx.attr.deps + [ctx.attr._test_runner_bin]
+                if target[DefaultInfo].default_runfiles != None
+            ]),
             executable = test_runner,
         ),
         RunEnvironmentInfo(
