@@ -5,6 +5,7 @@ the collected marker count matches the dep graph, and that a crate tagged
 for opt-out is skipped without breaking propagation to its own deps.
 """
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load(
     "//rust:defs.bzl",
@@ -76,6 +77,51 @@ def _make_transitive_count_test(marker_suffix, output_group_name):
 clippy_transitive_test = _make_transitive_count_test(".clippy.ok", "clippy_checks")
 rustfmt_transitive_test = _make_transitive_count_test(".rustfmt.ok", "rustfmt_checks")
 
+def _runner_file(target):
+    executable = target[DefaultInfo].files_to_run.executable
+    action = [action for action in target.actions if executable in action.outputs.to_list()][0]
+    return action.inputs.to_list()[0]
+
+def _runner_format_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    runner = _runner_file(target)
+    executable = target[DefaultInfo].files_to_run.executable
+
+    asserts.equals(env, runner.extension, executable.extension)
+
+    markers = target[RunEnvironmentInfo].environment["RUST_LINT_TEST_MARKERS"]
+    separator = ";" if runner.extension == "exe" else ":"
+    asserts.equals(env, 1, markers.count(separator))
+
+    return analysistest.end(env)
+
+_runner_format_test = analysistest.make(
+    _runner_format_test_impl,
+)
+
+def _runner_platform_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    runner = _runner_file(target)
+    asserts.true(
+        env,
+        runner.path.startswith("bazel-out/macos_x86_64-"),
+        "Expected the test-platform runner, got {}".format(runner.path),
+    )
+    return analysistest.end(env)
+
+_runner_platform_test = analysistest.make(
+    _runner_platform_test_impl,
+    config_settings = {
+        "//command_line_option:extra_execution_platforms": [
+            str(Label(":macos_aarch64")),
+            str(Label(":macos_x86_64")),
+        ],
+        "//command_line_option:platforms": str(Label(":macos_x86_64")),
+    },
+)
+
 def lint_tests_suite(name):
     """Wire up the fixture graph and the two analysistests.
 
@@ -131,10 +177,40 @@ def lint_tests_suite(name):
         target_under_test = ":rustfmt_fixture",
     )
 
+    _runner_format_test(
+        name = "clippy_runner_format_test",
+        target_under_test = ":clippy_fixture",
+    )
+    _runner_format_test(
+        name = "rustfmt_runner_format_test",
+        target_under_test = ":rustfmt_fixture",
+    )
+
+    _runner_platform_test(
+        name = "clippy_runner_platform_test",
+        target_under_test = ":clippy_fixture",
+        target_compatible_with = [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:macos",
+        ] + ([] if bazel_features.toolchains.has_default_test_toolchain_type else ["@platforms//:incompatible"]),
+    )
+    _runner_platform_test(
+        name = "rustfmt_runner_platform_test",
+        target_under_test = ":rustfmt_fixture",
+        target_compatible_with = [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:macos",
+        ] + ([] if bazel_features.toolchains.has_default_test_toolchain_type else ["@platforms//:incompatible"]),
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":clippy_transitive_test",
             ":rustfmt_transitive_test",
+            ":clippy_runner_format_test",
+            ":rustfmt_runner_format_test",
+            ":clippy_runner_platform_test",
+            ":rustfmt_runner_platform_test",
         ],
     )
