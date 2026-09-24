@@ -1,7 +1,13 @@
 """Check that a Cargo build script constrains both execution stages."""
 
 def exec_constraints_test(name, build_script, constraint):
-    """Assert macro expansion forwards the execution constraint to both actions."""
+    """Assert macro expansion forwards the execution constraint to both actions.
+
+    Args:
+        name: Name of the generated test suite.
+        build_script: Build script target to inspect.
+        constraint: Expected execution constraint label.
+    """
     expected = str(Label(constraint))
     for target in [build_script + "_", build_script]:
         rule = native.existing_rule(target)
