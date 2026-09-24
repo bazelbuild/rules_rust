@@ -55,7 +55,7 @@ LINT_TEST_COMMON_ATTRS = {
     ),
     "_runner": attr.label(
         doc = "The shared runner (prints/inspects collected marker paths).",
-        cfg = "exec",
+        cfg = config.exec("test"),
         executable = True,
         default = Label("//rust/private/lint_test_runner"),
     ),
@@ -116,7 +116,7 @@ def lint_test_rule_impl(ctx, info_provider, output_group_names):
         list: `[DefaultInfo, RunEnvironmentInfo, OutputGroupInfo]` for the
             test target.
     """
-    is_windows = ctx.executable._runner.extension == ".exe"
+    is_windows = ctx.executable._runner.extension == "exe"
     runner = ctx.actions.declare_file("{}{}".format(
         ctx.label.name,
         ".exe" if is_windows else "",
@@ -140,7 +140,7 @@ def lint_test_rule_impl(ctx, info_provider, output_group_names):
     )
 
     workspace_name = ctx.workspace_name
-    markers_env = ctx.configuration.host_path_separator.join([
+    markers_env = (";" if is_windows else ":").join([
         rlocationpath(f, workspace_name)
         for f in checks.to_list()
     ])
