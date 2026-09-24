@@ -21,18 +21,13 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     } = Args::try_from(std::env::args())?;
 
     let manifest_contents = std::fs::read_to_string(&manifest_toml)?;
-    let mut crate_manifest = Manifest::from_str(&manifest_contents)?;
+    let crate_manifest = Manifest::from_str(&manifest_contents)?;
     let mut workspace_manifest = None;
 
-    // Optionally populate the manifest with info from the parent workspace, if one is provided.
+    // Lint extraction only needs the declared manifests. Completing the package
+    // from disk would require undeclared sources and workspace members.
     if let Some(workspace_path) = workspace_toml {
-        let manifest = Manifest::from_path(&workspace_path)?;
-        let workspace_details = Some((&manifest, workspace_path.as_path()));
-
-        // TODO(parkmycar): Fix cargo_toml so we inherit lints from our workspace.
-        //
-        // See: <https://gitlab.com/lib.rs/cargo_toml/-/issues/35>
-        crate_manifest.complete_from_path_and_workspace(&manifest_toml, workspace_details)?;
+        let manifest = Manifest::from_str(&std::fs::read_to_string(workspace_path)?)?;
         workspace_manifest = Some(manifest);
     }
 
