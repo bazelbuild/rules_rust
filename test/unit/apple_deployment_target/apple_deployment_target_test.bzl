@@ -9,6 +9,15 @@ load("//test/unit:common.bzl", "assert_env_value")
 
 _MACOS_TARGET_LINKOPT = ["-target", "arm64-apple-macosx26.0"]
 
+# The Apple cc_toolchain appends its own `-target` triple after the user's link
+# flags, so on macOS the last triple in the link args is the toolchain's rather
+# than the one passed through `--linkopt`. Tests that pin the derived value to
+# the `--linkopt` triple only hold on other hosts.
+NOT_MACOS = select({
+    "@platforms//os:macos": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 def _rustc_action(env):
     target = analysistest.target_under_test(env)
     actions = [action for action in target.actions if action.mnemonic == "Rustc"]
@@ -117,11 +126,13 @@ def apple_deployment_target_test_suite(name):
     deployment_target_from_linkopt_test(
         name = "deployment_target_from_linkopt_test",
         target_under_test = ":bin",
+        target_compatible_with = NOT_MACOS,
     )
 
     no_deployment_target_without_apple_target_test(
         name = "no_deployment_target_without_apple_target_test",
         target_under_test = ":bin",
+        target_compatible_with = NOT_MACOS,
     )
 
     rustc_env_deployment_target_wins_test(
