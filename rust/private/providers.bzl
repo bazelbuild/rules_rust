@@ -24,6 +24,7 @@ CrateInfo = provider(
         ),
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
+        "crate_output": "File, optional: The output File for the original rust_library target.  Only present for rust_doc_test targets.",
         "data": "depset[File]: Runtime data associated with the target. Not passed to `Rustc` actions, except for `proc-macro` targets where `Rustc` is the runtime.",
         "deps": "depset[DepVariantInfo]: This crate's direct (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",

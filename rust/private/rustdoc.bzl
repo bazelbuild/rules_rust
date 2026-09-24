@@ -67,6 +67,7 @@ def _rustdoc_crate_info(crate_info, output):
         compile_data_targets = crate_info.compile_data_targets,
         data = crate_info.data,
         owner = crate_info.owner,
+        crate_output = crate_info.output,
     )
 
 def rustdoc_compile_action(
