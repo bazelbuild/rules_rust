@@ -1,0 +1,51 @@
+load("@bazel_features//:features.bzl", "bazel_features")
+load("//rust:defs.bzl", "rust_test")
+load(":coverage_test.bzl", "collector_platform_test", "collector_probe", "platform_marker")
+
+collector_platform_test(
+    name = "collector_platform_test",
+    target_under_test = ":collector",
+)
+
+collector_probe(
+    name = "collector",
+    testonly = True,
+    dep = ":test",
+    # Older Bazel versions run tests on the first execution platform.
+    exec_compatible_with = [":tester" if bazel_features.toolchains.has_default_test_toolchain_type else ":compiler"],
+    marker = ":marker",
+    tags = ["manual"],
+    target_compatible_with = [":tester"],
+)
+
+platform_marker(name = "marker")
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2021",
+)
+
+constraint_setting(name = "execution_role")
+
+constraint_value(
+    name = "compiler",
+    constraint_setting = ":execution_role",
+)
+
+constraint_value(
+    name = "tester",
+    constraint_setting = ":execution_role",
+)
+
+platform(
+    name = "compiler_platform",
+    constraint_values = [":compiler"],
+    parents = ["@platforms//host"],
+)
+
+platform(
+    name = "test_platform",
+    constraint_values = [":tester"],
+    parents = ["@platforms//host"],
+)
