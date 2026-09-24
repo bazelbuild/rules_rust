@@ -209,7 +209,7 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
         execution_requirements = {"supports-path-mapping": ""} if action.supports_path_mapping else None,
     )
 
-    test_runner = ctx.actions.declare_file(ctx.label.name)
+    test_runner = ctx.actions.declare_file(ctx.label.name + (".exe" if ctx.executable._test_runner_bin.extension == "exe" else ""))
     ctx.actions.symlink(
         output = test_runner,
         target_file = ctx.executable._test_runner_bin,
@@ -330,6 +330,8 @@ def _rust_doc_test_impl(ctx):
     if use_compiled_doctest:
         return _compiled_rust_doc_test_impl(ctx, toolchain, crate_info)
     else:
+        if toolchain.exec_triple.str != toolchain.target_triple.str:
+            fail("Cross-built doctests require experimental_compile_rustdoc_tests and a nightly compiler; legacy doctests execute their compiler during the test.")
         return _legacy_rust_doc_test_impl(ctx, toolchain, crate_info)
 
 rust_doc_test = rule(
@@ -389,7 +391,7 @@ rust_doc_test = rule(
         ),
         "_test_runner_bin": attr.label(
             doc = "A binary used for running compiled doc test binaries.",
-            cfg = "exec",
+            cfg = config.exec("test"),
             default = Label("//rust/private/rustdoc:rustdoc_test_runner"),
             executable = True,
         ),
