@@ -934,7 +934,7 @@ _COVERAGE_ATTRS = {
     "_collect_cc_coverage": attr.label(
         default = Label("//rust/coverage:collect_rust_coverage"),
         executable = True,
-        cfg = "exec",
+        cfg = config.exec("test"),
     ),
     # Bazel’s coverage runner
     # (https://github.com/bazelbuild/bazel/blob/6.0.0/tools/test/collect_coverage.sh)
