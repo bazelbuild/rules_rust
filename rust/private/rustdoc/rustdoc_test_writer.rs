@@ -179,10 +179,18 @@ fn write_test_runner_unix(
         // sanitize the action args to run in a runfiles without this link.
         "if [[ ! -e 'external' ]]; then ln -s ../ external ; fi".to_owned(),
         "".to_owned(),
+        // Preserve the test invocation's paths before clearing the action env.
+        // Arrays keep values with spaces and shell characters intact.
+        "test_environment=()".to_owned(),
+        "for name in \"${!TEST_@}\" \"${!RUNFILES_@}\"; do".to_owned(),
+        "  test_environment+=(\"$name=${!name}\")".to_owned(),
+        "done".to_owned(),
+        "if [[ -n \"${TEST_TMPDIR:-}\" ]]; then test_environment+=(\"TMPDIR=$TEST_TMPDIR\" \"TMP=$TEST_TMPDIR\" \"TEMP=$TEST_TMPDIR\"); fi".to_owned(),
         "exec env - \\".to_owned(),
     ];
 
     content.extend(env.iter().map(|(key, val)| format!("{key}='{val}' \\")));
+    content.push("\"${test_environment[@]}\" \\".to_owned());
 
     let argv_str = argv
         .iter()
@@ -210,6 +218,10 @@ fn write_test_runner_windows(
     argv: &[String],
     strip_substrings: &[String],
 ) {
+    // Capture invocation values before the action environment overwrites any.
+    let capture = "$testEnvironment = @{}; Get-ChildItem Env: | Where-Object { $_.Name -like 'TEST_*' -or $_.Name -like 'RUNFILES_*' } | ForEach-Object { $testEnvironment[$_.Name] = $_.Value }";
+    let restore = "$testEnvironment.GetEnumerator() | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'Process') }; if ($testEnvironment['TEST_TMPDIR']) { foreach ($name in @('TMPDIR', 'TMP', 'TEMP')) { [Environment]::SetEnvironmentVariable($name, $testEnvironment['TEST_TMPDIR'], 'Process') } }";
+
     let env_str = env
         .iter()
         .map(|(key, val)| format!("$env:{key}='{val}'"))
@@ -239,7 +251,7 @@ fn write_test_runner_windows(
         "powershell.exe -c \"if (!(Test-Path .\\external)) { New-Item -Path .\\external -ItemType SymbolicLink -Value ..\\ }\""
             .to_owned(),
         "".to_owned(),
-        format!("powershell.exe -c \"{env_str} ; & {argv_str}\""),
+        format!("powershell.exe -c \"{capture}; {env_str}; {restore}; & {argv_str}\""),
         "".to_owned(),
     ];
 
@@ -288,4 +300,164 @@ fn main() {
         .collect();
 
     write_test_runner(&opt.output, &env, &opt.action_argv, &opt.strip_substrings);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct TestDir(PathBuf);
+
+    impl TestDir {
+        fn new(name: &str) -> Self {
+            static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+            let temp_root = env::var_os("TEST_TMPDIR")
+                .map(PathBuf::from)
+                .unwrap_or_else(env::temp_dir);
+            let dir = temp_root.join(format!(
+                "rustdoc_writer_{}_{}_{}",
+                std::process::id(),
+                name,
+                NEXT_ID.fetch_add(1, Ordering::Relaxed)
+            ));
+            fs::create_dir(&dir).unwrap();
+            Self(dir)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TestDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[cfg(target_family = "unix")] // A Unix shell executes the generated launcher.
+    #[test]
+    fn unix_runner_preserves_invocation_test_paths() {
+        use std::process::Command;
+
+        let dir = TestDir::new("unix");
+        let path = dir.path().join("test.sh");
+        let action_env = BTreeMap::from([
+            ("TEST_TMPDIR".to_owned(), "action tmp".to_owned()),
+            ("RUNFILES_DIR".to_owned(), "action runfiles".to_owned()),
+            ("ACTION_ONLY".to_owned(), "action".to_owned()),
+        ]);
+        write_test_runner_unix(&path, &action_env, &["/usr/bin/env".to_owned()], &[]);
+
+        let output = Command::new("bash")
+            .arg(&path)
+            .current_dir(dir.path())
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .env("TEST_TMPDIR", "invocation tmp")
+            .env("TEST_CUSTOM", "test value")
+            .env("RUNFILES_DIR", "invocation runfiles")
+            .env("RUNFILES_MANIFEST_FILE", "invocation manifest")
+            .env("RUNFILES_MANIFEST_ONLY", "1")
+            .env("UNRELATED", "discard")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let values: BTreeMap<_, _> = stdout
+            .lines()
+            .filter_map(|line| line.split_once('='))
+            .collect();
+        assert_eq!(values.get("TEST_TMPDIR"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TEST_CUSTOM"), Some(&"test value"));
+        assert_eq!(values.get("RUNFILES_DIR"), Some(&"invocation runfiles"));
+        assert_eq!(
+            values.get("RUNFILES_MANIFEST_FILE"),
+            Some(&"invocation manifest")
+        );
+        assert_eq!(values.get("RUNFILES_MANIFEST_ONLY"), Some(&"1"));
+        assert_eq!(values.get("TMPDIR"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TMP"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TEMP"), Some(&"invocation tmp"));
+        assert_eq!(values.get("ACTION_ONLY"), Some(&"action"));
+        assert!(!values.contains_key("UNRELATED"));
+    }
+
+    #[test]
+    fn windows_runner_restores_invocation_variables_after_action_environment() {
+        let dir = TestDir::new("windows_text");
+        let path = dir.path().join("test.bat");
+        let action_env = BTreeMap::from([("TEST_TMPDIR".to_owned(), "action tmp".to_owned())]);
+        write_test_runner_windows(&path, &action_env, &["rustdoc".to_owned()], &[]);
+
+        let content = fs::read_to_string(&path).unwrap();
+        let capture = content.find("$testEnvironment = @{}").unwrap();
+        let action = content.find("$env:TEST_TMPDIR='action tmp'").unwrap();
+        let restore = content.find("$testEnvironment.GetEnumerator()").unwrap();
+        assert!(capture < action && action < restore);
+        assert!(content.contains("'RUNFILES_*'"));
+        assert!(content.contains("'TEST_*'"));
+        assert!(content.contains("'TMPDIR', 'TMP', 'TEMP'"));
+    }
+
+    #[cfg(target_family = "windows")] // The generated batch file requires cmd.exe and PowerShell.
+    #[test]
+    fn windows_runner_preserves_invocation_test_paths() {
+        use std::process::Command;
+
+        let dir = TestDir::new("windows_runtime");
+        let path = dir.path().join("test.bat");
+        fs::create_dir(dir.path().join("external")).unwrap();
+        let action_env = BTreeMap::from([
+            ("TEST_TMPDIR".to_owned(), "action tmp".to_owned()),
+            ("RUNFILES_DIR".to_owned(), "action runfiles".to_owned()),
+            ("ACTION_ONLY".to_owned(), "action".to_owned()),
+        ]);
+        write_test_runner_windows(
+            &path,
+            &action_env,
+            &["cmd.exe".to_owned(), "/C".to_owned(), "set".to_owned()],
+            &[],
+        );
+
+        let output = Command::new("cmd.exe")
+            .arg("/C")
+            .arg(&path)
+            .current_dir(dir.path())
+            .env("TEST_TMPDIR", "invocation tmp")
+            .env("TEST_CUSTOM", "test value")
+            .env("RUNFILES_DIR", "invocation runfiles")
+            .env("RUNFILES_MANIFEST_FILE", "invocation manifest")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let values: BTreeMap<_, _> = stdout
+            .lines()
+            .filter_map(|line| line.split_once('='))
+            .map(|(key, value)| (key.to_ascii_uppercase(), value))
+            .collect();
+        assert_eq!(values.get("TEST_TMPDIR"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TEST_CUSTOM"), Some(&"test value"));
+        assert_eq!(values.get("RUNFILES_DIR"), Some(&"invocation runfiles"));
+        assert_eq!(
+            values.get("RUNFILES_MANIFEST_FILE"),
+            Some(&"invocation manifest")
+        );
+        assert_eq!(values.get("TMPDIR"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TMP"), Some(&"invocation tmp"));
+        assert_eq!(values.get("TEMP"), Some(&"invocation tmp"));
+        assert_eq!(values.get("ACTION_ONLY"), Some(&"action"));
+    }
 }
