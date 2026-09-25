@@ -2650,7 +2650,7 @@ def _process_build_scripts(
         build_env_file = build_info.rustc_env
         if build_info.flags:
             build_flags_files.append(build_info.flags)
-        if build_info.linker_flags and include_link_flags:
+        if build_info.linker_flags and include_link_flags and not _build_script_linked_by_library(build_info, dep_info):
             build_flags_files.append(build_info.linker_flags)
             direct_inputs.append(build_info.linker_flags)
 
@@ -2673,6 +2673,17 @@ def _process_build_scripts(
         build_env_file,
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
+
+def _build_script_linked_by_library(build_info, dep_info):
+    # Cargo applies rustc-link-lib to the package library when one exists.
+    # Binaries that depend on that library already link its native archives.
+    for crate in dep_info.direct_crates.to_list():
+        if crate.dep.type not in ("lib", "rlib", "dylib") or crate.dep.is_test:
+            continue
+        for dep in crate.dep.deps.to_list():
+            if dep.build_info == build_info and dep.build_info.linker_flags == build_info.linker_flags:
+                return True
+    return False
 
 def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, output_file = None, workspace_name = ""):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
