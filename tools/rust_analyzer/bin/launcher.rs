@@ -59,7 +59,21 @@ fn exec_replace(target: &Path) -> ! {
 
 #[cfg(not(unix))]
 fn exec_replace(target: &Path) -> ! {
-    let status = process::Command::new(target)
+    let mut cmd = process::Command::new(target);
+
+    // On Windows, ensure the respective bin/ folder is on PATH.
+    // This is necessary for rust_analyzer_proc_macro_srv, as it's in libexec/
+    // and otherwise would be missing .dlls
+    #[cfg(windows)]
+    if let Some(sys_root) = target.parent().and_then(Path::parent) {
+        let bin_dir = sys_root.join("bin");
+        let mut path = std::env::var_os("PATH").unwrap_or("".into());
+        path.push(";");
+        path.push(bin_dir);
+        cmd.env("PATH", path);
+    }
+
+    let status = cmd
         .args(env::args_os().skip(1))
         .status()
         .unwrap_or_else(|e| die(format!("spawn {}: {e}", target.display())));
