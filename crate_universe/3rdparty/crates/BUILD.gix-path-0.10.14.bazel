@@ -110,8 +110,8 @@ rust_library(
     deps = [
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-trace-0.1.12//:gix_trace",
-        "@cui__once_cell-1.21.3//:once_cell",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__once_cell-1.21.4//:once_cell",
+        "@cui__thiserror-2.0.20//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__home-0.5.5//:home",  # cfg(not(target_family = "wasm"))

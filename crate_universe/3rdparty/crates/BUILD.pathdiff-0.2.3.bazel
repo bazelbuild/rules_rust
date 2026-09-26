@@ -34,6 +34,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "camino",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_env_files = [
@@ -107,4 +110,7 @@ rust_library(
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.2.3",
+    deps = [
+        "@cui__camino-1.2.6//:camino",
+    ],
 )

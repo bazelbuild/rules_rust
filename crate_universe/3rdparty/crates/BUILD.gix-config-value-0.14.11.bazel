@@ -111,7 +111,7 @@ rust_library(
         "@cui__bitflags-2.4.1//:bitflags",
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-path-0.10.14//:gix_path",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__libc-0.2.172//:libc",  # cfg(not(windows))

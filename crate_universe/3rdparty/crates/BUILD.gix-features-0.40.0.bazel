@@ -126,11 +126,11 @@ rust_library(
         "@cui__gix-hash-0.16.0//:gix_hash",
         "@cui__gix-trace-0.1.12//:gix_trace",
         "@cui__gix-utils-0.1.14//:gix_utils",
-        "@cui__once_cell-1.21.3//:once_cell",
+        "@cui__once_cell-1.21.4//:once_cell",
         "@cui__parking_lot-0.12.1//:parking_lot",
         "@cui__prodash-29.0.0//:prodash",
         "@cui__sha1_smol-1.0.0//:sha1_smol",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
         "@cui__walkdir-2.5.0//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

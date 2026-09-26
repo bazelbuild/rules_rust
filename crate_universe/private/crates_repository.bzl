@@ -180,6 +180,7 @@ Environment Variables:
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 | `CARGO_BAZEL_TIMEOUT` | An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds. |
+| `RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER` | Resolve crate features and dependencies with [guppy](https://docs.rs/guppy) instead of `cargo tree`. Enabled by default; set to `0` to fall back to the legacy `cargo tree` resolver, which spawns one process per host/target platform pair and is substantially slower. |
 
 Example:
 
