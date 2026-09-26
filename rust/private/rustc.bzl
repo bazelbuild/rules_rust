@@ -177,6 +177,24 @@ def _are_linkstamps_supported(feature_configuration):
 def _is_proc_macro(crate_info):
     return "proc-macro" in (crate_info.type, crate_info.wrapped_crate_type)
 
+def flatten_crate_groups(deps):
+    """Flattens crate groups in a list of DepVariantInfo providers.
+
+    Args:
+        deps: A list of DepVariantInfo providers, such as crate_info.deps.
+
+    Returns:
+        A list of DepVariantInfo providers with crate groups replaced by their members.
+    """
+    crate_deps = []
+    for dep in deps:
+        crate_group = getattr(dep, "crate_group_info", None)
+        if crate_group:
+            crate_deps.extend(crate_group.dep_variant_infos.to_list())
+        else:
+            crate_deps.append(dep)
+    return crate_deps
+
 def collect_deps(
         deps,
         proc_macro_deps,
@@ -221,13 +239,7 @@ def collect_deps(
     direct_metadata_outputs = []
     transitive_metadata_outputs = []
 
-    crate_deps = []
-    for dep in deps + proc_macro_deps:
-        crate_group = getattr(dep, "crate_group_info", None)
-        if crate_group:
-            crate_deps.extend(crate_group.dep_variant_infos.to_list())
-        else:
-            crate_deps.append(dep)
+    crate_deps = flatten_crate_groups(deps + proc_macro_deps)
 
     aliases = {
         (k[rust_common.crate_info].owner if rust_common.crate_info in k else k.label): v
@@ -2114,9 +2126,11 @@ def rustc_compile_action(
             toolchain.stdlib_linkflags.linking_context,
         ]
 
-        for dep in crate_info.deps.to_list():
-            if dep.cc_info:
-                linking_contexts.append(dep.cc_info.linking_context)
+        linking_contexts += [
+            dep.cc_info.linking_context
+            for dep in flatten_crate_groups(crate_info.deps.to_list())
+            if dep.cc_info
+        ]
 
         # In the cc_common.link action we need to pass the name of the final
         # binary (output) relative to the package of this target.
@@ -2565,7 +2579,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     ]
 
     # Flattening is okay since crate_info.deps only records direct deps.
-    for dep in crate_info.deps.to_list():
+    for dep in flatten_crate_groups(crate_info.deps.to_list()):
         if dep.cc_info:
             # Static dependencies are bundled into both crate types. Shared libraries
             # remain final-link dependencies, as do a staticlib's user link flags.
