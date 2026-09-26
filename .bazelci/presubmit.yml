@@ -83,6 +83,18 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
           bazel-out/_coverage/_coverage_report.dat \
       ; exit 1 \
       ; }
+  # Regression check: lines reached only by a binary the test runs as a
+  # subprocess must be reported.
+  - |
+    awk '/^SF:test\/coverage_subprocess\/greeter\.rs$/,/^end_of_record$/' \
+        bazel-out/_coverage/_coverage_report.dat \
+      | grep -qE '^LH:[1-9]' \
+    || { 1>&2 echo "No coverage for a subprocess binary (test/coverage_subprocess/greeter.rs)" \
+      ; 1>&2 echo "Counters from binaries in a test's data were dropped." \
+      ; 1>&2 awk '/^SF:test\/coverage_subprocess\/greeter\.rs$/,/^end_of_record$/' \
+          bazel-out/_coverage/_coverage_report.dat \
+      ; exit 1 \
+      ; }
 split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
   - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
   - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc

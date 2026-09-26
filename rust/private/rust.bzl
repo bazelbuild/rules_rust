@@ -617,6 +617,25 @@ def _rust_test_impl(ctx):
         # must set them explicitly.
         env["GENERATE_LLVM_LCOV"] = "1"
         env["CC_CODE_COVERAGE_SCRIPT"] = ctx.executable._collect_cc_coverage.path
+
+        # Binaries the test runs as subprocesses write their `.profraw` beside
+        # the test's own, but `llvm-cov export` reads counters only for the
+        # objects it is given. Name them so the collector can pass them along.
+        coverage_objects = []
+        for dep in data:
+            if rust_common.crate_info not in dep or not ctx.coverage_instrumented(dep):
+                continue
+            dep_crate_info = dep[rust_common.crate_info]
+            if dep_crate_info.type != "bin":
+                continue
+            if toolchain._experimental_use_coverage_metadata_files:
+                coverage_objects.append(dep_crate_info.output.path)
+            elif dep_crate_info.output.short_path.startswith("../"):
+                coverage_objects.append(dep_crate_info.output.short_path[len("../"):])
+            else:
+                coverage_objects.append("{}/{}".format(ctx.workspace_name, dep_crate_info.output.short_path))
+        if coverage_objects:
+            env["RUST_COVERAGE_OBJECTS"] = ctx.configuration.host_path_separator.join(coverage_objects)
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
     providers.append(RunEnvironmentInfo(
