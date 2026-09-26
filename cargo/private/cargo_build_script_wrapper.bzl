@@ -52,6 +52,7 @@ def cargo_build_script(
         rustc_env = {},
         rustc_env_files = [],
         rustc_flags = [],
+        lint_config = None,
         visibility = None,
         tags = None,
         aliases = None,
@@ -160,6 +161,7 @@ def cargo_build_script(
         rustc_env_files (list of label, optional): Files containing additional environment variables to set for rustc
             when building the build script.
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
+        lint_config (Label, optional): Lints applied while compiling the build script.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
         aliases (dict, optional): Remap crates to a new name or moniker for linkage to this target. \
@@ -220,6 +222,7 @@ def cargo_build_script(
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,
         rustc_flags = rustc_flags,
+        lint_config = lint_config,
         edition = edition,
         tags = binary_tags,
         aliases = aliases,
