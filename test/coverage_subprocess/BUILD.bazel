@@ -1,0 +1,16 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "greeter",
+    srcs = ["greeter.rs"],
+    edition = "2021",
+)
+
+# Runs `:greeter` as a subprocess. Under `bazel coverage` the lines of
+# `greeter.rs` are reached only through that subprocess.
+rust_test(
+    name = "greeter_test",
+    srcs = ["greeter_test.rs"],
+    data = [":greeter"],
+    edition = "2021",
+)

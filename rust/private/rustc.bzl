@@ -2243,7 +2243,7 @@ def rustc_compile_action(
     executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None
 
     instrumented_files_kwargs = {
-        "dependency_attributes": ["deps", "crate"],
+        "dependency_attributes": ["deps", "crate", "data"],
         "extensions": ["rs"],
         "source_attributes": ["srcs"],
     }
