@@ -92,28 +92,37 @@ fn json_warning(line: &str) -> JsonValue {
 }
 
 fn process_line(
-    mut line: String,
+    line: String,
     quit_on_rmeta: bool,
     format: ErrorFormat,
     metadata_emitted: &mut bool,
 ) -> Result<LineOutput, String> {
-    // LLVM can emit lines that look like the following, and these will be interspersed
-    // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
-    // like these (or to convert them to JSON), but for now we convert them to JSON
-    // ourselves.
-    if line.contains("is not a recognized feature for this target (ignoring feature)")
-        || line.starts_with(" WARN ")
-    {
-        if let Ok(json_str) = json_warning(&line).stringify() {
-            line = json_str;
+    let mut process = |l: String| {
+        if quit_on_rmeta {
+            rustc::stop_on_rmeta_completion(l, format, metadata_emitted)
         } else {
-            return Ok(LineOutput::Skip);
+            rustc::process_json(l, format)
         }
-    }
-    if quit_on_rmeta {
-        rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+    };
+
+    let is_likely_json = line.trim_start().starts_with('{');
+
+    let result = if is_likely_json {
+        process(line.clone())
     } else {
-        rustc::process_json(line, format)
+        Err("not likely json".to_string())
+    };
+
+    match result {
+        Ok(output) => Ok(output),
+        Err(_) => {
+            if let Ok(mut json_str) = json_warning(&line).stringify() {
+                json_str.push('\n');
+                process(json_str)
+            } else {
+                Ok(LineOutput::Skip)
+            }
+        }
     }
 }
 
@@ -299,6 +308,8 @@ mod test {
         for text in [
             "'+zaamo' is not a recognized feature for this target (ignoring feature)",
             " WARN rustc_errors::emitter Invalid span...",
+            "this is random noise",
+            "{ this looks like json but is not }",
         ] {
             let LineOutput::Message(msg) = process_line(
                 text.to_string(),
@@ -369,6 +380,28 @@ mod test {
             LineOutput::Terminate
         ));
         assert!(metadata_emitted);
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_noise_rendered() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        for text in [
+            "this is random noise",
+            "{ this looks like json but is not }",
+            r#"noise with "quotes" and \backslashes"#,
+        ] {
+            let LineOutput::Message(msg) = process_line(
+                text.to_string(),
+                /*quit_on_rmeta=*/ false,
+                ErrorFormat::Rendered,
+                &mut metadata_emitted,
+            )?
+            else {
+                return Err("Expected a LineOutput::Message".to_string());
+            };
+            assert_eq!(msg, text);
+        }
         Ok(())
     }
 }
