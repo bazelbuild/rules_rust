@@ -200,6 +200,7 @@ def cargo_build_script(
     # it is translated to `target_compatible_with` to match the `cfg = "exec"`
     # consumption of the target.
     script_kwargs["target_compatible_with"] = exec_compatible_with
+    script_kwargs["exec_compatible_with"] = exec_compatible_with
 
     binary_tags = depset(
         (tags if tags else []) + ["manual"],
@@ -241,6 +242,7 @@ def cargo_build_script(
     # This target executes the build script.
     _build_script_run(
         name = name,
+        exec_compatible_with = exec_compatible_with,
         script = ":{}_".format(name),
         data_runfiles = ":{}-".format(name),
         data = data,
