@@ -1,3 +1,3 @@
-pub fn value() -> i32 {
-    1
+pub fn value() -> &'static str {
+    env!("BUILD_SCRIPT_VALUE")
 }

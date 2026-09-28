@@ -1,4 +1,4 @@
-"""Check when a package build script's native link flags reach a Rustc action."""
+"""Regression coverage for https://github.com/bazelbuild/rules_rust/issues/4291."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//cargo:defs.bzl", "cargo_build_script")
@@ -18,6 +18,20 @@ def _link_flags_test_impl(ctx):
             if argv[i] == "--arg-file" and argv[i + 1].endswith("shared_script.linkflags")
         ]
         asserts.equals(env, ctx.attr.expected_count, len(link_flags))
+
+        # Both the library and binary still need the script's non-link outputs.
+        for flag, suffix in [
+            ("--arg-file", "shared_script.flags"),
+            ("--arg-file", "shared_script.linksearchpaths"),
+            ("--env-file", "shared_script.env"),
+            ("--out-dir", "shared_script.out_dir"),
+        ]:
+            matches = [
+                argv[i + 1]
+                for i in range(len(argv) - 1)
+                if argv[i] == flag and argv[i + 1].endswith(suffix)
+            ]
+            asserts.equals(env, 1, len(matches), "missing build-script input: " + suffix)
 
     return analysistest.end(env)
 
@@ -55,6 +69,35 @@ def duplicate_link_flags_test_suite(name):
         deps = [":shared_script"],
     )
 
+    rust_library(
+        name = "intermediate_lib",
+        srcs = ["lib.rs"],
+        deps = [":lib", ":shared_script"],
+    )
+
+    rust_binary(
+        name = "bin_with_intermediate_lib",
+        srcs = ["main.rs"],
+        deps = [":intermediate_lib", ":shared_script"],
+    )
+
+    cargo_build_script(
+        name = "other_script",
+        srcs = ["build.rs"],
+    )
+
+    rust_library(
+        name = "unrelated_lib",
+        srcs = ["lib.rs"],
+        deps = [":other_script"],
+    )
+
+    rust_binary(
+        name = "bin_with_unrelated_lib",
+        srcs = ["main.rs"],
+        deps = [":shared_script", ":unrelated_lib"],
+    )
+
     _link_flags_test(
         name = "lib_link_flags_test",
         target_under_test = ":lib",
@@ -73,11 +116,25 @@ def duplicate_link_flags_test_suite(name):
         expected_count = 1,
     )
 
+    _link_flags_test(
+        name = "bin_with_intermediate_lib_link_flags_test",
+        target_under_test = ":bin_with_intermediate_lib",
+        expected_count = 0,
+    )
+
+    _link_flags_test(
+        name = "bin_with_unrelated_lib_link_flags_test",
+        target_under_test = ":bin_with_unrelated_lib",
+        expected_count = 1,
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":lib_link_flags_test",
             ":bin_with_lib_link_flags_test",
             ":bin_without_lib_link_flags_test",
+            ":bin_with_intermediate_lib_link_flags_test",
+            ":bin_with_unrelated_lib_link_flags_test",
         ],
     )
