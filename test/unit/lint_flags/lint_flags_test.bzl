@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_lint_config")
+load("//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_lint_config", "rust_proc_macro")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_not")
 
 def target_action_contains_not_flag(env, target, flags):
@@ -28,6 +28,8 @@ def target_action_contains_flag(env, target, flags):
 def _extra_rustc_flags_present_test(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
+    if ctx.attr.apply_in_exec:
+        asserts.true(env, any([action.mnemonic == "Rustc" for action in target.actions]), "expected a target-configuration Rustc action")
     target_action_contains_flag(env, target, ctx.attr.rustc_flags)
 
     target = ctx.attr.lib_exec
@@ -76,6 +78,13 @@ def _define_test_targets():
         edition = "2018",
     )
 
+    rust_proc_macro(
+        name = "proc_macro_with_lints",
+        srcs = ["proc_macro.rs"],
+        lint_config = ":workspace_lints",
+        edition = "2018",
+    )
+
     rust_clippy(
         name = "clippy",
         deps = [":lib"],
@@ -118,6 +127,17 @@ def lint_flags_test_suite(name):
     )
 
     extra_rustc_flag_present_test(
+        name = "proc_macro_lints_apply_in_exec",
+        target_under_test = ":proc_macro_with_lints",
+        lib_exec = ":proc_macro_with_lints",
+        rustc_flags = [
+            "--allow=unknown_lints",
+            "--check-cfg=cfg(bazel)",
+        ],
+        apply_in_exec = True,
+    )
+
+    extra_rustc_flag_present_test(
         name = "clippy_lints_apply_flags",
         target_under_test = ":clippy",
         lib_exec = ":clippy",
@@ -136,6 +156,7 @@ def lint_flags_test_suite(name):
         tests = [
             ":rustc_lints_apply_flags",
             ":build_script_lints_apply_in_exec",
+            ":proc_macro_lints_apply_in_exec",
             ":clippy_lints_apply_flags",
             ":rustdoc_lints_apply_flags",
         ],
