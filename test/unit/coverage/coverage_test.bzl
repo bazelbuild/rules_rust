@@ -2,6 +2,9 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+
+# The unit test inspects the private transition used by the collector.
+# buildifier: disable=bzl-visibility
 load("//rust/private:cargo_context.bzl", "CARGO_INPUTS", "CARGO_TARGET", "cargo_context")
 
 _CollectorInfo = provider(
