@@ -8,6 +8,10 @@ fn main() {
     } else {
         format!("-L{out_dir}")
     };
-    println!("cargo::rustc-cdylib-link-arg={search}");
+    println!("cargo::rustc-link-arg-cdylib={search}");
+    println!("cargo:rustc-cdylib-link-arg={search}");
     println!("cargo::rustc-link-arg-bins={search}");
+    println!("cargo::rustc-link-arg-bin=my-bin={search}");
+    println!("cargo::rustc-link-arg-bin=my_bin={search}");
+    println!("cargo::rustc-link-arg-bin=unrelated=--this-must-never-reach-the-linker");
 }

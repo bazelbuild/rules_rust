@@ -30,8 +30,9 @@ pub struct CompileAndLinkFlags {
     /// (`cargo::rustc-cdylib-link-arg`). The consuming rule gates these on the
     /// crate type, and propagates them transitively to cdylibs (matching cargo).
     pub cdylib_link_flags: String,
-    /// `-Clink-arg`s that apply only when the crate is built as a binary
-    /// (`cargo::rustc-link-arg-bins`). Gated on the crate type by the rule.
+    /// Binary-scoped arguments in emission order, encoded as `BIN=-Clink-arg=FLAG`
+    /// per line. An empty `BIN` applies to all binaries; the process wrapper
+    /// selects named arguments before substituting execution paths.
     pub bin_link_flags: String,
 }
 
@@ -52,6 +53,8 @@ pub enum BuildScriptOutput {
     CdylibLinkArg(String),
     /// cargo::rustc-link-arg-bins
     BinLinkArg(String),
+    /// cargo::rustc-link-arg-bin=BIN=FLAG
+    NamedBinLinkArg { name: String, flag: String },
     /// cargo::rustc-env
     Env(String),
     /// cargo::VAR=VALUE
@@ -110,16 +113,24 @@ impl BuildScriptOutput {
                 }
             }
             // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
-            "rustc-cdylib-link-arg" => Some(BuildScriptOutput::CdylibLinkArg(param)),
+            "rustc-cdylib-link-arg" | "rustc-link-arg-cdylib" => {
+                Some(BuildScriptOutput::CdylibLinkArg(param))
+            }
             // cargo::rustc-link-arg-bins=FLAG – Passes custom flags to a linker for binaries.
             "rustc-link-arg-bins" => Some(BuildScriptOutput::BinLinkArg(param)),
             "rustc-link-arg-bin" => {
-                // cargo::rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
-                eprint!(
-                    "Warning: build script returned unsupported directive `{}`",
-                    split[0]
-                );
-                None
+                let Some((name, flag)) = param.split_once('=') else {
+                    eprintln!("Warning: rustc-link-arg-bin requires BIN=FLAG");
+                    return None;
+                };
+                if name.is_empty() {
+                    eprintln!("Warning: rustc-link-arg-bin requires a nonempty binary name");
+                    return None;
+                }
+                Some(BuildScriptOutput::NamedBinLinkArg {
+                    name: name.to_owned(),
+                    flag: flag.to_owned(),
+                })
             }
             _ => {
                 // cargo::KEY=VALUE — Metadata, used by links scripts.
@@ -240,7 +251,10 @@ impl BuildScriptOutput {
                 BuildScriptOutput::CdylibLinkArg(e) => {
                     cdylib_link_flags.push(format!("-Clink-arg={e}"))
                 }
-                BuildScriptOutput::BinLinkArg(e) => bin_link_flags.push(format!("-Clink-arg={e}")),
+                BuildScriptOutput::BinLinkArg(e) => bin_link_flags.push(format!("=-Clink-arg={e}")),
+                BuildScriptOutput::NamedBinLinkArg { name, flag } => {
+                    bin_link_flags.push(format!("{name}=-Clink-arg={flag}"));
+                }
                 BuildScriptOutput::LinkLib(e) => link_flags.push(format!("-l{e}")),
                 BuildScriptOutput::LinkSearch(e) => link_search_paths.push(format!("-L{e}")),
                 _ => {}
@@ -399,31 +413,42 @@ non-assignment-instructions-are-ignored",
         from_read_buffer_to_env_and_flags_test_impl(buff);
     }
 
+    // https://github.com/bazelbuild/rules_rust/issues/4299
     #[test]
-    fn test_cdylib_and_bin_link_args() {
+    fn scoped_link_args_preserve_names_order_and_paths() {
         let buff = Cursor::new(
-            "
-cargo::rustc-cdylib-link-arg=-undefined
-cargo::rustc-link-arg-bins=-Wl,--whole-archive
-cargo::rustc-link-arg-bin=mybin=-Wl,--per-bin",
+            "cargo:rustc-cdylib-link-arg=-first\n\
+             cargo::rustc-link-arg-cdylib=-second\n\
+             cargo::rustc-link-arg-bins=-before\n\
+             cargo::rustc-link-arg-bin=my-bin=/exec/out/file=with=equals\n\
+             cargo:rustc-link-arg-bin=my_bin=-other\n\
+             cargo::rustc-link-arg-bins=-after",
         );
-        let result = BuildScriptOutput::outputs_from_reader(BufReader::new(buff));
-
-        // `rustc-link-arg-bin` (the per-binary form) is unsupported and dropped.
+        let result = BuildScriptOutput::outputs_from_reader(BufReader::new(buff), false);
+        let flags = BuildScriptOutput::outputs_to_flags(&result, "/exec", "out");
         assert_eq!(
-            result,
-            vec![
-                BuildScriptOutput::CdylibLinkArg("-undefined".to_owned()),
-                BuildScriptOutput::BinLinkArg("-Wl,--whole-archive".to_owned()),
-            ]
+            flags.cdylib_link_flags,
+            "-Clink-arg=-first\n-Clink-arg=-second"
         );
-
-        let flags = BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path", "");
-        assert_eq!(flags.cdylib_link_flags, "-Clink-arg=-undefined".to_owned());
         assert_eq!(
             flags.bin_link_flags,
-            "-Clink-arg=-Wl,--whole-archive".to_owned()
+            "=-Clink-arg=-before\n\
+             my-bin=-Clink-arg=${pwd}/${out}/file=with=equals\n\
+             my_bin=-Clink-arg=-other\n\
+             =-Clink-arg=-after"
         );
+        assert_eq!(flags.compile_flags, "");
+        assert_eq!(flags.link_flags, "");
+    }
+
+    #[test]
+    fn malformed_named_binary_flags_do_not_become_unscoped_flags() {
+        for line in [
+            "cargo::rustc-link-arg-bin=oops",
+            "cargo::rustc-link-arg-bin==-bad",
+        ] {
+            assert_eq!(BuildScriptOutput::new(line, false), None);
+        }
     }
 
     /// Demonstrate that the old style single colon flags are all parsable

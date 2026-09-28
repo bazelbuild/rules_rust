@@ -914,6 +914,7 @@ def collect_inputs(
         build_info = build_info,
         dep_info = dep_info,
         crate_type = crate_info.type,
+        is_test = crate_info.is_test,
         include_link_flags = include_link_flags,
         include_transitive_data = not toolchain._incompatible_do_not_include_transitive_data_in_compile_inputs,
     )
@@ -1050,7 +1051,8 @@ def construct_arguments(
         require_explicit_unstable_features = False,
         error_format = None,
         allowed_unstable_rust_features = None,
-        link_std_dylib = False):
+        link_std_dylib = False,
+        bin_link_flags = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1123,6 +1125,7 @@ def construct_arguments(
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
         link_std_dylib (bool): Whether to dynamically link the Rust standard library using `--prefer-dynamic`.
+        bin_link_flags (File, optional): Binary-scoped build-script arguments, selected by `cargo_bin_name`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1149,6 +1152,9 @@ def construct_arguments(
         process_wrapper_flags.add("--env-file", build_env_file)
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
+    if bin_link_flags:
+        process_wrapper_flags.add("--bin-arg-file", bin_link_flags)
+        process_wrapper_flags.add("--cargo-bin-name", getattr(attr, "cargo_bin_name", "") or ctx.label.name)
 
     all_allowed_unstable_features = []
     if getattr(ctx.attr, "unstable_rust_features_config", None):
@@ -1948,6 +1954,7 @@ def rustc_compile_action(
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
+        bin_link_flags = getattr(build_info, "bin_link_flags", None) if build_info and crate_info.type == "bin" and not crate_info.is_test else None,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
@@ -2612,6 +2619,7 @@ def _process_build_scripts(
         build_info,
         dep_info,
         crate_type,
+        is_test = False,
         include_link_flags = True,
         include_transitive_data = False):
     """Gathers the outputs from a target's `cargo_build_script` action.
@@ -2619,6 +2627,8 @@ def _process_build_scripts(
     Args:
         build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
+        crate_type (str): The consuming crate type.
+        is_test (bool): Whether the consumer is a test harness.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
         include_transitive_data (bool, optional): Whether to include transitive data dependencies in compile inputs.
 
@@ -2658,8 +2668,7 @@ def _process_build_scripts(
 
         # `cargo::rustc-link-arg-bins` applies only to binary targets, and (like
         # cargo) only from the crate's own build script — not transitively.
-        if crate_type == "bin" and getattr(build_info, "bin_link_flags", None):
-            build_flags_files.append(build_info.bin_link_flags)
+        if crate_type == "bin" and not is_test and getattr(build_info, "bin_link_flags", None):
             direct_inputs.append(build_info.bin_link_flags)
 
         transitive_inputs.append(build_info.compile_data)
@@ -2674,7 +2683,7 @@ def _process_build_scripts(
         # `cargo::rustc-cdylib-link-arg` applies only to cdylib targets, and (like
         # cargo, see rust-lang/cargo#9562) propagates transitively to them. The
         # crate's own build script is included here via `transitive_build_infos`.
-        if crate_type == "cdylib" and getattr(dep_build_info, "cdylib_link_flags", None):
+        if crate_type == "cdylib" and not is_test and getattr(dep_build_info, "cdylib_link_flags", None):
             build_flags_files.append(dep_build_info.cdylib_link_flags)
             direct_inputs.append(dep_build_info.cdylib_link_flags)
 

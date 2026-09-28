@@ -1,8 +1,9 @@
 """Tests for `cargo::rustc-cdylib-link-arg` and `cargo::rustc-link-arg-bins`."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 # The build script's `.cdyliblinkflags` / `.binlinkflags` outputs are passed to
@@ -12,7 +13,7 @@ load("//test/unit:common.bzl", "assert_action_mnemonic")
 # gated (and, for cdylibs, transitively propagated) consumer.
 def _has_arg_file(argv, suffix):
     for i in range(len(argv) - 1):
-        if argv[i] == "--arg-file" and argv[i + 1].endswith(suffix):
+        if argv[i] in ["--arg-file", "--bin-arg-file"] and argv[i + 1].endswith(suffix):
             return True
     return False
 
@@ -33,12 +34,16 @@ def _link_args_test_impl(ctx):
     for suffix in ctx.attr.unexpected_arg_files:
         asserts.false(env, _has_arg_file(action.argv, suffix), "unexpected --arg-file ending with '{}'".format(suffix))
 
+    if ctx.attr.bin_name:
+        index = action.argv.index("--cargo-bin-name")
+        asserts.equals(env, ctx.attr.bin_name, action.argv[index + 1])
     return analysistest.end(env)
 
 _link_args_test = analysistest.make(
     _link_args_test_impl,
     attrs = {
         "expect_arg_files": attr.string_list(),
+        "bin_name": attr.string(),
         "unexpected_arg_files": attr.string_list(),
     },
 )
@@ -80,9 +85,22 @@ def cdylib_bin_link_args_test_suite(name):
 
     rust_binary(
         name = "bin",
+        cargo_bin_name = "my-bin",
         srcs = ["bin.rs"],
         deps = [":direct_build_script", ":dep_lib"],
         tags = ["manual"],
+    )
+
+    rust_binary(
+        name = "my_bin",
+        srcs = ["bin.rs"],
+        deps = [":direct_build_script", ":dep_lib"],
+        tags = ["manual"],
+    )
+
+    rust_test(
+        name = "binary_unit_test",
+        crate = ":bin",
     )
 
     rust_library(
@@ -109,10 +127,12 @@ def cdylib_bin_link_args_test_suite(name):
     _link_args_test(
         name = "bin_consumer_test",
         target_under_test = ":bin",
+        bin_name = "my-bin",
         expect_arg_files = ["direct_build_script.binlinkflags"],
         unexpected_arg_files = [
             "direct_build_script.cdyliblinkflags",
             "transitive_build_script.cdyliblinkflags",
+            "transitive_build_script.binlinkflags",
         ],
     )
 
@@ -126,11 +146,40 @@ def cdylib_bin_link_args_test_suite(name):
         ],
     )
 
+    _link_args_test(
+        name = "default_binary_name_test",
+        target_under_test = ":my_bin",
+        bin_name = "my_bin",
+        expect_arg_files = ["direct_build_script.binlinkflags"],
+        unexpected_arg_files = ["transitive_build_script.binlinkflags"],
+    )
+
+    _link_args_test(
+        name = "test_harness_consumer_test",
+        target_under_test = ":binary_unit_test",
+        unexpected_arg_files = [
+            "direct_build_script.binlinkflags",
+            "direct_build_script.cdyliblinkflags",
+        ],
+    )
+
+    # Analysis alone does not read the generated response files. Build each
+    # consumer so malformed records, path substitution, and leaked invalid
+    # flags for an unrelated binary cause a real compiler/linker failure.
+    build_test(
+        name = "link_args_build_test",
+        targets = [":bin", ":my_bin", ":cdylib", ":lib"],
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":cdylib_consumer_test",
             ":bin_consumer_test",
             ":lib_consumer_test",
+            ":default_binary_name_test",
+            ":test_harness_consumer_test",
+            ":link_args_build_test",
+            ":binary_unit_test",
         ],
     )
