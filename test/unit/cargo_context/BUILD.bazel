@@ -2,7 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("//test/unit/cc_toolchain_runtime_lib:cc_toolchain_runtime_lib_test.bzl", "test_cc_config")
 load(":context_test.bzl", "cargo_context_tests")
 
-cargo_context_tests()
+cargo_context_tests(name = "cargo_context_tests")
 
 platform(
     name = "linux",
