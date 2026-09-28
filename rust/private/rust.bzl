@@ -736,9 +736,6 @@ _cargo_transition = transition(
 )
 
 _COMMON_ATTRS = {
-    "cargo_target_triple_map": attr.string_dict(
-        doc = "Optional equivalence map for the originating Cargo target in an execution configuration. Keys omit the `target/` prefix. Use only for contexts with identical dependencies and features, and map canonical values to themselves. Has no effect when `//cargo/settings:cargo_target_triple` is unset or when compiling for the target platform.",
-    ),
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
             Remap crates to a new name or moniker for linkage to this target
@@ -754,6 +751,9 @@ _COMMON_ATTRS = {
             This attribute is used by the C++ Starlark API when passing CcInfo providers.
         """),
         default = False,
+    ),
+    "cargo_target_triple_map": attr.string_dict(
+        doc = "Optional equivalence map for the originating Cargo target in an execution configuration. Keys omit the `target/` prefix. Use only for contexts with identical dependencies and features, and map canonical values to themselves. Has no effect when `//cargo/settings:cargo_target_triple` is unset or when compiling for the target platform.",
     ),
     "compile_data": attr.label_list(
         doc = dedent("""\
