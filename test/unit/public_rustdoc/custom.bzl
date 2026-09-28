@@ -3,6 +3,9 @@
 load("//rust:rust_common.bzl", "CrateInfo", "LintsInfo", "transform_deps")
 load("//rust:rust_doc.bzl", "rustdoc_compile_action")
 
+def _dirname(file):
+    return file.dirname
+
 def _custom_impl(ctx):
     crate = ctx.attr.crate[CrateInfo]
 
@@ -29,12 +32,18 @@ def _custom_impl(ctx):
     )
     wrapper_flags = ctx.actions.args()
     wrapper_flags.add("--touch-file", stamp)
+    wrapper_flags.add_all(
+        [stamp],
+        before_each = "--subst",
+        format_each = "doctest_tmpdir=%s",
+        map_each = _dirname,
+    )
     ctx.actions.run(
         executable = action.executable,
         inputs = action.inputs,
         outputs = [stamp],
         arguments = [wrapper_flags] + action.arguments,
-        env = action.env | {"TMPDIR": "${pwd}/" + stamp.dirname},
+        env = action.env | {"TMPDIR": "${pwd}/${doctest_tmpdir}"},
         tools = action.tools,
         toolchain = Label("//rust:toolchain_type"),
         execution_requirements = {"supports-path-mapping": ""} if action.supports_path_mapping else {},
