@@ -75,10 +75,18 @@ def rustdoc_compile_action(
         crate_info,
         lints_info = None,
         output = None,
-        rustdoc_flags = [],
+        rustdoc_flags = None,
         is_test = False,
         force_depend_on_objects = None):
-    """Create a struct of information needed for a `rustdoc` compile action based on crate passed to the rustdoc rule.
+    """Prepare a rustdoc invocation without registering its action.
+
+    Public load path: `@rules_rust//rust:rust_doc.bzl`. The calling rule must
+    declare the Rust toolchain, the optional C++ toolchain, the `cpp` fragment,
+    and `_process_wrapper` (executable, cfg="exec") and `_error_format` label
+    attributes. See `docs/custom_rustdoc.md` for the complete contract and example.
+    The caller owns output declarations, action registration and any test runner.
+    This function may append linker and lint arguments to `rustdoc_flags`.
+
 
     Args:
         ctx (ctx): The rule's context object.
@@ -86,14 +94,21 @@ def rustdoc_compile_action(
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
-        rustdoc_flags (Args, optional): An `Args` object of `rustdoc` specific flags.
+        rustdoc_flags (Args, optional): Mutable rustdoc-specific flags. Defaults to a new Args object.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
         force_depend_on_objects (bool, optional): If set, overrides is_test for controlling whether
             to depend on .rlib files instead of .rmeta. Defaults to is_test.
 
     Returns:
-        struct: A struct of some `ctx.actions.run` arguments.
+        struct: `executable` (process-wrapper File), `inputs` (depset[File]),
+        `env` (dict[str, str]), `arguments` (list[Args]), `tools` (list[File]),
+        `supports_path_mapping` (bool), and `static_runtime_libs` (list[File]).
+        Pass the first five fields to `ctx.actions.run`; add the path-mapping
+        execution requirement only when `supports_path_mapping` is true.
     """
+    if rustdoc_flags == None:
+        rustdoc_flags = ctx.actions.args()
+
     if force_depend_on_objects == None:
         force_depend_on_objects = is_test
 

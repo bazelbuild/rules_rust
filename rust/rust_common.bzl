@@ -27,10 +27,12 @@ load(
     _CrateInfo = "CrateInfo",
     _DepInfo = "DepInfo",
     _DepVariantInfo = "DepVariantInfo",
+    _LintsInfo = "LintsInfo",
     _TestCrateInfo = "TestCrateInfo",
     _UnstableRustFeaturesInfo = "UnstableRustFeaturesInfo",
 )
 load("//rust/private:rustc.bzl", _UnstableSelfProfileInfo = "UnstableSelfProfileInfo")
+load("//rust/private:utils.bzl", _transform_deps = "transform_deps")
 
 BuildInfo = _BuildInfo
 ClippyInfo = _ClippyInfo
@@ -38,9 +40,13 @@ CrateGroupInfo = _CrateGroupInfo
 CrateInfo = _CrateInfo
 DepInfo = _DepInfo
 DepVariantInfo = _DepVariantInfo
+LintsInfo = _LintsInfo
 TestCrateInfo = _TestCrateInfo
 UnstableRustFeaturesInfo = _UnstableRustFeaturesInfo
 UnstableSelfProfileInfo = _UnstableSelfProfileInfo
 COMMON_PROVIDERS = _COMMON_PROVIDERS
 
 rust_common = _rust_common
+
+# Preserve provider identity and dependency conversion for custom Rust rules.
+transform_deps = _transform_deps

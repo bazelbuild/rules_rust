@@ -534,7 +534,15 @@ def is_exec_configuration(ctx):
     return ctx.genfiles_dir.path.find("-exec") != -1
 
 def transform_deps(deps):
-    """Transforms a [Target] into [DepVariantInfo].
+    """Convert configured dependency targets to `DepVariantInfo` values.
+
+    Public load path: `@rules_rust//rust:rust_common.bzl`. The conversion preserves
+    input order and the original provider instances. Rust crates, crate groups,
+    build scripts and C++ providers are copied when present; missing fields are
+    None. No configuration transition or dependency validation is performed.
+    In particular, declare procedural-macro attributes with `cfg = "exec"`
+    before calling this function. Keep normal and procedural-macro results in
+    their respective `CrateInfo` fields.
 
     This helper function is used to transform ctx.attr.deps and ctx.attr.proc_macro_deps into
     [DepVariantInfo].

@@ -1,0 +1,41 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//rust:defs.bzl", "rust_library", "rust_lint_config", "rust_proc_macro")
+load(":custom.bzl", "custom_doctest")
+
+rust_library(
+    name = "dependency",
+    srcs = ["dep.rs"],
+    edition = "2021",
+)
+
+rust_proc_macro(
+    name = "identity",
+    srcs = ["macro.rs"],
+    edition = "2021",
+)
+
+rust_lint_config(
+    name = "lints",
+    rustdoc = {"broken_intra_doc_links": "deny"},
+)
+
+rust_library(
+    name = "documented",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    lint_config = ":lints",
+    proc_macro_deps = [":identity"],
+    deps = [":dependency"],
+)
+
+custom_doctest(
+    name = "custom",
+    crate = ":documented",
+    proc_macro_deps = [":identity"],
+    deps = [":dependency"],
+)
+
+build_test(
+    name = "public_rustdoc_test",
+    targets = [":custom"],
+)
