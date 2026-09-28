@@ -1276,14 +1276,14 @@ rust_proc_macro = rule(
 )
 
 _RUST_BINARY_ATTRS = {
-    "cargo_bin_name": attr.string(
-        doc = "Cargo binary target name used to select `cargo::rustc-link-arg-bin=BIN=FLAG` output. Defaults to this rule's name. Set this when a generated Bazel target name differs from the Cargo name; hyphens and underscores are distinct.",
-    ),
     "binary_name": attr.string(
         doc = dedent("""\
             Override the resulting binary file name. By default, the binary file will be named using the `name` attribute on this rule,
             however sometimes that is not deseriable.
         """),
+    ),
+    "cargo_bin_name": attr.string(
+        doc = "Cargo binary target name used to select `cargo::rustc-link-arg-bin=BIN=FLAG` output. Defaults to this rule's name. Set this when a generated Bazel target name differs from the Cargo name; hyphens and underscores are distinct.",
     ),
     "crate_type": attr.string(
         doc = dedent("""\

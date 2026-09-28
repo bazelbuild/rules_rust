@@ -42,8 +42,8 @@ def _link_args_test_impl(ctx):
 _link_args_test = analysistest.make(
     _link_args_test_impl,
     attrs = {
-        "expect_arg_files": attr.string_list(),
         "bin_name": attr.string(),
+        "expect_arg_files": attr.string_list(),
         "unexpected_arg_files": attr.string_list(),
     },
 )
