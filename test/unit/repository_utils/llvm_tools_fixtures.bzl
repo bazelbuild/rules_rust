@@ -11,7 +11,7 @@ def _fixture_impl(ctx):
         ctx.file("lib/rustlib/" + ctx.attr.triple + "/lib/" + filename, "fixture")
     ctx.file("lib/rustlib/unrelated-target/lib/libLLVM-wrong.dylib", "not selected")
 
-_fixture = repository_rule(implementation = _fixture_impl, attrs = {"triple": attr.string(), "libraries": attr.string_list()})
+_fixture = repository_rule(implementation = _fixture_impl, attrs = {"libraries": attr.string_list(), "triple": attr.string()})
 
 def _fixtures_impl(_ctx):
     _fixture(name = "llvm_macos_fixture", triple = "aarch64-apple-darwin", libraries = ["libLLVM.dylib", "libLLVM-23.dylib", "libLLVM.a"])
