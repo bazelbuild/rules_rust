@@ -52,7 +52,6 @@ def _ambiguous_deps_test_impl(env, target):
         matching.custom("does not end with the desired extension", lambda arg: not arg.endswith(extension)),
     )
 
-
 def _bin_with_ambiguous_deps_test(name):
     rust_library(
         name = name + "_rlib_with_ambiguous_deps",
