@@ -48,8 +48,8 @@ custom_doctest = rule(
         "crate": attr.label(mandatory = True, providers = [CrateInfo, LintsInfo]),
         "deps": attr.label_list(providers = [CrateInfo]),
         "proc_macro_deps": attr.label_list(providers = [CrateInfo], cfg = "exec"),
-        "_process_wrapper": attr.label(default = Label("//util/process_wrapper"), executable = True, cfg = "exec"),
         "_error_format": attr.label(default = Label("//rust/settings:error_format")),
+        "_process_wrapper": attr.label(default = Label("//util/process_wrapper"), executable = True, cfg = "exec"),
     },
     fragments = ["cpp"],
     toolchains = [
