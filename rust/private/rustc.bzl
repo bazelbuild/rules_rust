@@ -208,6 +208,7 @@ def collect_deps(
 
     direct_build_infos = []
     transitive_build_infos = []
+    library_build_infos = []
 
     direct_link_search_paths = []
     transitive_link_search_paths = []
@@ -251,6 +252,11 @@ def collect_deps(
             ))
 
             is_proc_macro = _is_proc_macro(crate_info)
+
+            if crate_info.type in ("lib", "rlib", "dylib") and not crate_info.is_test:
+                library_build_info = getattr(dep_info, "direct_build_info", None)
+                if library_build_info:
+                    library_build_infos.append(library_build_info)
 
             direct_crates.append(crate_info)
             if not is_proc_macro:
@@ -314,8 +320,17 @@ def collect_deps(
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
 
+    # Cargo sends rustc-link-lib only to the package library when one exists.
+    # Keep the original BuildInfo so dependents can compare the same script,
+    # and retain its cfg, environment, OUT_DIR and search paths for this crate.
+    build_script_linker_flags = None
+    if build_info and build_info not in library_build_infos:
+        build_script_linker_flags = build_info.linker_flags
+
     return (
         rust_common.dep_info(
+            direct_build_info = build_info,
+            build_script_linker_flags = build_script_linker_flags,
             direct_crates = depset(
                 direct_deps,
                 transitive = [extra_named_deps] if extra_named_deps else [],
@@ -2662,9 +2677,10 @@ def _process_build_scripts(
         build_env_file = build_info.rustc_env
         if build_info.flags:
             build_flags_files.append(build_info.flags)
-        if build_info.linker_flags and include_link_flags and not _build_script_linked_by_library(build_info, dep_info):
-            build_flags_files.append(build_info.linker_flags)
-            direct_inputs.append(build_info.linker_flags)
+        linker_flags = getattr(dep_info, "build_script_linker_flags", build_info.linker_flags)
+        if linker_flags and include_link_flags:
+            build_flags_files.append(linker_flags)
+            direct_inputs.append(linker_flags)
 
         # `cargo::rustc-link-arg-bins` applies only to binary targets, and (like
         # cargo) only from the crate's own build script — not transitively.
@@ -2698,17 +2714,6 @@ def _process_build_scripts(
         build_env_file,
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
-
-def _build_script_linked_by_library(build_info, dep_info):
-    # Cargo applies rustc-link-lib to the package library when one exists.
-    # Binaries that depend on that library already link its native archives.
-    for crate in dep_info.direct_crates.to_list():
-        if crate.dep.type not in ("lib", "rlib", "dylib") or crate.dep.is_test:
-            continue
-        for dep in crate.dep.deps.to_list():
-            if dep.build_info == build_info and dep.build_info.linker_flags == build_info.linker_flags:
-                return True
-    return False
 
 def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, output_file = None, workspace_name = ""):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
