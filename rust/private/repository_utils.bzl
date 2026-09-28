@@ -259,7 +259,10 @@ _build_file_for_llvm_tools = """\
 filegroup(
     name = "llvm_lib",
     srcs = glob(
-      ["lib/rustlib/{target_triple}/lib/libLLVM*.so*"],
+      [
+        "lib/rustlib/{target_triple}/lib/libLLVM*.so*",
+        "lib/rustlib/{target_triple}/lib/libLLVM*.dylib",
+      ],
       allow_empty = True,
     ),
     visibility = ["//visibility:public"],

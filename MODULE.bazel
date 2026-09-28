@@ -160,3 +160,6 @@ use_repo(
     "cross_rs",
     "cross_rs_host_bin",
 )
+
+llvm_tools_fixtures = use_extension("//test/unit/repository_utils:llvm_tools_fixtures.bzl", "fixtures", dev_dependency = True)
+use_repo(llvm_tools_fixtures, "llvm_linux_fixture", "llvm_macos_fixture", "llvm_static_fixture")
