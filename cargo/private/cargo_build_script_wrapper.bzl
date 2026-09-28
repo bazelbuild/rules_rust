@@ -35,6 +35,7 @@ def cargo_build_script(
         root_path = None,
         srcs = [],
         crate_features = [],
+        cargo_target_triple_map = {},
         version = None,
         deps = [],
         link_deps = [],
@@ -125,6 +126,7 @@ def cargo_build_script(
         root_path (str, optional): The path to the crate root within a directory artifact passed in `srcs`.
         srcs (list of label): Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
         crate_features (list, optional): A list of features to enable for the build script.
+        cargo_target_triple_map (dict, optional): Execution-context equivalences passed to the build-script compiler target; see `rust_binary.cargo_target_triple_map`.
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The build-dependencies of the crate.
         pkg_name (string, optional): Override the package name used for the build script. This is useful if the build target name gets too long otherwise.
@@ -211,6 +213,7 @@ def cargo_build_script(
     # This target exists as the actual build script.
     rust_binary(
         name = name + "_",
+        cargo_target_triple_map = cargo_target_triple_map,
         crate_name = crate_name,
         srcs = srcs,
         crate_root = crate_root,
