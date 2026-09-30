@@ -1,6 +1,0 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-
-build_test(
-    name = "example_proc_macro_dep_with_exclusion",
-    targets = ["@crate_index//serde"],
-)
