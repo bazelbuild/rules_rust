@@ -15,6 +15,9 @@
 //! - `RUNFILES_DIR` (optional): Location of the test's runfiles. Not set in split
 //!   coverage postprocessing mode (`--experimental_split_coverage_postprocessing`).
 //! - `TEST_BINARY`: Runfiles-relative path to the test binary (used when `RUNFILES_DIR` is absent).
+//! - `RUST_COVERAGE_OBJECTS` (optional): Instrumented binaries the test runs as
+//!   subprocesses, separated by the host path separator. Each is resolved like
+//!   `RUST_LLVM_COV`.
 //! - `VERBOSE_COVERAGE`: Print debug info from the coverage scripts
 //!
 //! The script looks in $COVERAGE_DIR for the Rust metadata coverage files
@@ -22,6 +25,7 @@
 //! is placed in $COVERAGE_DIR as a `coverage.dat` file.
 
 use std::env;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -152,6 +156,18 @@ fn main() {
             test_binary
         }
     };
+    let coverage_objects: Vec<PathBuf> = env::var("RUST_COVERAGE_OBJECTS")
+        .map(|objects| {
+            env::split_paths(&objects)
+                .map(|object| match runfiles_dir {
+                    Some(ref rd) => find_metadata_file(&execroot, rd, &object.to_string_lossy()),
+                    None => execroot.join(object),
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    debug_log!("Additional coverage objects: {:#?}", coverage_objects);
+
     let profraw_files: Vec<PathBuf> = fs::read_dir(coverage_dir)
         .unwrap()
         .flatten()
@@ -203,6 +219,11 @@ fn main() {
         .arg("-ignore-filename-regex=/tmp/.+")
         .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
+        .args(
+            coverage_objects
+                .iter()
+                .flat_map(|object| [OsStr::new("-object"), object.as_os_str()]),
+        )
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped());
 
