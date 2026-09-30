@@ -66,7 +66,7 @@ def _assert_no_deprecated_attributes(_ctx):
     """
     pass
 
-def _assert_correct_dep_mapping(ctx):
+def _assert_correct_dep_mapping(ctx, crate_type):
     """Ensures dependencies are correctly mapped between 'deps', 'proc_macro_deps', and 'link_deps'.
 
     This function validates that procedural macros and native libraries are listed in
@@ -74,6 +74,7 @@ def _assert_correct_dep_mapping(ctx):
 
     Args:
         ctx (ctx): The current rule's context object
+        crate_type (String): one of bin|test|lib|rlib|dylib|staticlib|cdylib|proc-macro
     """
     for dep in ctx.attr.deps:
         # Identify if this is a Rust-related target using any known Rust provider.
@@ -98,7 +99,8 @@ def _assert_correct_dep_mapping(ctx):
 
         # If it's not a known Rust target but provides CcInfo, it's a native library
         # that should ideally be in 'link_deps'.
-        if CcInfo in dep:
+        # `proc_macro` doesn't support link_deps, so we exclude it from the warning.
+        if CcInfo in dep and crate_type != "proc-macro":
             # buildifier: disable=print
             print(
                 ("\nWARNING: Target {dep} in 'deps' of {target} is a C++ library. " +
@@ -242,7 +244,7 @@ def _rust_library_common(ctx, crate_type):
     """
     _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    _assert_correct_dep_mapping(ctx, crate_type)
 
     toolchain = find_toolchain(ctx)
 
@@ -337,7 +339,7 @@ def _rust_binary_impl(ctx):
     _validate_root_path(ctx)
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-    _assert_correct_dep_mapping(ctx)
+    _assert_correct_dep_mapping(ctx, "bin")
 
     if ctx.attr.binary_name:
         output_filename = ctx.attr.binary_name
@@ -431,7 +433,7 @@ def _rust_test_impl(ctx):
     """
     _validate_root_path(ctx)
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    _assert_correct_dep_mapping(ctx, "test")
 
     toolchain = find_toolchain(ctx)
 
