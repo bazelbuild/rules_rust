@@ -410,14 +410,14 @@ fn proc_macro_dep_with_exclusion() {
         HashMap::from([(
             runfiles::rlocation!(
                 r,
-                "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.toml"
+                "rules_rust/crate_universe/tests/integration/example_proc_macro_dep_with_exclusion/Cargo.toml"
             )
             .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
         )]),
-        "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.lock",
+        "rules_rust/crate_universe/tests/integration/example_proc_macro_dep_with_exclusion/Cargo.lock",
     );
 
     let tree_metadatas = metadata["metadata"]["cargo-bazel"]["tree_metadata"]

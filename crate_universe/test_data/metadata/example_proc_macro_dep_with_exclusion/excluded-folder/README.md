@@ -1,1 +1,0 @@
-Since this folder doesn't have a Cargo.toml, it should break `cargo metadata` if it isn't excluded, failing the `proc_macro_dep_with_exclusion` test in [cargo_integration_test.rs](../../../../../crate_universe/tests/cargo_integration_test.rs).
