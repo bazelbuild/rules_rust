@@ -1,0 +1,3 @@
+# What rustup and cargo read; MODULE.bazel points rules_rust at it too.
+[toolchain]
+channel = "1.98.0"

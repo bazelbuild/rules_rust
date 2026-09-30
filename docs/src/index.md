@@ -42,6 +42,16 @@ rust.toolchain(
 )
 ```
 
+If the repository has a [`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file) for rustup and cargo, `rust_toolchain_file` reads the version from it instead, so it is only written once. Its `channel` must be an exact release (`1.85.0`, `nightly-2025-01-01`), as rules_rust downloads a fixed release rather than asking rustup what `stable` is today:
+
+```python
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    rust_toolchain_file = "//:rust-toolchain.toml",
+)
+```
+
 By default, a `stable` and `nightly` toolchain will be registered if no `toolchain` method is called (and thus no specific versions are registered). However, if only 1 version is passed and it is from the `nightly` or `beta` release channels (i.e. __not__ `stable`), then the following build setting flag must be present, either on the command line or set in the project's `.bazelrc` file:
 
 ```text
