@@ -397,6 +397,53 @@ fn feature_generator_crate_combined_features() {
     );
 }
 
+#[test]
+fn proc_macro_dep_with_exclusion() {
+    if should_skip_test() {
+        eprintln!("Skipping!");
+        return;
+    }
+
+    let r = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "example_proc_macro_dep_with_exclusion",
+        HashMap::from([(
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.toml"
+            )
+            .unwrap()
+            .to_string_lossy()
+            .to_string(),
+            "//:test_input".to_string(),
+        )]),
+        "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.lock",
+    );
+
+    let tree_metadatas = metadata["metadata"]["cargo-bazel"]["tree_metadata"]
+        .as_object()
+        .expect("Tree metadatas should be a JSON object");
+
+    // Check workspace member deps is plumbed though / we didn't forget serde.
+    let member_deps = tree_metadatas["workspace-member 0.1.0"]["common"]["deps"]
+        .as_array()
+        .expect("Deps should be an array");
+    assert!(member_deps[0]
+        .as_str()
+        .is_some_and(|x| x.starts_with("serde ")));
+
+    // The corresponding proc macro should be propagated to the workspace root,
+    // or it may have not been resolved for the host, which is one of the core
+    // features of the TreeResolver in
+    // crate_universe/src/metadata/cargo_tree_resolver.rs.
+    let proc_macro_deps = tree_metadatas["rules_rust_fake_proc_macro_root 0.0.0"]["common"]["deps"]
+        .as_array()
+        .expect("Deps should be an array");
+    assert!(proc_macro_deps[0]
+        .as_str()
+        .is_some_and(|x| x.starts_with("serde_derive ")));
+}
+
 // See crate_universe/test_data/metadata/target_cfg_features/Cargo.toml for input.
 #[test]
 fn resolver_2_deps() {
