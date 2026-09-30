@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(
     "//rust:defs.bzl",
@@ -9,6 +10,7 @@ load(
     "rust_library",
     "rust_shared_library",
     "rust_static_library",
+    "rust_test",
 )
 
 def _check_runfiles_test_impl(ctx):
@@ -73,9 +75,35 @@ def _check_runfiles_test():
         linkshared = True,
     )
 
+    # A cc_import puts nothing in its own runfiles, so the only way libbar.so
+    # reaches a consumer's runfiles is through the dylib staging in
+    # rustc_compile_action.
+    cc_import(
+        name = "bar_import",
+        shared_library = ":libbar.so",
+    )
+
+    rust_library(
+        name = "foo_lib_via_import",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        deps = [":bar_import"],
+    )
+
+    # Reaches libbar.so only through `crate`; nothing in `deps` links it.
+    rust_test(
+        name = "foo_crate_test",
+        crate = ":foo_lib_via_import",
+    )
+
     check_runfiles_test(
         name = "check_runfiles_lib_test",
         target_under_test = ":foo_lib",
+    )
+
+    check_runfiles_test(
+        name = "check_runfiles_crate_test",
+        target_under_test = ":foo_crate_test",
     )
 
     check_runfiles_test(
@@ -105,6 +133,7 @@ def check_runfiles_test_suite(name):
         name = name,
         tests = [
             ":check_runfiles_lib_test",
+            ":check_runfiles_crate_test",
             ":check_runfiles_bin_test",
             ":check_runfiles_dylib_test",
             ":check_runfiles_static_test",

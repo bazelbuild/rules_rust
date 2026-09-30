@@ -2214,11 +2214,14 @@ def rustc_compile_action(
             transitive_runfiles.append(target[DefaultInfo].default_runfiles)
     dep_dylib_files = []
     if crate_info.type in ["bin", "cdylib", "dylib", "staticlib"]:
+        # Walk the same transitive set `_compute_rpaths` does. Walking only the
+        # rule's own `deps` misses a dylib reached solely through `crate`: the
+        # binary NEEDs it and its rpath points at the solib dir, but the file
+        # was never staged, so it fails at load time on any host without a
+        # copy of its own.
         dep_dylib_files = [
             library_to_link.dynamic_library
-            for dep in getattr(ctx.attr, "deps", []) + getattr(ctx.attr, "link_deps", [])
-            if CcInfo in dep
-            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
+            for linker_input in dep_info.transitive_noncrates.to_list()
             for library_to_link in linker_input.libraries
             if _is_dylib(library_to_link) and library_to_link.dynamic_library
         ]
