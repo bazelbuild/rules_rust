@@ -1,0 +1,30 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//:defs.bzl", "mdbook")
+
+# This shows how mdBook can include sources from anywhere in the
+# repository. However, because mdBook only processes files located
+# under the 'src' directory (as configured in book.toml), any files
+# from outside the book's package must be rebased into the 'src'
+# directory using genrules or other means. The rule's process_wrapper
+# ensures that the relative directory structure of these "stitched"
+# files is preserved in the temporary build directory.
+
+mdbook(
+    name = "stitched",
+    srcs = [
+        # The main navigation file for the book.
+        "//test/stitched/src:SUMMARY.md",
+        # A file rebased from a sibling directory into the book's src/
+        # directory.
+        "//test/stitched/src:rebased",
+        # A file generated within a subpackage and placed in the
+        # book's src/ directory.
+        "//test/stitched/src:generated",
+    ],
+    book = "book.toml",
+)
+
+build_test(
+    name = "stitched_test",
+    targets = [":stitched"],
+)

@@ -8,14 +8,17 @@ fn test_encoded_rustflags() {
         .split('\x1f')
         .map(str::to_string)
         .collect();
-    assert_eq!(flags.len(), 2);
+    assert_eq!(flags.len(), 3);
 
     assert!(flags[0].starts_with("--sysroot"));
 
     // Ensure the `pwd` template has been resolved
     assert!(!flags[0].contains("${pwd}"));
 
-    assert_eq!(flags[1], "--cfg=foo=\"bar\"");
+    assert!(flags[1].starts_with("--remap-path-prefix"));
+    assert!(!flags[1].contains("${pwd}"));
+
+    assert_eq!(flags[2], "--cfg=foo=\"bar\"");
 }
 
 /// Ensure Make variables provided by the `toolchains` attribute are expandable.

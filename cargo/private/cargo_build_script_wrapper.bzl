@@ -9,12 +9,30 @@ load(
 )
 load("//rust:defs.bzl", "rust_binary")
 
+def _sanitize_tristate(value):
+    """Coerce a user-provided value to the rule's `-1`/`0`/`1` tri-state `int` shape.
+
+    Args:
+        value (bool | int | None): The user-provided value. `None` is treated as
+            "unset" (`-1`), booleans are mapped to `0`/`1`, and integers are
+            passed through.
+
+    Returns:
+        int: The sanitized tri-state value (`-1`, `0`, or `1`).
+    """
+    if value == None:
+        return -1
+    if type(value) == "bool":
+        return 1 if value else 0
+    return value
+
 def cargo_build_script(
         *,
         name,
         edition = None,
         crate_name = None,
         crate_root = None,
+        root_path = None,
         srcs = [],
         crate_features = [],
         version = None,
@@ -23,6 +41,8 @@ def cargo_build_script(
         proc_macro_deps = [],
         build_script_env = {},
         build_script_env_files = [],
+        emit_warnings = True,
+        use_cc_toolchain = None,
         use_default_shell_env = None,
         data = [],
         compile_data = [],
@@ -32,6 +52,7 @@ def cargo_build_script(
         rustc_env = {},
         rustc_env_files = [],
         rustc_flags = [],
+        lint_config = None,
         visibility = None,
         tags = None,
         aliases = None,
@@ -101,6 +122,7 @@ def cargo_build_script(
         edition (str): The rust edition to use for the internal binary crate.
         crate_name (str): Crate name to use for build script.
         crate_root (label): The file that will be passed to rustc to be used for building this crate.
+        root_path (str, optional): The path to the crate root within a directory artifact passed in `srcs`.
         srcs (list of label): Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
@@ -112,6 +134,18 @@ def cargo_build_script(
         build_script_env (dict, optional): Environment variables for build scripts.
         build_script_env_files (list of label, optional): Files containing additional environment variables to set
             when running the build script.
+        emit_warnings (bool, optional): Whether to forward `cargo::warning=` lines from the build script
+            to stderr. Honored only when
+            `@rules_rust//cargo/settings:emit_build_script_warnings` is `auto` (the
+            default); set the flag to `on` or `off` to override every target.
+        use_cc_toolchain (bool, optional): Whether or not to pull in the resolved `cc_toolchain` when running the build script.
+
+            When enabled, the resolved `cc_toolchain`'s `all_files` are added to the action inputs and the `CC`,
+            `CXX`, `AR`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, and `INCLUDE` environment variables are populated from
+            that toolchain (matching Cargo's normal behavior). Disabling this can significantly shrink build
+            script action input trees (particularly with hermetic sysroots) but breaks any build script that
+            needs to compile C/C++ code. If unset the global setting
+            `@rules_rust//cargo/settings:use_cc_toolchain` will be used to determine this value.
         use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
             setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
@@ -127,6 +161,7 @@ def cargo_build_script(
         rustc_env_files (list of label, optional): Files containing additional environment variables to set for rustc
             when building the build script.
         rustc_flags (list, optional): List of compiler flags passed to `rustc`.
+        lint_config (Label, optional): Lints applied while compiling the build script.
         visibility (list of label, optional): Visibility to apply to the generated build script output.
         tags: (list of str, optional): Tags to apply to the generated build script output.
         aliases (dict, optional): Remap crates to a new name or moniker for linkage to this target. \
@@ -167,6 +202,7 @@ def cargo_build_script(
     # it is translated to `target_compatible_with` to match the `cfg = "exec"`
     # consumption of the target.
     script_kwargs["target_compatible_with"] = exec_compatible_with
+    script_kwargs["exec_compatible_with"] = exec_compatible_with
 
     binary_tags = depset(
         (tags if tags else []) + ["manual"],
@@ -178,6 +214,7 @@ def cargo_build_script(
         crate_name = crate_name,
         srcs = srcs,
         crate_root = crate_root,
+        root_path = root_path,
         crate_features = crate_features,
         deps = deps,
         proc_macro_deps = proc_macro_deps,
@@ -186,41 +223,39 @@ def cargo_build_script(
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,
         rustc_flags = rustc_flags,
+        lint_config = lint_config,
         edition = edition,
         tags = binary_tags,
         aliases = aliases,
         **script_kwargs
     )
 
-    # Because the build script is expected to be run on the exec host, the
-    # script above needs to be in the exec configuration but the script may
-    # need data files that are in the target configuration. This rule wraps
-    # the script above so the `cfg=exec` target can be run without issue in
-    # a `cfg=target` environment. More details can be found on the rule.
+    # This rule creates a runfiles tree from data files. The script binary
+    # is passed directly to _build_script_run via its script attribute.
     cargo_build_script_runfiles(
         name = name + "-",
-        script = ":{}_".format(name),
         data = data,
-        tools = tools,
         tags = binary_tags,
         **wrapper_kwargs
     )
 
-    if use_default_shell_env == None:
-        sanitized_use_default_shell_env = -1
-    elif type(use_default_shell_env) == "bool":
-        sanitized_use_default_shell_env = 1 if use_default_shell_env else 0
-    else:
-        sanitized_use_default_shell_env = use_default_shell_env
+    sanitized_use_default_shell_env = _sanitize_tristate(use_default_shell_env)
+    sanitized_use_cc_toolchain = _sanitize_tristate(use_cc_toolchain)
 
     # This target executes the build script.
     _build_script_run(
         name = name,
-        script = ":{}-".format(name),
+        exec_compatible_with = exec_compatible_with,
+        script = ":{}_".format(name),
+        data_runfiles = ":{}-".format(name),
+        data = data,
+        tools = tools,
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
         build_script_env_files = build_script_env_files,
+        emit_warnings = emit_warnings,
+        use_cc_toolchain = sanitized_use_cc_toolchain,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,

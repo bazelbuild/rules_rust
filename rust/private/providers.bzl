@@ -27,6 +27,7 @@ CrateInfo = provider(
         "data": "depset[File]: Runtime data associated with the target. Not passed to `Rustc` actions, except for `proc-macro` targets where `Rustc` is the runtime.",
         "deps": "depset[DepVariantInfo]: This crate's direct (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
+        "extra_named_deps": "depset[AliasableDepInfo]: Extra named dependencies.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
@@ -36,6 +37,7 @@ CrateInfo = provider(
         "owner": "Label: The label of the target that produced this CrateInfo",
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
+        "root_path": "str: If root is a directory, path to the source entrypoint under it.",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
@@ -79,6 +81,8 @@ CrateGroupInfo = provider(
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
+        "bin_link_flags": "Optional[File]: file of binary-scoped `BIN=-Clink-arg=FLAG` records in emission order. Empty BIN applies to all binaries; otherwise matched exactly against `cargo_bin_name`.",
+        "cdylib_link_flags": "Optional[File]: file of `-Clink-arg`s to pass to rustc only when the crate is built as a cdylib (`cargo::rustc-cdylib-link-arg`); propagated transitively to cdylibs.",
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
         "dep_env": "Optional[File]: extra build script environment variables to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
@@ -219,6 +223,8 @@ AllocatorLibrariesInfo = provider(
         "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
         "libstd_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used",
         "libstd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used",
+        "libstd_dylib_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used with a dylib stdlib",
+        "libstd_dylib_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used with a dylib stdlib",
         "nostd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when nostd with a global rust allocator is used",
     },
 )

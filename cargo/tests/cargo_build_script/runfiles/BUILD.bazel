@@ -1,0 +1,41 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+# A "tool" file that becomes `data` on the rust_binary backing the build
+# script. The build script should be able to locate it via the runfiles
+# library (RUNFILES_DIR).
+write_file(
+    name = "tool_txt",
+    out = "tool.txt",
+    content = ["this is a tool, locatable via the runfiles library"],
+)
+
+# A "data" file that lives in CARGO_MANIFEST_DIR. The build script must NOT
+# be able to locate it via the runfiles library; it should be looked up
+# relative to CARGO_MANIFEST_DIR like a normal source file.
+write_file(
+    name = "data_txt",
+    out = "data.txt",
+    content = ["this is data, locatable only via CARGO_MANIFEST_DIR"],
+)
+
+cargo_build_script(
+    name = "build_rs",
+    srcs = ["build.rs"],
+    build_script_env = {
+        "DATA_RLOCATION": "$(rlocationpath :data.txt)",
+        "TOOL_RLOCATION": "$(rlocationpath :tool.txt)",
+    },
+    data = [":data.txt"],
+    edition = "2021",
+    tools = [":tool.txt"],
+    deps = ["//rust/runfiles"],
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_rs"],
+)

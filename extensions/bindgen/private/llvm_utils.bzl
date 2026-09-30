@@ -29,7 +29,8 @@ _cc_stdcc17_transition = transition(
 )
 
 _CXX_OPTS = select({
-    "@platforms//os:windows": ["/std:c++17"],
+    "@rules_cc//cc/compiler:clang-cl": ["/std:c++17"],
+    "@rules_cc//cc/compiler:msvc-cl": ["/std:c++17"],
     "//conditions:default": ["-std=c++17"],
 })
 

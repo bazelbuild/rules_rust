@@ -29,6 +29,7 @@ cc_library(
         "foo_shared.cc",
     ],
     hdrs = ["foo_shared.h"],
+    additional_linker_inputs = ["empty.so"],
     linkopts = ["-L/doesnotexist"],
 )
 
@@ -87,6 +88,13 @@ rust_static_library(
 rust_library(
     name = "rlib_uses_foo_with_redundant_linkopts",
     srcs = ["bar_uses_shared_foo_for_rust.rs"],
+    edition = "2018",
+    deps = [":foo_with_linkopts"],
+)
+
+rust_static_library(
+    name = "staticlib_uses_foo_with_linkopts",
+    srcs = ["bar_uses_shared_foo.rs"],
     edition = "2018",
     deps = [":foo_with_linkopts"],
 )
@@ -167,4 +175,33 @@ rust_binary(
         "//conditions:default": [],
     }),
     deps = [":rlib_uses_foo_with_redundant_linkopts"],
+)
+
+cc_binary(
+    name = "depends_on_foo_with_linkopts_via_staticlib",
+    srcs = ["baz.cc"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":staticlib_uses_foo_with_linkopts"],
+)
+
+cc_library(
+    name = "resolver_linkopts",
+    linkopts = ["-lresolv"],
+)
+
+rust_static_library(
+    name = "staticlib_uses_resolver_linkopts",
+    srcs = ["resolver.rs"],
+    edition = "2021",
+    link_deps = [":resolver_linkopts"],
+)
+
+cc_test(
+    name = "depends_on_resolver_linkopts_via_staticlib",
+    srcs = ["resolver.cc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":staticlib_uses_resolver_linkopts"],
 )

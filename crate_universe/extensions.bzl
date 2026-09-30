@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.70.0")
+bazel_dep(name = "rules_rust", version = "0.74.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -175,9 +175,9 @@ rust_binary(
     ]),
     deps = [
         # External crates
-        "@crates//:serde",
-        "@crates//:serde_json",
-        "@crates//:tokio",
+        "@crates//serde",
+        "@crates//serde_json",
+        "@crates//tokio",
     ],
     visibility = ["//visibility:public"],
 )
@@ -246,7 +246,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.70.0")
+bazel_dep(name = "rules_rust", version = "0.74.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -381,12 +381,14 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
+    "sanitize_label_injections",
 )
 load("//crate_universe/private:crate.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
     "//crate_universe/private:crates_vendor.bzl",
     "CRATES_VENDOR_ATTRS",
+    "crates_vendor_remote_repository",
     "generate_config_file",
     "generate_splicing_manifest",
 )
@@ -410,13 +412,6 @@ load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_UR
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
-# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
-#
-# If I were to write ":foo", with attr.label_list, it would evaluate to
-# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
-# "@@rules_rust~crates~<crate>//:foo".
-_relative_label_list = attr.string_list
-
 _OPT_BOOL_VALUES = {
     "auto": None,
     "off": False,
@@ -427,24 +422,6 @@ def _get_or_insert(d, key, value):
     if key not in d:
         d[key] = value
     return d[key]
-
-def _generate_repo_impl(repository_ctx):
-    for path, contents in repository_ctx.attr.contents.items():
-        repository_ctx.file(path, contents)
-    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
-        repository_ctx.name,
-    ))
-
-_generate_repo = repository_rule(
-    doc = "A utility for generating a hub repo.",
-    implementation = _generate_repo_impl,
-    attrs = {
-        "contents": attr.string_dict(
-            doc = "A mapping of file names to text they should contain.",
-            mandatory = True,
-        ),
-    },
-)
 
 def _annotations_for_repo(module_annotations, repo_specific_annotations):
     """Merges the set of global annotations with the repo-specific ones
@@ -563,6 +540,7 @@ def _generate_hub_and_spokes(
         lockfile,
         skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile,
+        is_root,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -584,6 +562,12 @@ def _generate_hub_and_spokes(
             Bazel only requires external dependencies to be present in the lockfile.
             By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
             in other lockfiles where the cargo lockfile's sha is stored.
+        is_root (bool): Whether the module owning this extension call is the workspace's root module.
+            For non-root (transitive) modules the lockfile is trusted as-is — the digest check is
+            skipped and repinning is never attempted, because the digest can legitimately differ
+            across rust / cargo / rules_rust versions between the producing module and the consumer,
+            and the producer's lockfile typically lives in a read-only bzlmod cache that can't be
+            repinned anyway.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -627,15 +611,27 @@ def _generate_hub_and_spokes(
     # TODO: Repins should never be allowed if the lockfile is not within
     # https://github.com/bazelbuild/rules_rust/issues/1738
 
-    # Determine whether or not to repin dependencies
-    repin = not lockfile or determine_repin(
-        repository_ctx = module_ctx,
-        repository_name = cfg.name,
-        cargo_bazel_fn = cargo_bazel_fn,
-        lockfile_path = lockfile,
-        config = config_file,
-        splicing_manifest = splicing_manifest,
-    )
+    # Determine whether or not to repin dependencies. Transitive (non-root)
+    # modules are taken as-is: the digest check would fail across rust /
+    # cargo / rules_rust version differences between the producing module
+    # and the consumer, and the producer's lockfile typically lives in a
+    # read-only bzlmod cache so repinning isn't an option anyway.
+    if not is_root:
+        if not lockfile:
+            fail(("crate_universe extension call `{}` is in a non-root module " +
+                  "but has no lockfile. Transitive crate_universe repositories " +
+                  "must ship a `lockfile = ...` because repinning is not " +
+                  "supported across module boundaries.").format(cfg.name))
+        repin = False
+    else:
+        repin = not lockfile or determine_repin(
+            repository_ctx = module_ctx,
+            repository_name = cfg.name,
+            cargo_bazel_fn = cargo_bazel_fn,
+            lockfile_path = lockfile,
+            config = config_file,
+            splicing_manifest = splicing_manifest,
+        )
 
     # The workspace root when one is explicitly provided.
     # buildifier: disable=canonical-repository
@@ -680,6 +676,7 @@ def _generate_hub_and_spokes(
 
     paths_to_track_file = tag_path.get_child("paths_to_track.json")
     warnings_output_file = tag_path.get_child("warnings_output.json")
+    hub_packages_output_file = tag_path.get_child("hub_packages.json")
 
     # Run the generator
     module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))
@@ -693,6 +690,7 @@ def _generate_hub_and_spokes(
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        hub_packages_output_file = hub_packages_output_file,
         skip_cargo_lockfile_overwrite = skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile = strip_internal_dependencies_from_cargo_lockfile,
         **kwargs
@@ -710,13 +708,25 @@ def _generate_hub_and_spokes(
         print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)
-    _generate_repo(
+    hub_contents = {
+        "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
+        "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
+        "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
+        "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
+    }
+
+    # Per-alias subpackages always render so users can consume
+    # `@<repo>//<alias>`. `module_ctx` cannot enumerate a directory, so the
+    # renderer writes a sidecar list of subpackage names we slurp here.
+    hub_packages = json.decode(module_ctx.read(hub_packages_output_file))
+    for hub_package in hub_packages:
+        hub_contents["{}/BUILD.bazel".format(hub_package)] = module_ctx.read(
+            crates_dir.get_child(hub_package).get_child("BUILD.bazel"),
+        )
+
+    crates_vendor_remote_repository(
         name = cfg.name,
-        contents = {
-            "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
-            "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
-            "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
-        },
+        contents = hub_contents,
     )
 
     contents = json.decode(module_ctx.read(lockfile))
@@ -1015,6 +1025,15 @@ def _crate_impl(module_ctx):
             crate = annotation_dict.pop("crate")
             version = annotation_dict.pop("version")
 
+            # `label_injections` is left on `annotation_dict` so it flows through
+            # to the cargo-bazel config JSON. The Rust side reads it during
+            # config load and substitutes apparent labels for their canonical
+            # form across every string in this annotation, then strips the
+            # field. See `crate_universe/src/config/label_injection.rs`.
+            annotation_dict["label_injections"] = sanitize_label_injections(
+                annotation_dict.pop("label_injections", {}),
+            )
+
             # The crate.annotation function can take in either a list or a bool.
             # For the tag-based method, because it has type safety, we have to
             # split it into two parameters.
@@ -1022,9 +1041,22 @@ def _crate_impl(module_ctx):
                 annotation_dict["gen_binaries"] = True
             annotation_dict["gen_build_script"] = _OPT_BOOL_VALUES[annotation_dict["gen_build_script"]]
 
+            # Convert the tri-state string values ("auto"/"on"/"off") into the
+            # `int` representation understood by `crate.annotation` (`None`, `1`,
+            # or `0` respectively).
+            for opt_bool_key in (
+                "build_script_use_cc_toolchain",
+                "build_script_use_default_shell_env",
+            ):
+                bool_value = _OPT_BOOL_VALUES[annotation_dict[opt_bool_key]]
+                if bool_value == None:
+                    annotation_dict.pop(opt_bool_key)
+                else:
+                    annotation_dict[opt_bool_key] = int(bool_value)
+
             # Process the override targets for the annotation.
             # In the non-bzlmod approach, this is given as a dict
-            # with the possible keys "`proc_macro`, `build_script`, `lib`, `bin`".
+            # with the possible keys "`proc-macro`, `custom-build`, `lib`, `bin`".
             # With the tag-based approach used in Bzlmod, we run into an issue
             # where there is no dict type that takes a string as a key and a Label as the value.
             # To work around this, we split the override option into four, and reconstruct the
@@ -1036,11 +1068,11 @@ def _crate_impl(module_ctx):
 
             replacement = annotation_dict.pop("override_target_proc_macro")
             if replacement:
-                annotation_dict["override_targets"]["proc_macro"] = str(replacement)
+                annotation_dict["override_targets"]["proc-macro"] = str(replacement)
 
             replacement = annotation_dict.pop("override_target_build_script")
             if replacement:
-                annotation_dict["override_targets"]["build_script"] = str(replacement)
+                annotation_dict["override_targets"]["custom-build"] = str(replacement)
 
             replacement = annotation_dict.pop("override_target_bin")
             if replacement:
@@ -1178,6 +1210,7 @@ def _crate_impl(module_ctx):
                 packages = packages,
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
+                is_root = mod.is_root,
             )
 
             # Watch cfg.lockfile AFTER generation. The generator may modify it during
@@ -1286,6 +1319,24 @@ _ANNOTATION_NORMAL_ATTRS = {
     "build_script_toolchains": attr.label_list(
         doc = "A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.",
     ),
+    "build_script_use_cc_toolchain": attr.string(
+        doc = (
+            "Whether or not to pull in the resolved `cc_toolchain` when running the build script. " +
+            "Supported values are `on`, `off`, and `auto`. Setting `auto` (the default) defers to the " +
+            "`@rules_rust//cargo/settings:use_cc_toolchain` build setting (defaults to enabled)."
+        ),
+        values = _OPT_BOOL_VALUES.keys(),
+        default = "auto",
+    ),
+    "build_script_use_default_shell_env": attr.string(
+        doc = (
+            "Whether or not to include the default shell environment for the build script action. " +
+            "Supported values are `on`, `off`, and `auto`. Setting `auto` (the default) defers to the " +
+            "`@rules_rust//cargo/settings:use_default_shell_env` build setting."
+        ),
+        values = _OPT_BOOL_VALUES.keys(),
+        default = "auto",
+    ),
     "compile_data_glob": attr.string_list(
         doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",
     ),
@@ -1311,6 +1362,15 @@ _ANNOTATION_NORMAL_ATTRS = {
         doc = "An authoritative flag to determine whether or not to produce `cargo_build_script` targets for the current crate. Supported values are 'on', 'off', and 'auto'.",
         values = _OPT_BOOL_VALUES.keys(),
         default = "auto",
+    ),
+    "label_injections": attr.label_keyed_string_dict(
+        doc = (
+            "A mapping of canonical repository labels to the apparent repository prefix used in the annotation's strings. This is necessary for cases where a `build_script_data` " +
+            "annotation is given and the new label is used in location expansion via `build_script_env`. E.g. `build_script_data = [\"@xz//:lzma\"]` and `build_script_env = " +
+            "{\"LZMA_BIN\": \"$(execpath @xz//:lzma)\"}`. This example would require `label_injections = {\"@xz\": \"@xz\"}` where the key resolves to a canonical repo and the value is " +
+            "the apparent repo prefix used throughout this annotation. Target portions (`//pkg:target`) on either side are ignored; the cargo-bazel generator rewrites the apparent repo " +
+            "prefix to its canonical form and leaves any user-written target verbatim."
+        ),
     ),
     "override_target_bin": attr.label(
         doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
@@ -1338,6 +1398,13 @@ _ANNOTATION_NORMAL_ATTRS = {
     ),
 }
 
+# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
+#
+# If I were to write ":foo", with attr.label_list, it would evaluate to
+# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
+# "@@rules_rust~crates~<crate>//:foo".
+_relative_label_list = attr.string_list
+
 _ANNOTATION_SELECT_ATTRS = {
     "build_script_compile_data": _relative_label_list(
         doc = "A list of labels to add to a crate's `cargo_build_script::compile_data` attribute.",
@@ -1350,6 +1417,9 @@ _ANNOTATION_SELECT_ATTRS = {
     ),
     "build_script_env": attr.string_dict(
         doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+    ),
+    "build_script_env_files": _relative_label_list(
+        doc = "A list of labels to set on a crate's `cargo_build_script::build_script_env_files` attribute.",
     ),
     "build_script_exec_properties": attr.string_dict(
         doc = "Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.",
@@ -1380,6 +1450,9 @@ _ANNOTATION_SELECT_ATTRS = {
     ),
     "deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::deps` attribute.",
+    ),
+    "link_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::link_deps` attribute.",
     ),
     "proc_macro_deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::proc_macro_deps` attribute.",
@@ -1501,8 +1574,15 @@ can be found below where the supported keys for each template can be found in th
             default = "//:BUILD.{name}-{version}.bazel",
         ),
         "crate_alias_template": attr.string(
-            doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
-            default = "@{repository}//:{name}-{version}-{target}",
+            doc = (
+                "The base template to use for crate aliases. The available format keys are " +
+                "[`{repository}`, `{name}`, `{version}`, `{target}`]. Defaults to the per-alias " +
+                "subpackage layout (`@{repository}//{name}-{version}`); set to " +
+                "`@{repository}//:{name}-{version}` to point `aliases()` / `all_crate_deps()` at " +
+                "the legacy root-package aliases (only valid while " +
+                "`incompatible_no_root_alias_targets` is off)."
+            ),
+            default = "@{repository}//{name}-{version}",
         ),
         "crate_label_template": attr.string(
             doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
@@ -1538,6 +1618,16 @@ can be found below where the supported keys for each template can be found in th
         "generate_target_compatible_with": attr.bool(
             doc = "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` being targeted that isn't declared in `supported_platform_triples`.",
             default = True,
+        ),
+        "incompatible_no_root_alias_targets": attr.bool(
+            doc = (
+                "Incompatibility flag. Suppresses the top-level `alias()` rules in the hub " +
+                "repository's root `BUILD.bazel` (e.g. `@crate_index//:clap`). Per-alias " +
+                "subpackages (e.g. `@crate_index//clap`) are always emitted, so flipping this " +
+                "flag on lets users keep consuming aliases through the subpackage path while " +
+                "the root version disappears."
+            ),
+            default = False,
         ),
         "platforms_template": attr.string(
             doc = "The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [`{triple}`].",

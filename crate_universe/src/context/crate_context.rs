@@ -1,6 +1,7 @@
 //! Crate specific information embedded into [crate::context::Context] objects.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 
 use camino::Utf8PathBuf;
 use cargo_metadata::{Node, Package, PackageId};
@@ -49,6 +50,10 @@ pub(crate) struct TargetAttributes {
     pub(crate) crate_root: Option<String>,
 
     /// A glob pattern of all source files required by the target
+    #[serde(
+        default = "Glob::default_rust_srcs",
+        skip_serializing_if = "Glob::is_default_rust_srcs"
+    )]
     pub(crate) srcs: Glob,
 }
 
@@ -89,6 +94,22 @@ impl Rule {
     }
 }
 
+fn default_glob_all() -> BTreeSet<String> {
+    BTreeSet::from(["**".to_owned()])
+}
+
+fn is_default_glob_all(value: &BTreeSet<String>) -> bool {
+    *value == default_glob_all()
+}
+
+fn default_build_script_compile_data_glob_excludes() -> BTreeSet<String> {
+    BTreeSet::from(["**/*.rs".to_owned()])
+}
+
+fn is_default_build_script_compile_data_glob_excludes(value: &BTreeSet<String>) -> bool {
+    *value == default_build_script_compile_data_glob_excludes()
+}
+
 /// A set of attributes common to most `rust_library`, `rust_proc_macro`, and other
 /// [core rules of `rules_rust`](https://bazelbuild.github.io/rules_rust/defs.html).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,7 +118,10 @@ pub(crate) struct CommonAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) compile_data: Select<BTreeSet<Label>>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    #[serde(
+        default = "default_glob_all",
+        skip_serializing_if = "is_default_glob_all"
+    )]
     pub(crate) compile_data_glob: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
@@ -133,6 +157,9 @@ pub(crate) struct CommonAttributes {
     pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) extra_link_deps: Select<BTreeSet<Label>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -144,8 +171,6 @@ pub(crate) struct CommonAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) rustc_flags: Select<Vec<String>>,
 
-    pub(crate) version: String,
-
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub(crate) tags: Vec<String>,
 }
@@ -155,7 +180,7 @@ impl Default for CommonAttributes {
         Self {
             compile_data: Default::default(),
             // Generated targets include all files in their package by default
-            compile_data_glob: BTreeSet::from(["**".to_owned()]),
+            compile_data_glob: default_glob_all(),
             compile_data_glob_excludes: Default::default(),
             crate_features: Default::default(),
             data: Default::default(),
@@ -167,11 +192,11 @@ impl Default for CommonAttributes {
             linker_script: Default::default(),
             proc_macro_deps: Default::default(),
             extra_proc_macro_deps: Default::default(),
+            extra_link_deps: Default::default(),
             proc_macro_deps_dev: Default::default(),
             rustc_env: Default::default(),
             rustc_env_files: Default::default(),
             rustc_flags: Default::default(),
-            version: Default::default(),
             tags: Default::default(),
         }
     }
@@ -185,16 +210,25 @@ pub(crate) struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) compile_data: Select<BTreeSet<Label>>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    #[serde(
+        default = "default_glob_all",
+        skip_serializing_if = "is_default_glob_all"
+    )]
     pub(crate) compile_data_glob: BTreeSet<String>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    #[serde(
+        default = "default_build_script_compile_data_glob_excludes",
+        skip_serializing_if = "is_default_build_script_compile_data_glob_excludes"
+    )]
     pub(crate) compile_data_glob_excludes: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) data: Select<BTreeSet<Label>>,
 
-    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    #[serde(
+        default = "default_glob_all",
+        skip_serializing_if = "is_default_glob_all"
+    )]
     pub(crate) data_glob: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -264,6 +298,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -272,11 +309,11 @@ impl Default for BuildScriptAttributes {
             compile_data: Default::default(),
             // The build script itself also has access to all
             // source files by default.
-            compile_data_glob: BTreeSet::from(["**".to_owned()]),
-            compile_data_glob_excludes: BTreeSet::from(["**/*.rs".to_owned()]),
+            compile_data_glob: default_glob_all(),
+            compile_data_glob_excludes: default_build_script_compile_data_glob_excludes(),
             data: Default::default(),
             // Build scripts include all sources by default
-            data_glob: BTreeSet::from(["**".to_owned()]),
+            data_glob: default_glob_all(),
             deps: Default::default(),
             extra_deps: Default::default(),
             link_deps: Default::default(),
@@ -294,6 +331,7 @@ impl Default for BuildScriptAttributes {
             links: Default::default(),
             toolchains: Default::default(),
             use_default_shell_env: None,
+            use_cc_toolchain: None,
         }
     }
 }
@@ -307,12 +345,15 @@ pub(crate) struct CrateContext {
     pub(crate) version: semver::Version,
 
     /// The package URL of the current crate
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) package_url: Option<String>,
 
     /// Optional source annotations if they were discoverable in the
     /// lockfile. Workspace Members will not have source annotations and
     /// potentially others.
+    // Always emitted; rendering templates iterate `crate.repository` and
+    // Tera treats a missing variable inside `for`/attribute access as an
+    // error even when guarded by `{% if not ... %}`.
     #[serde(default)]
     pub(crate) repository: Option<SourceAnnotation>,
 
@@ -322,7 +363,7 @@ pub(crate) struct CrateContext {
 
     /// The name of the crate's root library target. This is the target that a dependent
     /// would get if they were to depend on `{crate_name}`.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) library_target_name: Option<String>,
 
     /// A set of attributes common to most [Rule] types or target types.
@@ -336,15 +377,15 @@ pub(crate) struct CrateContext {
     pub(crate) build_script_attrs: Option<BuildScriptAttributes>,
 
     /// The license used by the crate
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) license: Option<String>,
 
     /// The SPDX licence IDs
-    /// #[serde(default)]
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) license_ids: BTreeSet<String>,
 
     /// The license file
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) license_file: Option<String>,
 
     /// Additional text to add to the generated BUILD file.
@@ -430,7 +471,12 @@ impl CrateContext {
             })
             .unwrap_or_default();
 
-        // Gather all "common" attributes
+        // Gather all "common" attributes.
+        //
+        // Note: `version` is intentionally not populated here — the crate
+        // version is already captured on the parent `CrateContext` and is
+        // re-derived at render time. Keeping this field empty elides it from
+        // the serialized lockfile (see `CommonAttributes::version`).
         let mut common_attrs = CommonAttributes {
             crate_features,
             deps,
@@ -438,7 +484,6 @@ impl CrateContext {
             edition: package.edition.as_str().to_string(),
             proc_macro_deps,
             proc_macro_deps_dev,
-            version: package.version.to_string(),
             ..Default::default()
         };
 
@@ -496,16 +541,8 @@ impl CrateContext {
 
         let build_script_attrs = if let Some(target) = build_script_target {
             // Track the build script dependency
-            common_attrs.deps.insert(
-                CrateDependency {
-                    id: current_crate_id,
-                    target: target.crate_name.clone(),
-                    alias: None,
-                    local_path: match source_annotations.get(&annotation.node.id) {
-                        Some(SourceAnnotation::Path { path }) => Some(path.clone()),
-                        _ => None,
-                    },
-                },
+            common_attrs.extra_deps.insert(
+                Label::from_str(&format!(":{}", target.crate_name)).unwrap(),
                 None,
             );
 
@@ -589,6 +626,12 @@ impl CrateContext {
             if let Some(extra) = &crate_extra.proc_macro_deps {
                 self.common_attrs.extra_proc_macro_deps =
                     Select::merge(self.common_attrs.extra_proc_macro_deps, extra.clone());
+            }
+
+            // Link deps
+            if let Some(extra) = &crate_extra.link_deps {
+                self.common_attrs.extra_link_deps =
+                    Select::merge(self.common_attrs.extra_link_deps, extra.clone());
             }
 
             // Compile data
@@ -703,6 +746,12 @@ impl CrateContext {
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
                 }
 
+                // Build script env files
+                if let Some(extra) = &crate_extra.build_script_env_files {
+                    attrs.build_script_env_files =
+                        Select::merge(attrs.build_script_env_files.clone(), extra.clone());
+                }
+
                 // Exec properties
                 if let Some(extra) = &crate_extra.build_script_exec_properties {
                     attrs.exec_properties =
@@ -712,6 +761,11 @@ impl CrateContext {
                 // Default Shell Env
                 if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
                     attrs.use_default_shell_env = Some(*extra);
+                }
+
+                // Use cc toolchain
+                if let Some(extra) = &crate_extra.build_script_use_cc_toolchain {
+                    attrs.use_cc_toolchain = Some(*extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
@@ -925,6 +979,25 @@ mod test {
         .unwrap()
     }
 
+    /// `crate.annotation` takes these keys verbatim, and `extensions.bzl`
+    /// spells them out by hand. An unknown key is silently ignored, so pin the
+    /// exact strings.
+    #[test]
+    fn override_target_keys() {
+        let attrs = TargetAttributes::default();
+        let rules = [
+            Rule::Library(attrs.clone()),
+            Rule::ProcMacro(attrs.clone()),
+            Rule::Binary(attrs.clone()),
+            Rule::BuildScript(attrs),
+        ];
+
+        assert_eq!(
+            rules.map(|rule| rule.override_target_key()),
+            ["lib", "proc-macro", "bin", "custom-build"],
+        );
+    }
+
     #[test]
     fn new_context() {
         let annotations = common_annotations();
@@ -1087,6 +1160,59 @@ mod test {
 
         // Cargo build scripts should include all sources
         assert!(context.build_script_attrs.unwrap().data_glob.contains("**"));
+    }
+
+    #[test]
+    fn context_with_build_script_env_files_annotation() {
+        let mut build_script_env_files =
+            Select::from_value(BTreeSet::from(["@//:build-script.env".to_owned()]));
+        build_script_env_files.insert(
+            "@//:linux-build-script.env".to_owned(),
+            Some("x86_64-unknown-linux-gnu".to_owned()),
+        );
+
+        let mut config = crate::config::Config::default();
+        config.annotations.insert(
+            crate::config::CrateNameAndVersionReq::new(
+                "openssl-sys".to_owned(),
+                "0.9.87".parse().unwrap(),
+            ),
+            CrateAnnotations {
+                build_script_env_files: Some(build_script_env_files.clone()),
+                ..CrateAnnotations::default()
+            },
+        );
+
+        let annotations = Annotations::new(
+            crate::test::metadata::build_scripts(),
+            &None,
+            crate::test::lockfile::build_scripts(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let package_id = PackageId {
+            repr: "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
+                .to_owned(),
+        };
+        let crate_annotation = &annotations.metadata.crates[&package_id];
+
+        let context = CrateContext::new(
+            crate_annotation,
+            &annotations.metadata.packages,
+            &annotations.lockfile.crates,
+            &annotations.pairred_extras,
+            &annotations.metadata.workspace_metadata.tree_metadata,
+            false,
+            true,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(
+            context.build_script_attrs.unwrap().build_script_env_files,
+            build_script_env_files
+        );
     }
 
     #[test]

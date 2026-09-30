@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load(":rules.bzl", "rust_library_with_extra_deps")
+
+rust_library(
+    name = "c",
+    srcs = ["c.rs"],
+    edition = "2021",
+)
+
+rust_library(
+    name = "b",
+    srcs = ["b.rs"],
+    edition = "2021",
+    deps = [":c"],
+)
+
+rust_library_with_extra_deps(
+    name = "a",
+    srcs = ["a.rs"],
+    edition = "2021",
+    rename_indirect_deps = {
+        ":c": "renamed_c",
+    },
+    deps = [":b"],
+)
+
+rust_test(
+    name = "extra_named_deps_test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":a"],
+)

@@ -11,6 +11,36 @@ local_path_override(
 
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
+# Pull in `cu_test_complicated_dependencies` as a transitive bzlmod dep so
+# that its `crate.from_specs(name = "complicated_dependencies", ...)` module
+# extension — which exercises crate_universe annotations and label_injection
+# — is invoked here even though this root module never calls `use_extension`
+# on it itself. The `:transitive_module_extension_test` rust_test below
+# spawns the binary that module exposes and verifies it runs end-to-end.
+bazel_dep(name = "cu_test_complicated_dependencies", version = "0.0.0")
+local_path_override(
+    module_name = "cu_test_complicated_dependencies",
+    path = "../complicated_dependencies",
+)
+
+# Force a different revision of the `openssl` bazel module than the one
+# `cu_test_complicated_dependencies` requested (3.5.5.bcr.4). This proves
+# that complicated_dependencies' `crate.annotation(label_injections = {"@openssl": ...})`
+# on openssl-sys is resilient to a root-driven swap: Bzlmod MVS / override
+# replaces the `@openssl` repo the build script consumes, and the injected
+# label must re-resolve through the new module instance for the openssl-sys
+# build to still link. If label_injection silently captured the original
+# canonical name at extension-evaluation time, this would break.
+#
+# 3.5.5.bcr.3 is the lowest BCR revision of openssl 3.5.5 that still exposes
+# the `:install` collate_into_directory target that openssl-sys' build script
+# needs (`OPENSSL_DIR = $(execpath @openssl//:install)`). Earlier revisions
+# only expose `:openssl`/`:crypto`/`:ssl` individually.
+single_version_override(
+    module_name = "openssl",
+    version = "3.5.5.bcr.3",
+)
+
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
 

@@ -1,6 +1,15 @@
-load("//rust/private:rust.bzl", "rust_binary")
+load("//rust/private:rust.bzl", "rust_binary", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "rustdoc_test_runner",
+    srcs = ["rustdoc_test_runner.rs"],
+    edition = "2018",
+    deps = [
+        "//rust/runfiles",
+    ],
+)
 
 rust_binary(
     name = "rustdoc_test_writer",
@@ -9,4 +18,15 @@ rust_binary(
     deps = [
         "//rust/runfiles",
     ],
+)
+
+rust_test(
+    name = "rustdoc_test_writer_test",
+    crate = ":rustdoc_test_writer",
+)
+
+rust_binary(
+    name = "rustdoc_compile_wrapper",
+    srcs = ["rustdoc_compile_wrapper.rs"],
+    edition = "2018",
 )

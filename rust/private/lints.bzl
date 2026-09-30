@@ -53,16 +53,16 @@ rust_lint_config = rule(
     implementation = _rust_lint_config,
     attrs = {
         "rustc": attr.string_dict(
-            doc = "Set of 'rustc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.",
+            doc = "Set of 'rustc' lints to 'allow', 'warn', 'force-warn', 'deny', or 'forbid'.",
         ),
         "rustc_check_cfg": attr.string_list_dict(
             doc = "Set of 'cfg' names and list of values to expect.",
         ),
         "clippy": attr.string_dict(
-            doc = "Set of 'clippy' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.",
+            doc = "Set of 'clippy' lints to 'allow', 'warn', 'force-warn', 'deny', or 'forbid'.",
         ),
         "rustdoc": attr.string_dict(
-            doc = "Set of 'rustdoc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.",
+            doc = "Set of 'rustdoc' lints to 'allow', 'warn', 'force-warn', 'deny', or 'forbid'.",
         ),
     },
     doc = """\

@@ -73,6 +73,17 @@ fn generate_work_dir(output_dir: &Path, inputs_manifest: &BTreeMap<PathBuf, Path
 
     for (src, dest) in inputs_manifest.iter() {
         let abs_dest = workdir.join(dest);
+
+        // Ensure the destination is within the workdir
+        if !abs_dest.starts_with(&workdir) {
+            panic!(
+                "Attempted to stage file outside of workdir: {} -> {} (dest: {})",
+                src.display(),
+                abs_dest.display(),
+                dest.display()
+            );
+        }
+
         fs::create_dir_all(abs_dest.parent().unwrap()).unwrap();
         fs::copy(src, &abs_dest).unwrap_or_else(|e| {
             panic!(

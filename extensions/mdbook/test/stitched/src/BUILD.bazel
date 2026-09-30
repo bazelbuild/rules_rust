@@ -1,0 +1,19 @@
+exports_files(["SUMMARY.md"])
+
+# Rebase a file from a different directory into the book's source
+# directory. This is necessary because mdBook only processes files
+# located under the 'src' directory (as configured in book.toml).
+genrule(
+    name = "rebased",
+    srcs = ["//test/stitched/other_srcs:chapter_2.md"],
+    outs = ["chapter_2.md"],
+    cmd = "cp $< $@",
+    visibility = ["//test/stitched:__pkg__"],
+)
+
+genrule(
+    name = "generated",
+    outs = ["chapter_3.md"],
+    cmd = "echo '# Chapter 3\nGenerated source.' > $@",
+    visibility = ["//test/stitched:__pkg__"],
+)

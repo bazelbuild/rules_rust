@@ -22,7 +22,45 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use cargo_build_script_runner::cargo_manifest_dir::{remove_symlink, symlink, RunfilesMaker};
-use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags};
+use cargo_build_script_runner::{BuildScriptOutput, CompileAndLinkFlags, SUPPRESS_WARNINGS_ENV};
+
+fn parse_env_file(contents: &str) -> Result<Vec<(String, String)>, String> {
+    fn push_variable(
+        variables: &mut Vec<(String, String)>,
+        variable: &mut String,
+    ) -> Result<(), String> {
+        let (key, value) = variable
+            .split_once('=')
+            .ok_or_else(|| "error: Wrong environment file format, should not happen".to_owned())?;
+        variables.push((key.to_owned(), value.to_owned()));
+        variable.clear();
+        Ok(())
+    }
+
+    let mut variables = Vec::new();
+    let mut variable = String::new();
+
+    for line in contents.lines() {
+        if let Some(value) = line.strip_suffix('\\') {
+            variable.push_str(value);
+            variable.push('\n');
+            continue;
+        }
+
+        variable.push_str(line);
+        if !variable.is_empty() {
+            push_variable(&mut variables, &mut variable)?;
+        }
+    }
+
+    // `str::lines` does not yield a final empty line, so finalize a value
+    // whose last line ended in a continuation as well.
+    if !variable.is_empty() {
+        push_variable(&mut variables, &mut variable)?;
+    }
+
+    Ok(variables)
+}
 
 fn run_buildrs() -> Result<(), String> {
     // We use exec_root.join rather than std::fs::canonicalize, to avoid resolving symlinks, as
@@ -43,6 +81,8 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags_file,
         link_flags_file,
         link_search_paths_file,
+        cdylib_link_flags_file,
+        bin_link_flags_file,
         output_dep_env_path,
         stdout_path,
         stderr_path,
@@ -75,10 +115,12 @@ fn run_buildrs() -> Result<(), String> {
                 .ok_or_else(|| "Failed while getting file name".to_string())?;
             let link = manifest_dir.join(file_name);
 
-            symlink_if_not_exists(&path, &link)
-                .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?;
-
-            exec_root_links.push(link)
+            // An entry that already exists belongs to CARGO_MANIFEST_DIR and must not be cleaned.
+            if symlink_if_not_exists(&path, &link)
+                .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?
+            {
+                exec_root_links.push(link)
+            }
         }
     }
 
@@ -87,7 +129,8 @@ fn run_buildrs() -> Result<(), String> {
 
     let working_directory = resolve_rundir(&rundir, &exec_root, &manifest_dir)?;
 
-    let mut command = Command::new(exec_root.join(progname));
+    let script_path = exec_root.join(&progname);
+    let mut command = Command::new(&script_path);
     command
         .current_dir(&working_directory)
         .envs(target_env_vars)
@@ -96,26 +139,20 @@ fn run_buildrs() -> Result<(), String> {
         .env("RUSTC", rustc)
         .env("RUST_BACKTRACE", "full");
 
+    // The script binary may have a `<script>.runfiles/` tree or a
+    // `<script>.runfiles_manifest` file materialized next to it by Bazel
+    // (because the script was passed as a `FilesToRunProvider`). Expose
+    // whichever exists so the runfiles library can locate the script's
+    // runfiles (tools). Data files of `cargo_build_script` are intentionally
+    // NOT in this tree — they must be looked up relative to
+    // `CARGO_MANIFEST_DIR`.
+    set_script_runfiles_env(&script_path, &mut command);
+
     for dep_env_path in input_dep_env_paths.iter() {
-        if let Ok(contents) = read_to_string(dep_env_path) {
-            for line in contents.split('\n') {
-                // split on empty contents will still produce a single empty string in iterable.
-                if line.is_empty() {
-                    continue;
-                }
-                match line.split_once('=') {
-                    Some((key, value)) => {
-                        command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
-                    }
-                    _ => {
-                        return Err(
-                            "error: Wrong environment file format, should not happen".to_owned()
-                        )
-                    }
-                }
-            }
-        } else {
-            return Err("error: Dependency environment file unreadable".to_owned());
+        let contents = read_to_string(dep_env_path)
+            .map_err(|_| "error: Dependency environment file unreadable".to_owned())?;
+        for (key, value) in parse_env_file(&contents)? {
+            command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
         }
     }
 
@@ -158,21 +195,25 @@ fn run_buildrs() -> Result<(), String> {
         );
     }
 
-    let (buildrs_outputs, process_output) = BuildScriptOutput::outputs_from_command(&mut command)
-        .map_err(|process_output| {
-        format!(
-            "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
-            if let Some(exit_code) = process_output.status.code() {
-                format!(" with exit code {exit_code}")
-            } else {
-                String::new()
+    let emit_warnings = env::var_os(SUPPRESS_WARNINGS_ENV).is_none_or(|v| v != "1");
+
+    let (buildrs_outputs, process_output) =
+        BuildScriptOutput::outputs_from_command(&mut command, emit_warnings).map_err(
+            |process_output| {
+                format!(
+                    "Build script process failed{}\n--stdout:\n{}\n--stderr:\n{}",
+                    if let Some(exit_code) = process_output.status.code() {
+                        format!(" with exit code {exit_code}")
+                    } else {
+                        String::new()
+                    },
+                    String::from_utf8(process_output.stdout)
+                        .expect("Failed to parse stdout of child process"),
+                    String::from_utf8(process_output.stderr)
+                        .expect("Failed to parse stdout of child process"),
+                )
             },
-            String::from_utf8(process_output.stdout)
-                .expect("Failed to parse stdout of child process"),
-            String::from_utf8(process_output.stderr)
-                .expect("Failed to parse stdout of child process"),
-        )
-    })?;
+        )?;
 
     write(
         &env_file,
@@ -186,7 +227,6 @@ fn run_buildrs() -> Result<(), String> {
             &buildrs_outputs,
             &crate_links,
             &exec_root.to_string_lossy(),
-            &out_dir,
         )
         .as_bytes(),
     )
@@ -205,6 +245,8 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags,
         link_flags,
         link_search_paths,
+        cdylib_link_flags,
+        bin_link_flags,
     } = BuildScriptOutput::outputs_to_flags(
         &buildrs_outputs,
         &exec_root.to_string_lossy(),
@@ -221,6 +263,14 @@ fn run_buildrs() -> Result<(), String> {
             link_search_paths_file, e
         )
     });
+    write(&cdylib_link_flags_file, cdylib_link_flags.as_bytes()).unwrap_or_else(|e| {
+        panic!(
+            "Unable to write file {:?}: {:#?}",
+            cdylib_link_flags_file, e
+        )
+    });
+    write(&bin_link_flags_file, bin_link_flags.as_bytes())
+        .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", bin_link_flags_file, e));
 
     if !exec_root_links.is_empty() {
         for link in exec_root_links {
@@ -313,11 +363,48 @@ fn should_symlink_exec_root() -> bool {
         .unwrap_or(false)
 }
 
+/// Locate the runfiles materialized for `script_path` and expose them to the
+/// build script via the appropriate env var.
+///
+/// Bazel materializes runfiles for a `FilesToRunProvider` tool either as a
+/// `<script>.runfiles/` directory tree, a `<script>.runfiles_manifest` file,
+/// or both. Both are checked; if neither is present, no env var is set and
+/// the runfiles library falls back to its own heuristics (e.g. argv[0]).
+///
+/// `RUNFILES_MANIFEST_FILE` inherited from the parent process is cleared so
+/// it doesn't shadow what we're exposing.
+fn set_script_runfiles_env(script_path: &Path, command: &mut Command) {
+    command.env_remove("RUNFILES_MANIFEST_FILE");
+    command.env_remove("RUNFILES_DIR");
+
+    let Some(file_name) = script_path.file_name() else {
+        return;
+    };
+
+    let mut runfiles_dir_name = file_name.to_owned();
+    runfiles_dir_name.push(".runfiles");
+    let runfiles_dir = script_path.with_file_name(&runfiles_dir_name);
+    if runfiles_dir.is_dir() {
+        command.env("RUNFILES_DIR", &runfiles_dir);
+    }
+
+    let mut runfiles_manifest_name = file_name.to_owned();
+    runfiles_manifest_name.push(".runfiles_manifest");
+    let runfiles_manifest = script_path.with_file_name(&runfiles_manifest_name);
+    if runfiles_manifest.is_file() {
+        command.env("RUNFILES_MANIFEST_FILE", &runfiles_manifest);
+    }
+}
+
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.
-fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
-    symlink(original, link)
-        .or_else(swallow_already_exists)
-        .map_err(|err| format!("Failed to create symlink: {err}"))
+///
+/// Returns whether the symlink was created.
+fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<bool, String> {
+    match symlink(original, link) {
+        Ok(()) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(false),
+        Err(err) => Err(format!("Failed to create symlink: {err}")),
+    }
 }
 
 fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result<PathBuf, String> {
@@ -337,14 +424,6 @@ fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result
     Ok(exec_root.join(rundir_path))
 }
 
-fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
-    if err.kind() == std::io::ErrorKind::AlreadyExists {
-        Ok(())
-    } else {
-        Err(err)
-    }
-}
-
 /// A representation of expected command line arguments.
 struct Args {
     progname: String,
@@ -354,6 +433,8 @@ struct Args {
     compile_flags_file: String,
     link_flags_file: String,
     link_search_paths_file: String,
+    cdylib_link_flags_file: String,
+    bin_link_flags_file: String,
     output_dep_env_path: String,
     stdout_path: Option<String>,
     stderr_path: Option<String>,
@@ -377,6 +458,10 @@ impl Args {
             Err("Argument `link_flags_file` not provided".to_owned());
         let mut link_search_paths_file: Result<String, String> =
             Err("Argument `link_search_paths_file` not provided".to_owned());
+        let mut cdylib_link_flags_file: Result<String, String> =
+            Err("Argument `cdylib_link_flags_file` not provided".to_owned());
+        let mut bin_link_flags_file: Result<String, String> =
+            Err("Argument `bin_link_flags_file` not provided".to_owned());
         let mut output_dep_env_path: Result<String, String> =
             Err("Argument `output_dep_env_path` not provided".to_owned());
         let mut stdout_path = None;
@@ -401,6 +486,10 @@ impl Args {
                 link_flags_file = Ok(arg.split_off("--link_flags=".len()));
             } else if arg.starts_with("--link_search_paths=") {
                 link_search_paths_file = Ok(arg.split_off("--link_search_paths=".len()));
+            } else if arg.starts_with("--cdylib_link_flags=") {
+                cdylib_link_flags_file = Ok(arg.split_off("--cdylib_link_flags=".len()));
+            } else if arg.starts_with("--bin_link_flags=") {
+                bin_link_flags_file = Ok(arg.split_off("--bin_link_flags=".len()));
             } else if arg.starts_with("--dep_env_out=") {
                 output_dep_env_path = Ok(arg.split_off("--dep_env_out=".len()));
             } else if arg.starts_with("--stdout=") {
@@ -426,6 +515,8 @@ impl Args {
             compile_flags_file: compile_flags_file.unwrap(),
             link_flags_file: link_flags_file.unwrap(),
             link_search_paths_file: link_search_paths_file.unwrap(),
+            cdylib_link_flags_file: cdylib_link_flags_file.unwrap(),
+            bin_link_flags_file: bin_link_flags_file.unwrap(),
             output_dep_env_path: output_dep_env_path.unwrap(),
             stdout_path,
             stderr_path,

@@ -40,7 +40,6 @@ use_repo(
     "cvm",
     "cvm__serde_yaml-0.9.34-deprecated",
     "cvm__tempfile-3.27.0",
-    "cvm__tokio-1.52.1",
     "cvm__tokio-test-0.4.5",
     # vendor_remote_pkgs repos
     "crates_vendor_pkgs",
@@ -54,4 +53,5 @@ use_repo(
     "crates_vendor_pkgs__tower-http-0.2.5",
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
+    "cvm__tokio-1.52.3",
 )

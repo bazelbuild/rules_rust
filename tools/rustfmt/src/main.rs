@@ -6,6 +6,38 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str;
 
+/// Details used for executing rustfmt.
+#[derive(Debug)]
+struct RustfmtConfig {
+    /// The rustfmt binary from the currently active toolchain
+    rustfmt: PathBuf,
+
+    /// The rustfmt config file containing rustfmt settings.
+    /// https://rust-lang.github.io/rustfmt/
+    config: PathBuf,
+}
+
+/// Locate the rustfmt binary and config via the runfiles env vars baked in
+/// at compile time.
+fn parse_rustfmt_config() -> RustfmtConfig {
+    let runfiles = runfiles::Runfiles::create().unwrap();
+
+    let rustfmt = runfiles::rlocation!(runfiles, env!("RUSTFMT")).unwrap();
+    if !rustfmt.exists() {
+        panic!("rustfmt does not exist at: {}", rustfmt.display());
+    }
+
+    let config = runfiles::rlocation!(runfiles, env!("RUSTFMT_CONFIG")).unwrap();
+    if !config.exists() {
+        panic!(
+            "rustfmt config file does not exist at: {}",
+            config.display()
+        );
+    }
+
+    RustfmtConfig { rustfmt, config }
+}
+
 /// The Bazel Rustfmt tool entry point
 fn main() {
     // Gather all command line and environment settings
@@ -151,6 +183,9 @@ fn apply_rustfmt(options: &Config, editions_and_targets: &HashMap<String, Vec<St
             .arg(edition)
             .arg("--config-path")
             .arg(&options.rustfmt_config.config)
+            .arg("--config")
+            .arg("skip_children=true")
+            .args(&options.rustfmt_args)
             .args(sources)
             .status()
             .expect("Failed to run rustfmt");
@@ -171,18 +206,34 @@ struct Config {
     pub bazel: PathBuf,
 
     /// Information about the current rustfmt binary to run.
-    pub rustfmt_config: rustfmt_lib::RustfmtConfig,
+    pub rustfmt_config: RustfmtConfig,
 
     /// Optionally, users can pass a list of targets/packages/scopes
     /// (eg `//my:target` or `//my/pkg/...`) to control the targets
     /// to be formatted. If empty, all targets in the workspace will
     /// be formatted.
     pub packages: Vec<String>,
+
+    /// Extra arguments to forward to the `rustfmt` invocation. These
+    /// come from anything after a trailing `--` on the command line, e.g.
+    /// `bazel run @rules_rust//:rustfmt -- <runner args> -- <rustfmt args>`.
+    pub rustfmt_args: Vec<String>,
 }
 
 /// Parse command line arguments and environment variables to
 /// produce config data for running rustfmt.
 fn parse_args() -> Config {
+    let mut args = env::args().skip(1);
+    let mut packages = Vec::new();
+    let mut rustfmt_args = Vec::new();
+    for arg in args.by_ref() {
+        if arg == "--" {
+            rustfmt_args.extend(args.by_ref());
+            break;
+        }
+        packages.push(arg);
+    }
+
     Config{
         workspace: PathBuf::from(
             env::var("BUILD_WORKSPACE_DIRECTORY")
@@ -192,7 +243,8 @@ fn parse_args() -> Config {
             env::var("BAZEL_REAL")
             .unwrap_or_else(|_| "bazel".to_owned())
         ),
-        rustfmt_config: rustfmt_lib::parse_rustfmt_config(),
-        packages: env::args().skip(1).collect(),
+        rustfmt_config: parse_rustfmt_config(),
+        packages,
+        rustfmt_args,
     }
 }

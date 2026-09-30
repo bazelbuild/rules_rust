@@ -24,6 +24,7 @@ def _rust_toolchain_channel_flag_impl(ctx):
 rust_toolchain_channel_flag = rule(
     doc = "A build setting which represents the Rust toolchain channel. The allowed values are {}".format(_CHANNELS),
     implementation = _rust_toolchain_channel_flag_impl,
+    attrs = {"scope": attr.string(default = "universal")},
     build_setting = config.string(
         flag = True,
     ),

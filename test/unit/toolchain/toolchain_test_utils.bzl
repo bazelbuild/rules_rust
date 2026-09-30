@@ -10,6 +10,9 @@ def _rules_rust_toolchain_test_target_json_repository_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 rules_rust_toolchain_test_target_json_repository = repository_rule(
     doc = (

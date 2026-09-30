@@ -3,7 +3,7 @@
 Definitions for all `@rules_rust//cargo` settings
 """
 
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_list_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag", "string_list_flag")
 
 def experimental_symlink_execroot():
     """A flag for which causes `cargo_build_script` to symlink the execroot of the action to \
@@ -41,6 +41,48 @@ def use_default_shell_env():
     bool_flag(
         name = "use_default_shell_env",
         build_setting_default = True,
+    )
+
+def use_cc_toolchain():
+    """A flag which controls the global default of whether `cargo_build_script` \
+    targets should pull in the resolved `cc_toolchain`.
+
+    When enabled (the default), each `cargo_build_script` action gets the
+    resolved `cc_toolchain`'s `all_files` added to its inputs and picks up the
+    `CC`, `CXX`, `AR`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, and `INCLUDE`
+    environment variables derived from that toolchain. This matches Cargo's
+    behavior and is required for build scripts that shell out to a C/C++
+    compiler (e.g. those using `cc-rs` or `cmake-rs`).
+
+    When disabled, the `cc_toolchain` is omitted from `cargo_build_script`
+    actions. This can significantly reduce action input sizes when using a
+    hermetic sysroot but breaks any build script that needs to compile C/C++
+    code. Individual targets may override this default via the
+    `cargo_build_script.use_cc_toolchain` attribute.
+    """
+    bool_flag(
+        name = "use_cc_toolchain",
+        scope = "universal",
+        build_setting_default = True,
+    )
+
+def emit_build_script_warnings():
+    """A flag which controls whether `cargo_build_script` warnings \
+    (`cargo::warning=`) are printed to stderr.
+
+    Supported values:
+
+    - `on`: emit warnings for every `cargo_build_script` target, overriding any
+      per-target `emit_warnings = False`.
+    - `auto` (default): respect the per-target `emit_warnings` attribute.
+      `crate_universe`-generated targets set it to `False`, so registry/git
+      crates stay quiet (matching Cargo); first-party targets emit by default.
+    - `off`: silence warnings build-wide.
+    """
+    string_flag(
+        name = "emit_build_script_warnings",
+        build_setting_default = "auto",
+        values = ["on", "auto", "off"],
     )
 
 def out_dir_volatile_file_basenames():

@@ -33,7 +33,6 @@ UNPRETTY_MODES = [
     "hir,identified",
     "hir,typed",
     "hir",
-    "identified",
     "mir-cfg",
     "mir",
     "normal",
@@ -144,6 +143,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
         deps = crate_info.deps.to_list(),
         proc_macro_deps = crate_info.proc_macro_deps.to_list(),
         aliases = crate_info.aliases,
+        extra_named_deps = crate_info.extra_named_deps,
     )
     lint_files = []
 
@@ -354,7 +354,7 @@ rust_unpretty(
         ":hello_lib",
         ":greeting_test",
     ],
-    mode = "expand",
+    mode = "expanded",
 )
 ```
 """,

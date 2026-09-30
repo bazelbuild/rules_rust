@@ -368,13 +368,8 @@ rust_prost_aspect = aspect(
     attr_aspects = ["deps"],
     attrs = {
         "_collect_cc_coverage": attr.label(
-            default = Label("@rules_rust//util:collect_coverage"),
+            default = Label("@rules_rust//rust/coverage:collect_rust_coverage"),
             executable = True,
-            cfg = "exec",
-        ),
-        "_grep_includes": attr.label(
-            allow_single_file = True,
-            default = Label("@bazel_tools//tools/cpp:grep-includes"),
             cfg = "exec",
         ),
         "_prost_process_wrapper": attr.label(
@@ -437,7 +432,7 @@ rust_prost_library = rule(
             mandatory = True,
         ),
         "_collect_cc_coverage": attr.label(
-            default = Label("@rules_rust//util:collect_coverage"),
+            default = Label("@rules_rust//rust/coverage:collect_rust_coverage"),
             executable = True,
             cfg = "exec",
         ),
@@ -501,7 +496,7 @@ rust_prost_toolchain = rule(
             doc = "Additional options to add to Prost.",
         ),
         "prost_plugin": attr.label(
-            doc = "Additional plugins to add to Prost.",
+            doc = "The Prost `protoc` plugin (e.g. `protoc-gen-prost`) to invoke.",
             cfg = "exec",
             executable = True,
             mandatory = True,
@@ -530,7 +525,7 @@ rust_prost_toolchain = rule(
             doc = "Additional options to add to Tonic.",
         ),
         "tonic_plugin": attr.label(
-            doc = "Additional plugins to add to Tonic.",
+            doc = "The Tonic `protoc` plugin (e.g. `protoc-gen-tonic`) to invoke.",
             cfg = "exec",
             executable = True,
         ),

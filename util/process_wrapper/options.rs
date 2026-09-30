@@ -60,6 +60,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut env_file_raw = None;
     let mut out_dir_raw = None;
     let mut arg_file_raw = None;
+    let mut bin_arg_file_raw = None;
+    let mut cargo_bin_name = None;
     let mut touch_file = None;
     let mut copy_output_raw = None;
     let mut stdout_file = None;
@@ -91,6 +93,16 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--arg-file",
         "File(s) containing command line arguments to pass to the child process.",
         &mut arg_file_raw,
+    );
+    flags.define_repeated_flag(
+        "--bin-arg-file",
+        "Files containing BIN=ARG records; an empty BIN applies to every binary.",
+        &mut bin_arg_file_raw,
+    );
+    flags.define_flag(
+        "--cargo-bin-name",
+        "Exact Cargo binary name used to select arguments from --bin-arg-file.",
+        &mut cargo_bin_name,
     );
     flags.define_flag(
         "--touch-file",
@@ -231,6 +243,17 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         environment_file_block.insert("OUT_DIR".to_owned(), format!("${{pwd}}/{out_dir}"));
     }
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
+    if let Some(paths) = bin_arg_file_raw {
+        let name = cargo_bin_name
+            .as_deref()
+            .filter(|name| !name.is_empty())
+            .ok_or_else(|| {
+                OptionError::Generic(
+                    "--bin-arg-file requires a nonempty --cargo-bin-name".to_owned(),
+                )
+            })?;
+        file_arguments.extend(select_binary_args(args_from_file(paths)?, name)?);
+    }
     // Process --copy-output
     let copy_output = copy_output_raw
         .map(|co| {
@@ -310,10 +333,25 @@ fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
         let mut lines = read_file_to_array(path).map_err(|err| {
             OptionError::Generic(format!(
                 "{} while processing args from file paths: {:?}",
-                err, &paths
+                err, paths
             ))
         })?;
         args.append(&mut lines);
+    }
+    Ok(args)
+}
+
+// Keep the selector out of rustc's arguments and preserve the script's ordering.
+// Split only once: linker flags commonly contain additional equals signs.
+fn select_binary_args(records: Vec<String>, name: &str) -> Result<Vec<String>, OptionError> {
+    let mut args = Vec::new();
+    for record in records {
+        let (selector, arg) = record.split_once('=').ok_or_else(|| {
+            OptionError::Generic("binary argument file requires BIN=ARG records".to_owned())
+        })?;
+        if selector.is_empty() || selector == name {
+            args.push(arg.to_owned());
+        }
     }
     Ok(args)
 }
@@ -473,6 +511,43 @@ fn environment_block(
 #[cfg(test)]
 mod test {
     use super::*;
+
+    // https://github.com/bazelbuild/rules_rust/issues/4299
+    #[test]
+    fn binary_args_match_exact_names_and_preserve_order() {
+        let records = [
+            "=-Clink-arg=first",
+            "my-bin=-Clink-arg=${pwd}/${out}/file=with=equals",
+            "my_bin=-Clink-arg=other",
+            "=-Clink-arg=last",
+        ];
+        let args = select_binary_args(records.map(str::to_owned).to_vec(), "my-bin").unwrap();
+        assert_eq!(
+            args,
+            [
+                "-Clink-arg=first",
+                "-Clink-arg=${pwd}/${out}/file=with=equals",
+                "-Clink-arg=last"
+            ]
+        );
+        let args = prepare_args(
+            args,
+            &[
+                ("pwd".to_owned(), "/exec".to_owned()),
+                ("out".to_owned(), "mapped/out".to_owned()),
+            ],
+            false,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(args[1], "-Clink-arg=/exec/mapped/out/file=with=equals");
+        assert_eq!(
+            select_binary_args(records.map(str::to_owned).to_vec(), "my_bin").unwrap(),
+            ["-Clink-arg=first", "-Clink-arg=other", "-Clink-arg=last"]
+        );
+        assert!(select_binary_args(vec!["invalid".to_owned()], "my-bin").is_err());
+    }
 
     #[test]
     fn test_enforce_allow_features_flag_user_didnt_say() {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eux
+set -xeuo pipefail
 
 # Normalize working directory to root of repository.
 cd "$(dirname "${BASH_SOURCE[0]}")"/..

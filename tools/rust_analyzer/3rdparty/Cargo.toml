@@ -14,6 +14,7 @@ camino = { features = ["serde1"], version = "1.1.9" }
 clap = { features = ["derive", "env"], version = "4.3.11" }
 env_logger = { version = "0.11.10" }
 itertools = { version = "0.14.0" }
+jsonc-parser = { features = ["cst", "serde"], version = "0.26.2" }
 log = { version = "0.4.19" }
 serde = { features = ["derive"], version = "1.0.171" }
 serde_json = { version = "1.0.102" }

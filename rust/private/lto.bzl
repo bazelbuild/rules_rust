@@ -38,7 +38,7 @@ def _rust_lto_flag_impl(ctx):
     return RustLtoInfo(mode = value)
 
 rust_lto_flag = rule(
-    doc = "A build setting which specifies the link time optimization mode used when building Rust code. Allowed values are: ".format(_LTO_MODES),
+    doc = "A build setting which specifies the link time optimization mode used when building Rust code. Allowed values are: {}".format(_LTO_MODES),
     implementation = _rust_lto_flag_impl,
     build_setting = config.string(flag = True),
 )

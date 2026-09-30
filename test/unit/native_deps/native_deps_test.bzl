@@ -11,34 +11,11 @@ load(
     "assert_argv_contains_prefix_not",
     "assert_argv_contains_prefix_suffix",
     "assert_list_contains_adjacent_elements",
+    "get_bin_dir_from_action",
 )
 
 def _get_toolchain(ctx):
     return ctx.attr._toolchain[platform_common.ToolchainInfo]
-
-def _get_bin_dir_from_action(action):
-    """Extract the bin directory from an action's outputs.
-
-    This handles config transitions that add suffixes like -ST-<hash>, as
-    well as Bazel path mapping (`--experimental_output_paths=strip` plus a
-    `supports-path-mapping` requirement on the action), which rewrites
-    argv entries to live under `bazel-out/cfg/bin/...` even though the
-    File's `.dirname` still returns the un-mapped, configuration-specific
-    path.
-
-    Args:
-        action: The action to extract the bin directory from.
-
-    Returns:
-        The bin directory path as a string.
-    """
-    for arg in action.argv:
-        if arg.startswith("bazel-out/cfg/bin/"):
-            return "bazel-out/cfg/bin"
-    bin_dir = action.outputs.to_list()[0].dirname
-    if "/bin/" in bin_dir:
-        bin_dir = bin_dir.split("/bin/")[0] + "/bin"
-    return bin_dir
 
 def _get_darwin_component(arg):
     """Extract darwin component from a path.
@@ -132,16 +109,18 @@ def _staticlib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
     if toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             native_link_arg = "-Clink-arg=native_dep.lib"
         else:
             native_link_arg = "-Clink-arg=-lnative_dep.lib"
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -172,15 +151,17 @@ def _bin_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
+    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
     if toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             native_link_arg = "-Clink-arg=native_dep.lib"
         else:
             native_link_arg = "-Clink-arg=-lnative_dep.lib"
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -209,27 +190,30 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
 
     toolchain = _get_toolchain(ctx)
     link_args = _extract_linker_args(action.argv)
-    bin_dir = _get_bin_dir_from_action(action)
+    bin_dir = get_bin_dir_from_action(action)
 
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
+
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+    pic_suffix = _get_pic_suffix(ctx, compilation_mode)
 
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
             # When using CC linker, args are passed with -Wl, prefix as separate arguments
             want = [
-                "-lstatic=native_dep",
-                "-lnative_dep",
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
                 "-Wl,-force_load",
-                "-Wl,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "-Wl,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             ]
         else:
             # When using rust-lld directly, args are passed without prefix as separate arguments
             want = [
-                "-lstatic=native_dep",
-                "-lnative_dep",
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
                 "-force_load",
-                "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
@@ -257,25 +241,25 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
             ]
     elif toolchain.target_arch == "s390x":
         want = [
-            "-lstatic=native_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
             "link-arg=-Wl,--whole-archive",
-            "link-arg={}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "link-arg={}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     elif use_cc_linker:
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
             "-Wl,--whole-archive",
-            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "-Wl,--no-whole-archive",
         ]
     else:
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
             "--whole-archive",
-            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, link_args, want)
@@ -289,7 +273,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     action = tut.actions[0]
 
     linker_args = _extract_linker_args(action.argv)
-    bin_dir = _get_bin_dir_from_action(action)
+    bin_dir = get_bin_dir_from_action(action)
 
     # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
     _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)

@@ -4,7 +4,7 @@ load("@bazel_features//:features.bzl", "bazel_features")
 load("//3rdparty/crates:crates.bzl", "crate_repositories")
 load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
 
-WASM_BINDGEN_VERSION = "0.2.105"
+WASM_BINDGEN_VERSION = "0.2.121"
 
 def _rust_ext_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines
