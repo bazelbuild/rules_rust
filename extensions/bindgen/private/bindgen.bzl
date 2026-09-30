@@ -77,12 +77,15 @@ def rust_bindgen_library(
     for shared in (
         "target_compatible_with",
         "exec_compatible_with",
+        "compatible_with",
+        "restricted_to",
     ):
         if shared in kwargs:
             bindgen_kwargs.update({shared: kwargs[shared]})
+    merge_cc_lib_objects_into_rlib = True
     if "merge_cc_lib_objects_into_rlib" in kwargs:
-        bindgen_kwargs.update({"merge_cc_lib_objects_into_rlib": kwargs["merge_cc_lib_objects_into_rlib"]})
-        kwargs.pop("merge_cc_lib_objects_into_rlib")
+        merge_cc_lib_objects_into_rlib = kwargs.pop("merge_cc_lib_objects_into_rlib")
+        bindgen_kwargs.update({"merge_cc_lib_objects_into_rlib": merge_cc_lib_objects_into_rlib})
 
     rust_bindgen(
         name = name + "__bindgen",
@@ -102,6 +105,10 @@ def rust_bindgen_library(
     if "deps" in kwargs:
         kwargs.pop("deps")
 
+    link_deps = kwargs.get("link_deps") or []
+    if "link_deps" in kwargs:
+        kwargs.pop("link_deps")
+
     if wrap_static_fns:
         native.filegroup(
             name = name + "__bindgen_c_thunks",
@@ -115,10 +122,26 @@ def rust_bindgen_library(
             deps = [cc_lib],
         )
 
+    # With `merge_cc_lib_objects_into_rlib` the bindgen target links `cc_lib`
+    # into the rlib via a `BuildInfo` provider carrying `-lstatic=`/`-Lnative=`
+    # flags, and deliberately withholds `cc_lib`'s libraries from its `CcInfo`
+    # so nothing downstream links them twice.  `link_deps` keeps only `CcInfo`,
+    # so routing it there would drop the objects entirely; it has to stay in
+    # `deps`.  Without the flag it provides a plain `CcInfo` and belongs in
+    # `link_deps`, as does the `cc_library` of static fn thunks.
+    if merge_cc_lib_objects_into_rlib:
+        deps = deps + [":" + name + "__bindgen"]
+    else:
+        link_deps = link_deps + [":" + name + "__bindgen"]
+
+    if wrap_static_fns:
+        link_deps = link_deps + [":" + name + "__bindgen_c_thunks_library"]
+
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        deps = deps + [":" + name + "__bindgen"] + ([":" + name + "__bindgen_c_thunks_library"] if wrap_static_fns else []),
+        deps = deps,
+        link_deps = link_deps,
         tags = tags,
         **kwargs
     )
@@ -156,9 +179,13 @@ def _generate_cc_link_build_info(ctx, cc_lib):
                 rustc_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
+            elif lib.dynamic_library:
+                rustc_flags.append("-ldylib={}".format(get_lib_name_default(lib.dynamic_library)))
+                linker_search_paths.append(lib.dynamic_library.dirname)
+                compile_data.append(lib.dynamic_library)
 
     if not compile_data:
-        fail("No static libraries found in {}".format(
+        fail("No static or dynamic libraries found in {}".format(
             cc_lib.label,
         ))
 
@@ -285,6 +312,14 @@ def _rust_bindgen_impl(ctx):
     # Configure Clang Arguments
     args.add("--")
 
+    # Ignore unknown warning options from the CC toolchain (e.g., GCC-specific flags)
+    args.add("-Wno-unknown-warning-option")
+
+    # The CC toolchain's flags are written for its own language mode.  bindgen
+    # parses headers as C, where flags like -nostdinc++ do nothing, so clang
+    # warns about each one and buries the real output.
+    args.add("-Wno-unused-command-line-argument")
+
     resource_dir = _get_resource_dir(cc_toolchain)
     if resource_dir:
         args.add("-resource-dir=%s" % resource_dir)
@@ -318,6 +353,7 @@ def _rust_bindgen_impl(ctx):
     param_flags_known_to_clang = (
         "-I",
         "-iquote",
+        "-idirafter",
         "-isystem",
         "--sysroot",
         "--gcc-toolchain",
@@ -338,6 +374,17 @@ def _rust_bindgen_impl(ctx):
         "-nostdinc++",
         "-nostdlib++",
         "-nostdlibinc",
+    )
+
+    # Flags in this tuple are matched by prefix and never accept a parameter, neither in the same
+    # argument nor in a separate one (`-O`, `-O2`, `-Og`). They deliberately don't live in
+    # `param_flags_known_to_clang`, as an exact match there would consume the following argument.
+    paramless_prefix_flags_known_to_clang = (
+        # Optimization level affects the macros Clang predefines, so dropping it makes bindgen parse
+        # headers differently than the rest of the build. This causes problems with, for example,
+        # glibc's FORTIFY_SOURCE, which requires optimization and warns if `__OPTIMIZE__` is not
+        # defined.
+        "-O",
     )
 
     # Some forks of Clang, such as Apple's, define additional `-Xclang` flags that upstream Clang
@@ -361,9 +408,13 @@ def _rust_bindgen_impl(ctx):
         # The cc_toolchain merged these flags into its returned flags - don't strip these out.
         if arg in ctx.attr.clang_flags:
             args.add(arg)
+            if arg in param_flags_known_to_clang:
+                open_arg = True
             continue
 
-        if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
+        if (not arg.startswith(param_flags_known_to_clang) and
+            not arg in paramless_flags_known_to_clang and
+            not arg.startswith(paramless_prefix_flags_known_to_clang)):
             continue
 
         if arg == "-Xclang" and idx + 1 < len(compile_flags) and compile_flags[idx + 1] in xclang_flags_to_strip:
@@ -407,9 +458,7 @@ def _rust_bindgen_impl(ctx):
         env = env,
         arguments = [args],
         tools = tools,
-        # ctx.actions.run now require (through a buildifier check) that we
-        # specify this
-        toolchain = None,
+        toolchain = "@rules_rust_bindgen//:toolchain_type",
     )
 
     if ctx.attr.merge_cc_lib_objects_into_rlib:
@@ -501,8 +550,8 @@ rust_bindgen_toolchain = rule(
 The tools required for the `rust_bindgen` rule.
 
 This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it
-in turn depends on both a clang binary and the clang library. To obtain these dependencies,
-`rust_bindgen_dependencies` imports bindgen and its dependencies.
+in turn depends on both a clang binary and the clang library. These dependencies are provided
+by the `@rules_rust_bindgen` module extension when using Bzlmod.
 
 ```python
 load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")

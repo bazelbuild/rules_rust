@@ -236,6 +236,9 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         binary_name = binary_name,
         binary = built_binary,
     ))
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 cargo_bootstrap_repository = repository_rule(
     doc = "A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)",

@@ -28,6 +28,7 @@ pub const test_answer_macro: test::TestDescAndFn =
         testfn: test::StaticTestFn(#[coverage(off)] ||
                 test::assert_test_result(test_answer_macro())),
     };
+#[rustc_test_entrypoint_marker]
 fn test_answer_macro() {
     { ::std::io::_print(format_args!("{0}\n", answer())); };
 }

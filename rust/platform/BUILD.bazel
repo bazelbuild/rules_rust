@@ -6,6 +6,8 @@ package(default_visibility = ["//visibility:public"])
 declare_config_settings()
 
 # WASI Preview version constraint settings
+#
+# TODO(https://github.com/bazelbuild/platforms/pull/123): Replace with upstream.
 constraint_setting(
     name = "wasi_version",
     default_constraint_value = ":wasi_preview_1",

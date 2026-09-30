@@ -8,6 +8,8 @@ use std::process::Command;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
 use hex::ToHex;
+use once_cell::sync::OnceCell;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as Sha2Digest, Sha256};
 
@@ -37,7 +39,9 @@ pub(crate) fn lock_context(
 
 /// Write a [crate::context::Context] to disk
 pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
-    let content = serde_json::to_string_pretty(&lockfile)?;
+    let mut value = serde_json::to_value(&lockfile)?;
+    compact_lockfile_value(&mut value);
+    let content = serde_json::to_string_pretty(&value)?;
 
     if dry_run {
         println!("{content:#?}");
@@ -51,6 +55,49 @@ pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> R
     }
 
     Ok(())
+}
+
+/// Recursively rewrite `{"common": X, "selects": {}}` patterns in a lockfile
+/// JSON value to just `X`.
+///
+/// [`crate::select::Select`] always serializes to the verbose two-field shape
+/// because the Tera-based rendering templates (see
+/// `src/rendering/templates/`) index `deps_set.common` / `deps_set.selects`
+/// directly on a `serde_json::Value` and would break if handed a bare array.
+/// The on-disk lockfile has no such consumer — its readers all go through
+/// `Select`'s own `Deserialize` impl, which accepts both shapes — so we
+/// collapse the empty-`selects` case here for a substantial size win. The
+/// verbose shape is preserved when `selects` is non-empty because that shape
+/// is meaningful (multiple platform-specific values).
+pub(crate) fn compact_lockfile_value(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            // Only collapse when the object is exactly `{"common": _, "selects": {}}`.
+            // Extra keys (or a missing key) mean this isn't a `Select` and we
+            // must leave it alone.
+            let is_empty_select = map.len() == 2
+                && map.contains_key("common")
+                && map
+                    .get("selects")
+                    .and_then(|s| s.as_object())
+                    .is_some_and(|s| s.is_empty());
+            if is_empty_select {
+                let mut common = map.remove("common").unwrap();
+                compact_lockfile_value(&mut common);
+                *value = common;
+            } else {
+                for v in map.values_mut() {
+                    compact_lockfile_value(v);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                compact_lockfile_value(item);
+            }
+        }
+        _ => {}
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -69,6 +116,19 @@ impl Digest {
         let rustc_version = Self::bin_version(rustc_bin)?;
         let cargo_bazel_version = env!("CARGO_PKG_VERSION");
 
+        // Mirror the Context.checksum sanitization below for Config's
+        // `label_injection_mapping`: that field is a per-session derived
+        // artifact (apparent -> canonical labels resolved through the consumer
+        // module's repo_mapping). If it entered the hash, a consumer-side
+        // `single_version_override` would shift the canonical names, change
+        // the digest, and force a producer-side repin to recover — which is
+        // impossible for registry-distributed producers whose lockfile lives
+        // in a read-only bzlmod cache.
+        let config_for_hash = Config {
+            label_injection_mapping: Default::default(),
+            ..config.clone()
+        };
+
         // Ensure the checksum of a digest is not present before computing one
         Ok(match context.checksum {
             Some(_) => Self::compute(
@@ -76,7 +136,7 @@ impl Digest {
                     checksum: None,
                     ..context.clone()
                 },
-                config,
+                &config_for_hash,
                 &splicing_metadata,
                 cargo_bazel_version,
                 &cargo_version,
@@ -84,7 +144,7 @@ impl Digest {
             ),
             None => Self::compute(
                 context,
-                config,
+                &config_for_hash,
                 &splicing_metadata,
                 cargo_bazel_version,
                 &cargo_version,
@@ -101,6 +161,33 @@ impl Digest {
         let hash = hasher.finalize().encode_hex::<String>();
         tracing::debug!("{} hash: {}", id, hash);
         hash
+    }
+
+    /// Normalize canonical Bazel labels in a JSON string for stable digest computation.
+    ///
+    /// The canonical name of a repository changes depending on whether it is used as the
+    /// root workspace/module or as a dependency:
+    ///
+    /// - bzlmod root:     `@@//package:target`
+    /// - bzlmod non-root: `@@module_name+//package:target`
+    /// - WORKSPACE root:  `@@//package:target` (or `//package:target`)
+    /// - WORKSPACE dep:   `@@repo_name//package:target`
+    ///
+    /// To ensure the lockfile digest is stable across these contexts (so that a lockfile
+    /// generated when a module is root remains valid when the module is used as a
+    /// non-root dependency), we normalize all canonical labels by stripping the
+    /// repository name component, treating `@@repo_name//` the same as `@@//`.
+    fn normalize_labels_for_digest(json: &str) -> std::borrow::Cow<'_, str> {
+        static RE: OnceCell<Regex> = OnceCell::new();
+        let re = RE.get_or_init(|| {
+            // Match canonical labels (@@...) with a non-empty repository name followed by //.
+            // The repository name is matched by [^/"]+ (one or more chars that are not / or ").
+            // This handles both bzlmod (@@module_name+//) and WORKSPACE (@@repo_name//) forms.
+            // This does NOT match @@// (root form, empty repo name) since [^/"]+ requires at
+            // least one character.
+            Regex::new(r#"@@[^/"]+//"#).expect("valid regex")
+        });
+        re.replace_all(json, "@@//")
     }
 
     fn compute(
@@ -132,8 +219,10 @@ impl Digest {
         hasher.update(b"\0");
 
         // This content is generated by various attributes in Bazel rules and written to a file behind the scenes.
+        // Labels are normalized to strip bzlmod canonical repository names so the digest is stable
+        // regardless of whether the module is used as a root module or a non-root dependency.
         hasher.update(Digest::compute_single_hash(
-            &serde_json::to_string(config).unwrap(),
+            &Self::normalize_labels_for_digest(&serde_json::to_string(config).unwrap()),
             "workspace config",
         ));
         hasher.update(b"\0");
@@ -247,7 +336,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("edd73970897c01af3bb0e6c9d62f572203dd38a03c189dcca555d463990aa086".to_owned()),
+            Digest("6154c8de88bb971f8b94365716f437c005c43ee3bb16190fa7c3b8282757504b".to_owned()),
             digest,
         );
     }
@@ -292,7 +381,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("8a4c1b3bb4c2d6c36e27565e71a13d54cff9490696a492c66a3a37bdd3893edf".to_owned()),
+            Digest("f65772987e8f02b9a0a5978bed38ce660694a89b7c7723d3ad7c25c0f260e604".to_owned()),
             digest,
         );
     }
@@ -323,7 +412,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("1e01331686ba1f26f707dc098cd9d21c39d6ccd8e46be03329bb2470d3833e15".to_owned()),
+            Digest("652b70ca28db1763146554856913308e68547119367e9a5799fce7d9931152c4".to_owned()),
             digest,
         );
     }
@@ -372,7 +461,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("45ccf7109db2d274420fac521f4736a1fb55450ec60e6df698e1be4dc2c89fad".to_owned()),
+            Digest("75883a7020d457b9c886fd185688c2e698139f52f4382d82a9261e7ecdc1abc5".to_owned()),
             digest,
         );
     }
@@ -428,5 +517,162 @@ mod test {
             digest_crlf, digest_lf,
             "Digests should be identical regardless of CRLF vs LF line endings in cargo_config"
         );
+    }
+
+    #[test]
+    fn digest_stable_for_root_vs_non_root_module() {
+        // Verifies that the digest is stable when labels in the config use different
+        // canonical forms depending on whether the module is root (@@//) or a non-root
+        // dependency (@@module_name+//). See: https://github.com/bazelbuild/rules_rust/issues/3521
+        let context = Context::default();
+        let splicing_metadata = SplicingMetadata::default();
+
+        let make_config = |patch_label: &str| -> Config {
+            Config {
+                annotations: BTreeMap::from([(
+                    CrateNameAndVersionReq::new("some_crate".to_owned(), "1.0.0".parse().unwrap()),
+                    CrateAnnotations {
+                        patches: Some(BTreeSet::from([patch_label.to_owned()])),
+                        ..CrateAnnotations::default()
+                    },
+                )]),
+                ..Config::default()
+            }
+        };
+
+        // Same patch label in root vs non-root bzlmod context
+        let config_root = make_config("@@//patches/my_crate.patch");
+        let config_non_root = make_config("@@module1+//patches/my_crate.patch");
+
+        let digest_root = Digest::compute(
+            &context,
+            &config_root,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        let digest_non_root = Digest::compute(
+            &context,
+            &config_non_root,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        assert_eq!(
+            digest_root, digest_non_root,
+            "Digests should be identical for root (@@//...) and non-root (@@module_name+//...) module contexts"
+        );
+    }
+
+    #[test]
+    fn digest_stable_for_workspace_root_vs_dep() {
+        // Verifies that the digest is stable in legacy WORKSPACE mode, where labels also
+        // change canonical form when the workspace transitions from root to an external dep:
+        // - Root workspace:    @@//package:target
+        // - External workspace dep: @@repo_name//package:target  (no "+" suffix unlike bzlmod)
+        let context = Context::default();
+        let splicing_metadata = SplicingMetadata::default();
+
+        let make_config = |patch_label: &str| -> Config {
+            Config {
+                annotations: BTreeMap::from([(
+                    CrateNameAndVersionReq::new("some_crate".to_owned(), "1.0.0".parse().unwrap()),
+                    CrateAnnotations {
+                        patches: Some(BTreeSet::from([patch_label.to_owned()])),
+                        ..CrateAnnotations::default()
+                    },
+                )]),
+                ..Config::default()
+            }
+        };
+
+        // Same patch label in WORKSPACE root vs external dep context (no "+" in repo name)
+        let config_root = make_config("@@//patches/my_crate.patch");
+        let config_dep = make_config("@@my_workspace//patches/my_crate.patch");
+
+        let digest_root = Digest::compute(
+            &context,
+            &config_root,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        let digest_dep = Digest::compute(
+            &context,
+            &config_dep,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        assert_eq!(
+            digest_root, digest_dep,
+            "Digests should be identical for WORKSPACE root (@@//...) and dep (@@repo_name//...) contexts"
+        );
+    }
+
+    #[test]
+    fn compact_collapses_empty_selects() {
+        let mut value = serde_json::json!({
+            "crates": {
+                "anyhow 1.0.69": {
+                    "common_attrs": {
+                        "crate_features": {
+                            "common": ["default", "std"],
+                            "selects": {}
+                        },
+                        "deps": {
+                            "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                            "selects": {
+                                "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        compact_lockfile_value(&mut value);
+
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "crates": {
+                    "anyhow 1.0.69": {
+                        "common_attrs": {
+                            // Empty `selects` collapsed to just the common list.
+                            "crate_features": ["default", "std"],
+                            // Non-empty `selects` preserved as-is.
+                            "deps": {
+                                "common": [{"id": "cfg-if 1.0.0", "target": "cfg_if"}],
+                                "selects": {
+                                    "cfg(windows)": [{"id": "winapi 0.3.9", "target": "winapi"}]
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+        );
+    }
+
+    // Guard against false positives: unrelated `{common, selects}`-shaped objects
+    // with extra keys (or a non-object `selects`) must not be collapsed.
+    #[test]
+    fn compact_leaves_non_select_objects_alone() {
+        let original = serde_json::json!({
+            "common": [1, 2],
+            "selects": {},
+            "extra_key": "value"
+        });
+        let mut value = original.clone();
+        compact_lockfile_value(&mut value);
+        assert_eq!(value, original);
     }
 }

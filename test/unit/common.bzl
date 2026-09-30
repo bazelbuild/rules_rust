@@ -52,6 +52,18 @@ def assert_argv_contains_prefix_not(env, action, prefix):
                 ),
             )
 
+def assert_argv_contains_prefix_then_digit(env, action, prefix):
+    for found_flag in action.argv:
+        if found_flag.startswith(prefix) and len(found_flag) > len(prefix) and found_flag[len(prefix)].isdigit():
+            return
+    unittest.fail(
+        env,
+        "Expected an arg with prefix '{prefix}' followed by a digit in {args}".format(
+            prefix = prefix,
+            args = action.argv,
+        ),
+    )
+
 def assert_action_mnemonic(env, action, mnemonic):
     if not action.mnemonic == mnemonic:
         unittest.fail(
@@ -137,3 +149,25 @@ def assert_env_value(env, action, key, value):
             real_value = action.env[key],
         ),
     )
+
+def get_bin_dir_from_action(action):
+    """Extract `bazel-out/<config>/bin` from an action.
+
+    Inspects argv first so the path-mapping (`--experimental_output_paths=strip`)
+    form `bazel-out/cfg/bin` is returned when active, otherwise falls back to
+    the first output's `.dirname` (handles `-ST-<hash>` config-transition
+    suffixes).
+
+    Args:
+        action: The action to extract the bin directory from.
+
+    Returns:
+        The bin directory path as a string.
+    """
+    for arg in action.argv:
+        if arg.startswith("bazel-out/cfg/bin/"):
+            return "bazel-out/cfg/bin"
+    bin_dir = action.outputs.to_list()[0].dirname
+    if "/bin/" in bin_dir:
+        bin_dir = bin_dir.split("/bin/")[0] + "/bin"
+    return bin_dir

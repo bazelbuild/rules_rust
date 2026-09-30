@@ -1,5 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@rules_rust_bindgen//:repositories.bzl", "BINDGEN_VERSION")
+load("@rules_rust_bindgen//:extensions.bzl", "BINDGEN_VERSION")
 
 package(default_visibility = ["//visibility:public"])
 

@@ -2,8 +2,14 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES", "rust_register_toolchains", "rust_repository_set", "rust_toolchain_tools_repository")
 load("//rust/platform:triple.bzl", "get_host_triple")
+load(
+    "//rust/private:repositories.bzl",
+    "DEFAULT_TOOLCHAIN_TRIPLES",
+    "rust_register_toolchains",
+    "rust_repository_set",
+    "rust_toolchain_tools_repository",
+)
 load(
     "//rust/private:repository_utils.bzl",
     "DEFAULT_EXTRA_TARGET_TRIPLES",
@@ -36,6 +42,9 @@ def _empty_repository_impl(repository_ctx):
         repository_ctx.name,
     ))
     repository_ctx.file("BUILD.bazel", "")
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 _empty_repository = repository_rule(
     doc = "Declare an empty repository.",
@@ -98,7 +107,6 @@ def _rust_impl(module_ctx):
 
     for repository_set in grouped_repository_sets.values():
         toolchain_infos = rust_repository_set(
-            register_toolchain = False,
             **repository_set
         )
         extra_toolchain_infos.update(**toolchain_infos)
@@ -110,6 +118,8 @@ def _rust_impl(module_ctx):
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
+        if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
+            fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
         if len(toolchain.versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
@@ -118,23 +128,24 @@ def _rust_impl(module_ctx):
             _empty_repository(name = "rust_toolchains")
         else:
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
+            extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
-                extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
+                extra_exec_rustc_flags = extra_exec_rustc_flags,
                 allocator_library = str(toolchain.allocator_library) if toolchain.allocator_library else None,
                 global_allocator_library = str(toolchain.global_allocator_library) if toolchain.global_allocator_library else None,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
+                opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
-                register_toolchains = False,
                 compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -162,7 +173,7 @@ _COMMON_TAG_KWARGS = {
     ),
     "edition": attr.string(
         doc = (
-            "The rust edition to be used by default (2015, 2018, or 2021). " +
+            "The rust edition to be used by default (2015, 2018, 2021, or 2024). " +
             "If absent, every rule is required to specify its `edition` attribute."
         ),
     ),
@@ -174,7 +185,7 @@ _COMMON_TAG_KWARGS = {
         default = _COMMON_TAG_DEFAULTS["rustfmt_version"],
     ),
     "sha256s": attr.string_dict(
-        doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+        doc = "A dict associating tool subdirectories to sha256 hashes.",
     ),
     "urls": attr.string_list(
         doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
@@ -251,6 +262,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "extra_exec_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in exec configuration",
         ),
+        "extra_exec_rustc_flags_triples": attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in exec configuration. Key is the triple, value is the flag.",
+        ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
@@ -258,7 +272,11 @@ _RUST_TOOLCHAIN_TAG = tag_class(
             doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
         ),
         "extra_target_triples": attr.string_list(
+            doc = "Additional Rust target triples to fetch and register toolchains for.",
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        "opt_level": attr.string_dict(
+            doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",

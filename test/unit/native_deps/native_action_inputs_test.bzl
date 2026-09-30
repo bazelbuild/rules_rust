@@ -5,7 +5,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(
     "//rust:defs.bzl",
     "rust_binary",
-    "rust_common",
     "rust_library",
     "rust_proc_macro",
     "rust_shared_library",
@@ -13,17 +12,13 @@ load(
 )
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
-def _get_crate_info(target):
-    return target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.test_crate_info].crate
-
 def _native_action_inputs_present_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     assert_action_mnemonic(env, action, "Rustc")
     inputs = action.inputs.to_list()
-    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
-    lib_name = _native_dep_lib_name(ctx, for_shared_library)
+    lib_name = _native_dep_lib_name(ctx)
 
     asserts.true(
         env,
@@ -40,10 +35,9 @@ def _native_action_inputs_not_present_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
-    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
     assert_action_mnemonic(env, action, "Rustc")
     inputs = action.inputs.to_list()
-    lib_name = _native_dep_lib_name(ctx, for_shared_library)
+    lib_name = _native_dep_lib_name(ctx)
 
     asserts.false(
         env,
@@ -53,7 +47,7 @@ def _native_action_inputs_not_present_test_impl(ctx):
 
     return analysistest.end(env)
 
-def _native_dep_lib_name(ctx, for_shared_library):
+def _native_dep_lib_name(ctx):
     compilation_mode = ctx.var["COMPILATION_MODE"]
     if ctx.target_platform_has_constraint(
         ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
@@ -64,7 +58,7 @@ def _native_dep_lib_name(ctx, for_shared_library):
     ):
         pic_suffix = ""
     else:
-        pic_suffix = ".pic" if compilation_mode == "opt" and for_shared_library else ""
+        pic_suffix = ".pic" if compilation_mode == "opt" else ""
     return "libbar{}.a".format(pic_suffix)
 
 def _has_action_input(name, inputs):

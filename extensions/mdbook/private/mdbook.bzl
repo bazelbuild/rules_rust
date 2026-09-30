@@ -10,10 +10,26 @@ MdBookInfo = provider(
 )
 
 def _map_inputs(file):
-    return "{}={}".format(file.path, file.short_path)
+    dest = file.short_path
+    if dest.startswith("../"):
+        # External repositories have short_paths starting with '../'.
+        # We need them to be staged at 'external/' within our shadow
+        # directory to match how 'file.path' (and thus 'file.dirname')
+        # refers to them.
+        dest = "external/" + dest.removeprefix("../")
+
+    return "{}={}".format(file.path, dest)
 
 def _mdbook_impl(ctx):
     output = ctx.actions.declare_directory(ctx.label.name)
+
+    book = ctx.file.book
+    if book == None:
+        book = ctx.actions.declare_file("{}.book.toml".format(ctx.label.name))
+        ctx.actions.write(
+            output = book,
+            content = "",
+        )
 
     toolchain = ctx.toolchains["@rules_rust_mdbook//:toolchain_type"]
 
@@ -25,7 +41,7 @@ def _mdbook_impl(ctx):
     path_sep = ";" if is_windows else ":"
     plugin_path = path_sep.join(plugin_paths.to_list())
 
-    inputs = depset([ctx.file.book] + ctx.files.srcs)
+    inputs = depset([book] + ctx.files.srcs)
 
     inputs_map_args = ctx.actions.args()
     inputs_map_args.use_param_file("%s", use_always = True)
@@ -37,7 +53,8 @@ def _mdbook_impl(ctx):
     args.add(output.path)
     args.add(toolchain.mdbook)
     args.add("build")
-    args.add("${{pwd}}/{}".format(ctx.file.book.dirname))
+    book_dir = "/".join(_src_dest_path(book).split("/")[:-1])
+    args.add("${{pwd}}/{}".format(book_dir))
 
     ctx.actions.run(
         mnemonic = "MdBookBuild",
@@ -56,7 +73,7 @@ def _mdbook_impl(ctx):
         ),
         MdBookInfo(
             srcs = depset(ctx.files.srcs),
-            config = ctx.file.book,
+            config = book,
             plugins = depset(ctx.files.plugins),
         ),
     ]
@@ -66,9 +83,11 @@ mdbook = rule(
     doc = "Rules to create book from markdown files using `mdBook`.",
     attrs = {
         "book": attr.label(
-            doc = "The `book.toml` file.",
+            doc = (
+                "The optional `book.toml` file. An empty default configuration is " +
+                "used when omitted."
+            ),
             allow_single_file = ["book.toml"],
-            mandatory = True,
         ),
         "plugins": attr.label_list(
             doc = (
@@ -97,23 +116,40 @@ def _rlocationpath(file, workspace_name):
 
     return "{}/{}".format(workspace_name, file.short_path)
 
+def _src_dest_path(file):
+    """Returns the path of `file` inside the staged workdir, mirroring the build action's `_map_inputs`."""
+    dest = file.short_path
+    if dest.startswith("../"):
+        dest = "external/" + dest.removeprefix("../")
+    return dest
+
 def _mdbook_server_impl(ctx):
     toolchain = ctx.toolchains["@rules_rust_mdbook//:toolchain_type"]
     book_info = ctx.attr.book[MdBookInfo]
 
     args = ctx.actions.args()
 
-    args.add("--mdbook={}".format(_rlocationpath(toolchain.mdbook, ctx.workspace_name)))
-    args.add("--config={}".format(_rlocationpath(book_info.config, ctx.workspace_name)))
+    workspace_name = ctx.workspace_name
+
+    args.add("--mdbook={}".format(_rlocationpath(toolchain.mdbook, workspace_name)))
+    config_dest = _src_dest_path(book_info.config)
+    args.add("--config={}".format(config_dest))
     args.add("--hostname={}".format(ctx.attr.hostname))
     args.add("--port={}".format(ctx.attr.port))
 
-    workspace_name = ctx.workspace_name
+    def _src_map(file):
+        return "--src={}={}".format(_rlocationpath(file, workspace_name), _src_dest_path(file))
 
-    def _runfile_map(file):
+    # The set of files that must be staged into the workdir for `mdbook serve` to
+    # see a consistent source tree. `book.toml` is included so that referencing it
+    # by `--config` resolves to a real file rather than a runfiles symlink.
+    book_inputs = depset([book_info.config], transitive = [book_info.srcs])
+    args.add_all(book_inputs, map_each = _src_map, allow_closure = True)
+
+    def _plugin_map(file):
         return "--plugin={}".format(_rlocationpath(file, workspace_name))
 
-    args.add_all(depset(transitive = [book_info.plugins, toolchain.plugins]), map_each = _runfile_map, allow_closure = True)
+    args.add_all(depset(transitive = [book_info.plugins, toolchain.plugins]), map_each = _plugin_map, allow_closure = True)
 
     args_file = ctx.actions.declare_file("{}.mdbook_serve_args.txt".format(ctx.label.name))
     ctx.actions.write(
@@ -159,7 +195,32 @@ def _mdbook_server_impl(ctx):
 
 mdbook_server = rule(
     implementation = _mdbook_server_impl,
-    doc = "Spawn an mdbook server for a given `mdbook` target.",
+    doc = """\
+Spawn an mdbook server for a given `mdbook` target.
+
+The server stages every input (including generated sources) into an isolated \
+working directory before invoking `mdbook serve`, so the running book always \
+reflects the bazel-built sources rather than the workspace checkout.
+
+For live-reload during development, add `tags = ["ibazel_notify_changes"]` and \
+invoke with [ibazel](https://github.com/bazelbuild/bazel-watcher):
+
+```python
+mdbook_server(
+    name = "book_server",
+    book = ":book",
+    tags = ["ibazel_notify_changes"],
+)
+```
+
+```sh
+ibazel run //path/to:book_server
+```
+
+ibazel will rebuild on source changes and signal the running server via stdin; \
+the server re-stages the freshly built inputs and `mdbook serve` reloads any \
+connected browsers.
+""",
     attrs = {
         "book": attr.label(
             doc = "The `mdbook` target to serve.",

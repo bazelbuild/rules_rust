@@ -1,0 +1,114 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_clippy_test",
+    "rust_library",
+    "rustfmt_test",
+)
+
+package(default_visibility = ["//visibility:private"])
+
+rust_library(
+    name = "lib2",
+    srcs = ["src/lib2.rs"],
+    crate_name = "lib2",
+    crate_root = "src/lib2.rs",
+    edition = "2021",
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["src/lib.rs"],
+    crate_name = "lib",
+    crate_root = "src/lib.rs",
+    edition = "2021",
+    deps = [":lib2"],
+)
+
+rust_binary(
+    name = "app",
+    srcs = ["src/main.rs"],
+    crate_root = "src/main.rs",
+    edition = "2021",
+    deps = [":lib"],
+)
+
+# Both tests run over just `:app`; the aspect walks its `deps` transitively,
+# so `:lib` and `:lib2` are checked as well without being named here.
+rust_clippy_test(
+    name = "tree_clippy_test",
+    targets = [":app"],
+    transitive = True,
+)
+
+rustfmt_test(
+    name = "tree_fmt_test",
+    targets = [":app"],
+    transitive = True,
+)
+
+# Leaf tagged `no_clippy`. The wrapper `deps` on it but does not `use` it —
+# Bazel deps don't require a Rust `use`. Proves that the aspect gracefully
+# skips a tagged crate while still processing the rest of the tree.
+rust_library(
+    name = "leaf_no_clippy",
+    srcs = ["src/wrapper.rs"],
+    crate_name = "leaf_no_clippy",
+    crate_root = "src/wrapper.rs",
+    edition = "2021",
+    tags = ["no_clippy"],
+)
+
+rust_library(
+    name = "wrapper_over_no_clippy",
+    srcs = ["src/wrapper.rs"],
+    crate_name = "wrapper_over_no_clippy",
+    crate_root = "src/wrapper.rs",
+    edition = "2021",
+    deps = [":leaf_no_clippy"],
+)
+
+rust_clippy_test(
+    name = "tree_clippy_test_with_skip",
+    targets = [":wrapper_over_no_clippy"],
+    transitive = True,
+)
+
+# Leaf tagged `no_rustfmt`.
+rust_library(
+    name = "leaf_no_rustfmt",
+    srcs = ["src/wrapper.rs"],
+    crate_name = "leaf_no_rustfmt",
+    crate_root = "src/wrapper.rs",
+    edition = "2021",
+    tags = ["no_rustfmt"],
+)
+
+rust_library(
+    name = "wrapper_over_no_rustfmt",
+    srcs = ["src/wrapper.rs"],
+    crate_name = "wrapper_over_no_rustfmt",
+    crate_root = "src/wrapper.rs",
+    edition = "2021",
+    deps = [":leaf_no_rustfmt"],
+)
+
+rustfmt_test(
+    name = "tree_fmt_test_with_skip",
+    targets = [":wrapper_over_no_rustfmt"],
+    transitive = True,
+)
+
+# `transitive = False` variants: only the exact target listed is checked,
+# so the leaf crates are ignored even without any skip tags.
+rust_clippy_test(
+    name = "app_only_clippy_test",
+    targets = [":app"],
+    transitive = False,
+)
+
+rustfmt_test(
+    name = "app_only_fmt_test",
+    targets = [":app"],
+    transitive = False,
+)

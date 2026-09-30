@@ -20,8 +20,6 @@ crates_vendor(
                 build_script_toolchains = [
                     "@rules_rust_pyo3//:current_pyo3_toolchain",
                 ],
-                patch_args = ["-p1"],
-                patches = ["@rules_rust_pyo3//3rdparty/patches:resolve_cross_compile_config_path.patch"],
             ),
         ],
         "pyo3-ffi": [
@@ -53,13 +51,13 @@ crates_vendor(
                 "extension-module",
                 "experimental-inspect",
             ],
-            version = "0.28.2",
+            version = "0.29.0",
         ),
         "pyo3-ffi": crate.spec(
-            version = "0.28.2",
+            version = "0.29.0",
         ),
         "pyo3-introspection": crate.spec(
-            version = "0.28.2",
+            version = "0.29.0",
         ),
     },
     # Name is short to avoid windows paths being too long

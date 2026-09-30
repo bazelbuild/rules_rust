@@ -59,13 +59,28 @@ impl Label {
     }
 }
 
+/// Returns true if `b` is a byte that may appear inside a Bazel repository name.
+///
+/// Mirrors the repository-name character class used by the label-parsing regex
+/// in [`Label::from_str`] (`[\w\d\-_\.+~]`). Kept here as the single source of
+/// truth so the byte-level callers (e.g. `label_injection::replace_at_label_boundary`)
+/// stay in sync with the regex.
+///
+/// TODO: Disallow `~` once support for Bazel 7.2 is dropped (see the matching
+/// TODO in `Label::from_str`).
+pub(crate) fn is_repo_name_byte(b: u8) -> bool {
+    b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.' | b'+' | b'~')
+}
+
 impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         static RE: OnceCell<Regex> = OnceCell::new();
         let re = RE.get_or_try_init(|| {
-            // TODO: Disallow `~` in repository names once support for Bazel 7.2 is dropped.
+            // TODO: Disallow `~` in repository names once support for Bazel 7.2
+            // is dropped. Keep the character class in sync with
+            // [`is_repo_name_byte`] above.
             Regex::new(r"^(@@?[\w\d\-_\.+~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")
         });
 

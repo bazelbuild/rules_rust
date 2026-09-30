@@ -1,0 +1,38 @@
+module(
+    name = "cu_test_cargo_bindeps",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+rust_host_tools = use_extension("@rules_rust//rust:extensions.bzl", "rust_host_tools")
+rust_host_tools.host_tools(
+    name = "rust_host_tools_nightly",
+    version = "nightly",
+)
+use_repo(
+    rust_host_tools,
+    "rust_host_tools_nightly",
+)
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crate_index_cargo_bindeps",
+    cargo_lockfile = "//:Cargo.lock",
+    generate_binaries = True,
+    host_tools = "@rust_host_tools_nightly",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(
+    crate,
+    "crate_index_cargo_bindeps",
+)

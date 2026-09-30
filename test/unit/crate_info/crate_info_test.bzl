@@ -35,8 +35,41 @@ def _rule_does_not_provide_crate_info_test_impl(ctx):
     )
     return analysistest.end(env)
 
+# Sentinel injected via `--action_env` (see config_settings below). It enters
+# `ctx.configuration.default_shell_env` of the target under test; if the leak
+# regresses, it will surface inside `CrateInfo.rustc_env`.
+_LEAK_CANARY_KEY = "RULES_RUST_CRATE_INFO_LEAK_CANARY"
+_LEAK_CANARY_VALUE = "leaked"
+
+def _crate_info_does_not_leak_default_shell_env_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    crate_info = tut[rust_common.crate_info]
+
+    # Note: a structural "no key from default_shell_env appears in rustc_env"
+    # check would false-positive on Windows, where `env_from_args` legitimately
+    # carries cc_toolchain link_env values (PATH, ...) for crates that emit a
+    # dylib (e.g. proc_macro). The canary is unambiguous: nothing except an
+    # explicit --action_env produces it, so its presence proves a leak.
+    asserts.false(
+        env,
+        _LEAK_CANARY_KEY in crate_info.rustc_env,
+        ("CrateInfo.rustc_env leaked default_shell_env: found key '{key}'. " +
+         "See bazelbuild/rules_rust#3989.").format(key = _LEAK_CANARY_KEY),
+    )
+
+    return analysistest.end(env)
+
 rule_provides_crate_info_test = analysistest.make(_rule_provides_crate_info_test_impl)
 rule_does_not_provide_crate_info_test = analysistest.make(_rule_does_not_provide_crate_info_test_impl)
+crate_info_does_not_leak_default_shell_env_test = analysistest.make(
+    _crate_info_does_not_leak_default_shell_env_test_impl,
+    config_settings = {
+        "//command_line_option:action_env": [
+            "{}={}".format(_LEAK_CANARY_KEY, _LEAK_CANARY_VALUE),
+        ],
+    },
+)
 
 def _crate_info_test():
     rust_library(
@@ -83,6 +116,16 @@ def _crate_info_test():
         target_under_test = ":staticlib",
     )
 
+    crate_info_does_not_leak_default_shell_env_test(
+        name = "rlib_crate_info_does_not_leak_default_shell_env_test",
+        target_under_test = ":rlib",
+    )
+
+    crate_info_does_not_leak_default_shell_env_test(
+        name = "proc_macro_crate_info_does_not_leak_default_shell_env_test",
+        target_under_test = ":proc_macro",
+    )
+
 def crate_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -98,5 +141,7 @@ def crate_info_test_suite(name):
             ":proc_macro_provides_crate_info_test",
             ":cdylib_does_not_provide_crate_info_test",
             ":staticlib_does_not_provide_crate_info_test",
+            ":rlib_crate_info_does_not_leak_default_shell_env_test",
+            ":proc_macro_crate_info_does_not_leak_default_shell_env_test",
         ],
     )

@@ -1,0 +1,3 @@
+load(":rustfmt_unit_test.bzl", "rustfmt_unit_test_suite")
+
+rustfmt_unit_test_suite(name = "rustfmt_unit_test_suite")

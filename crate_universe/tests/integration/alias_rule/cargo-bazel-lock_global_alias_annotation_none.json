@@ -1,0 +1,95 @@
+{
+  "checksum": "b621264e05b712712280d114f81c59b7187c2e9df2a87d1e4fb267e19b8f316d",
+  "conditions": {
+    "aarch64-apple-darwin": [
+      "aarch64-apple-darwin"
+    ],
+    "aarch64-unknown-linux-gnu": [
+      "aarch64-unknown-linux-gnu"
+    ],
+    "wasm32-unknown-unknown": [
+      "wasm32-unknown-unknown"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
+    ],
+    "x86_64-pc-windows-msvc": [
+      "x86_64-pc-windows-msvc"
+    ],
+    "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-nixos-gnu": [
+      "x86_64-unknown-nixos-gnu"
+    ]
+  },
+  "crates": {
+    "direct-cargo-bazel-deps 0.0.1": {
+      "common_attrs": {
+        "deps": [
+          {
+            "id": "test_data_passing_crate 0.1.0",
+            "target": "test_data_passing_crate"
+          }
+        ],
+        "edition": "2018"
+      },
+      "library_target_name": "direct_cargo_bazel_deps",
+      "name": "direct-cargo-bazel-deps",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "direct_cargo_bazel_deps",
+            "crate_root": ".direct_cargo_bazel_deps.rs"
+          }
+        }
+      ],
+      "version": "0.0.1"
+    },
+    "test_data_passing_crate 0.1.0": {
+      "build_script_attrs": {},
+      "common_attrs": {
+        "edition": "2021",
+        "extra_deps": [
+          ":build_script_build"
+        ]
+      },
+      "library_target_name": "test_data_passing_crate",
+      "license": "Apache-2.0",
+      "license_ids": [
+        "Apache-2.0"
+      ],
+      "name": "test_data_passing_crate",
+      "package_url": "https://github.com/bazelbuild/rules_rust",
+      "repository": {
+        "Http": {
+          "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286",
+          "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "test_data_passing_crate",
+            "crate_root": "src/lib.rs"
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs"
+          }
+        }
+      ],
+      "version": "0.1.0"
+    }
+  },
+  "direct_deps": [
+    "test_data_passing_crate 0.1.0"
+  ],
+  "direct_dev_deps": [],
+  "workspace_members": {
+    "direct-cargo-bazel-deps 0.0.1": ""
+  }
+}

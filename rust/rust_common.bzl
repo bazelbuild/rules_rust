@@ -17,6 +17,7 @@
 load(
     "//rust/private:common.bzl",
     _COMMON_PROVIDERS = "COMMON_PROVIDERS",
+    _rust_common = "rust_common",
 )
 load(
     "//rust/private:providers.bzl",
@@ -27,7 +28,9 @@ load(
     _DepInfo = "DepInfo",
     _DepVariantInfo = "DepVariantInfo",
     _TestCrateInfo = "TestCrateInfo",
+    _UnstableRustFeaturesInfo = "UnstableRustFeaturesInfo",
 )
+load("//rust/private:rustc.bzl", _UnstableSelfProfileInfo = "UnstableSelfProfileInfo")
 
 BuildInfo = _BuildInfo
 ClippyInfo = _ClippyInfo
@@ -36,5 +39,8 @@ CrateInfo = _CrateInfo
 DepInfo = _DepInfo
 DepVariantInfo = _DepVariantInfo
 TestCrateInfo = _TestCrateInfo
-
+UnstableRustFeaturesInfo = _UnstableRustFeaturesInfo
+UnstableSelfProfileInfo = _UnstableSelfProfileInfo
 COMMON_PROVIDERS = _COMMON_PROVIDERS
+
+rust_common = _rust_common

@@ -2,20 +2,20 @@
 
 module(
     name = "rules_rust",
-    version = "0.69.0",
+    version = "0.74.0",
 )
 
 ###############################################################################
 ## Core
 ###############################################################################
 
-bazel_dep(name = "bazel_features", version = "1.32.0")
+bazel_dep(name = "bazel_features", version = "1.50.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "apple_support", version = "1.24.1", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "apple_support", version = "1.24.1")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -26,6 +26,7 @@ use_repo(
     "rrra__clap-4.6.0",
     "rrra__env_logger-0.11.10",
     "rrra__itertools-0.14.0",
+    "rrra__jsonc-parser-0.26.2",
     "rrra__log-0.4.29",
     "rrra__serde-1.0.228",
     "rrra__serde_json-1.0.149",
@@ -78,12 +79,11 @@ use_repo(
     "rrtd__tracing-subscriber-0.3.20",
     "rrtd__walkdir-2.5.0",
     "rtra",
-    "rtra__serde-1.0.228",
-    "rtra__serde_json-1.0.149",
+    "rtra__serde-1.0.229",
+    "rtra__serde_json-1.0.151",
     "rtvsc",
-    "rtvsc__serde-1.0.228",
-    "rtvsc__serde_json-1.0.149",
-    "rules_rust_test_load_arbitrary_tool",
+    "rtvsc__serde-1.0.229",
+    "rtvsc__serde_json-1.0.151",
     "rules_rust_toolchain_test_target_json",
 )
 
@@ -109,7 +109,7 @@ use_repo(
     "cui",
     "cui__anyhow-1.0.98",
     "cui__camino-1.1.9",
-    "cui__cargo-lock-10.1.0",
+    "cui__cargo-lock-11.1.0",
     "cui__cargo-platform-0.1.9",
     "cui__cargo_metadata-0.19.2",
     "cui__cargo_toml-0.22.3",
@@ -126,7 +126,7 @@ use_repo(
     "cui__pathdiff-0.2.3",
     "cui__regex-1.11.1",
     "cui__semver-1.0.26",
-    "cui__serde-1.0.219",
+    "cui__serde-1.0.229",
     "cui__serde_json-1.0.140",
     "cui__serde_starlark-0.1.17",
     "cui__sha2-0.10.8",

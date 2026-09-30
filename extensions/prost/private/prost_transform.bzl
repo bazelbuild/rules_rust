@@ -57,7 +57,7 @@ proto_library(
         "a.proto",
     ],
     data = [
-        ":transform",
+        ":a_transform",
     ],
 )
 

@@ -82,7 +82,7 @@ pub(crate) struct Filegroup {
     pub(crate) srcs: Glob,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Alias {
     pub(crate) rule: String,
     pub(crate) name: String,
@@ -98,6 +98,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) build_script_env: SelectDict<String, String>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) build_script_env_files: SelectSet<String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub(crate) compile_data: Data,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
@@ -111,6 +113,9 @@ pub(crate) struct CargoBuildScript {
     pub(crate) data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) deps: SelectSet<Label>,
+    // Skip emitting when value matches the rule default (`True`).
+    #[serde(skip_serializing_if = "Clone::clone")]
+    pub(crate) emit_warnings: bool,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) link_deps: SelectSet<Label>,
     pub(crate) edition: String,
@@ -139,6 +144,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) toolchains: Set<Label>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) use_default_shell_env: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_cc_toolchain: Option<i32>,
     pub(crate) version: String,
     pub(crate) visibility: Set<String>,
 }
@@ -170,6 +177,8 @@ pub(crate) struct RustLibrary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
@@ -185,6 +194,8 @@ pub(crate) struct RustBinary {
     pub(crate) deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
+    #[serde(skip_serializing_if = "SelectSet::is_empty")]
+    pub(crate) link_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]

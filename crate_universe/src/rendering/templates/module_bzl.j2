@@ -8,6 +8,7 @@ Expected length = 6 lines
 # `crates_repository` API
 
 - [aliases](#aliases)
+- [crate_edition](#crate_edition)
 - [crate_deps](#crate_deps)
 - [all_crate_deps](#all_crate_deps)
 - [crate_repositories](#crate_repositories)
@@ -18,7 +19,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@rules_rust//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor_remote_repository", "local_crate_mirror")
 
 ###############################################################################
 # MACROS API
@@ -136,6 +137,24 @@ def crate_deps(deps, package_name = {{ default_package_name }}):
         ))
 
     return crate_targets
+
+def crate_edition(package_name = {{ default_package_name }}):
+    """Finds the Rust edition for the package where this macro is called.
+
+    Args:
+        package_name (str, optional): The package name whose edition should be
+            looked up. Defaults to `native.package_name()` when unset.
+
+    Returns:
+        str: The Rust edition declared by the package's Cargo.toml file.
+    """
+    if package_name == None:
+        package_name = native.package_name()
+
+    if package_name not in _CRATE_EDITIONS:
+        fail("Tried to get crate_edition for package " + package_name + " but that package had no Cargo.toml file")
+
+    return _CRATE_EDITIONS[package_name]
 
 def all_crate_deps(
         normal = False, 
@@ -290,8 +309,15 @@ def aliases(
     return select(crate_aliases)
 
 ###############################################################################
-# WORKSPACE MEMBER DEPS AND ALIASES
+# WORKSPACE MEMBER DEPS, ALIASES, AND EDITIONS
 ###############################################################################
+
+_CRATE_EDITIONS = {
+    {%- for id, path in context.workspace_members %}
+    {%- set workspace_member = context.crates | get(key=id) %}
+    "{{ path }}": "{{ workspace_member.common_attrs.edition }}",
+    {%- endfor %}
+}
 
 _NORMAL_DEPENDENCIES = {% set deps_type = "normal" %}{% include "partials/module/deps_map.j2" %}
 
@@ -331,6 +357,13 @@ def crate_repositories():
     Returns:
       A list of repos visible to the module through the module extension.
     """
+    maybe(
+        crates_vendor_remote_repository,
+        name = "{{ repository_name }}",
+        # Lean interface: just point at `crates.bzl`; the repo rule
+        # derives the sibling `BUILD.bazel` and `defs.bzl`.
+        crates_module = Label("{{ crates_module_label(file="crates.bzl") }}"),
+    )
 {%- for id, crate in context.crates %}
 {%- if not crate.repository %}{% continue %}{% endif %}
 {%- for repository_type, attrs in crate.repository %}
@@ -355,6 +388,7 @@ def crate_repositories():
 {%- endfor %}
 {%- endfor %}
     return [
+        struct(repo = "{{ repository_name }}", is_dev_dep = False),
         {%- for id in context.direct_deps %}
         {%- set crate = context.crates | get(key=id) %}
         {%- if crate.repository %}

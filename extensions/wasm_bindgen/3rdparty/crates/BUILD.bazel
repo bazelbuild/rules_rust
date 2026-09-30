@@ -44,38 +44,38 @@ alias(
 )
 
 alias(
-    name = "wasm-bindgen-0.2.105",
-    actual = "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
+    name = "wasm-bindgen-0.2.121",
+    actual = "@rrwbd__wasm-bindgen-0.2.121//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
+    actual = "@rrwbd__wasm-bindgen-0.2.121//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasm-bindgen-cli-0.2.105",
-    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
+    name = "wasm-bindgen-cli-0.2.121",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.121//:wasm_bindgen_cli",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli",
-    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.121//:wasm_bindgen_cli",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasm-bindgen-test-0.3.55",
-    actual = "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
+    name = "wasm-bindgen-test-0.3.71",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.71//:wasm_bindgen_test",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-test",
-    actual = "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.71//:wasm_bindgen_test",
     tags = ["manual"],
 )
 
@@ -94,7 +94,7 @@ alias(
 
 alias(
     name = "brotli-decompressor__brotli-decompressor",
-    actual = "@rrwbd__brotli-decompressor-4.0.3//:brotli-decompressor__bin",
+    actual = "@rrwbd__brotli-decompressor-5.0.0//:brotli-decompressor__bin",
     tags = ["manual"],
 )
 
@@ -118,18 +118,18 @@ alias(
 
 alias(
     name = "wasm-bindgen-cli__wasm-bindgen",
-    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm-bindgen__bin",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.121//:wasm-bindgen__bin",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli__wasm-bindgen-test-runner",
-    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm-bindgen-test-runner__bin",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.121//:wasm-bindgen-test-runner__bin",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli__wasm2es6js",
-    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm2es6js__bin",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.121//:wasm2es6js__bin",
     tags = ["manual"],
 )

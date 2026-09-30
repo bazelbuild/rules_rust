@@ -1,0 +1,37 @@
+# Clippy
+
+[Clippy][clippy] is a tool for catching common mistakes in Rust code and improving it. An
+expansive list of lints and the justification can be found in their [documentation][docs].
+
+[clippy]: https://github.com/rust-lang/rust-clippy#readme
+[docs]: https://rust-lang.github.io/rust-clippy/
+
+## Setup
+
+Simply add the following to the `.bazelrc` file in the root of your workspace:
+
+```text
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks
+```
+
+This will enable clippy on all [Rust targets](./rust.md).
+
+Note that targets tagged with `no-clippy` will not perform clippy checks.
+
+To use a local `clippy.toml`, add the following flag to your `.bazelrc`. Note that due to
+the upstream implementation of clippy, this file must be named either `.clippy.toml` or
+`clippy.toml`. Using a custom config file requires Rust 1.34.0 or newer.
+
+```text
+build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
+```
+
+## Rules
+
+- [rust_clippy](./rust_clippy.md) — Rule that runs `clippy-driver` against a Rust target and
+  fails the build on lint findings. Attach one per target for explicit gating.
+- [rust_clippy_aspect](./rust_clippy_aspect.md) — Aspect form of the above. Attach in
+  `.bazelrc` (as shown in Setup) to run clippy across every Rust target in the build.
+- [rust_clippy_test](./rust_clippy_test.md) — Test rule that reports clippy findings as
+  test failures, useful in CI where a failing test is more visible than a failing build.

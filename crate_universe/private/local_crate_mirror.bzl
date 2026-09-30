@@ -25,6 +25,9 @@ def _local_crate_mirror_impl(repository_ctx):
     execute(repository_ctx, [generator, "render", "--options-json", repository_ctx.attr.options_json, "--output-path", repository_ctx.path("BUILD.bazel")])
 
     repository_ctx.file("WORKSPACE.bazel", "")
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 local_crate_mirror = repository_rule(
     doc = """This is a private implementation detail of crate_universe, and should not be relied on in manually written code.
@@ -54,7 +57,7 @@ This is effectively a `local_repository` rule implementation, but where the `BUI
         ),
         "path": attr.string(
             # TODO: Verify what happens if this is not an absolute path.
-            doc = "Absolute path to the BUILD.bazel file to generate.",
+            doc = "Absolute path to the crate source directory whose contents will be copied into the mirror repository.",
         ),
         "quiet": attr.bool(
             doc = "If stdout and stderr should not be printed to the terminal.",

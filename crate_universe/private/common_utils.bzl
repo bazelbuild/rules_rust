@@ -211,3 +211,38 @@ def parse_alias_rule(value):
         bzl = str(bzl),
         rule = rule,
     )
+
+# buildifier: disable=canonical-repository
+def sanitize_label_injections(label_injections):
+    """Reduce `{Label(canonical): apparent_label}` to `{canonical_repo: apparent_repo}`.
+
+    The `cargo-bazel` generator applies these as substring replacements over
+    every string in an annotation, so the mapping must be keyed at the repo
+    prefix only (e.g. `@@openssl+` -> `@openssl`). Appending a target would
+    cause double-`//` mangling on references like `@openssl//:install`.
+
+    Target portions on either side are dropped on ingestion; the Rust pass
+    handles whatever target the user references in their annotation strings.
+
+    Args:
+        label_injections (dict[Label, str]): A mapping of labels (canonical) to string labels (apparent).
+
+    Returns:
+        dict[str, str]: A mapping of canonical repo prefix to apparent repo prefix.
+    """
+    updated = {}
+    for canonical, apparent in label_injections.items():
+        canon_repo, _, _ = str(canonical).partition("//")
+        apparent_repo, _, _ = apparent.partition("//")
+        if not canon_repo or not apparent_repo:
+            continue
+        existing = updated.get(canon_repo)
+        if existing != None and existing != apparent_repo:
+            fail("Conflicting label_injections for canonical repo {}: {} vs {}".format(
+                canon_repo,
+                existing,
+                apparent_repo,
+            ))
+        updated[canon_repo] = apparent_repo
+
+    return updated

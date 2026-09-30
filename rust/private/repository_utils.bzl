@@ -6,7 +6,6 @@ load(
     "read_user_netrc",
     "use_netrc",
 )
-load("//rust:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(
     "//rust/platform:triple_mappings.bzl",
     "system_to_binary_ext",
@@ -14,6 +13,7 @@ load(
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
 )
+load("//rust/private:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 load(":semver.bzl", "semver")
 
@@ -105,7 +105,7 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
     """Emits a BUILD file the compiler archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
         include_linker (bool): Whether to generate targets for linkers.
         include_objcopy (bool): Whether to generate targets for rust-objcopy.
 
@@ -114,7 +114,7 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
     """
     content = [_build_file_for_compiler_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         target_triple = target_triple.str,
     )]
@@ -123,7 +123,7 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
         content.append(
             _build_file_for_linker_template.format(
                 binary_ext = system_to_binary_ext(target_triple.system),
-                staticlib_ext = system_to_staticlib_ext(target_triple.system),
+                staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
                 dylib_ext = system_to_dylib_ext(target_triple.system),
                 target_triple = target_triple.str,
             ),
@@ -150,7 +150,7 @@ def BUILD_for_cargo(target_triple):
     """Emits a BUILD file the cargo archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
@@ -171,7 +171,7 @@ def BUILD_for_rust_analyzer(target_triple):
     """Emits a BUILD file for the rust-analyzer archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
@@ -200,7 +200,7 @@ def BUILD_for_rustfmt(target_triple):
     """Emits a BUILD file the rustfmt archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
@@ -221,7 +221,7 @@ def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     """Emits a BUILD file the rust_analyzer_proc_macro_srv archive.
 
     Args:
-        exec_triple (str): The triple of the exec platform
+        exec_triple (struct): The triple of the exec platform
     Returns:
         str: The contents of a BUILD file
     """
@@ -246,7 +246,7 @@ def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
 
     Args:
-        target_triple (str): The triple of the target platform
+        target_triple (struct): The triple of the target platform
 
     Returns:
         str: The contents of a BUILD file
@@ -330,7 +330,7 @@ def BUILD_for_stdlib(target_triple):
     """
     return _build_file_for_stdlib_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         target_triple = target_triple.str,
     )
@@ -462,7 +462,7 @@ def BUILD_for_rust_toolchain(
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
+        staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         allocator_library = repr(allocator_library_label),
         global_allocator_library = repr(global_allocator_library_label),
@@ -718,16 +718,18 @@ rust_analyzer_toolchain(
     rust_analyzer = {rust_analyzer},
     rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
+    version = "{version}",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, rust_analyzer = None):
+def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, version, rust_analyzer = None):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
         rustc = rustc,
         proc_macro_srv = repr(proc_macro_srv),
         rust_analyzer = repr(rust_analyzer) if rust_analyzer else "None",
+        version = version,
     )
 
 _build_file_for_rustfmt_toolchain_template = """\
@@ -889,7 +891,7 @@ def lookup_tool_sha256(
     The lookup order is:
 
     1. The sha256s dict in the context attributes;
-    2. The list of sha256 hashes populated in `//rust:known_shas.bzl`;
+    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`;
 
     Args:
         repository_ctx (repository_ctx): A repository_ctx (no attrs required).
@@ -934,7 +936,7 @@ def load_arbitrary_tool(
     Args:
         ctx (repository_ctx): A repository_ctx (no attrs required).
         tool_name (str): The name of the given tool per the archive naming.
-        tool_subdirectories (str): The subdirectories of the tool files (at a level below the root directory of
+        tool_subdirectories (list of str): The subdirectories of the tool files (at a level below the root directory of
             the archive). The root directory of the archive is expected to match
             $TOOL_NAME-$VERSION-$TARGET_TRIPLE.
             Example:
@@ -1135,6 +1137,10 @@ def _toolchain_repository_hub_impl(repository_ctx):
         target_compatible_with = repository_ctx.attr.target_compatible_with,
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
     ))
+
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
 
 toolchain_repository_hub = repository_rule(
     doc = (

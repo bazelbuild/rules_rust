@@ -127,6 +127,10 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("thumbv7em-none-eabihf"), "thumbv7em", None, "none", "eabihf")
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
 
+    # BPF targets
+    _assert_parts(env, triple("bpfeb-unknown-none"), "bpfeb", "unknown", "none", None)
+    _assert_parts(env, triple("bpfel-unknown-none"), "bpfel", "unknown", "none", None)
+
     # Test all WASM32 targets
     _assert_parts(env, triple("wasm32-unknown-unknown"), "wasm32", "unknown", "unknown", None)
     _assert_parts(env, triple("wasm32-unknown-emscripten"), "wasm32", "unknown", "emscripten", None)
@@ -165,11 +169,22 @@ def _wasm_staticlib_ext_test_impl(ctx):
 
     return unittest.end(env)
 
+def _windows_staticlib_ext_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    asserts.equals(env, ".a", system_to_staticlib_ext("windows", "gnu"))
+    asserts.equals(env, ".a", system_to_staticlib_ext("windows", "gnullvm"))
+    asserts.equals(env, ".lib", system_to_staticlib_ext("windows", "msvc"))
+    asserts.equals(env, ".lib", system_to_staticlib_ext("windows"))
+
+    return unittest.end(env)
+
 construct_platform_triple_test = unittest.make(_construct_platform_triple_test_impl)
 construct_minimal_platform_triple_test = unittest.make(_construct_minimal_platform_triple_test_impl)
 supported_platform_triples_test = unittest.make(_supported_platform_triples_test_impl)
 construct_known_triples_test = unittest.make(_construct_known_triples_test_impl)
 wasm_staticlib_ext_test = unittest.make(_wasm_staticlib_ext_test_impl)
+windows_staticlib_ext_test = unittest.make(_windows_staticlib_ext_test_impl)
 
 def platform_triple_test_suite(name, **kwargs):
     """Define a test suite for testing the `triple` constructor
@@ -193,6 +208,9 @@ def platform_triple_test_suite(name, **kwargs):
     wasm_staticlib_ext_test(
         name = "wasm_staticlib_ext_test",
     )
+    windows_staticlib_ext_test(
+        name = "windows_staticlib_ext_test",
+    )
 
     native.test_suite(
         name = name,
@@ -202,6 +220,7 @@ def platform_triple_test_suite(name, **kwargs):
             ":supported_platform_triples_test",
             ":construct_known_triples_test",
             ":wasm_staticlib_ext_test",
+            ":windows_staticlib_ext_test",
         ],
         **kwargs
     )

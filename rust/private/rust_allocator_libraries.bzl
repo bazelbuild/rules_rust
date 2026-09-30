@@ -43,7 +43,7 @@ def make_libstd_and_allocator_ccinfo(
         feature_configuration,
         label,
         actions,
-        experimental_link_std_dylib,
+        link_std_dylib,
         rust_std,
         allocator_library,
         std = "std"):
@@ -54,7 +54,7 @@ def make_libstd_and_allocator_ccinfo(
         feature_configuration (feature_configuration): feature_configuration to be queried.
         label (Label): The rule's label.
         actions: The rule's ctx.actions object.
-        experimental_link_std_dylib (boolean): The value of the standard library's `_experimental_link_std_dylib(ctx)`.
+        link_std_dylib (boolean): If the standard library should be included as a dylib.
         rust_std: The Rust standard library.
         allocator_library (struct): The target to use for providing allocator functions.
           This should be a struct with either:
@@ -81,6 +81,9 @@ def make_libstd_and_allocator_ccinfo(
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
         """).format(label, rust_std))
     rust_stdlib_info = rust_std[rust_common.stdlib_info]
+
+    if link_std_dylib and (not rust_stdlib_info.std_dylib or not cc_toolchain):
+        return None
 
     if rust_stdlib_info.self_contained_files:
         compilation_outputs = cc_common.create_compilation_outputs(
@@ -183,7 +186,7 @@ def make_libstd_and_allocator_ccinfo(
             order = "topological",
         )
 
-        if experimental_link_std_dylib:
+        if link_std_dylib:
             # std dylib has everything so that we do not need to include all std_files
             std_inputs = depset(
                 [cc_common.create_library_to_link(
@@ -264,20 +267,23 @@ def _rust_allocator_libraries_impl(ctx):
 
     toolchain = find_toolchain(ctx)
 
-    def make_cc_info(info, std):
+    def make_cc_info(info, std, link_std_dylib):
         return toolchain.make_libstd_and_allocator_ccinfo(
             ctx.label,
             ctx.actions,
             struct(allocator_libraries_impl_info = info),
             std,
+            link_std_dylib,
         )
 
     providers = [AllocatorLibrariesInfo(
         allocator_library = allocator_library,
         global_allocator_library = global_allocator_library,
-        libstd_and_allocator_ccinfo = make_cc_info(allocator_library, "std"),
-        libstd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "std"),
-        nostd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "no_std_with_alloc"),
+        libstd_and_allocator_ccinfo = make_cc_info(allocator_library, "std", False),
+        libstd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "std", False),
+        nostd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "no_std_with_alloc", False),
+        libstd_dylib_and_allocator_ccinfo = make_cc_info(allocator_library, "std", True),
+        libstd_dylib_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "std", True),
     )]
 
     return providers
@@ -291,7 +297,7 @@ rust_allocator_libraries = rule(
             providers = [AllocatorLibrariesImplInfo],
         ),
         "global_allocator_library": attr.label(
-            doc = "An optional library to provide when a default rust allocator is used.",
+            doc = "An optional library to provide when a global rust allocator is used.",
             providers = [AllocatorLibrariesImplInfo],
         ),
     },

@@ -1,4 +1,4 @@
-"""rust_binary"""
+"""# rust_binary.bzl"""
 
 load(
     "//rust/private:rust.bzl",

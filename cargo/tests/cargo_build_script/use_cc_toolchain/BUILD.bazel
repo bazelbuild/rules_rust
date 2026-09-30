@@ -1,0 +1,3 @@
+load(":use_cc_toolchain_test.bzl", "use_cc_toolchain_test_suite")
+
+use_cc_toolchain_test_suite(name = "use_cc_toolchain_test_suite")

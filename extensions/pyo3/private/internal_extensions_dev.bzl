@@ -7,7 +7,7 @@ def _rust_ext_dev_impl(module_ctx):
 
     rbe_preconfig(
         name = "buildkite_config",
-        toolchain = "ubuntu1804-bazel-java11",
+        toolchain = "ubuntu2404",
     )
 
     deps.append(struct(repo = "buildkite_config"))
@@ -21,6 +21,6 @@ def _rust_ext_dev_impl(module_ctx):
     )
 
 rust_ext_dev = module_extension(
-    doc = "Development dependencies for the rules_rust_wasm_bindgen extension.",
+    doc = "Development dependencies for the rules_rust_pyo3 extension.",
     implementation = _rust_ext_dev_impl,
 )

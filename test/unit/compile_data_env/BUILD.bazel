@@ -1,0 +1,4 @@
+load(":compile_data_env_test.bzl", "compile_data_env_test_suite")
+
+############################ UNIT TESTS #############################
+compile_data_env_test_suite(name = "compile_data_env_test_suite")

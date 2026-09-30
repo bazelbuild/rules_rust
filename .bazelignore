@@ -1,6 +1,7 @@
 .direnv
 bzlmod
 crate_universe/private/bootstrap
+crate_universe/tests/integration
 docs
 examples
 extensions

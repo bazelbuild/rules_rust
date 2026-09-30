@@ -20,7 +20,7 @@ given targets. This file can be consumed by rust-analyzer as an alternative
 to Cargo.toml files.
 """
 
-load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext", "triple_to_system")
+load("//rust/platform:triple_mappings.bzl", "system_to_dylib_ext")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//rust/private:rustc.bzl", "BuildInfo")
@@ -120,6 +120,12 @@ def _rust_analyzer_aspect_impl(target, ctx):
     _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "deps", []))
     _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "proc_macro_deps", []))
 
+    # For `rust_test(crate = X)` we add X to dep_infos. Since X has the same
+    # crate_id as us (same root_module), the dep-list filter in
+    # `_create_single_crate` later drops it as a self-reference, and
+    # `consolidate_crate_specs` merges X's spec with ours. End result: one
+    # rust-analyzer crate with the union of deps and the test target's
+    # build label.
     _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "crate", None))
     _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "actual", None))
 
@@ -141,6 +147,12 @@ def _rust_analyzer_aspect_impl(target, ctx):
     proc_macro_dylibs = [proc_macro_dylib] if proc_macro_dylib else None
     build_info_out_dirs = [build_info.out_dir] if build_info != None and build_info.out_dir != None else None
 
+    rust_generated_srcs = []
+    for attr in ["srcs", "deps", "proc_macro_deps"]:
+        for dep in getattr(ctx.rule.attr, attr, []):
+            if OutputGroupInfo in dep and hasattr(dep[OutputGroupInfo], "rust_generated_srcs"):
+                rust_generated_srcs.append(dep[OutputGroupInfo].rust_generated_srcs)
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = aliases,
         crate = crate_info,
@@ -160,6 +172,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
             rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
             rust_analyzer_proc_macro_dylib = rust_analyzer_info.proc_macro_dylibs,
             rust_analyzer_src = rust_analyzer_info.build_info_out_dirs,
+            rust_generated_srcs = depset(transitive = rust_generated_srcs),
         ),
     ]
 
@@ -182,18 +195,17 @@ def find_proc_macro_dylib(toolchain, target):
     if crate_info.type != "proc-macro":
         return None
 
-    dylib_ext = system_to_dylib_ext(triple_to_system(toolchain.target_triple))
+    # Use the exec ext: rust-analyzer (host) is what loads the dylib.
+    dylib_ext = system_to_dylib_ext(toolchain.exec_triple.system)
     for action in target.actions:
         for output in action.outputs.to_list():
             if output.extension == dylib_ext[1:]:
                 return output
 
-    # Failed to find the dylib path inside a proc-macro crate.
-    # TODO: Should this be an error?
     return None
 
 rust_analyzer_aspect = aspect(
-    attr_aspects = ["deps", "proc_macro_deps", "crate", "actual", "proto"],
+    attr_aspects = ["srcs", "deps", "proc_macro_deps", "crate", "actual", "proto"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain_type"))],
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
@@ -206,7 +218,16 @@ _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
 
 def _crate_id(crate_info):
-    """Returns a unique stable identifier for a crate
+    """Returns a unique stable identifier for a crate.
+
+    Keyed on the crate's root module path so that `rust_library(name = "lib")`
+    and `rust_test(name = "lib_test", crate = ":lib")` — which share a root
+    module — produce specs with the SAME crate_id. `consolidate_crate_specs`
+    then merges them into one rust-analyzer crate with the union of deps and
+    the test target's `build.label` (so TestOne runnables work). Without that
+    merge, rust-analyzer ends up with two crates pointing at the same source
+    file, which its IDE-side runnable detection doesn't handle well — test
+    codelens silently vanishes.
 
     Returns:
         (string): This crate's unique stable id.
@@ -248,7 +269,12 @@ def _create_single_crate(ctx, attrs, info):
     if not is_external and not is_generated:
         crate["build"] = {
             "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
-            "label": ctx.label.package + ":" + ctx.label.name,
+            # Emit canonical `//pkg:name` form. Bazel's BEP reports action
+            # labels in this form, and the flycheck wrapper matches spec
+            # labels against BEP labels to find each action's stderr for
+            # diagnostics. Without the leading `//`, the match silently
+            # fails and the wrapper emits no diagnostics for the crate.
+            "label": "//" + ctx.label.package + ":" + ctx.label.name,
         }
 
     if is_generated:
@@ -256,7 +282,10 @@ def _create_single_crate(ctx, attrs, info):
         src_map = {src.short_path: src for src in srcs if src.is_source}
         if info.crate.root.short_path in src_map:
             crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
-            crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
+            crate["source"]["include_dirs"].extend([
+                _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].dirname,
+                path_prefix + info.crate.root.dirname,
+            ])
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
@@ -300,10 +329,17 @@ def _rlocationpath(file, workspace_name):
     return "{}/{}".format(workspace_name, file.short_path)
 
 def _rust_analyzer_toolchain_impl(ctx):
-    make_variable_info = platform_common.TemplateVariableInfo({
+    make_vars = {
         "RUST_ANALYZER": ctx.file.rust_analyzer.path,
         "RUST_ANALYZER_RLOCATIONPATH": _rlocationpath(ctx.file.rust_analyzer, ctx.workspace_name),
-    })
+    }
+    if ctx.file.proc_macro_srv:
+        make_vars["RUST_ANALYZER_PROC_MACRO_SRV"] = ctx.file.proc_macro_srv.path
+        make_vars["RUST_ANALYZER_PROC_MACRO_SRV_RLOCATIONPATH"] = _rlocationpath(
+            ctx.file.proc_macro_srv,
+            ctx.workspace_name,
+        )
+    make_variable_info = platform_common.TemplateVariableInfo(make_vars)
 
     toolchain = platform_common.ToolchainInfo(
         proc_macro_srv = ctx.executable.proc_macro_srv,
@@ -311,6 +347,7 @@ def _rust_analyzer_toolchain_impl(ctx):
         rustc = ctx.executable.rustc,
         rustc_srcs = ctx.attr.rustc_srcs,
         rustc_srcs_path = ctx.attr.rustc_srcs_path,
+        version = ctx.attr.version,
         make_variables = make_variable_info,
     )
 
@@ -350,6 +387,17 @@ rust_analyzer_toolchain = rule(
             doc = "The direct path to rustc srcs relative to rustc_srcs package root.",
             default = "library",
         ),
+        "version": attr.string(
+            doc = (
+                "The rust-analyzer version (e.g. `1.96.0`). Optional. " +
+                "When set, consumers (e.g. the discover binary) can gate " +
+                "newer rust-analyzer features that older versions reject. " +
+                "Left empty for user-supplied toolchains where the version " +
+                "isn't known statically; consumers should treat the empty " +
+                "value as 'assume oldest supported'."
+            ),
+            default = "",
+        ),
     },
 )
 
@@ -386,7 +434,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     if not rust_analyzer_toolchain.rustc_srcs:
         fail(
             "Current Rust-Analyzer toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
-            "These are needed by rust-analyzer. If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
+            "These are needed by rust-analyzer.",
         )
 
     rustc_srcs = rust_analyzer_toolchain.rustc_srcs
@@ -409,6 +457,11 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     toolchain_info = {
         "sysroot": sysroot,
         "sysroot_src": sysroot_src,
+        # Empty string when the toolchain doesn't declare a version
+        # (user-supplied rust_analyzer_toolchain that omits the attr).
+        # The Rust-side consumer treats empty as "assume oldest" so
+        # forward-compatible features stay off in that case.
+        "version": rust_analyzer_toolchain.version,
     }
 
     output = ctx.actions.declare_file(ctx.label.name + ".rust_analyzer_toolchain.json")
