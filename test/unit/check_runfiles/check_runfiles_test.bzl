@@ -13,6 +13,13 @@ load(
     "rust_test",
 )
 
+# A `cc_import` with only a `shared_library` has no import library for MSVC to
+# link against, so the `crate`-only case cannot be built on Windows.
+NOT_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 def _check_runfiles_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -81,12 +88,14 @@ def _check_runfiles_test():
     cc_import(
         name = "bar_import",
         shared_library = ":libbar.so",
+        target_compatible_with = NOT_WINDOWS,
     )
 
     rust_library(
         name = "foo_lib_via_import",
         srcs = ["foo.rs"],
         edition = "2018",
+        target_compatible_with = NOT_WINDOWS,
         deps = [":bar_import"],
     )
 
@@ -94,6 +103,7 @@ def _check_runfiles_test():
     rust_test(
         name = "foo_crate_test",
         crate = ":foo_lib_via_import",
+        target_compatible_with = NOT_WINDOWS,
     )
 
     check_runfiles_test(
@@ -103,6 +113,7 @@ def _check_runfiles_test():
 
     check_runfiles_test(
         name = "check_runfiles_crate_test",
+        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":foo_crate_test",
     )
 
