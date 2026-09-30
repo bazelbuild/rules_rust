@@ -652,6 +652,24 @@ tasks:
     test_targets:
       - "//..."
 
+  # --- example_proc_macro_dep_with_exclusion ---
+  cu_integ_example_proc_macro_dep_with_exclusion_ubuntu2204:
+    name: Crate Universe - example_proc_macro_dep_with_exclusion
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/example_proc_macro_dep_with_exclusion
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_example_proc_macro_dep_with_exclusion_macos:
+    name: Crate Universe - example_proc_macro_dep_with_exclusion
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/example_proc_macro_dep_with_exclusion
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
   # --- multi_package (linux + macos only, curl-sys Windows issues) ---
   cu_integ_multi_package_ubuntu2204:
     name: Crate Universe - multi_package
