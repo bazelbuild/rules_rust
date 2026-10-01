@@ -39,12 +39,10 @@ rust_library(
         "default",
         "derive",
         "extra-traits",
-        "fold",
         "full",
         "parsing",
         "printing",
         "proc-macro",
-        "visit",
         "visit-mut",
     ],
     crate_root = "src/lib.rs",
@@ -89,6 +87,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -123,6 +122,6 @@ rust_library(
     deps = [
         "@rmdbi__proc-macro2-1.0.107//:proc_macro2",
         "@rmdbi__quote-1.0.47//:quote",
-        "@rmdbi__unicode-ident-1.0.24//:unicode_ident",
+        "@rmdbi__unicode-ident-1.0.26//:unicode_ident",
     ],
 )
