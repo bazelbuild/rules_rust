@@ -113,7 +113,7 @@ rust_library(
         "@cui__gix-hash-0.16.0//:gix_hash",
         "@cui__gix-hashtable-0.7.0//:gix_hashtable",
         "@cui__gix-object-0.47.0//:gix_object",
-        "@cui__smallvec-1.15.0//:smallvec",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__smallvec-1.16.0//:smallvec",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

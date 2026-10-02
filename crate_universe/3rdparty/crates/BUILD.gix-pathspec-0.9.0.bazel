@@ -114,6 +114,6 @@ rust_library(
         "@cui__gix-config-value-0.14.11//:gix_config_value",
         "@cui__gix-glob-0.18.0//:gix_glob",
         "@cui__gix-path-0.10.14//:gix_path",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

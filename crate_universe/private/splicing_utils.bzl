@@ -1,6 +1,12 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN")
+load(
+    ":common_utils.bzl",
+    "CARGO_BAZEL_DEBUG",
+    "CARGO_BAZEL_REPIN",
+    "REPIN",
+    "RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER",
+)
 
 def splicing_config(resolver_version = "2"):
     """Various settings used to configure Cargo manifest splicing behavior.
@@ -191,6 +197,10 @@ def splice_workspace_manifest(
     # Ensure the short hand repin variable is set to the full name.
     if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
         env["CARGO_BAZEL_REPIN"] = repository_ctx.os.environ[REPIN]
+
+    # Forward the opt-out from the guppy based feature resolver.
+    if RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER in repository_ctx.os.environ:
+        env[RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER] = repository_ctx.os.environ[RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER]
 
     cargo_bazel_fn(
         args = arguments,

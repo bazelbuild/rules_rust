@@ -1,0 +1,22 @@
+[package]
+name = "host_target_feature_split"
+version = "0.0.0"
+edition = "2021"
+
+# Required to satisfy cargo but no `lib.rs` or `build.rs` is expected to
+# exist within test data.
+build = "build.rs"
+
+[lib]
+path = "lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# `log` is depended on twice with different features. Cargo's v2 resolver builds it
+# twice: once for the target with no features, and once for the host, for the build
+# script, with `std`.
+[dependencies]
+log = { version = "=0.4.17", default-features = false }
+
+[build-dependencies]
+log = { version = "=0.4.17", features = ["std"] }

@@ -3,8 +3,11 @@
 mod cargo_bin;
 mod cargo_tree_resolver;
 mod dependency;
+mod guppy_resolver;
 mod metadata_annotation;
+mod tree_resolver_metadata;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -16,7 +19,52 @@ use tracing::debug;
 pub(crate) use self::cargo_bin::*;
 pub(crate) use self::cargo_tree_resolver::*;
 pub(crate) use self::dependency::*;
+pub(crate) use self::guppy_resolver::*;
 pub(crate) use self::metadata_annotation::*;
+pub(crate) use self::tree_resolver_metadata::*;
+
+use crate::utils::target_triple::TargetTriple;
+
+/// Selects between [GuppyResolver] and [TreeResolver].
+///
+/// Follows the convention of Bazel's `--incompatible_*` flags: it is named for the
+/// new behavior and defaults to enabled. Setting it to a falsey value with
+/// `--repo_env=RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER=0` restores the
+/// legacy `cargo tree` resolver.
+const INCOMPATIBLE_GUPPY_RESOLVER_ENV_VAR: &str =
+    "RULES_RUST_CRATE_UNIVERSE_INCOMPATIBLE_GUPPY_RESOLVER";
+
+/// Returns whether the guppy based resolver should be used.
+fn use_guppy_resolver() -> bool {
+    // Unset means the new behavior, as with an `--incompatible_*` flag which has
+    // already been flipped on.
+    std::env::var(INCOMPATIBLE_GUPPY_RESOLVER_ENV_VAR).map_or(true, |value| {
+        !matches!(
+            value.to_lowercase().as_str(),
+            "" | "0" | "false" | "no" | "off"
+        )
+    })
+}
+
+/// Computes feature and dependency metadata for a spliced workspace.
+///
+/// Dispatches to either [GuppyResolver] (the default) or the legacy [TreeResolver]
+/// backed by `cargo tree`. Both produce a [TreeResolverMetadata] and are intended to
+/// be interchangeable.
+pub(crate) fn resolve_tree_metadata(
+    cargo_bin: Cargo,
+    manifest_path: &Utf8Path,
+    target_triples: &BTreeSet<TargetTriple>,
+) -> Result<TreeResolverMetadata> {
+    if use_guppy_resolver() {
+        GuppyResolver::new(cargo_bin).generate(manifest_path, target_triples)
+    } else {
+        debug!(
+            "Using the legacy `cargo tree` resolver ({INCOMPATIBLE_GUPPY_RESOLVER_ENV_VAR} is disabled)"
+        );
+        TreeResolver::new(cargo_bin).generate(manifest_path, target_triples)
+    }
+}
 
 /// A configuration describing how to invoke [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
 #[derive(Debug, Clone, PartialEq, Eq)]

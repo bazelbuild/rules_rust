@@ -11,7 +11,7 @@ use itertools::Itertools;
 
 use crate::cli::Result;
 use crate::config::Config;
-use crate::metadata::{Cargo, CargoUpdateRequest, TreeResolver};
+use crate::metadata::{resolve_tree_metadata, Cargo, CargoUpdateRequest};
 use crate::splicing::{
     generate_lockfile, Splicer, SplicerKind, SplicingManifest, WorkspaceMetadata,
 };
@@ -131,12 +131,12 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // populated but unused here. The substitution happens in `generate`.
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
-    let resolver_data = TreeResolver::new(cargo.clone())
-        .generate(
-            manifest_path.as_path_buf(),
-            &config.supported_platform_triples,
-        )
-        .context("Failed to generate features")?;
+    let resolver_data = resolve_tree_metadata(
+        cargo.clone(),
+        manifest_path.as_path_buf(),
+        &config.supported_platform_triples,
+    )
+    .context("Failed to generate features")?;
 
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(

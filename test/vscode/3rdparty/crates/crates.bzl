@@ -537,12 +537,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtvsc__syn-3.0.4",
-        sha256 = "e6275cddf4610d1775e6d1fe9469b2e77d0f39fd98fb7450901b821e0c53649f",
+        name = "rtvsc__syn-3.0.5",
+        sha256 = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/3.0.4/download"],
-        strip_prefix = "syn-3.0.4",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-3.0.4.bazel"),
+        urls = ["https://static.crates.io/crates/syn/3.0.5/download"],
+        strip_prefix = "syn-3.0.5",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-3.0.5.bazel"),
     )
 
     maybe(

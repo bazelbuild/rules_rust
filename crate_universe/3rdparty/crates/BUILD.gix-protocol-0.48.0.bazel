@@ -131,7 +131,7 @@ rust_library(
         "@cui__gix-trace-0.1.12//:gix_trace",
         "@cui__gix-transport-0.45.0//:gix_transport",
         "@cui__gix-utils-0.1.14//:gix_utils",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
         "@cui__winnow-0.6.20//:winnow",
     ],
 )
