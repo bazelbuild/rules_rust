@@ -1,7 +1,9 @@
 # Local vendoring with patches
 
 This demonstrates patching out crates when using the "local" vendor mode. The
-example crate just depends on `rand`, and we patch out two of the transitive deps:
+example binary depends directly on the generated `getrandom` alias, while a
+second test resolves it through `crate_deps`, so both local-path mappings are
+exercised. We patch out two crates:
 
 - `getrandom` is forked. In `forked_getrandom/BUILD.bazel` the necessary
 filegroups are exposed so that the generated BUILD file at

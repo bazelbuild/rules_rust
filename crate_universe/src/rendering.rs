@@ -9,6 +9,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
+use camino::{Utf8Component, Utf8Path};
 use itertools::Itertools;
 
 use crate::config::{AliasRule, RenderConfig, VendorMode};
@@ -42,6 +43,18 @@ struct HubAlias {
 struct HubAliases {
     workspace_member: Vec<HubAlias>,
     binaries: Vec<HubAlias>,
+}
+
+fn local_crate_label(path: &Utf8Path, target: &str) -> Result<Label> {
+    if path
+        .components()
+        .any(|component| !matches!(component, Utf8Component::Normal(_)))
+    {
+        bail!("Local crate path must be relative and contain no '.' or '..' components: {path}");
+    }
+
+    Label::from_str(&format!("//{path}:{target}"))
+        .with_context(|| format!("Failed to generate label for local crate path '{path}'"))
 }
 
 /// The renderer's output. `files` is the map ready for [`write_outputs`];
@@ -361,7 +374,8 @@ impl Renderer {
                                 &krate.name,
                                 &krate.version.to_string(),
                                 library_target_name,
-                            ),
+                                dep.local_path.as_deref(),
+                            )?,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -379,7 +393,8 @@ impl Renderer {
                                     &krate.name,
                                     &krate.version.to_string(),
                                     library_target_name,
-                                ),
+                                    dep.local_path.as_deref(),
+                                )?,
                                 tags: BTreeSet::from(["manual".to_owned()]),
                             },
                         });
@@ -402,7 +417,8 @@ impl Renderer {
                                 &krate.name,
                                 &krate.version.to_string(),
                                 library_target_name,
-                            ),
+                                dep.local_path.as_deref(),
+                            )?,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -415,7 +431,12 @@ impl Renderer {
                     alias: Alias {
                         rule: alias_rule.rule(),
                         name: alias.clone(),
-                        actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version.to_string(),
+                            target,
+                            dep.local_path.as_deref(),
+                        )?,
                         tags: BTreeSet::from(["manual".to_owned()]),
                     },
                 });
@@ -425,6 +446,10 @@ impl Renderer {
         let mut binaries = Vec::new();
         for crate_id in &context.binary_crates {
             let krate = &context.crates[crate_id];
+            let local_path = match &krate.repository {
+                Some(SourceAnnotation::Path { path }) => Some(path.as_path()),
+                _ => None,
+            };
             for rule in &krate.targets {
                 if let Rule::Binary(bin) = rule {
                     binaries.push(HubAlias {
@@ -441,7 +466,8 @@ impl Renderer {
                                 &krate.name,
                                 &krate.version.to_string(),
                                 &format!("{}__bin", bin.crate_name),
-                            ),
+                                local_path,
+                            )?,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -684,7 +710,7 @@ impl Renderer {
             //
             // This is set to a short name to avoid long path name issues on windows.
             name: "_bs".to_string(),
-            aliases: SelectDict::new(self.make_aliases(krate, true, false), platforms),
+            aliases: SelectDict::new(self.make_aliases(krate, true, false)?, platforms),
             build_script_env: SelectDict::new(
                 attrs
                     .map(|attrs| attrs.build_script_env.clone())
@@ -734,7 +760,7 @@ impl Renderer {
                     attrs
                         .map(|attrs| attrs.extra_deps.clone())
                         .unwrap_or_default(),
-                ),
+                )?,
                 platforms,
             ),
             link_deps: SelectSet::new(
@@ -745,7 +771,7 @@ impl Renderer {
                     attrs
                         .map(|attrs| attrs.extra_link_deps.clone())
                         .unwrap_or_default(),
-                ),
+                )?,
                 platforms,
             ),
             // Match Cargo's default: registry/git crates are quiet unless the
@@ -763,7 +789,7 @@ impl Renderer {
                     attrs
                         .map(|attrs| attrs.extra_proc_macro_deps.clone())
                         .unwrap_or_default(),
-                ),
+                )?,
                 platforms,
             ),
             rundir: SelectScalar::new(
@@ -827,17 +853,17 @@ impl Renderer {
                 self.make_deps(
                     krate.common_attrs.deps.clone(),
                     krate.common_attrs.extra_deps.clone(),
-                ),
+                )?,
                 platforms,
             ),
             proc_macro_deps: SelectSet::new(
                 self.make_deps(
                     krate.common_attrs.proc_macro_deps.clone(),
                     krate.common_attrs.extra_proc_macro_deps.clone(),
-                ),
+                )?,
                 platforms,
             ),
-            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false)?, platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
     }
@@ -854,18 +880,18 @@ impl Renderer {
                 self.make_deps(
                     krate.common_attrs.deps.clone(),
                     krate.common_attrs.extra_deps.clone(),
-                ),
+                )?,
                 platforms,
             ),
             proc_macro_deps: SelectSet::new(
                 self.make_deps(
                     krate.common_attrs.proc_macro_deps.clone(),
                     krate.common_attrs.extra_proc_macro_deps.clone(),
-                ),
+                )?,
                 platforms,
             ),
             link_deps: SelectSet::new(krate.common_attrs.extra_link_deps.clone(), platforms),
-            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false)?, platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
             disable_pipelining: krate.disable_pipelining,
         })
@@ -887,11 +913,11 @@ impl Renderer {
         let mut deps = self.make_deps(
             krate.common_attrs.deps.clone(),
             krate.common_attrs.extra_deps.clone(),
-        );
+        )?;
         let mut proc_macro_deps = self.make_deps(
             krate.common_attrs.proc_macro_deps.clone(),
             krate.common_attrs.extra_proc_macro_deps.clone(),
-        );
+        )?;
 
         if let Some(library_target_name) = &krate.library_target_name {
             let lib_label = Label::from_str(&format!(":{library_target_name}")).unwrap();
@@ -907,7 +933,7 @@ impl Renderer {
             deps: SelectSet::new(deps, platforms),
             proc_macro_deps: SelectSet::new(proc_macro_deps, platforms),
             link_deps: SelectSet::new(krate.common_attrs.extra_link_deps.clone(), platforms),
-            aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
+            aliases: SelectDict::new(self.make_aliases(krate, false, false)?, platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
     }
@@ -981,7 +1007,7 @@ impl Renderer {
         krate: &CrateContext,
         build: bool,
         include_dev: bool,
-    ) -> Select<BTreeMap<Label, String>> {
+    ) -> Result<Select<BTreeMap<Label, String>>> {
         let mut dependency_selects = Vec::new();
         if build {
             if let Some(build_script_attrs) = &krate.build_script_attrs {
@@ -1005,32 +1031,33 @@ impl Renderer {
                         &dependency.id.name,
                         &dependency.id.version.to_string(),
                         &dependency.target,
-                    );
+                        dependency.local_path.as_deref(),
+                    )?;
                     aliases.insert((label, alias.clone()), configuration.clone());
                 }
             }
         }
-        aliases
+        Ok(aliases)
     }
 
     fn make_deps(
         &self,
         deps: Select<BTreeSet<CrateDependency>>,
         extra_deps: Select<BTreeSet<Label>>,
-    ) -> Select<BTreeSet<Label>> {
-        Select::merge(
-            deps.map(|dep| {
-                match (dep.local_path, self.config.vendor_mode) {
-                    // In local vendor mode, we use paths within the the repo.
-                    (Some(path), Some(VendorMode::Local)) => {
-                        Label::from_str(&format!("//{}:{}", path, dep.target)).unwrap()
-                    }
-                    // If we're not vendoring source, or don't have a path for the dep, construct the label we expect.
-                    _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
-                }
-            }),
-            extra_deps,
-        )
+    ) -> Result<Select<BTreeSet<Label>>> {
+        let mut labels = Select::default();
+        for (configuration, dep) in deps.items() {
+            labels.insert(
+                self.crate_label(
+                    &dep.id.name,
+                    &dep.id.version.to_string(),
+                    &dep.target,
+                    dep.local_path.as_deref(),
+                )?,
+                configuration,
+            );
+        }
+        Ok(Select::merge(labels, extra_deps))
     }
 
     fn label_to_path(label: &Label) -> PathBuf {
@@ -1042,15 +1069,25 @@ impl Renderer {
         }
     }
 
-    fn crate_label(&self, name: &str, version: &str, target: &str) -> Label {
-        Label::from_str(&sanitize_repository_name(&render_crate_bazel_label(
-            &self.config.crate_label_template,
-            &self.config.repository_name,
-            name,
-            version,
-            target,
-        )))
-        .unwrap()
+    fn crate_label(
+        &self,
+        name: &str,
+        version: &str,
+        target: &str,
+        local_path: Option<&Utf8Path>,
+    ) -> Result<Label> {
+        match (local_path, self.config.vendor_mode) {
+            // In local vendor mode, path dependencies live within the repository.
+            (Some(path), Some(VendorMode::Local)) => local_crate_label(path, target),
+            // Otherwise, construct the external repository label we expect.
+            _ => Label::from_str(&sanitize_repository_name(&render_crate_bazel_label(
+                &self.config.crate_label_template,
+                &self.config.repository_name,
+                name,
+                version,
+                target,
+            ))),
+        }
     }
 }
 
@@ -1889,6 +1926,96 @@ mod test {
         // `defs.bzl` shim is always rendered as a back-compat re-export.
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
         assert!(defs_module.contains("_aliases = \"aliases\""));
+    }
+
+    #[test]
+    fn local_vendor_dependency_aliases_use_local_paths() {
+        let dependency_id = CrateId::new("patched-crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        let krate = CrateContext {
+            name: "consumer".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+            library_target_name: Some("consumer".to_owned()),
+            common_attrs: CommonAttributes {
+                deps: Select::from_value(BTreeSet::from([CrateDependency {
+                    id: dependency_id.clone(),
+                    target: "patched_crate".to_owned(),
+                    alias: Some("renamed_crate".to_owned()),
+                    local_path: Some("fork/patched-crate".into()),
+                }])),
+                ..CommonAttributes::default()
+            },
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
+            override_targets: BTreeMap::default(),
+        };
+        let renderer = Renderer::new(
+            mock_render_config(Some(VendorMode::Local)),
+            mock_supported_platform_triples(),
+        );
+
+        let aliases = renderer.make_aliases(&krate, false, false).unwrap();
+
+        assert_eq!(
+            aliases.items(),
+            vec![(
+                None,
+                (
+                    Label::from_str("//fork/patched-crate:patched_crate").unwrap(),
+                    "renamed_crate".to_owned(),
+                ),
+            )]
+        );
+
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        let mut dependency_target = mock_target_attributes();
+        dependency_target.crate_name = "patched_crate".to_owned();
+        let dependency = CrateContext {
+            name: dependency_id.name.clone(),
+            version: dependency_id.version.clone(),
+            package_url: None,
+            repository: Some(SourceAnnotation::Path {
+                path: "fork/patched-crate".into(),
+            }),
+            targets: BTreeSet::from([Rule::Library(dependency_target)]),
+            library_target_name: Some("patched_crate".to_owned()),
+            common_attrs: CommonAttributes::default(),
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
+            override_targets: BTreeMap::default(),
+        };
+        let mut context = Context::default();
+        context.crates.insert(consumer_id.clone(), krate);
+        context.crates.insert(dependency_id, dependency);
+        context.workspace_members.insert(consumer_id, String::new());
+
+        let output = renderer.render(&context, None).unwrap();
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+        assert!(crates_module
+            .contains(r#"Label("//fork/patched-crate:patched_crate"): "renamed_crate""#));
+    }
+
+    #[test]
+    fn local_crate_labels_reject_escaping_paths_and_invalid_targets() {
+        assert!(
+            local_crate_label(Utf8Path::new("../fork/patched_crate"), "patched_crate").is_err()
+        );
+        assert!(local_crate_label(Utf8Path::new("/fork/patched_crate"), "patched_crate").is_err());
+        assert!(local_crate_label(Utf8Path::new("fork/patched_crate"), "bad\"").is_err());
     }
 
     #[test]

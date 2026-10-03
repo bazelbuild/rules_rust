@@ -1,4 +1,6 @@
 fn main() {
+    let mut bytes = [0; 1];
+    getrandom::getrandom(&mut bytes).unwrap();
     println!("\"random\" number: {}", rand::random::<f32>());
 }
 
