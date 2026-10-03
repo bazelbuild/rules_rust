@@ -106,6 +106,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -139,7 +140,7 @@ rust_library(
     version = "1.53.1",
     deps = [
         "@rmdbi__bytes-1.12.1//:bytes",
-        "@rmdbi__mio-1.2.2//:mio",
+        "@rmdbi__mio-1.2.3//:mio",
         "@rmdbi__pin-project-lite-0.2.17//:pin_project_lite",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
@@ -241,6 +242,10 @@ rust_library(
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@rmdbi__socket2-0.6.5//:socket2",  # riscv32imc-unknown-none-elf
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [
+            "@rmdbi__libc-0.2.189//:libc",  # riscv64gc-unknown-fuchsia
+            "@rmdbi__socket2-0.6.5//:socket2",  # riscv64gc-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
             "@rmdbi__libc-0.2.189//:libc",  # riscv64gc-unknown-linux-gnu

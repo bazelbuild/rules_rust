@@ -29,11 +29,18 @@ done
   done
 )
 
+# Repinning happens when the `crate` module extension (or repository rule) is
+# evaluated. Querying `//...` alone only loads the root module's BUILD files,
+# which is not enough for workspaces that reference their crate repositories
+# purely as `deps` labels (e.g. `@crates//:foo`) without `load()`ing from them.
+# Querying the direct dependencies of `//...` forces the packages of those
+# repositories to load, which evaluates the extension and triggers the repin,
+# without descending into (and downloading) every transitive crate source.
 for d in crate_universe/tests/integration/* examples/cross_compile_musl test/integration/no_std
 do
   # vendor/ is handled explicitly above via bazel run of crates_vendor targets
   [[ "${d}" == */vendor ]] && continue
-  (cd "${d}" && CARGO_BAZEL_REPIN=true bazel query //... >/dev/null)
+  (cd "${d}" && CARGO_BAZEL_REPIN=true bazel query 'deps(//..., 1)' >/dev/null)
 done
 
 # `nix_cross_compiling` special cased as `//...` will invoke Nix.

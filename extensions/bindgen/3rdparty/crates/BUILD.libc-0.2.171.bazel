@@ -119,6 +119,10 @@ rust_library(
             "default",  # powerpc-unknown-linux-gnu
             "std",  # powerpc-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [
+            "default",  # riscv64gc-unknown-fuchsia
+            "std",  # riscv64gc-unknown-fuchsia
+        ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
             "default",  # riscv64gc-unknown-linux-gnu
             "std",  # riscv64gc-unknown-linux-gnu
@@ -231,6 +235,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -369,6 +374,10 @@ cargo_build_script(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "default",  # powerpc-unknown-linux-gnu
             "std",  # powerpc-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [
+            "default",  # riscv64gc-unknown-fuchsia
+            "std",  # riscv64gc-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
             "default",  # riscv64gc-unknown-linux-gnu

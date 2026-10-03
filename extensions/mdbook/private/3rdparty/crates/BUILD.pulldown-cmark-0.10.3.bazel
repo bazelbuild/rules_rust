@@ -84,6 +84,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -117,7 +118,7 @@ rust_library(
     version = "0.10.3",
     deps = [
         ":build_script_build",
-        "@rmdbi__bitflags-2.13.1//:bitflags",
+        "@rmdbi__bitflags-2.13.2//:bitflags",
         "@rmdbi__memchr-2.8.3//:memchr",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
         "@rmdbi__unicase-2.9.0//:unicase",

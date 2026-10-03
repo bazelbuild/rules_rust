@@ -90,6 +90,13 @@ split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_she
 coverage_flags: &coverage_flags
   - "--instrumentation_filter=^//"
   - "--instrument_test_targets"
+# Apple clang emits an older LLVM profile record layout than rustc 1.99's
+# LLVM 23. An image that mixes instrumented C and Rust crashes at exit, so the
+# one package whose test links both is not instrumented on macOS. The tests
+# still run under coverage. See COVERAGE_PROFILE_ABI_MISMATCH.md.
+macos_coverage_flags: &macos_coverage_flags
+  - "--instrumentation_filter=^//,-^//test/cc_shared_library[/:]"
+  - "--instrument_test_targets"
 rbe_coverage_flags: &rbe_coverage_flags
   # https://github.com/bazelbuild/bazel/issues/20578
   - "--strategy=CoverageReport=local"
@@ -118,7 +125,7 @@ tasks:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
-    coverage_flags: *coverage_flags
+    coverage_flags: *macos_coverage_flags
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
     build_targets: *default_windows_targets
@@ -143,7 +150,7 @@ tasks:
     platform: macos_arm64
     shell_commands: *split_coverage_postprocessing_shell_commands
     coverage_targets: *default_macos_targets
-    coverage_flags: *coverage_flags
+    coverage_flags: *macos_coverage_flags
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2204_opt:
     name: Opt Mode
@@ -214,7 +221,7 @@ tasks:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
-    coverage_flags: *coverage_flags
+    coverage_flags: *macos_coverage_flags
     post_shell_commands: *coverage_validation_post_shell_commands
   macos_rolling_with_aspects:
     name: "Macos Rolling Bazel Version With Aspects"
@@ -223,7 +230,7 @@ tasks:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
-    coverage_flags: *coverage_flags
+    coverage_flags: *macos_coverage_flags
     post_shell_commands: *coverage_validation_post_shell_commands
     soft_fail: yes
     bazel: "rolling"
@@ -484,7 +491,7 @@ tasks:
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
-    coverage_flags: *coverage_flags
+    coverage_flags: *macos_coverage_flags
     post_shell_commands: *coverage_validation_post_shell_commands
   # TODO: path_mapping requires sandboxing
   # https://github.com/bazelbuild/bazel/issues/7480

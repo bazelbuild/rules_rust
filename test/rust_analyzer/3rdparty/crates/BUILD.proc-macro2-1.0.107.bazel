@@ -83,6 +83,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -116,7 +117,7 @@ rust_library(
     version = "1.0.107",
     deps = [
         ":build_script_build",
-        "@rtra__unicode-ident-1.0.24//:unicode_ident",
+        "@rtra__unicode-ident-1.0.26//:unicode_ident",
     ],
 )
 

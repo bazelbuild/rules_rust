@@ -76,6 +76,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -108,7 +109,7 @@ rust_library(
     }),
     version = "0.4.33",
     deps = [
-        "@rmdbi__crossbeam-deque-0.8.7//:crossbeam_deque",
+        "@rmdbi__crossbeam-deque-0.8.8//:crossbeam_deque",
         "@rmdbi__globset-0.4.20//:globset",
         "@rmdbi__log-0.4.34//:log",
         "@rmdbi__memchr-2.8.3//:memchr",
