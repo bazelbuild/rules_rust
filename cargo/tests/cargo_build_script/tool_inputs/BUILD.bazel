@@ -1,0 +1,72 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//cargo/private:cargo_build_script.bzl", "cargo_build_script_runfiles", run_build_script = "cargo_build_script")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+load(":tool_inputs_test.bzl", "generated_tool", "tool_inputs_test", "transitioned_script")
+
+rust_binary(
+    name = "tool_binary",
+    srcs = ["tool.rs"],
+    edition = "2021",
+)
+
+generated_tool(
+    name = "fixture_tool",
+    executable = ":tool_binary",
+)
+
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    build_script_env = {"CODEGEN": "$(execpath :fixture_tool)"},
+    edition = "2021",
+    tools = [":fixture_tool"],
+)
+
+rust_test(
+    name = "tool_runs_in_sandbox",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_script"],
+)
+
+tool_inputs_test(
+    name = "declared_tool_inputs",
+    target_under_test = ":build_script",
+)
+
+string_flag(
+    name = "script_context",
+    build_setting_default = "",
+    scope = "universal",
+)
+
+transitioned_script(
+    name = "mapped_script",
+    binary = ":build_script_",
+)
+
+cargo_build_script_runfiles(
+    name = "mapped_data",
+    data = [],
+)
+
+run_build_script(
+    name = "mapped_build_script",
+    build_script_env = {"CODEGEN": "$(execpath :fixture_tool)"},
+    data_runfiles = ":mapped_data",
+    script = ":mapped_script",
+    tools = [":fixture_tool"],
+)
+
+rust_test(
+    name = "mapped_tool_runs_in_sandbox",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":mapped_build_script"],
+)
+
+tool_inputs_test(
+    name = "mapped_declared_tool_inputs",
+    target_under_test = ":mapped_build_script",
+)
