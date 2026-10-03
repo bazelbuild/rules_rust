@@ -1,0 +1,3 @@
+load(":duplicate_link_flags_test.bzl", "duplicate_link_flags_test_suite")
+
+duplicate_link_flags_test_suite(name = "duplicate_link_flags_test_suite")
