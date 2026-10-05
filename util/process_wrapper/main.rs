@@ -101,8 +101,9 @@ fn process_line(
     // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
     // like these (or to convert them to JSON), but for now we convert them to JSON
     // ourselves.
-    if line.contains("is not a recognized feature for this target (ignoring feature)")
-        || line.starts_with(" WARN ")
+    if line.starts_with(" WARN ")
+        || line.contains("is not a recognized feature for this target (ignoring feature)")
+        || line.contains("is not a recognized processor for this target (ignoring processor)")
     {
         if let Ok(json_str) = json_warning(&line).stringify() {
             line = json_str;
@@ -298,6 +299,7 @@ mod test {
         let mut metadata_emitted = false;
         for text in [
             "'+zaamo' is not a recognized feature for this target (ignoring feature)",
+            "'westmere' is not a recognized processor for this target (ignoring processor)",
             " WARN rustc_errors::emitter Invalid span...",
         ] {
             let LineOutput::Message(msg) = process_line(
