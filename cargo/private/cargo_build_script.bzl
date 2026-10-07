@@ -247,6 +247,10 @@ def _pwd_flags_fsanitize_ignorelist(args):
     """Prefix execroot-relative paths in -fsanitize-ignorelist= arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-fsanitize-ignorelist="])
 
+def _pwd_flags_warning_suppression_mappings(args):
+    """Prefix execroot-relative paths in --warning-suppression-mappings= arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["--warning-suppression-mappings="])
+
 def _pwd_flags_isystem(args):
     """Prefix execroot-relative paths in -isystem and -Xclang -internal-isystem arguments with ${pwd}."""
     return _prefix_pwd_to_flag(args, ["-isystem", "-internal-isystem"])
@@ -268,7 +272,9 @@ def _pwd_paths(args):
     return _prefix_pwd_to_paths(args)
 
 def _pwd_flags(args):
-    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
+    return _pwd_flags_warning_suppression_mappings(
+        _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args)))))),
+    )
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.

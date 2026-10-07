@@ -565,3 +565,26 @@ def include_mixed_test(name):
             "//conditions:default": "/test/absolute/include:${pwd}/test/relative/path",
         }),
     )
+
+def warning_suppression_mappings_test(name):
+    flags = [
+        "--warning-suppression-mappings=test/relative/mapping.txt",
+        "--warning-suppression-mappings=/test/absolute/mapping.txt",
+        "-O2",
+    ]
+    expected = [
+        "--warning-suppression-mappings=${pwd}/test/relative/mapping.txt",
+        "--warning-suppression-mappings=/test/absolute/mapping.txt",
+        "-O2",
+    ]
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = flags,
+        extra_cxx_compile_flags = flags,
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = expected,
+        expected_cxxflags = expected,
+    )

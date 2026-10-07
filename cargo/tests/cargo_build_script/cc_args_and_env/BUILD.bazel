@@ -17,6 +17,7 @@ load(
     "sysroot_absolute_test",
     "sysroot_next_absolute_test",
     "sysroot_relative_test",
+    "warning_suppression_mappings_test",
     "xclang_isystem_absolute_test",
     "xclang_isystem_relative_test",
 )
@@ -58,3 +59,5 @@ include_relative_test(name = "include_relative_test")
 include_absolute_test(name = "include_absolute_test")
 
 include_mixed_test(name = "include_mixed_test")
+
+warning_suppression_mappings_test(name = "warning_suppression_mappings_test")
