@@ -773,6 +773,11 @@ def direct_libs_as_flag_operand_test(name):
     )
 
 def forwarded_header_paths_test(name):
+    """Tests path rewriting through Clang forwarding options.
+
+    Args:
+        name: Prefix for the generated analysis tests.
+    """
     for forwarding in ["-Xclang", "-Xpreprocessor"]:
         for category in ["-internal-isystem", "-internal-externc-isystem"]:
             for kind, path, expected in [
