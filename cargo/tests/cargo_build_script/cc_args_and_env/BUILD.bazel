@@ -8,6 +8,7 @@ load(
     "direct_libs_absolute_test",
     "direct_libs_as_flag_operand_test",
     "direct_libs_relative_test",
+    "forwarded_header_paths_test",
     "fsanitize_ignorelist_absolute_test",
     "fsanitize_ignorelist_relative_test",
     "imacros_absolute_test",
@@ -91,3 +92,5 @@ direct_libs_relative_test(name = "direct_libs_relative_test")
 direct_libs_absolute_test(name = "direct_libs_absolute_test")
 
 direct_libs_as_flag_operand_test(name = "direct_libs_as_flag_operand_test")
+
+forwarded_header_paths_test(name = "forwarded_header_paths_test")
