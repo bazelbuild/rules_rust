@@ -70,7 +70,7 @@ def _create_crate_info(**kwargs):
     if not "aliases" in kwargs:
         kwargs.update({"aliases": {}})
     if not "cfgs" in kwargs:
-        kwargs.update({"cfgs": depset([])})
+        kwargs.update({"cfgs": []})
     if not "compile_data" in kwargs:
         kwargs.update({"compile_data": depset([])})
     if not "compile_data_targets" in kwargs:
