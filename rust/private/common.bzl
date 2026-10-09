@@ -93,7 +93,6 @@ def _create_crate_info(**kwargs):
         kwargs.update({"srcs": depset([])})
     if not "std_dylib" in kwargs:
         kwargs.update({"std_dylib": None})
-    
     return CrateInfo(**kwargs)
 
 rust_common = struct(
