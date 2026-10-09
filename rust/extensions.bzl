@@ -16,6 +16,7 @@ load(
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
+load("//rust/private:rust_toolchain_file.bzl", "parse_rust_toolchain_file")
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -120,7 +121,23 @@ def _rust_impl(module_ctx):
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
         if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
             fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
-        if len(toolchain.versions) == 0:
+
+        versions = toolchain.versions
+        extra_target_triples = toolchain.extra_target_triples
+        dev_components = toolchain.dev_components
+        if toolchain.rust_toolchain_file:
+            if toolchain.versions != _RUST_TOOLCHAIN_VERSIONS:
+                fail("Cannot define both versions and rust_toolchain_file")
+            toolchain_file = parse_rust_toolchain_file(module_ctx.read(module_ctx.path(toolchain.rust_toolchain_file)))
+            versions = toolchain_file.versions
+            extra_target_triples = extra_target_triples + [
+                triple
+                for triple in toolchain_file.extra_target_triples
+                if triple not in extra_target_triples
+            ]
+            dev_components = dev_components or toolchain_file.dev_components
+
+        if len(versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
             # so that the `register_toolchains()` in MODULES.bazel is still
@@ -132,7 +149,7 @@ def _rust_impl(module_ctx):
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
-                dev_components = toolchain.dev_components,
+                dev_components = dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
                 extra_exec_rustc_flags = extra_exec_rustc_flags,
@@ -141,11 +158,11 @@ def _rust_impl(module_ctx):
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
-                extra_target_triples = toolchain.extra_target_triples,
+                extra_target_triples = extra_target_triples,
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
-                versions = toolchain.versions,
+                versions = versions,
                 compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -280,6 +297,15 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
+        ),
+        "rust_toolchain_file": attr.label(
+            doc = (
+                "A `rust-toolchain.toml` file, the one rustup and cargo read, to take the toolchain from " +
+                "instead of `versions`: its `channel` must be an exact release (`1.85.0`, `nightly-2025-01-01`), " +
+                "its `targets` are added to `extra_target_triples`, and `rustc-dev` in its `components` " +
+                "enables `dev_components`."
+            ),
+            allow_single_file = True,
         ),
         "rustfmt_toolchain_triples": attr.string_dict(
             doc = "Like toolchain_triples, but for rustfmt toolchains. Mapping of rust target triple to repository name.",

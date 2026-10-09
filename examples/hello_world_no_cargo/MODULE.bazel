@@ -9,7 +9,10 @@ local_path_override(
 )
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
-rust.toolchain(edition = "2021")
+rust.toolchain(
+    edition = "2021",
+    rust_toolchain_file = "//:rust-toolchain.toml",
+)
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
