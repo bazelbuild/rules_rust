@@ -67,6 +67,32 @@ def _create_crate_info(**kwargs):
         kwargs.update({"root_path": ""})
     if not "owner" in kwargs:
         kwargs.update({"owner": None})
+    if not "aliases" in kwargs:
+        kwargs.update({"aliases": {}})
+    if not "cfgs" in kwargs:
+        kwargs.update({"cfgs": depset([])})
+    if not "compile_data" in kwargs:
+        kwargs.update({"compile_data": depset([])})
+    if not "compile_data_targets" in kwargs:
+        kwargs.update({"compile_data_targets": depset([])})
+    if not "deps" in kwargs:
+        kwargs.update({"deps": depset([])})
+    if not "edition" in kwargs:
+        kwargs.update({"edition": "2015"})
+    if not "is_test" in kwargs:
+        kwargs.update({"is_test": False})
+    if not "output" in kwargs:
+        kwargs.update({"output": None})
+    if not "proc_macro_deps" in kwargs:
+        kwargs.update({"proc_macro_deps": depset([])})
+    if not "root" in kwargs:
+        kwargs.update({"root": None})
+    if not "rustc_env" in kwargs:
+        kwargs.update({"rustc_env": {}})
+    if not "srcs" in kwargs:
+        kwargs.update({"srcs": depset([])})
+    if not "std_dylib" in kwargs:
+        kwargs.update({"std_dylib": None})
     return CrateInfo(**kwargs)
 
 rust_common = struct(
