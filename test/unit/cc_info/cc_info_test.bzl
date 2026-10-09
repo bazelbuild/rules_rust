@@ -7,198 +7,109 @@ load(
 )
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
+load("@rules_testing//lib:truth.bzl", "subjects")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 load("//rust/private:rustc.bzl", "establish_cc_info")  # buildifier: disable=bzl-visibility
+
+# Helper for fluent asserts involving File struct fields that might be None.
+def _optional_file_subject(file, *, meta):
+    def is_not_none():
+        if file == None:
+            meta.add_failure("expected: a File (non-None)", "actual: None")
+            return None
+        return subjects.file(file, meta = meta)
+
+    return struct(
+        is_none = lambda: subjects.file(file, meta = meta).equals(None),
+        is_not_none = is_not_none,
+    )
+
+def _expect_that_library_to_link(env, library_to_link):
+    return env.expect.that_struct(
+        library_to_link,
+        expr = "library_to_link",
+        attrs = dict(
+            alwayslink = subjects.bool,
+            lto_bitcode_files = subjects.collection,
+            pic_lto_bitcode_files = subjects.collection,
+            objects = subjects.collection,
+            pic_objects = subjects.collection,
+            dynamic_library = _optional_file_subject,
+            interface_library = _optional_file_subject,
+            resolved_symlink_dynamic_library = _optional_file_subject,
+            resolved_symlink_interface_library = _optional_file_subject,
+            static_library = _optional_file_subject,
+            pic_static_library = _optional_file_subject,
+        ),
+    )
 
 def _is_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
 
-def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
-    asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
-    cc_info = tut[CcInfo]
+def _assert_cc_info_has_library_to_link(env, target, type, ccinfo_count):
+    env.expect.that_target(target).has_provider(CcInfo)
+    cc_info = target[CcInfo]
+
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    asserts.equals(env, ccinfo_count, len(linker_inputs))
+    env.expect.that_collection(
+        linker_inputs,
+        expr = "cc_info.linking_context.linker_inputs.to_list()",
+    ).has_size(ccinfo_count)
+
     library_to_link = linker_inputs[0].libraries[0]
-    asserts.equals(env, False, library_to_link.alwayslink)
+    expect_that_library_to_link = _expect_that_library_to_link(env, library_to_link)
+    expect_that_library_to_link.alwayslink().equals(False)
 
-    asserts.equals(env, [], library_to_link.lto_bitcode_files)
-    asserts.equals(env, [], library_to_link.pic_lto_bitcode_files)
+    # TODO: change `has_size(0)` to `is_empty` when the latter is released.
+    expect_that_library_to_link.lto_bitcode_files().has_size(0)
+    expect_that_library_to_link.pic_lto_bitcode_files().has_size(0)
 
-    asserts.equals(env, [], library_to_link.objects)
-    asserts.equals(env, [], library_to_link.pic_objects)
+    expect_that_library_to_link.objects().has_size(0)
+    expect_that_library_to_link.pic_objects().has_size(0)
 
     if type == "cdylib":
-        asserts.true(env, library_to_link.dynamic_library != None)
+        expect_that_library_to_link.dynamic_library().is_not_none()
         if _is_windows(env.ctx):
-            asserts.true(env, library_to_link.interface_library != None)
-            asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
+            expect_that_library_to_link.interface_library().is_not_none()
+            expect_that_library_to_link.resolved_symlink_dynamic_library().is_none()
         else:
-            asserts.equals(env, None, library_to_link.interface_library)
-            asserts.true(env, library_to_link.resolved_symlink_dynamic_library != None)
-        asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
-        asserts.equals(env, None, library_to_link.static_library)
-        asserts.equals(env, None, library_to_link.pic_static_library)
+            expect_that_library_to_link.interface_library().is_none()
+            expect_that_library_to_link.resolved_symlink_dynamic_library().is_not_none()
+        expect_that_library_to_link.resolved_symlink_interface_library().is_none()
+        expect_that_library_to_link.static_library().is_none()
+        expect_that_library_to_link.pic_static_library().is_none()
     else:
-        asserts.equals(env, None, library_to_link.dynamic_library)
-        asserts.equals(env, None, library_to_link.interface_library)
-        asserts.equals(env, None, library_to_link.resolved_symlink_dynamic_library)
-        asserts.equals(env, None, library_to_link.resolved_symlink_interface_library)
+        expect_that_library_to_link.dynamic_library().is_none()
+        expect_that_library_to_link.interface_library().is_none()
+        expect_that_library_to_link.resolved_symlink_dynamic_library().is_none()
+        expect_that_library_to_link.resolved_symlink_interface_library().is_none()
         if library_to_link.static_library != None:
             if type in ("rlib", "lib"):
-                asserts.true(env, library_to_link.static_library.basename.startswith("lib" + tut.label.name))
-            asserts.equals(env, None, library_to_link.pic_static_library)
+                # TODO: change to something like
+                # expect_that_lib.static_library().is_not_none().basename().starts_with("lib" + target.label.name)
+                # when `StrSubject.starts_with` is released.
+                env.expect.that_bool(
+                    library_to_link.static_library.basename.startswith("lib" + target.label.name),
+                    expr = 'library_to_link.pic_static_library.basename.startswith("lib" + target.label.name)',
+                ).equals(True)
+            expect_that_library_to_link.pic_static_library().is_none()
         else:
-            asserts.true(env, library_to_link.pic_static_library != None)
+            expect_that_library_to_link.pic_static_library().is_not_none()
             if type in ("rlib", "lib"):
-                asserts.true(env, library_to_link.pic_static_library.basename.startswith("lib" + tut.label.name))
+                # TODO: change to something like
+                # expect_that_lib.pic_static_library().is_not_none().basename().starts_with("lib" + target.label.name)
+                # when `StrSubject.starts_with` is released.
+                env.expect.that_bool(
+                    library_to_link.pic_static_library.basename.startswith("lib" + target.label.name),
+                    expr = 'library_to_link.pic_static_library.basename.startswith("lib" + target.label.name)',
+                ).equals(True)
 
-def _collect_user_link_flags(env, tut):
-    asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
-    cc_info = tut[CcInfo]
+def _collect_user_link_flags(env, target):
+    asserts.true(env, CcInfo in target, "rust_library should provide CcInfo")
+    cc_info = target[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
     return [f for i in linker_inputs for f in i.user_link_flags]
-
-def _rlib_provides_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    count = 4
-    if _is_windows(env.ctx):
-        count -= 1
-    if ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols[BuildSettingInfo].value:
-        count -= 1
-
-    _assert_cc_info_has_library_to_link(env, tut, "rlib", count)
-    return analysistest.end(env)
-
-def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    user_link_flags = _collect_user_link_flags(env, tut)
-    asserts.equals(
-        env,
-        depset(user_link_flags).to_list(),
-        user_link_flags,
-        "user_link_flags_should_not_have_duplicates_here",
-    )
-    return analysistest.end(env)
-
-def _bin_does_not_provide_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    asserts.false(env, CcInfo in tut, "rust_binary should not provide CcInfo")
-    return analysistest.end(env)
-
-def _proc_macro_does_not_provide_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    asserts.false(env, CcInfo in tut, "rust_proc_macro should not provide CcInfo")
-    return analysistest.end(env)
-
-def _cdylib_provides_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "cdylib", 2)
-    return analysistest.end(env)
-
-def _staticlib_provides_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "staticlib", 2)
-    return analysistest.end(env)
-
-def _crate_group_info_provides_cc_info_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    asserts.true(
-        env,
-        len(tut[rust_common.dep_info].transitive_noncrates.to_list()) == 1,
-        "crate_group_info should provide 1 non-crate transitive dependency",
-    )
-    return analysistest.end(env)
-
-rlib_provides_cc_info_test = analysistest.make(
-    _rlib_provides_cc_info_test_impl,
-    attrs = {
-        "_experimental_use_allocator_libraries_with_mangled_symbols": attr.label(
-            default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
-        ),
-        "_windows": attr.label(default = Label("@platforms//os:windows")),
-    },
-)
-rlib_with_dep_only_has_stdlib_linkflags_once_test = analysistest.make(
-    _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl,
-)
-bin_does_not_provide_cc_info_test = analysistest.make(_bin_does_not_provide_cc_info_test_impl)
-staticlib_provides_cc_info_test = analysistest.make(_staticlib_provides_cc_info_test_impl)
-cdylib_provides_cc_info_test = analysistest.make(_cdylib_provides_cc_info_test_impl, attrs = {
-    "_windows": attr.label(default = Label("@platforms//os:windows")),
-})
-proc_macro_does_not_provide_cc_info_test = analysistest.make(_proc_macro_does_not_provide_cc_info_test_impl)
-
-crate_group_info_provides_cc_info_test = analysistest.make(_crate_group_info_provides_cc_info_test_impl)
-
-def _is_cc_interface_library_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-
-    cc_info = tut[CcInfo]
-
-    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    asserts.true(
-        env,
-        len(linker_inputs) > 0,
-        "No linker inputs provided by {}".format(tut.label),
-    )
-
-    for linker_input in linker_inputs:
-        asserts.true(
-            env,
-            len(linker_input.libraries) > 0,
-            "No linker input libraries provided by {}".format(tut.label),
-        )
-
-        for library_to_link in linker_input.libraries:
-            asserts.true(
-                env,
-                library_to_link.dynamic_library == None,
-                "dynamic_library unexpectedly provided by {}".format(tut.label),
-            )
-            asserts.true(
-                env,
-                library_to_link.static_library == None,
-                "static_library unexpectedly provided by {}".format(tut.label),
-            )
-            asserts.true(
-                env,
-                library_to_link.pic_static_library == None,
-                "pic_static_library unexpectedly provided by {}".format(tut.label),
-            )
-            asserts.true(
-                env,
-                library_to_link.interface_library != None,
-                "No interface libraries provided by {}".format(tut.label),
-            )
-    return analysistest.end(env)
-
-is_cc_interface_library_test = analysistest.make(_is_cc_interface_library_test_impl)
-
-def _build_test(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    if rust_common.crate_info in tut:
-        crate_info = tut[rust_common.crate_info]
-    else:
-        crate_info = tut[rust_common.test_crate_info].crate
-    asserts.true(
-        env,
-        bool(crate_info.output),
-        "No output created by {}".format(tut.label),
-    )
-
-    return analysistest.end(env)
-
-build_test = analysistest.make(_build_test)
 
 def _rust_cc_injection_impl(ctx):
     dep_variant_info = rust_common.dep_variant_info(
@@ -322,56 +233,9 @@ def _cc_info_test():
         edition = "2018",
     )
 
-    rlib_provides_cc_info_test(
-        name = "rlib_provides_cc_info_test",
-        target_under_test = ":rlib",
-    )
-    rlib_with_dep_only_has_stdlib_linkflags_once_test(
-        name = "rlib_with_dep_only_has_stdlib_linkflags_once_test",
-        target_under_test = ":rlib_with_dep",
-    )
-    bin_does_not_provide_cc_info_test(
-        name = "bin_does_not_provide_cc_info_test",
-        target_under_test = ":bin",
-    )
-    cdylib_provides_cc_info_test(
-        name = "cdylib_provides_cc_info_test",
-        target_under_test = ":cdylib",
-    )
-    staticlib_provides_cc_info_test(
-        name = "staticlib_provides_cc_info_test",
-        target_under_test = ":staticlib",
-    )
-    proc_macro_does_not_provide_cc_info_test(
-        name = "proc_macro_does_not_provide_cc_info_test",
-        target_under_test = ":proc_macro",
-    )
-    crate_group_info_provides_cc_info_test(
-        name = "crate_group_info_provides_cc_info_test",
-        target_under_test = ":rust_lib_with_cc_lib_injected",
-    )
-    is_cc_interface_library_test(
-        name = "is_cc_interface_library_test",
-        target_under_test = ":cc_import",
-    )
-    build_test(
-        name = "rust_lib_with_interface_lib_dep_test",
-        target_under_test = ":rust_lib_with_interface_lib_dep",
-    )
-    build_test(
-        name = "rust_dylib_with_interface_lib_dep_test",
-        target_under_test = ":rust_dylib_with_interface_lib_dep",
-    )
-
     mock_rust_library_with_custom_owner(
         name = "custom_owner_target",
         owner = ":rlib",
-    )
-
-    linker_input_owner_test(
-        name = "linker_input_owner_test",
-        target_under_test = ":custom_owner_target",
-        expected_owner = ":rlib",
     )
 
     mock_rust_library_with_custom_owner(
@@ -379,19 +243,19 @@ def _cc_info_test():
         set_owner_to_none = True,
     )
 
-    linker_input_owner_test(
-        name = "none_owner_test",
-        target_under_test = ":none_owner_target",
-    )
+    #linker_input_owner_test(
+    #    name = "none_owner_test",
+    #    target_under_test = ":none_owner_target",
+    #)
 
     mock_rust_library_with_custom_owner(
         name = "absent_owner_target",
     )
 
-    linker_input_owner_test(
-        name = "absent_owner_test",
-        target_under_test = ":absent_owner_target",
-    )
+    #linker_input_owner_test(
+    #    name = "absent_owner_test",
+    #    target_under_test = ":absent_owner_target",
+    #)
 
 def _mock_rust_library_with_custom_owner_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".rlib")
@@ -450,33 +314,364 @@ mock_rust_library_with_custom_owner = rule(
     },
 )
 
-def _linker_input_owner_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
+def _rlib_provides_cc_info_test(name):
+    rust_library(
+        name = name + "_rlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_rlib",
+        attrs = {
+            "_experimental_use_allocator_libraries_with_mangled_symbols": attr.label(
+                default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
+            ),
+            "_windows": attr.label(default = Label("@platforms//os:windows")),
+        },
+        impl = _rlib_provides_cc_info_test_impl,
+    )
 
-    asserts.true(env, CcInfo in tut, "Target should provide CcInfo")
-    cc_info = tut[CcInfo]
+def _rlib_provides_cc_info_test_impl(env, target):
+    count = 4
+    if _is_windows(env.ctx):
+        count -= 1
+    if env.ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols[BuildSettingInfo].value:
+        count -= 1
+
+    _assert_cc_info_has_library_to_link(env, target, "rlib", count)
+
+def _rlib_with_dep_only_has_stdlib_linkflags_once_test(name):
+    rust_library(
+        name = name + "_rlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_library(
+        name = name + "_rlib_with_dep",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        deps = [name + "_rlib"],
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_rlib_with_dep",
+        impl = _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl,
+    )
+
+def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(env, target):
+    user_link_flags = _collect_user_link_flags(env, target)
+    if user_link_flags != depset(user_link_flags).to_list():
+        env.fail("user_link_flags should have no duplicates")
+
+def _staticlib_provides_cc_info_test(name):
+    rust_static_library(
+        name = name + "_staticlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_staticlib",
+        impl = _staticlib_provides_cc_info_test_impl,
+    )
+
+def _staticlib_provides_cc_info_test_impl(env, target):
+    _assert_cc_info_has_library_to_link(env, target, "staticlib", 2)
+
+def _cdylib_provides_cc_info_test(name):
+    rust_shared_library(
+        name = name + "_cdylib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_cdylib",
+        impl = _cdylib_provides_cc_info_test_impl,
+        attrs = {
+            "_windows": attr.label(default = Label("@platforms//os:windows")),
+        },
+    )
+
+def _cdylib_provides_cc_info_test_impl(env, target):
+    _assert_cc_info_has_library_to_link(env, target, "cdylib", 2)
+
+def _proc_macro_does_not_provide_cc_info_test(name):
+    rust_proc_macro(
+        name = name + "_proc_macro",
+        srcs = ["proc_macro.rs"],
+        edition = "2018",
+        deps = ["//test/unit/native_deps:native_dep"],
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_proc_macro",
+        impl = _proc_macro_does_not_provide_cc_info_test_impl,
+    )
+
+def _proc_macro_does_not_provide_cc_info_test_impl(env, target):
+    if CcInfo in target:
+        env.fail("rust_proc_macro should not provide CcInfo")
+
+def _bin_does_not_provide_cc_info_test(name):
+    rust_binary(
+        name = name + "_bin",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_bin",
+        impl = _bin_does_not_provide_cc_info_test_impl,
+    )
+
+def _bin_does_not_provide_cc_info_test_impl(env, target):
+    if CcInfo in target:
+        env.fail("rust_binary should not provide CcInfo")
+
+def _crate_group_info_provides_cc_info_test(name):
+    cc_library(
+        name = name + "_cc_lib",
+        srcs = ["foo.cc"],
+        tags = ["manual"],
+    )
+    rust_cc_injection(
+        name = name + "_cc_lib_injected",
+        cc_dep = name + "_cc_lib",
+        tags = ["manual"],
+    )
+    rust_library(
+        name = name + "_rust_lib_with_cc_lib_injected",
+        srcs = ["foo.rs"],
+        deps = [name + "_cc_lib_injected"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_rust_lib_with_cc_lib_injected",
+        impl = _crate_group_info_provides_cc_info_test_impl,
+    )
+
+def _crate_group_info_provides_cc_info_test_impl(env, target):
+    if len(target[rust_common.dep_info].transitive_noncrates.to_list()) != 1:
+        env.fail("crate_group_info should provide 1 non-crate transitive dependency")
+
+def _is_cc_interface_library_test(name):
+    rust_static_library(
+        name = name + "_staticlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_shared_library(
+        name = name + "_cdylib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_output_extractor(
+        name = name + "_rust_output_extractor",
+        dep = select({
+            "@platforms//os:windows": name + "_staticlib",
+            "//conditions:default": name + "_cdylib",
+        }),
+    )
+    cc_import(
+        name = name + "_cc_import",
+        interface_library = name + "_rust_output_extractor",
+        system_provided = True,
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_cc_import",
+        impl = _is_cc_interface_library_test_impl,
+    )
+
+def _is_cc_interface_library_test_impl(env, target):
+    cc_info = target[CcInfo]
+
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    asserts.equals(env, 1, len(linker_inputs))
+    if len(linker_inputs) == 0:
+        env.fail("No linker inputs provided by {}".format(target.label))
 
+    for linker_input in linker_inputs:
+        if len(linker_input.libraries) == 0:
+            env.fail("No linker input libraries provided by {}".format(target.label))
+
+        for library_to_link in linker_input.libraries:
+            _expect_that_library_to_link(env, library_to_link).dynamic_library().is_none()
+            _expect_that_library_to_link(env, library_to_link).static_library().is_none()
+            _expect_that_library_to_link(env, library_to_link).pic_static_library().is_none()
+            _expect_that_library_to_link(env, library_to_link).interface_library().is_not_none()
+
+# Shared test impl that checks that `target` produces an output.
+def _build_test_impl(env, target):
+    if rust_common.crate_info in target:
+        crate_info = target[rust_common.crate_info]
+    else:
+        crate_info = target[rust_common.test_crate_info].crate
+    if not crate_info.output:
+        env.fail("No output created by {}".format(target.label))
+
+def _rust_lib_with_interface_lib_dep_test(name):
+    rust_static_library(
+        name = name + "_staticlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_shared_library(
+        name = name + "_cdylib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_output_extractor(
+        name = name + "_rust_output_extractor",
+        dep = select({
+            "@platforms//os:windows": name + "_staticlib",
+            "//conditions:default": name + "_cdylib",
+        }),
+    )
+    cc_import(
+        name = name + "_cc_import",
+        interface_library = name + "_rust_output_extractor",
+        system_provided = True,
+        tags = ["manual"],
+    )
+    rust_library(
+        name = name + "_rust_lib_with_interface_lib_dep",
+        srcs = ["foo.rs"],
+        link_deps = [name + "_cc_import"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_rust_lib_with_interface_lib_dep",
+        impl = _build_test_impl,
+    )
+
+def _rust_dylib_with_interface_lib_dep_test(name):
+    rust_static_library(
+        name = name + "_staticlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_shared_library(
+        name = name + "_cdylib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    rust_output_extractor(
+        name = name + "_rust_output_extractor",
+        dep = select({
+            "@platforms//os:windows": name + "_staticlib",
+            "//conditions:default": name + "_cdylib",
+        }),
+    )
+    cc_import(
+        name = name + "_cc_import",
+        interface_library = name + "_rust_output_extractor",
+        system_provided = True,
+        tags = ["manual"],
+    )
+    rust_shared_library(
+        name = name + "_rust_dylib_with_interface_lib_dep",
+        srcs = ["foo.rs"],
+        link_deps = [name + "_cc_import"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_rust_dylib_with_interface_lib_dep",
+        impl = _build_test_impl,
+    )
+
+def _linker_input_owner_test_impl(env, target):
+    env.expect.that_target(target).has_provider(CcInfo, provider_name = "CcInfo")
+    cc_info = target[CcInfo]
+
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    env.expect.that_collection(linker_inputs, expr = "cc_info.linking_context.linker_inputs.to_list()").has_size(1)
     linker_input = linker_inputs[0]
 
-    expected_owner = ctx.attr.expected_owner
+    expected_owner = env.ctx.attr.expected_owner
     if expected_owner:
         expected_owner_label = expected_owner.label
     else:
-        expected_owner_label = tut.label
+        expected_owner_label = target.label
 
-    asserts.equals(env, expected_owner_label, linker_input.owner)
+    if expected_owner_label != linker_input.owner:
+        env.fail("Unexpected owner for target {}. Expected = '{}', actual = '{}'".format(
+            target.label,
+            expected_owner_label,
+            linker_input.owner,
+        ))
 
-    return analysistest.end(env)
+def _linker_input_owner_test(name):
+    rust_library(
+        name = name + "_rlib",
+        srcs = ["foo.rs"],
+        edition = "2018",
+        tags = ["manual"],
+    )
+    mock_rust_library_with_custom_owner(
+        name = name + "_custom_owner_target",
+        owner = name + "_rlib",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = name + "_custom_owner_target",
+        impl = _linker_input_owner_test_impl,
+        attrs = {
+            "expected_owner": attr.label(mandatory = False),
+        },
+        attr_values = {
+            "expected_owner": name + "_rlib",
+        },
+    )
 
-linker_input_owner_test = analysistest.make(
-    _linker_input_owner_test_impl,
-    attrs = {
-        "expected_owner": attr.label(mandatory = False),
-    },
-)
+def _none_owner_test(name):
+    mock_rust_library_with_custom_owner(
+        name = name + "_none_owner_target",
+        set_owner_to_none = True,
+    )
+    analysis_test(
+        name = name,
+        target = name + "_none_owner_target",
+        impl = _linker_input_owner_test_impl,
+        attrs = {
+            "expected_owner": attr.label(mandatory = False),
+        },
+    )
+
+def _absent_owner_test(name):
+    mock_rust_library_with_custom_owner(
+        name = name + "_absent_owner_target",
+    )
+    analysis_test(
+        name = name,
+        target = name + "_absent_owner_target",
+        impl = _linker_input_owner_test_impl,
+        attrs = {
+            "expected_owner": attr.label(mandatory = False),
+        },
+    )
 
 def cc_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -484,23 +679,21 @@ def cc_info_test_suite(name):
     Args:
         name: Name of the macro.
     """
-    _cc_info_test()
-
-    native.test_suite(
+    test_suite(
         name = name,
         tests = [
-            ":rlib_provides_cc_info_test",
-            ":rlib_with_dep_only_has_stdlib_linkflags_once_test",
-            ":staticlib_provides_cc_info_test",
-            ":cdylib_provides_cc_info_test",
-            ":proc_macro_does_not_provide_cc_info_test",
-            ":bin_does_not_provide_cc_info_test",
-            ":crate_group_info_provides_cc_info_test",
-            ":is_cc_interface_library_test",
-            ":rust_lib_with_interface_lib_dep_test",
-            ":rust_dylib_with_interface_lib_dep_test",
-            ":linker_input_owner_test",
-            ":none_owner_test",
-            ":absent_owner_test",
+            _rlib_provides_cc_info_test,
+            _rlib_with_dep_only_has_stdlib_linkflags_once_test,
+            _staticlib_provides_cc_info_test,
+            _cdylib_provides_cc_info_test,
+            _proc_macro_does_not_provide_cc_info_test,
+            _bin_does_not_provide_cc_info_test,
+            _crate_group_info_provides_cc_info_test,
+            _is_cc_interface_library_test,
+            _rust_lib_with_interface_lib_dep_test,
+            _rust_dylib_with_interface_lib_dep_test,
+            _linker_input_owner_test,
+            _none_owner_test,
+            _absent_owner_test,
         ],
     )

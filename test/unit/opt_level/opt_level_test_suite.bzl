@@ -1,53 +1,37 @@
 """Starlark tests for `rust_toolchain.opt_level`"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
 load("//rust:defs.bzl", "rust_binary")
-load(
-    "//test/unit:common.bzl",
-    "assert_action_mnemonic",
-    "assert_argv_contains",
-)
 
-def _opt_level_test_impl(ctx, expected_level):
-    env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
+def _opt_level_test(name, compilation_mode, expected_opt_level):
+    target_name = "{}_{}_bin".format(name, compilation_mode)
+    rust_binary(
+        name = target_name,
+        srcs = [":main.rs"],
+        edition = "2021",
+        tags = ["manual"],
+    )
+    analysis_test(
+        name = name,
+        target = target_name,
+        config_settings = {
+            "//command_line_option:compilation_mode": compilation_mode,
+        },
+        impl = _opt_level_test_impl(expected_opt_level),
+    )
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+def _opt_level_test_impl(expected_opt_level):
+    return lambda env, target: env.expect.that_target(target).action_named("Rustc").contains_at_least_args(["--codegen=opt-level={}".format(expected_opt_level)])
 
-    assert_argv_contains(env, action, "--codegen=opt-level={}".format(expected_level))
-    return analysistest.end(env)
+def _opt_level_for_dbg_test(name):
+    _opt_level_test(name, "dbg", 0)
 
-def _opt_level_for_dbg_test_impl(ctx):
-    return _opt_level_test_impl(ctx, "0")
+def _opt_level_for_fastbuild_test(name):
+    _opt_level_test(name, "fastbuild", 0)
 
-_opt_level_for_dbg_test = analysistest.make(
-    _opt_level_for_dbg_test_impl,
-    config_settings = {
-        "//command_line_option:compilation_mode": "dbg",
-    },
-)
-
-def _opt_level_for_fastbuild_test_impl(ctx):
-    return _opt_level_test_impl(ctx, "0")
-
-_opt_level_for_fastbuild_test = analysistest.make(
-    _opt_level_for_fastbuild_test_impl,
-    config_settings = {
-        "//command_line_option:compilation_mode": "fastbuild",
-    },
-)
-
-def _opt_level_for_opt_test_impl(ctx):
-    return _opt_level_test_impl(ctx, "3")
-
-_opt_level_for_opt_test = analysistest.make(
-    _opt_level_for_opt_test_impl,
-    config_settings = {
-        "//command_line_option:compilation_mode": "opt",
-    },
-)
+def _opt_level_for_opt_test(name):
+    _opt_level_test(name, "opt", 3)
 
 def opt_level_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -63,33 +47,11 @@ def opt_level_test_suite(name):
             "",
         ],
     )
-
-    rust_binary(
-        name = "bin",
-        srcs = [":main.rs"],
-        edition = "2021",
-    )
-
-    _opt_level_for_dbg_test(
-        name = "opt_level_for_dbg_test",
-        target_under_test = ":bin",
-    )
-
-    _opt_level_for_fastbuild_test(
-        name = "opt_level_for_fastbuild_test",
-        target_under_test = ":bin",
-    )
-
-    _opt_level_for_opt_test(
-        name = "opt_level_for_opt_test",
-        target_under_test = ":bin",
-    )
-
-    native.test_suite(
+    test_suite(
         name = name,
         tests = [
-            ":opt_level_for_dbg_test",
-            ":opt_level_for_fastbuild_test",
-            ":opt_level_for_opt_test",
+            _opt_level_for_dbg_test,
+            _opt_level_for_fastbuild_test,
+            _opt_level_for_opt_test,
         ],
     )
