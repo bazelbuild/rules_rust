@@ -272,6 +272,23 @@ def experimental_link_std_dylib():
         build_setting_default = False,
     )
 
+def experimental_emit_junit_xml():
+    """A flag to control whether `rust_test` targets emit JUnit XML test reports.
+
+    When enabled, each `rust_test` is wrapped with a runner that parses the test
+    binary's `libtest` output and writes a JUnit XML report to the path named by the
+    `$XML_OUTPUT_FILE` environment variable that `bazel test` provides. When
+    `$XML_OUTPUT_FILE` is unset (for example under `bazel run`), the runner execs the
+    test binary directly and adds no overhead.
+
+    This flag is off by default. Individual targets may override it with the
+    `experimental_junit` attribute on `rust_test`.
+    """
+    bool_flag(
+        name = "experimental_emit_junit_xml",
+        build_setting_default = False,
+    )
+
 def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
     """A flag to control whether the shell path from a shell toolchain (`@bazel_tools//tools/sh:toolchain_type`) \
     is embedded into the bootstrap process wrapper for the `.sh` file.
