@@ -109,6 +109,6 @@ rust_library(
     version = "0.9.3",
     deps = [
         "@cui__bstr-1.6.0//:bstr",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

@@ -111,6 +111,6 @@ rust_library(
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-hash-0.16.0//:gix_hash",
         "@cui__gix-object-0.47.0//:gix_object",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

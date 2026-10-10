@@ -114,7 +114,7 @@ rust_library(
         "@cui__gix-path-0.10.14//:gix_path",
         "@cui__gix-ref-0.50.0//:gix_ref",
         "@cui__gix-sec-0.10.11//:gix_sec",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__dunce-1.0.4//:dunce",  # cfg(windows)

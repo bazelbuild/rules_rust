@@ -1,7 +1,13 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@cui//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 load("//crate_universe:version.bzl", "VERSION")
+load(
+    "//rust/platform:triple_mappings.bzl",
+    "SUPPORTED_PLATFORM_TRIPLES",
+    "SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS",
+)
 
 exports_files(
     glob([
@@ -61,6 +67,18 @@ MSVC_RUSTC_FLAGS = [
     "-Ctarget-feature=+crt-static",
 ]
 
+# Passed to tests through a `rustc_env_files` file rather than `rustc_env` so the
+# triple lists, which are long and grow with every platform `rules_rust` adds, do
+# not have to fit in the environment of the `rustc` action.
+write_file(
+    name = "platform_triples_env",
+    out = "platform_triples.env",
+    content = [
+        "SUPPORTED_PLATFORM_TRIPLES=" + ",".join(SUPPORTED_PLATFORM_TRIPLES),
+        "SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS=" + ",".join(SUPPORTED_PLATFORM_TRIPLES_WITH_HOST_TOOLS),
+    ],
+)
+
 rust_library(
     name = "cargo_bazel",
     srcs = glob(
@@ -119,6 +137,9 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
+    # Passed through rather than duplicated in Rust so `RUSTC_TRIPLES_WITH_HOST_TOOLS`
+    # can be checked against the `host_tools` bits `rules_rust` tracks.
+    rustc_env_files = [":platform_triples_env"],
     # TODO: `crate_universe` currently does not work on Windows.
     # https://github.com/bazelbuild/rules_rust/issues/1156
     target_compatible_with = select({
@@ -150,6 +171,9 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    # Passed through rather than duplicated in Rust so the test always covers
+    # exactly the platforms `rules_rust` supports.
+    rustc_env_files = [":platform_triples_env"],
     tags = ["requires-network"],
     # TODO: `crate_universe` currently does not work on Windows.
     # https://github.com/bazelbuild/rules_rust/issues/1156

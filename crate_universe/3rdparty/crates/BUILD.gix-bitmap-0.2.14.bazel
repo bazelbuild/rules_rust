@@ -108,6 +108,6 @@ rust_library(
     }),
     version = "0.2.14",
     deps = [
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

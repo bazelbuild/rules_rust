@@ -124,8 +124,8 @@ rust_library(
         "@cui__hashbrown-0.14.3//:hashbrown",
         "@cui__itoa-1.0.8//:itoa",
         "@cui__memmap2-0.9.5//:memmap2",
-        "@cui__smallvec-1.15.0//:smallvec",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__smallvec-1.16.0//:smallvec",
+        "@cui__thiserror-2.0.20//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__libc-0.2.172//:libc",  # cfg(not(windows))
