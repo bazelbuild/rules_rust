@@ -20,6 +20,11 @@ coverage --experimental_fetch_all_coverage_outputs
 # https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
 common --experimental_cc_shared_library
 
+# The glibc Rust toolchain is constrained to platforms which declare glibc as
+# available (see `MODULE.bazel`). Bazel's default host platform does not, so use
+# one that does on Linux hosts. The target platform defaults to the host platform.
+build:linux --host_platform=//platforms:linux_host
+
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################
