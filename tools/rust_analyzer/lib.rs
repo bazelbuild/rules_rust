@@ -1,6 +1,7 @@
 mod aquery;
 pub mod bep;
 mod cache;
+mod overrides;
 mod rust_project;
 pub mod user_config;
 
@@ -203,6 +204,21 @@ pub fn generate_rust_project(
 
     let spec_contents = read_specs(&spec_paths)?;
 
+    // Crates from locally-overridden modules (`local_path_override`,
+    // `--override_module`) are first-party code; `assemble_rust_project`
+    // marks them as workspace members. Detected before the cache check and
+    // hashed into the key: flipping an override does not necessarily change
+    // any crate spec content, so it must invalidate the cache on its own.
+    let local_override_roots =
+        overrides::local_override_repo_roots(bazel, workspace, output_base, bazel_startup_options)
+            .unwrap_or_else(|e| {
+                log::warn!(
+                    "detecting module overrides failed ({e:#}); crates from \
+             overridden modules will not be marked as workspace members"
+                );
+                Vec::new()
+            });
+
     let launcher_dir = std::env::var(cache::LAUNCHER_DIR_ENV_VAR).unwrap_or_default();
     let cache_key = cache::compute_key(
         &spec_contents,
@@ -211,6 +227,7 @@ pub fn generate_rust_project(
         workspace,
         execution_root,
         &launcher_dir,
+        &local_override_roots,
     );
     if let Some(bytes) = cache::get(workspace, &cache_key)? {
         match serde_json::from_slice::<RustProject>(&bytes) {
@@ -251,8 +268,13 @@ pub fn generate_rust_project(
         );
     }
 
-    let project =
-        rust_project::assemble_rust_project(bazel, workspace, toolchain_info, &crate_specs)?;
+    let project = rust_project::assemble_rust_project(
+        bazel,
+        workspace,
+        toolchain_info,
+        &crate_specs,
+        &local_override_roots,
+    )?;
 
     // Log warnings AND persist to disk — progress events scroll off
     // the status bar before anyone reads them.
