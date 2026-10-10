@@ -273,8 +273,8 @@ impl LaunchConfigGenerator {
             // 3. Creates the debug target
                 "script ".to_owned() + &[
                     "import subprocess, os, sys".to_owned(),
-                    format!("result = subprocess.run(['bazel', 'run', '--compilation_mode=dbg', '--strip=never', '--run_under=@rules_rust//tools/vscode:get_binary_path', '{}'], stdout=subprocess.PIPE, text=True, cwd='${{workspaceFolder}}')", target_info.label),
-                    "binary_path = result.stdout.strip().splitlines()[-1]".to_owned(),
+                    format!("result = subprocess.run(['bazel', 'run', '--compilation_mode=dbg', '--strip=never', '--run_under=@rules_rust//tools/vscode:get_binary_path', '{}'], stderr=subprocess.PIPE, text=True, cwd='${{workspaceFolder}}')", target_info.label),
+                    "binary_path = result.stderr.strip().splitlines()[-1]".to_owned(),
                     format!("assert binary_path, 'No binary path output for {}'", target_info.label),
                     "abs_path = os.path.join('${workspaceFolder}', binary_path)".to_owned(),
                     "lldb.debugger.CreateTarget(abs_path)".to_owned(),
