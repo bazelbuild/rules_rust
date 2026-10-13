@@ -80,6 +80,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -171,7 +172,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__cc-1.4.4//:cc",
+        "@rmdbi__cc-1.5.1//:cc",
     ],
 )
 

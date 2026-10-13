@@ -79,6 +79,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -114,7 +115,7 @@ rust_library(
         "@rmdbi__icu_collections-2.3.0//:icu_collections",
         "@rmdbi__icu_normalizer_data-2.3.0//:icu_normalizer_data",
         "@rmdbi__icu_provider-2.3.1//:icu_provider",
-        "@rmdbi__smallvec-1.15.2//:smallvec",
+        "@rmdbi__smallvec-1.16.2//:smallvec",
         "@rmdbi__zerovec-0.11.8//:zerovec",
     ],
 )

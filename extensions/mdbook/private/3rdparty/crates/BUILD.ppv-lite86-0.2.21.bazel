@@ -80,6 +80,7 @@ rust_library(
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imac-unknown-none-elf": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-fuchsia": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
@@ -112,6 +113,6 @@ rust_library(
     }),
     version = "0.2.21",
     deps = [
-        "@rmdbi__zerocopy-0.8.56//:zerocopy",
+        "@rmdbi__zerocopy-0.8.59//:zerocopy",
     ],
 )
