@@ -58,6 +58,7 @@ def rust_register_toolchains(
         edition = None,
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         rustfmt_version = None,
         rust_analyzer_version = None,
         sha256s = None,
@@ -96,6 +97,7 @@ def rust_register_toolchains(
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its `edition` attribute.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. See `rust_toolchain.dlltool`.
         rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
@@ -184,6 +186,7 @@ def rust_register_toolchains(
             extra_target_triples = extra_target_triples,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
+            dlltool = dlltool,
             rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
@@ -279,6 +282,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
+    ),
+    "dlltool": attr.string(
+        doc = "Target that provides the `dlltool` binary used to generate import libraries. See `rust_toolchain.dlltool`.",
     ),
     "edition": attr.string(
         doc = (
@@ -474,6 +480,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         exec_triple = exec_triple,
         allocator_library = ctx.attr.allocator_library,
         global_allocator_library = ctx.attr.global_allocator_library,
+        dlltool = ctx.attr.dlltool,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         default_edition = ctx.attr.edition,
@@ -593,6 +600,7 @@ def rust_toolchain_repository(
         channel = None,
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         rustfmt_version = None,
         edition = None,
         dev_components = False,
@@ -619,6 +627,7 @@ def rust_toolchain_repository(
         target_settings (list of labels as strings, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. See `rust_toolchain.dlltool`.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
@@ -656,6 +665,7 @@ def rust_toolchain_repository(
         exec_triple = exec_triple,
         allocator_library = allocator_library,
         global_allocator_library = global_allocator_library,
+        dlltool = dlltool,
         target_triple = target_triple,
         version = version,
         rustfmt_version = rustfmt_version,
@@ -991,6 +1001,7 @@ def rust_repository_set(
         target_settings = [],
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         extra_target_triples = {},
         rustfmt_version = None,
         edition = None,
@@ -1020,6 +1031,7 @@ def rust_repository_set(
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions a global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. See `rust_toolchain.dlltool`.
         extra_target_triples (list or map, optional): Additional rust-style targets that this set of
             toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
@@ -1080,6 +1092,7 @@ def rust_repository_set(
             exec_triple = exec_triple,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
+            dlltool = dlltool,
             target_triple = toolchain.target_triple,
             version = toolchain.channel.version,
             rustfmt_version = rustfmt_version,

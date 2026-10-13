@@ -1394,14 +1394,17 @@ def construct_arguments(
 
     # gcc runs dlltool internally when acting as the linker, but rustc drives the linker directly so
     # it needs dlltool's path: apply outside the link-emit gate below since rlib compiles need it too.
-    if cc_toolchain and toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
-        linker_path = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
-        )
-        dlltool_path = dlltool_path_from_linker_path(linker_path)
-        if dlltool_path:
-            rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
+    if toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
+        if toolchain.dlltool:
+            rustc_flags.add(toolchain.dlltool, format = "--codegen=dlltool=%s")
+        elif cc_toolchain:
+            linker_path = cc_common.get_tool_for_action(
+                feature_configuration = feature_configuration,
+                action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+            )
+            dlltool_path = dlltool_path_from_linker_path(linker_path)
+            if dlltool_path:
+                rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:

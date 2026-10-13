@@ -359,6 +359,7 @@ rust_toolchain(
     rustc_lib = "//:rustc_lib",
     allocator_library = {allocator_library},
     global_allocator_library = {global_allocator_library},
+    dlltool = {dlltool},
     binary_ext = "{binary_ext}",
     staticlib_ext = "{staticlib_ext}",
     dylib_ext = "{dylib_ext}",
@@ -387,6 +388,7 @@ def BUILD_for_rust_toolchain(
         iso_date = None,
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         default_edition = "",
         include_rustfmt = False,
         include_llvm_tools = False,
@@ -410,6 +412,7 @@ def BUILD_for_rust_toolchain(
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common_link.
                                                   This target is only used in the target configuration; exec builds still use the symbols provided
                                                   by the `allocator_library` target.
+        dlltool (str, optional): Target that provides the `dlltool` binary.
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
@@ -469,6 +472,7 @@ def BUILD_for_rust_toolchain(
         dylib_ext = system_to_dylib_ext(target_triple.system),
         allocator_library = repr(allocator_library_label),
         global_allocator_library = repr(global_allocator_library_label),
+        dlltool = repr(dlltool or None),
         stdlib_linkflags = stdlib_linkflags,
         default_edition = default_edition,
         exec_triple = exec_triple.str,
