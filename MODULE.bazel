@@ -12,10 +12,21 @@ module(
 bazel_dep(name = "bazel_features", version = "1.50.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "platforms_contrib", version = "0.2.3")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
+
+# TODO: The `@platforms_contrib//os/linux/libc/...` constraints used to distinguish
+# musl from glibc toolchains have not been released yet. Remove this override once
+# a release containing them is available in the Bazel Central Registry.
+archive_override(
+    module_name = "platforms_contrib",
+    integrity = "sha256-kj0hka+hWv1khEjLUeB2NQF8b50v7MmihsJy5QUQHvc=",
+    strip_prefix = "platforms_contrib-94eb2db76709c1fb597b33969a48cfef3d76a259",
+    urls = ["https://github.com/bazel-contrib/platforms_contrib/archive/94eb2db76709c1fb597b33969a48cfef3d76a259.tar.gz"],
+)
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(

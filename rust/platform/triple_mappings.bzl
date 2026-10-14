@@ -37,6 +37,9 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
     #
     #"i686-pc-windows-gnu",
     #"x86_64-pc-windows-gnu",
+    #
+    # Linux `musl` triples are distinguished from their `gnu` counterparts via
+    # `@platforms_contrib//os/linux/libc/musl:available`, see `abi_to_constraints`.
 }
 
 # Some T2 Platforms are supported, provided we have mappings to `@platforms//...` entries.
@@ -48,6 +51,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-linux-musl": _support(std = True, host_tools = True),
     "aarch64-unknown-none": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
@@ -81,6 +85,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "x86_64-unknown-linux-musl": _support(std = True, host_tools = True),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
     "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }
@@ -295,7 +300,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "fuchsia": ["-lzircon", "-lfdio"],
     "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
     "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
-    # TODO: This ignores musl. Longer term what does Bazel think about musl?
+    # TODO: This ignores musl, where `-ldl` and `-lpthread` are no-ops as both are part of libc.
     "linux": ["-ldl", "-lpthread"],
     "macos": ["-lSystem", "-lresolv"],
     "nacl": [],
@@ -356,6 +361,20 @@ def system_to_constraints(system):
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
+# The constraint value declaring that musl is available on a platform. Platforms
+# targeting (or executing) musl toolchains must list it in their `constraint_values`.
+# See https://github.com/bazel-contrib/platforms_contrib.
+MUSL_CONSTRAINT = "@platforms_contrib//os/linux/libc/musl:available"
+
+# The constraint value declaring that glibc is available on a platform. This is
+# intentionally not part of the constraints of `*-linux-gnu*` triples. Bazel's
+# default host platform (`@platforms//host`) does not declare which libc is
+# available so requiring it would prevent the default toolchains from resolving.
+# Users who register both glibc and musl toolchains for the same CPU should add
+# it to the glibc toolchains themselves (e.g. via `rust.repository_set`), see
+# `examples/cross_compile_musl` for an example.
+GLIBC_CONSTRAINT = "@platforms_contrib//os/linux/libc/glibc:available"
+
 def abi_to_constraints(abi, *, arch = None, system = None):
     """Return a list of constraint values which represents a triple's ABI.
 
@@ -372,10 +391,12 @@ def abi_to_constraints(abi, *, arch = None, system = None):
 
     all_abi_constraints = []
 
-    # add constraints for MUSL static compilation and linking
-    # to separate the MUSL from the non-MUSL toolchain on x86_64
-    # if abi == "musl" and system == "linux" and arch == "x86_64":
-    # all_abi_constraints.append("//rust/platform/constraints:musl_on")
+    # Distinguish musl from glibc toolchains on Linux. The `@platforms//os:linux`
+    # constraint alone would make e.g. `x86_64-unknown-linux-musl` indistinguishable
+    # from `x86_64-unknown-linux-gnu`. Musl ABIs are `musl`, `musleabi`, `musleabihf`
+    # and `muslabi64`.
+    if system == "linux" and abi and abi.startswith("musl"):
+        all_abi_constraints.append(MUSL_CONSTRAINT)
 
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:

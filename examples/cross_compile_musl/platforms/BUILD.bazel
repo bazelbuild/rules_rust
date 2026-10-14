@@ -1,9 +1,13 @@
+# Musl target platforms.
+#
+# `@platforms_contrib//os/linux/libc/musl:available` is what distinguishes these
+# from glibc platforms: both the Rust and the C++ musl toolchains require it.
 platform(
     name = "linux_x86_64_musl",
     constraint_values = [
-        "@//linker_config:musl",
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
+        "@platforms_contrib//os/linux/libc/musl:available",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11,9 +15,29 @@ platform(
 platform(
     name = "linux_arm64_musl",
     constraint_values = [
-        "@//linker_config:musl",
         "@platforms//cpu:arm64",
         "@platforms//os:linux",
+        "@platforms_contrib//os/linux/libc/musl:available",
     ],
+    visibility = ["//visibility:public"],
+)
+
+# The host platform used on Linux, see `.bazelrc`.
+#
+# The glibc Rust toolchain in `MODULE.bazel` is constrained to platforms declaring
+# `@platforms_contrib//os/linux/libc/glibc:available` so that it does not match
+# the musl platforms above. Bazel's default host platform declares no libc at all,
+# so a host platform which does is required.
+#
+# `@platforms_contrib//host` can be used instead to detect the available libc
+# (and its version) automatically. Note that it declares musl as available too on
+# hosts which have musl installed, in which case toolchain registration order
+# decides between the glibc and musl toolchains for the host.
+platform(
+    name = "linux_host",
+    constraint_values = [
+        "@platforms_contrib//os/linux/libc/glibc:available",
+    ],
+    parents = ["@platforms//host"],
     visibility = ["//visibility:public"],
 )

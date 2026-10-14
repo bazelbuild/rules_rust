@@ -8,6 +8,17 @@ module(
 bazel_dep(name = "rules_rust", version = "0.74.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "bazel_features", version = "1.32.0")
+
+# TODO: Remove once a `platforms_contrib` release containing the
+# `//os/linux/libc/...` constraints used by `rules_rust` is available in the
+# Bazel Central Registry. Only applies when this module is the root module.
+archive_override(
+    module_name = "platforms_contrib",
+    integrity = "sha256-kj0hka+hWv1khEjLUeB2NQF8b50v7MmihsJy5QUQHvc=",
+    strip_prefix = "platforms_contrib-94eb2db76709c1fb597b33969a48cfef3d76a259",
+    urls = ["https://github.com/bazel-contrib/platforms_contrib/archive/94eb2db76709c1fb597b33969a48cfef3d76a259.tar.gz"],
+)
+
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_proto", version = "7.1.0")
