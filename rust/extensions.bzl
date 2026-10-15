@@ -174,7 +174,7 @@ _COMMON_TAG_KWARGS = {
         default = False,
     ),
     "dlltool": attr.label(
-        doc = "Target that provides the `dlltool` binary used to generate import libraries. See `rust_toolchain.dlltool`.",
+        doc = "Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.",
     ),
     "edition": attr.string(
         doc = (
