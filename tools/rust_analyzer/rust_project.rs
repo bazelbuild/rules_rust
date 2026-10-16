@@ -475,6 +475,7 @@ pub fn assemble_rust_project(
     workspace: &Utf8Path,
     toolchain_info: ToolchainInfo,
     crate_specs: &BTreeSet<CrateSpec>,
+    local_override_roots: &[Utf8PathBuf],
 ) -> anyhow::Result<RustProject> {
     let emit_test_mod = supports_test_mod(&toolchain_info.version);
 
@@ -607,16 +608,46 @@ pub fn assemble_rust_project(
             })
             .collect();
 
+        // Crates from locally-overridden modules (`local_path_override`,
+        // `--override_module`) sit under `{output_base}/external/` and are
+        // therefore marked non-members by the aspect, but their repo is a
+        // symlink into a checkout the user edits directly. Treat them as
+        // workspace members so rust-analyzer surfaces diagnostics, and
+        // canonicalize their paths — editors put the *real* path in file
+        // URIs, and rust-analyzer's file→crate mapping compares paths
+        // textually. `root_module` and `source.include_dirs` must be
+        // rewritten in lockstep: canonicalizing only one of them breaks the
+        // mapping and every item from the crate resolves as an unresolved
+        // import. Generated sources of these modules live under
+        // `bazel-out/`, never under an override root, so they keep their
+        // execution-root paths.
+        let is_local_override = local_override_roots
+            .iter()
+            .any(|root| Utf8Path::new(&c.root_module).starts_with(root));
+
+        let root_module = if is_local_override {
+            canonicalize_lossy(&c.root_module)
+        } else {
+            c.root_module.clone()
+        };
+
         project.crates.push(Crate {
             display_name: Some(c.display_name.clone()),
-            root_module: c.root_module.clone(),
+            root_module,
             edition: c.edition.clone(),
             deps,
-            is_workspace_member: Some(c.is_workspace_member),
+            is_workspace_member: Some(c.is_workspace_member || is_local_override),
             source: match &c.source {
                 Some(s) => Source {
                     exclude_dirs: s.exclude_dirs.clone(),
-                    include_dirs: s.include_dirs.clone(),
+                    include_dirs: if is_local_override {
+                        s.include_dirs
+                            .iter()
+                            .map(|d| canonicalize_lossy(d))
+                            .collect()
+                    } else {
+                        s.include_dirs.clone()
+                    },
                 },
                 None => Source::default(),
             },
@@ -638,6 +669,16 @@ pub fn assemble_rust_project(
     }
 
     Ok(project)
+}
+
+/// Resolve symlinks so a path through `{output_base}/external/<repo>` maps
+/// to the real checkout it points at. Falls back to the input unchanged when
+/// resolution fails (path doesn't exist, permission error) — a dangling
+/// original is no worse than a dangling fallback.
+fn canonicalize_lossy(path: &str) -> String {
+    std::fs::canonicalize(path)
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| path.to_owned())
 }
 
 #[cfg(test)]
@@ -686,6 +727,7 @@ mod tests {
                 is_test: false,
                 build: None,
             }]),
+            &[],
         )
         .expect("expect success");
 
@@ -760,6 +802,7 @@ mod tests {
                     build: None,
                 },
             ]),
+            &[],
         )
         .expect("expect success");
 
@@ -811,6 +854,7 @@ mod tests {
                 version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-b"]), spec("ID-b", &["ID-a"])]),
+            &[],
         )
         .expect("cycle must not fail assembly");
 
@@ -844,6 +888,7 @@ mod tests {
                 version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &["ID-nonexistent"])]),
+            &[],
         )
         .expect("missing dep must not fail assembly");
 
@@ -867,6 +912,7 @@ mod tests {
                 version: String::new(),
             },
             &BTreeSet::from([spec("ID-a", &[])]),
+            &[],
         )
         .expect("expect success");
 
@@ -879,6 +925,93 @@ mod tests {
             flycheck.args,
             vec!["{label}".to_owned(), "{saved_file}".to_owned()],
         );
+    }
+
+    /// A crate whose root_module falls under a local-override root becomes a
+    /// workspace member; crates outside the roots keep the aspect's verdict.
+    #[test]
+    fn local_override_crate_becomes_workspace_member() {
+        let mut override_crate = spec("ID-mypkg", &[]);
+        override_crate.is_workspace_member = false;
+        override_crate.root_module = "/output_base/external/mypkg+/src/lib.rs".into();
+        let mut registry_crate = spec("ID-anyhow", &[]);
+        registry_crate.is_workspace_member = false;
+        registry_crate.root_module =
+            "/output_base/external/rules_rust+crate+anyhow-1.0.0/src/lib.rs".into();
+
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([override_crate, registry_crate]),
+            &[Utf8PathBuf::from("/output_base/external/mypkg+")],
+        )
+        .expect("expect success");
+
+        let member = |name: &str| {
+            project
+                .crates
+                .iter()
+                .find(|c| c.display_name.as_deref() == Some(name))
+                .unwrap()
+                .is_workspace_member
+        };
+        assert_eq!(member("mypkg"), Some(true));
+        assert_eq!(member("anyhow"), Some(false));
+        // The paths don't exist on disk, so canonicalization falls back to
+        // the input unchanged rather than dropping the crate.
+        assert!(project
+            .crates
+            .iter()
+            .any(|c| c.root_module == "/output_base/external/mypkg+/src/lib.rs"));
+    }
+
+    /// With a real symlinked repo (what `local_path_override` produces),
+    /// `root_module` is rewritten to the checkout path the editor reports.
+    #[cfg(unix)]
+    #[test]
+    fn local_override_paths_resolve_through_symlink() {
+        let temp = std::env::temp_dir().join(format!(
+            "rules_rust_ra_override_test_{}",
+            std::process::id()
+        ));
+        let checkout = temp.join("checkout/mypkg");
+        let external = temp.join("output_base/external");
+        std::fs::create_dir_all(checkout.join("src")).unwrap();
+        std::fs::create_dir_all(&external).unwrap();
+        std::fs::write(checkout.join("src/lib.rs"), "").unwrap();
+        let repo = external.join("mypkg+");
+        std::os::unix::fs::symlink(&checkout, &repo).unwrap();
+
+        let mut override_crate = spec("ID-mypkg", &[]);
+        override_crate.is_workspace_member = false;
+        override_crate.root_module = format!("{}/src/lib.rs", repo.display());
+
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([override_crate]),
+            &[Utf8PathBuf::from_path_buf(repo.clone()).unwrap()],
+        )
+        .expect("expect success");
+
+        // Compare against a canonicalized expectation — the temp dir itself
+        // may sit behind a symlink (e.g. /tmp on macOS).
+        let expected = std::fs::canonicalize(checkout.join("src/lib.rs")).unwrap();
+        let c = &project.crates[0];
+        assert_eq!(c.root_module, expected.to_string_lossy());
+        assert_eq!(c.is_workspace_member, Some(true));
+
+        std::fs::remove_dir_all(&temp).unwrap();
     }
 
     // --- diagnose() suite ---
