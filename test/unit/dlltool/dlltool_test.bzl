@@ -20,7 +20,13 @@ def _dlltool_used_test_impl(ctx):
     dlltools = [f for f in action.inputs.to_list() if f.basename == "mock_dlltool.exe"]
     asserts.equals(env, 1, len(dlltools), "rust_toolchain.dlltool must be an input of the Rustc action")
     if dlltools:
-        asserts.equals(env, ["--codegen=dlltool=" + dlltools[0].path], _dlltool_flags(action))
+        flags = _dlltool_flags(action)
+        asserts.equals(env, 1, len(flags))
+        asserts.true(
+            env,
+            flags[0].startswith("--codegen=dlltool=bazel-out/") and flags[0].endswith(dlltools[0].short_path),
+            "Expected `--codegen=dlltool=bazel-out/<...>/{}` in {}".format(dlltools[0].short_path, flags),
+        )
 
     return analysistest.end(env)
 
