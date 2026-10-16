@@ -119,7 +119,7 @@ rust_library(
         "@cui__gix-utils-0.1.14//:gix_utils",
         "@cui__gix-validate-0.9.3//:gix_validate",
         "@cui__memmap2-0.9.5//:memmap2",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
         "@cui__winnow-0.6.20//:winnow",
     ],
 )

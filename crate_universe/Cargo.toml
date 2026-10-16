@@ -17,6 +17,7 @@ exclude = [
     "test_data/metadata/git_repos",
     "test_data/metadata/has_package_metadata",
     "test_data/metadata/host_specific_build_deps",
+    "test_data/metadata/host_target_feature_split",
     "test_data/metadata/multi_cfg_dep",
     "test_data/metadata/multi_kind_proc_macro_dep",
     "test_data/metadata/nested_build_dependencies",
@@ -77,6 +78,8 @@ clap = { version = "4.5.37", features = ["derive", "env"] }
 crates-index = { version = "3.7.0", default-features = false, features = [
     "git",
 ] }
+# `custom-cfg-platforms` builds platforms from real `rustc --print=cfg` output.
+guppy = { version = "0.19.1", features = ["custom-cfg-platforms"] }
 hex = "0.4.3"
 indoc = "2.0.6"
 itertools = "0.14.0"
@@ -102,3 +105,6 @@ glob = "0.3.2"
 
 [dev-dependencies]
 maplit = "1.0.2"
+# Only used directly by unit tests which evaluate `cfg` expressions. The
+# resolver itself goes through `guppy::platform`.
+target-spec = "3.7.0"

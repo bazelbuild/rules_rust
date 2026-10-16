@@ -1540,6 +1540,16 @@ _splicing_config = tag_class(
             default = [],
         ),
     } | {
+        "incompatible_guppy_resolver": attr.bool(
+            doc = (
+                "Incompatibility flag. Resolve crate features and dependencies with " +
+                "[guppy](https://docs.rs/guppy) instead of `cargo tree`. Set to `False` to fall back " +
+                "to the legacy `cargo tree` resolver, which spawns one process per host/target " +
+                "platform pair and is substantially slower. Part of the lockfile digest, so changing " +
+                "it requires a repin. The legacy resolver is planned for removal."
+            ),
+            default = True,
+        ),
         "resolver_version": attr.string(
             doc = "The [resolver version](https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions) to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See `crates_repository::packages`",
             default = "2",

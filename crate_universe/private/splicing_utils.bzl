@@ -2,7 +2,7 @@
 
 load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN")
 
-def splicing_config(resolver_version = "2"):
+def splicing_config(resolver_version = "2", incompatible_guppy_resolver = True):
     """Various settings used to configure Cargo manifest splicing behavior.
 
     [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
@@ -11,11 +11,19 @@ def splicing_config(resolver_version = "2"):
         resolver_version (str, optional): The [resolver version][rv] to use in generated Cargo
             manifests. This flag is **only** used when splicing a manifest from direct package
             definitions. See `crates_repository::packages`.
+        incompatible_guppy_resolver (bool, optional): Incompatibility flag. Resolve crate features and
+            dependencies with [guppy](https://docs.rs/guppy) instead of `cargo tree`. Set to `False` to fall
+            back to the legacy `cargo tree` resolver, which spawns one process per host/target platform pair
+            and is substantially slower. The two can differ for crates reachable only through a proc-macro:
+            `guppy` resolves those for the host platform they are built on, where `cargo tree` reports them
+            for every platform. The setting is part of the lockfile digest, so changing it requires a repin.
+            The legacy resolver is planned for removal.
 
     Returns:
         str: A json encoded string of the parameters provided
     """
     return json.encode(struct(
+        incompatible_guppy_resolver = incompatible_guppy_resolver,
         resolver_version = resolver_version,
     ))
 

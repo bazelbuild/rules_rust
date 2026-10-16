@@ -115,6 +115,6 @@ rust_library(
         "@cui__bstr-1.6.0//:bstr",
         "@cui__faster-hex-0.9.0//:faster_hex",
         "@cui__gix-trace-0.1.12//:gix_trace",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.20//:thiserror",
     ],
 )

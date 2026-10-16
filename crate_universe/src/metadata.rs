@@ -3,7 +3,9 @@
 mod cargo_bin;
 mod cargo_tree_resolver;
 mod dependency;
+mod guppy_resolver;
 mod metadata_annotation;
+mod tree_resolver_metadata;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,7 +18,35 @@ use tracing::debug;
 pub(crate) use self::cargo_bin::*;
 pub(crate) use self::cargo_tree_resolver::*;
 pub(crate) use self::dependency::*;
+pub(crate) use self::guppy_resolver::*;
 pub(crate) use self::metadata_annotation::*;
+pub(crate) use self::tree_resolver_metadata::*;
+
+use crate::utils::target_triple::TargetTriple;
+
+use std::collections::BTreeSet;
+
+/// Computes feature and dependency metadata for a spliced workspace.
+///
+/// Dispatches to either [GuppyResolver] (the default) or the legacy [TreeResolver]
+/// backed by `cargo tree`, as selected by `incompatible_guppy_resolver` in the
+/// `splicing_config`. Both produce a [TreeResolverMetadata] and are intended to be
+/// interchangeable.
+pub(crate) fn resolve_tree_metadata(
+    cargo_bin: Cargo,
+    manifest_path: &Utf8Path,
+    target_triples: &BTreeSet<TargetTriple>,
+    incompatible_guppy_resolver: bool,
+) -> Result<TreeResolverMetadata> {
+    if incompatible_guppy_resolver {
+        GuppyResolver::new(cargo_bin).generate(manifest_path, target_triples)
+    } else {
+        debug!(
+            "Using the legacy `cargo tree` resolver (`incompatible_guppy_resolver` is disabled)"
+        );
+        TreeResolver::new(cargo_bin).generate(manifest_path, target_triples)
+    }
+}
 
 /// A configuration describing how to invoke [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
 #[derive(Debug, Clone, PartialEq, Eq)]
