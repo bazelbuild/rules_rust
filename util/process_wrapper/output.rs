@@ -36,7 +36,7 @@ pub(crate) enum ProcessError {
 }
 
 impl fmt::Display for ProcessError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::IO(e) => write!(f, "{}", e),
             Self::Process(p) => write!(f, "{}", p),
