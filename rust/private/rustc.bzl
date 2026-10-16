@@ -518,6 +518,71 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
+# The environment variables rustc reads the Apple deployment target from,
+# keyed by the OS names clang accepts in a `-target` triple and in
+# `-m<os>-version-min=`.
+_APPLE_DEPLOYMENT_TARGET_ENV = {
+    "ios": "IPHONEOS_DEPLOYMENT_TARGET",
+    "iphoneos": "IPHONEOS_DEPLOYMENT_TARGET",
+    "macos": "MACOSX_DEPLOYMENT_TARGET",
+    "macosx": "MACOSX_DEPLOYMENT_TARGET",
+    "tvos": "TVOS_DEPLOYMENT_TARGET",
+    "visionos": "XROS_DEPLOYMENT_TARGET",
+    "watchos": "WATCHOS_DEPLOYMENT_TARGET",
+    "xros": "XROS_DEPLOYMENT_TARGET",
+}
+
+def _split_os_version(os_version):
+    """Splits `macosx26.0` into `("macosx", "26.0")`. The version may be empty."""
+    for i in range(len(os_version)):
+        if os_version[i].isdigit():
+            return os_version[:i], os_version[i:]
+    return os_version, ""
+
+def apple_deployment_target_env(link_args):
+    """Derives the Apple deployment target variable rustc expects from linker arguments.
+
+    An Apple cc_toolchain tells clang its deployment target through the
+    `-target` triple (e.g. `arm64-apple-macosx26.0`) or `-m<os>-version-min=`.
+    rustc does not read the link args it forwards: it takes the deployment
+    target from `MACOSX_DEPLOYMENT_TARGET` and its per-OS siblings and, when
+    those are unset, from its own default, which it passes to the linker as
+    `-m<os>-version-min=`. clang then warns about the conflicting options on
+    every link (bazelbuild/rules_rust#4149).
+
+    As in clang, a version carried by the last `-target` triple wins over
+    `-m<os>-version-min=`.
+
+    Args:
+        link_args (list): The linker arguments forwarded to rustc.
+
+    Returns:
+        dict: The deployment target variable to set for rustc, if any.
+    """
+    triple = None
+    version_min = None
+    for i, arg in enumerate(link_args):
+        if arg == "-target" and i + 1 < len(link_args):
+            triple = link_args[i + 1]
+        elif arg.startswith("--target="):
+            triple = arg[len("--target="):]
+        elif arg.startswith("-m") and "-version-min=" in arg:
+            version_min = arg[len("-m"):].split("-version-min=", 1)
+
+    os, version = None, None
+    if triple:
+        parts = triple.split("-")
+        if len(parts) >= 3 and parts[1] == "apple":
+            os, version = _split_os_version(parts[2])
+    if not version and version_min:
+        # `-mios-simulator-version-min=` names the OS before the environment.
+        os, version = version_min[0].split("-")[0], version_min[1]
+
+    var = _APPLE_DEPLOYMENT_TARGET_ENV.get(os)
+    if not var or not version:
+        return {}
+    return {var: version}
+
 def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
@@ -1360,6 +1425,15 @@ def construct_arguments(
             )
 
             env.update(link_env)
+
+            # rustc only learns the Apple deployment target from its environment,
+            # so mirror the one the cc_toolchain encodes in its link args. A value
+            # from `--action_env` is kept; `rustc_env` and the toolchain's `env`
+            # are applied below and override this one.
+            for key, value in apple_deployment_target_env(link_args).items():
+                if key not in ctx.configuration.default_shell_env:
+                    env[key] = value
+
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
