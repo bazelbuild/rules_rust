@@ -617,11 +617,20 @@ def _cargo_build_script_impl(ctx):
             known_variables,
         ))
 
+    # `build_script_env` names tools by `$(execpath)`, so the tools and their
+    # runfiles must be inputs at those paths, not only in the script's runfiles.
+    tool_files = []
+    for tool in ctx.attr.tools:
+        info = tool[DefaultInfo]
+        tool_files.append(info.files)
+        if info.default_runfiles:
+            tool_files.append(info.default_runfiles.files)
+
     tools = depset(
         direct = [
             ctx.executable._cargo_build_script_runner,
         ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
-        transitive = script_data + toolchain_tools,
+        transitive = script_data + toolchain_tools + tool_files,
     )
 
     # dep_env_file contains additional environment variables coming from
