@@ -316,6 +316,7 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "local_patching": {
         _COMMON_CONDITION: {
+            "getrandom": Label("//local_patching/forked/getrandom:getrandom"),
             "rand": Label("//local_patching/vendor/rand-0.8.5:rand"),
         },
     },
