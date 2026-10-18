@@ -2724,7 +2724,9 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, link_std_dylib, ou
         return depset([])
 
     dylibs = [
-        get_preferred_artifact(lib, use_pic)
+        # An interface library is a link-time input. Runtime search paths must
+        # point to the shared library, which can be in a different directory.
+        lib.dynamic_library or get_preferred_artifact(lib, use_pic)
         for linker_input in dep_info.transitive_noncrates.to_list()
         for lib in linker_input.libraries
         if _is_dylib(lib)
@@ -3026,6 +3028,21 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
                 ("-Clink-arg=%s" % get_preferred_artifact(lib, use_pic).path),
                 ("-Clink-arg=%s--no-whole-archive" % prefix),
             ])
+        elif include_link_flags and _is_dylib(lib):
+            artifact = get_preferred_artifact(lib, use_pic)
+            if lib.interface_library:
+                # Interface libraries can have the same basename in different
+                # directories; their SONAME identifies the runtime library.
+                link_arg = artifact.path
+            else:
+                # Preserve version suffixes and non-lib-prefixed filenames.
+                # Filename lookup also avoids recording a build path in
+                # DT_NEEDED when the library has no SONAME.
+                link_arg = "-l:" + artifact.basename
+
+            # rustc places link-arg after Rust archives, so --as-needed sees
+            # their references before considering the shared library.
+            ret.append("-Clink-arg=" + link_arg)
         elif include_link_flags:
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
     _add_user_link_flags(ret, linker_input)

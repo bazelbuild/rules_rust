@@ -1,0 +1,201 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_testonly = True)
+
+# There is deliberately no unversioned libnative.so or libodd.so symlink.
+cc_binary(
+    name = "runtime/libnative.so.7",
+    srcs = ["native.cc"],
+    linkopts = ["-Wl,-soname,libnative.so.7"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_binary(
+    name = "runtime/odd.so",
+    srcs = ["odd.cc"],
+    linkopts = ["-Wl,-soname,odd.so"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "native",
+    shared_library = ":runtime/libnative.so.7",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "odd",
+    shared_library = ":runtime/odd.so",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Without DT_SONAME, passing a shared library's full build path to the linker
+# embeds that path in DT_NEEDED. These imports must still run from runfiles.
+cc_binary(
+    name = "libunversioned.so",
+    srcs = ["no_soname.cc"],
+    defines = [
+        "LIB_VALUE=11",
+        "VALUE_FUNCTION=unversioned_value",
+    ],
+    features = ["-set_soname"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_binary(
+    name = "libversioned.so.9",
+    srcs = ["no_soname.cc"],
+    defines = [
+        "LIB_VALUE=13",
+        "VALUE_FUNCTION=versioned_value",
+    ],
+    features = ["-set_soname"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "unversioned_no_soname",
+    shared_library = ":libunversioned.so",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "versioned_no_soname",
+    shared_library = ":libversioned.so.9",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# The real libraries have distinct SONAMEs and live in runtime/, separately
+# from both the interfaces and the no-SONAME imports above.
+# An ELF shared library can also be used as the link-time interface. Giving
+# these files the same basename tests that -l:<basename> is not sufficient:
+# the linker must receive the complete path to each declared interface.
+copy_file(
+    name = "native_interface",
+    src = ":runtime/libnative.so.7",
+    out = "native/rpath.ifso",
+)
+
+copy_file(
+    name = "odd_interface",
+    src = ":runtime/odd.so",
+    out = "odd/rpath.ifso",
+)
+
+cc_import(
+    name = "native_with_interface",
+    interface_library = ":native_interface",
+    shared_library = ":runtime/libnative.so.7",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "odd_with_interface",
+    interface_library = ":odd_interface",
+    shared_library = ":runtime/odd.so",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Pass the CcInfo through an rlib to exercise transitive native dependencies.
+rust_library(
+    name = "direct",
+    srcs = ["native.rs"],
+    crate_name = "native",
+    edition = "2021",
+    link_deps = [
+        ":native",
+        ":odd",
+        ":unversioned_no_soname",
+        ":versioned_no_soname",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+rust_library(
+    name = "interfaces",
+    srcs = ["native.rs"],
+    crate_name = "native",
+    edition = "2021",
+    link_deps = [
+        ":native_with_interface",
+        ":odd_with_interface",
+        ":unversioned_no_soname",
+        ":versioned_no_soname",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+rust_binary(
+    name = "direct_abort",
+    srcs = ["main.rs"],
+    edition = "2021",
+    experimental_use_cc_common_link = 0,
+    rustc_flags = ["-Cpanic=abort"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":direct"],
+)
+
+rust_binary(
+    name = "direct_unwind",
+    srcs = ["main.rs"],
+    edition = "2021",
+    experimental_use_cc_common_link = 0,
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":direct"],
+)
+
+rust_binary(
+    name = "interfaces_abort",
+    srcs = ["main.rs"],
+    edition = "2021",
+    experimental_use_cc_common_link = 0,
+    rustc_flags = ["-Cpanic=abort"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":interfaces"],
+)
+
+rust_binary(
+    name = "interfaces_unwind",
+    srcs = ["main.rs"],
+    edition = "2021",
+    experimental_use_cc_common_link = 0,
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":interfaces"],
+)
+
+sh_test(
+    name = "direct_test",
+    size = "small",
+    srcs = ["test.sh"],
+    args = [
+        "$(rootpath :direct_abort)",
+        "$(rootpath :direct_unwind)",
+    ],
+    data = [
+        ":direct_abort",
+        ":direct_unwind",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+sh_test(
+    name = "interfaces_test",
+    size = "small",
+    srcs = ["test.sh"],
+    args = [
+        "$(rootpath :interfaces_abort)",
+        "$(rootpath :interfaces_unwind)",
+    ],
+    data = [
+        ":interfaces_abort",
+        ":interfaces_unwind",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
