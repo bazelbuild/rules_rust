@@ -121,7 +121,7 @@ rust_library(
         "@rmdbi__bitflags-2.13.2//:bitflags",
         "@rmdbi__memchr-2.8.3//:memchr",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
-        "@rmdbi__unicase-2.9.0//:unicase",
+        "@rmdbi__unicase-2.10.0//:unicase",
     ],
 )
 

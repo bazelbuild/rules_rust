@@ -111,6 +111,6 @@ rust_library(
     deps = [
         "@rmdbi__dtoa-short-0.3.5//:dtoa_short",
         "@rmdbi__itoa-1.0.18//:itoa",
-        "@rmdbi__smallvec-1.16.2//:smallvec",
+        "@rmdbi__smallvec-1.16.3//:smallvec",
     ],
 )

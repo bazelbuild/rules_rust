@@ -122,6 +122,6 @@ rust_library(
     deps = [
         "@rmdbi__proc-macro2-1.0.107//:proc_macro2",
         "@rmdbi__quote-1.0.47//:quote",
-        "@rmdbi__unicode-ident-1.0.26//:unicode_ident",
+        "@rmdbi__unicode-ident-1.0.27//:unicode_ident",
     ],
 )

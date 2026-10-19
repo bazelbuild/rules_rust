@@ -119,7 +119,7 @@ rust_library(
     deps = [
         ":build_script_build",
         "@rmdbi__mime-0.3.17//:mime",
-        "@rmdbi__unicase-2.9.0//:unicase",
+        "@rmdbi__unicase-2.10.0//:unicase",
     ],
 )
 
@@ -182,7 +182,7 @@ cargo_build_script(
     version = "2.0.5",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__unicase-2.9.0//:unicase",
+        "@rmdbi__unicase-2.10.0//:unicase",
     ],
 )
 

@@ -114,7 +114,7 @@ rust_library(
     version = "0.1.8",
     deps = [
         ":build_script_build",
-        "@rmdbi__libc-0.2.189//:libc",
+        "@rmdbi__libc-0.2.191//:libc",
     ],
 )
 

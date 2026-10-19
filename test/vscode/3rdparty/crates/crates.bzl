@@ -320,7 +320,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@rtvsc//serde-1.0.229"),
-            "serde_json": Label("@rtvsc//serde_json-1.0.151"),
+            "serde_json": Label("@rtvsc//serde_json-1.0.154"),
         },
     },
 }
@@ -528,32 +528,32 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtvsc__serde_json-1.0.151",
-        sha256 = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14",
+        name = "rtvsc__serde_json-1.0.154",
+        sha256 = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.151/download"],
-        strip_prefix = "serde_json-1.0.151",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.serde_json-1.0.151.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.154/download"],
+        strip_prefix = "serde_json-1.0.154",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.serde_json-1.0.154.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtvsc__syn-3.0.6",
-        sha256 = "8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
+        name = "rtvsc__syn-3.0.9",
+        sha256 = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/3.0.6/download"],
-        strip_prefix = "syn-3.0.6",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-3.0.6.bazel"),
+        urls = ["https://static.crates.io/crates/syn/3.0.9/download"],
+        strip_prefix = "syn-3.0.9",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-3.0.9.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtvsc__unicode-ident-1.0.26",
-        sha256 = "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
+        name = "rtvsc__unicode-ident-1.0.27",
+        sha256 = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unicode-ident/1.0.26/download"],
-        strip_prefix = "unicode-ident-1.0.26",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.unicode-ident-1.0.26.bazel"),
+        urls = ["https://static.crates.io/crates/unicode-ident/1.0.27/download"],
+        strip_prefix = "unicode-ident-1.0.27",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.unicode-ident-1.0.27.bazel"),
     )
 
     maybe(
@@ -569,5 +569,5 @@ def crate_repositories():
     return [
         struct(repo = "rtvsc", is_dev_dep = False),
         struct(repo = "rtvsc__serde-1.0.229", is_dev_dep = False),
-        struct(repo = "rtvsc__serde_json-1.0.151", is_dev_dep = False),
+        struct(repo = "rtvsc__serde_json-1.0.154", is_dev_dep = False),
     ]
