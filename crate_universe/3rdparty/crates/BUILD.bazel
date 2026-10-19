@@ -44,14 +44,14 @@ alias(
 )
 
 alias(
-    name = "camino-1.1.9",
-    actual = "@cui__camino-1.1.9//:camino",
+    name = "camino-1.2.6",
+    actual = "@cui__camino-1.2.6//:camino",
     tags = ["manual"],
 )
 
 alias(
     name = "camino",
-    actual = "@cui__camino-1.1.9//:camino",
+    actual = "@cui__camino-1.2.6//:camino",
     tags = ["manual"],
 )
 
@@ -68,26 +68,26 @@ alias(
 )
 
 alias(
-    name = "cargo-platform-0.1.9",
-    actual = "@cui__cargo-platform-0.1.9//:cargo_platform",
+    name = "cargo-platform-0.3.3",
+    actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-platform",
-    actual = "@cui__cargo-platform-0.1.9//:cargo_platform",
+    actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
     tags = ["manual"],
 )
 
 alias(
-    name = "cargo_metadata-0.19.2",
-    actual = "@cui__cargo_metadata-0.19.2//:cargo_metadata",
+    name = "cargo_metadata-0.23.1",
+    actual = "@cui__cargo_metadata-0.23.1//:cargo_metadata",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_metadata",
-    actual = "@cui__cargo_metadata-0.19.2//:cargo_metadata",
+    actual = "@cui__cargo_metadata-0.23.1//:cargo_metadata",
     tags = ["manual"],
 )
 
@@ -272,14 +272,14 @@ alias(
 )
 
 alias(
-    name = "serde_json-1.0.140",
-    actual = "@cui__serde_json-1.0.140//:serde_json",
+    name = "serde_json-1.0.154",
+    actual = "@cui__serde_json-1.0.154//:serde_json",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@cui__serde_json-1.0.140//:serde_json",
+    actual = "@cui__serde_json-1.0.154//:serde_json",
     tags = ["manual"],
 )
 

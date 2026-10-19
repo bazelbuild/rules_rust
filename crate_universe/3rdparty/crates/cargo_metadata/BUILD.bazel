@@ -10,6 +10,6 @@ package(default_visibility = ["//visibility:public"])
 
 alias(
     name = "cargo_metadata",
-    actual = "@cui__cargo_metadata-0.19.2//:cargo_metadata",
+    actual = "@cui__cargo_metadata-0.23.1//:cargo_metadata",
     tags = ["manual"],
 )

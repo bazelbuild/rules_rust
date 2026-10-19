@@ -322,10 +322,10 @@ _NORMAL_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
             "anyhow": Label("@cui//anyhow-1.0.98"),
-            "camino": Label("@cui//camino-1.1.9"),
+            "camino": Label("@cui//camino-1.2.6"),
             "cargo-lock": Label("@cui//cargo-lock-11.1.0"),
-            "cargo-platform": Label("@cui//cargo-platform-0.1.9"),
-            "cargo_metadata": Label("@cui//cargo_metadata-0.19.2"),
+            "cargo-platform": Label("@cui//cargo-platform-0.3.3"),
+            "cargo_metadata": Label("@cui//cargo_metadata-0.23.1"),
             "cargo_toml": Label("@cui//cargo_toml-0.22.3"),
             "cfg-expr": Label("@cui//cfg-expr-0.18.0"),
             "clap": Label("@cui//clap-4.5.37"),
@@ -339,7 +339,7 @@ _NORMAL_DEPENDENCIES = {
             "regex": Label("@cui//regex-1.11.1"),
             "semver": Label("@cui//semver-1.0.26"),
             "serde": Label("@cui//serde-1.0.229"),
-            "serde_json": Label("@cui//serde_json-1.0.140"),
+            "serde_json": Label("@cui//serde_json-1.0.154"),
             "serde_starlark": Label("@cui//serde_starlark-0.1.17"),
             "sha2": Label("@cui//sha2-0.10.8"),
             "spdx": Label("@cui//spdx-0.10.8"),
@@ -362,7 +362,7 @@ _NORMAL_DEPENDENCIES = {
         _COMMON_CONDITION: {
             "clap": Label("@cui//clap-4.5.37"),
             "hex": Label("@cui//hex-0.4.3"),
-            "serde_json": Label("@cui//serde_json-1.0.140"),
+            "serde_json": Label("@cui//serde_json-1.0.154"),
             "sha2": Label("@cui//sha2-0.10.8"),
         },
     },
@@ -780,12 +780,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__camino-1.1.9",
-        sha256 = "8b96ec4966b5813e2c0507c1f86115c8c5abaadc3980879c3424042a02fd1ad3",
+        name = "cui__camino-1.2.6",
+        sha256 = "bbbad30e4b4c14a39e3cc8aed085a12a327257c316619c93581e017bc52be591",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/camino/1.1.9/download"],
-        strip_prefix = "camino-1.1.9",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.camino-1.1.9.bazel"),
+        urls = ["https://static.crates.io/crates/camino/1.2.6/download"],
+        strip_prefix = "camino-1.2.6",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.camino-1.2.6.bazel"),
     )
 
     maybe(
@@ -800,22 +800,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo-platform-0.1.9",
-        sha256 = "e35af189006b9c0f00a064685c727031e3ed2d8020f7ba284d78cc2671bd36ea",
+        name = "cui__cargo-platform-0.3.3",
+        sha256 = "dd0061da739915fae12ea00e16397555ed4371a6bb285431aab930f61b0aa4ba",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cargo-platform/0.1.9/download"],
-        strip_prefix = "cargo-platform-0.1.9",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-platform-0.1.9.bazel"),
+        urls = ["https://static.crates.io/crates/cargo-platform/0.3.3/download"],
+        strip_prefix = "cargo-platform-0.3.3",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-platform-0.3.3.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__cargo_metadata-0.19.2",
-        sha256 = "dd5eb614ed4c27c5d706420e4320fbe3216ab31fa1c33cd8246ac36dae4479ba",
+        name = "cui__cargo_metadata-0.23.1",
+        sha256 = "ef987d17b0a113becdd19d3d0022d04d7ef41f9efe4f3fb63ac44ba61df3ade9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cargo_metadata/0.19.2/download"],
-        strip_prefix = "cargo_metadata-0.19.2",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo_metadata-0.19.2.bazel"),
+        urls = ["https://static.crates.io/crates/cargo_metadata/0.23.1/download"],
+        strip_prefix = "cargo_metadata-0.23.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo_metadata-0.23.1.bazel"),
     )
 
     maybe(
@@ -2300,16 +2300,6 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__ryu-1.0.14",
-        sha256 = "fe232bdf6be8c8de797b22184ee71118d63780ea42ac85b61d1baa6d3b782ae9",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/ryu/1.0.14/download"],
-        strip_prefix = "ryu-1.0.14",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.ryu-1.0.14.bazel"),
-    )
-
-    maybe(
-        http_archive,
         name = "cui__same-file-1.0.6",
         sha256 = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502",
         type = "tar.gz",
@@ -2370,12 +2360,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__serde_json-1.0.140",
-        sha256 = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373",
+        name = "cui__serde_json-1.0.154",
+        sha256 = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.140/download"],
-        strip_prefix = "serde_json-1.0.140",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_json-1.0.140.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.154/download"],
+        strip_prefix = "serde_json-1.0.154",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.serde_json-1.0.154.bazel"),
     )
 
     maybe(
@@ -2600,12 +2590,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__thiserror-2.0.4",
-        sha256 = "2f49a1853cf82743e3b7950f77e0f4d622ca36cf4317cba00c767838bac8d490",
+        name = "cui__thiserror-2.0.21",
+        sha256 = "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/thiserror/2.0.4/download"],
-        strip_prefix = "thiserror-2.0.4",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.thiserror-2.0.4.bazel"),
+        urls = ["https://static.crates.io/crates/thiserror/2.0.21/download"],
+        strip_prefix = "thiserror-2.0.21",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.thiserror-2.0.21.bazel"),
     )
 
     maybe(
@@ -2620,12 +2610,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__thiserror-impl-2.0.4",
-        sha256 = "8381894bb3efe0c4acac3ded651301ceee58a15d47c2e34885ed1908ad667061",
+        name = "cui__thiserror-impl-2.0.21",
+        sha256 = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/thiserror-impl/2.0.4/download"],
-        strip_prefix = "thiserror-impl-2.0.4",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.thiserror-impl-2.0.4.bazel"),
+        urls = ["https://static.crates.io/crates/thiserror-impl/2.0.21/download"],
+        strip_prefix = "thiserror-impl-2.0.21",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.thiserror-impl-2.0.21.bazel"),
     )
 
     maybe(
@@ -3408,13 +3398,23 @@ def crate_repositories():
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.zerovec-derive-0.10.3.bazel"),
     )
 
+    maybe(
+        http_archive,
+        name = "cui__zmij-1.0.23",
+        sha256 = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/zmij/1.0.23/download"],
+        strip_prefix = "zmij-1.0.23",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.zmij-1.0.23.bazel"),
+    )
+
     return [
         struct(repo = "cui", is_dev_dep = False),
         struct(repo = "cui__anyhow-1.0.98", is_dev_dep = False),
-        struct(repo = "cui__camino-1.1.9", is_dev_dep = False),
+        struct(repo = "cui__camino-1.2.6", is_dev_dep = False),
         struct(repo = "cui__cargo-lock-11.1.0", is_dev_dep = False),
-        struct(repo = "cui__cargo-platform-0.1.9", is_dev_dep = False),
-        struct(repo = "cui__cargo_metadata-0.19.2", is_dev_dep = False),
+        struct(repo = "cui__cargo-platform-0.3.3", is_dev_dep = False),
+        struct(repo = "cui__cargo_metadata-0.23.1", is_dev_dep = False),
         struct(repo = "cui__cargo_toml-0.22.3", is_dev_dep = False),
         struct(repo = "cui__cfg-expr-0.18.0", is_dev_dep = False),
         struct(repo = "cui__clap-4.5.37", is_dev_dep = False),
@@ -3429,7 +3429,7 @@ def crate_repositories():
         struct(repo = "cui__regex-1.11.1", is_dev_dep = False),
         struct(repo = "cui__semver-1.0.26", is_dev_dep = False),
         struct(repo = "cui__serde-1.0.229", is_dev_dep = False),
-        struct(repo = "cui__serde_json-1.0.140", is_dev_dep = False),
+        struct(repo = "cui__serde_json-1.0.154", is_dev_dep = False),
         struct(repo = "cui__serde_starlark-0.1.17", is_dev_dep = False),
         struct(repo = "cui__sha2-0.10.8", is_dev_dep = False),
         struct(repo = "cui__spdx-0.10.8", is_dev_dep = False),
