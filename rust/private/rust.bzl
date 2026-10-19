@@ -16,6 +16,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
@@ -1046,8 +1047,7 @@ rust_library = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Builds a Rust library crate.
 
@@ -1140,8 +1140,7 @@ rust_dylib_library = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Builds a shared library using the unstable Rust ABI.
 
@@ -1203,8 +1202,7 @@ rust_static_library = rule(
     cfg = _rust_static_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     provides = [
         CcInfo,
         rust_common.test_crate_info,
@@ -1244,8 +1242,7 @@ rust_cdylib_library = rule(
     cfg = _rust_shared_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     provides = [
         CcInfo,
         rust_common.test_crate_info,
@@ -1270,8 +1267,7 @@ rust_proc_macro = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Builds a Rust proc-macro crate.
     """),
@@ -1350,8 +1346,7 @@ rust_binary = rule(
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Builds a Rust binary crate.
 
@@ -1493,8 +1488,7 @@ rust_binary_without_process_wrapper = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )
 
 def _rust_library_without_process_wrapper_impl(ctx):
@@ -1509,8 +1503,7 @@ rust_library_without_process_wrapper = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )
 
 def _rust_static_library_without_process_wrapper_impl(ctx):
@@ -1524,8 +1517,7 @@ rust_static_library_without_process_wrapper = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     provides = [
         CcInfo,
         rust_common.test_crate_info,
@@ -1569,8 +1561,7 @@ rust_test_without_process_wrapper_test = rule(
     test = True,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )
 
 def _rust_test_transition_impl(settings, attr):
@@ -1598,8 +1589,7 @@ rust_test = rule(
     test = True,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Builds a Rust test crate.
 

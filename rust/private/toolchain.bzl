@@ -4,6 +4,7 @@ Toolchain rules for Rust.
 """
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
@@ -978,9 +979,7 @@ rust_toolchain = rule(
             ),
         ),
     },
-    toolchains = [
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    toolchains = use_cc_toolchain(mandatory = False),
     doc = """Declares a Rust toolchain for use.
 
 This is for declaring a custom toolchain, eg. for configuring a particular version of rust or supporting a new platform.

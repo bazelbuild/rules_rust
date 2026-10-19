@@ -1,5 +1,6 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
@@ -387,7 +388,7 @@ rust_prost_aspect = aspect(
     fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ] + use_cc_toolchain(mandatory = False) + [
         "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rustfmt:toolchain_type",
     ],

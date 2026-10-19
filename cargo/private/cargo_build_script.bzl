@@ -4,6 +4,7 @@ load("@apple_support//lib:apple_support.bzl", "apple_support")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//cargo/private:cargo_toolchain.bzl", "cargo_version_mismatch", "find_cargo")
 load("//rust:defs.bzl", "rust_common")
@@ -946,10 +947,9 @@ cargo_build_script = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = True),
         config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )
 
 def _merge_env_dict(prefix_dict, suffix_dict):

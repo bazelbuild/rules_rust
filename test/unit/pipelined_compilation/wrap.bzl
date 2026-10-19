@@ -1,5 +1,6 @@
 """A custom rule that wraps a crate called to_wrap."""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # buildifier: disable=bzl-visibility
@@ -106,7 +107,6 @@ wrap = rule(
     },
     toolchains = [
         "@rules_rust//rust:toolchain",
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     fragments = ["cpp"],
 )
