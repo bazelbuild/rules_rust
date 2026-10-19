@@ -409,8 +409,12 @@ rust_analyzer_toolchain = rule(
     },
 )
 
-def _current_rust_analyzer_toolchain_impl(ctx):
+def _rust_analyzer_toolchain_alias_impl(ctx):
     toolchain = ctx.toolchains[str(Label("@rules_rust//rust/rust_analyzer:toolchain_type"))]
+    if not toolchain:
+        if ctx.attr.mandatory:
+            fail("{}: no `rust_analyzer_toolchain` is registered for the current platform".format(ctx.label))
+        return []
 
     files = []
     if toolchain.rust_analyzer:
@@ -428,11 +432,24 @@ def _current_rust_analyzer_toolchain_impl(ctx):
         ),
     ]
 
-current_rust_analyzer_toolchain = rule(
-    doc = "A rule for exposing the current registered `rust_analyzer_toolchain`.",
-    implementation = _current_rust_analyzer_toolchain_impl,
+rust_analyzer_toolchain_alias = rule(
+    doc = """\
+A target standing in for the `rust_analyzer_toolchain` resolved for the current platform.
+
+The alias forwards the toolchain's providers, its Make variables and the
+`rust-analyzer`, proc-macro server and `rustc` binaries it carries.
+`@rules_rust//rust/toolchain:current_rust_analyzer_toolchain` is the alias
+`rules_rust` declares.
+""",
+    implementation = _rust_analyzer_toolchain_alias_impl,
+    attrs = {
+        "mandatory": attr.bool(
+            doc = "Whether to fail when no toolchain is registered. When `False`, the target provides nothing instead.",
+            default = True,
+        ),
+    },
     toolchains = [
-        str(Label("@rules_rust//rust/rust_analyzer:toolchain_type")),
+        config_common.toolchain_type(str(Label("@rules_rust//rust/rust_analyzer:toolchain_type")), mandatory = False),
     ],
 )
 

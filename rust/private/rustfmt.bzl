@@ -333,8 +333,12 @@ rustfmt_toolchain = rule(
     ],
 )
 
-def _current_rustfmt_toolchain_impl(ctx):
+def _rustfmt_toolchain_alias_impl(ctx):
     toolchain = ctx.toolchains[str(Label("@rules_rust//rust/rustfmt:toolchain_type"))]
+    if not toolchain:
+        if ctx.attr.mandatory:
+            fail("{}: no `rustfmt_toolchain` is registered for the current platform".format(ctx.label))
+        return []
 
     return [
         toolchain,
@@ -347,10 +351,23 @@ def _current_rustfmt_toolchain_impl(ctx):
         ),
     ]
 
-current_rustfmt_toolchain = rule(
-    doc = "A rule for exposing the current registered `rustfmt_toolchain`.",
-    implementation = _current_rustfmt_toolchain_impl,
+rustfmt_toolchain_alias = rule(
+    doc = """\
+A target standing in for the `rustfmt_toolchain` resolved for the current platform.
+
+The alias forwards the toolchain's providers, its Make variables (`$(RUSTFMT)`,
+`$(RUSTFMT_RLOCATIONPATH)`) and the `rustfmt` binary, with the files it needs
+at run time as runfiles. `@rules_rust//rust/toolchain:current_rustfmt_toolchain`
+is the alias `rules_rust` declares.
+""",
+    implementation = _rustfmt_toolchain_alias_impl,
+    attrs = {
+        "mandatory": attr.bool(
+            doc = "Whether to fail when no toolchain is registered. When `False`, the target provides nothing instead.",
+            default = True,
+        ),
+    },
     toolchains = [
-        str(Label("@rules_rust//rust/rustfmt:toolchain_type")),
+        config_common.toolchain_type(str(Label("@rules_rust//rust/rustfmt:toolchain_type")), mandatory = False),
     ],
 )
