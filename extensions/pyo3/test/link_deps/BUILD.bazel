@@ -1,0 +1,20 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:defs.bzl", "pyo3_extension")
+
+cc_library(
+    name = "c_deps",
+)
+
+# Regression test: `link_deps` must only reach the `rust_shared_library`, not
+# the `py_pyo3_library` wrapper (which has no such attribute).
+pyo3_extension(
+    name = "link_deps",
+    srcs = ["link_deps.rs"],
+    link_deps = [":c_deps"],
+)
+
+build_test(
+    name = "link_deps_build_test",
+    targets = [":link_deps"],
+)

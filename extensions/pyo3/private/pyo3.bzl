@@ -248,6 +248,7 @@ def pyo3_extension(
         crate_root = None,
         data = [],
         deps = [],
+        link_deps = [],
         edition = None,
         lint_config = None,
         imports = [],
@@ -337,6 +338,7 @@ def pyo3_extension(
         deps = [
             Label("//private:current_rust_pyo3_toolchain"),
         ] + deps,
+        link_deps = link_deps,
         edition = edition,
         lint_config = lint_config,
         proc_macro_deps = proc_macro_deps,
