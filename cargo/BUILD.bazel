@@ -1,7 +1,18 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//cargo:cargo_toolchain.bzl", "cargo_toolchain_alias")
 
 exports_files(
     glob(["*.bzl"]) + ["Cargo.toml"],
+)
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+cargo_toolchain_alias(
+    name = "current_cargo_toolchain",
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(

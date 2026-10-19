@@ -41,6 +41,7 @@
 - [Toolchains](./rust_toolchains.md)
     - [rust_toolchain](./rust_toolchain.md)
     - [rustfmt_toolchain](./rustfmt_toolchain.md)
+    - [cargo_toolchain](./cargo_toolchain.md)
     - [rust_analyzer_toolchain](./rust_analyzer_toolchain.md)
     - [rust_stdlib_filegroup](./rust_stdlib_filegroup.md)
 - [Bzlmod](./rust_bzlmod.md)

@@ -104,6 +104,13 @@ rust_common = struct(
     test_crate_info = TestCrateInfo,
     crate_group_info = CrateGroupInfo,
     default_version = DEFAULT_RUST_VERSION,
+    # The toolchain types `rules_rust` defines, for rules which resolve them:
+    # `toolchains = [config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False)]`
+    # and `ctx.toolchains[rust_common.cargo_toolchain_type]`.
+    toolchain_type = Label("//rust:toolchain_type"),
+    cargo_toolchain_type = Label("//cargo:toolchain_type"),
+    rust_analyzer_toolchain_type = Label("//rust/rust_analyzer:toolchain_type"),
+    rustfmt_toolchain_type = Label("//rust/rustfmt:toolchain_type"),
 )
 
 COMMON_PROVIDERS = [
