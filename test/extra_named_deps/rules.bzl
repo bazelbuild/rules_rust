@@ -2,6 +2,8 @@
 Defines a test-only rule that lets us set rustc_compile_action.extra_named_deps.
 """
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:common.bzl", "COMMON_PROVIDERS")
 
@@ -103,6 +105,5 @@ rust_library_with_extra_deps = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )

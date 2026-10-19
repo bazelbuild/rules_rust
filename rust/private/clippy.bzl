@@ -15,6 +15,7 @@
 """A module defining clippy rules"""
 
 load("@bazel_skylib//lib:structs.bzl", "structs")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:lint_test.bzl",
@@ -369,8 +370,7 @@ rust_clippy_aspect = aspect(
     ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     implementation = _clippy_aspect_impl,
     doc = """\
 Executes the clippy checker on specified targets.
