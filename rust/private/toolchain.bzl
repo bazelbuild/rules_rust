@@ -820,7 +820,10 @@ rust_toolchain = rule(
         "lto": attr.label(
             providers = [RustLtoInfo],
             default = Label("//rust/settings:lto"),
-            doc = "Label to an LTO setting whether which can enable custom LTO settings",
+            doc = (
+                "A `rust_lto_flag` target that sets the link time optimization mode " +
+                "for crates built with this toolchain."
+            ),
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
