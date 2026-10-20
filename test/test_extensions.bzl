@@ -2,6 +2,7 @@
 
 load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 load("//test:deps.bzl", "rules_rust_test_deps")
+load("//test/unit/companion_toolchains:symlinked_rust_distribution.bzl", "symlinked_rust_distribution")
 
 def _rust_test_impl(module_ctx):
     deps = []
@@ -14,6 +15,9 @@ def _rust_test_impl(module_ctx):
     )
 
     deps.append(struct(repo = "buildkite_config"))
+
+    symlinked_rust_distribution(name = "rules_rust_test_symlinked_rust")
+    deps.append(struct(repo = "rules_rust_test_symlinked_rust"))
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used

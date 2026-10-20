@@ -35,3 +35,13 @@ build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
   `.bazelrc` (as shown in Setup) to run clippy across every Rust target in the build.
 - [rust_clippy_test](./rust_clippy_test.md) — Test rule that reports clippy findings as
   test failures, useful in CI where a failing test is more visible than a failing build.
+
+## Toolchain
+
+- [clippy_toolchain](./clippy_toolchain.md) — Provide the `clippy-driver` the
+  rules above run. Registered for `@rules_rust//rust/clippy:toolchain_type` next
+  to every `rust_toolchain` the `rust` module extension registers, so the driver
+  always matches the compiler.
+  Rules declare the type as `rust_common.clippy_toolchain_type`; the same page
+  documents `find_clippy`, which falls back to the `clippy_driver` of the
+  `rust_toolchain` when no `clippy_toolchain` is registered.

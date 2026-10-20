@@ -13,6 +13,10 @@ load(
     "rustfmt_toolchain_alias",
 )
 load(
+    ":clippy_toolchain.bzl",
+    _clippy_toolchain = "clippy_toolchain",
+)
+load(
     ":rust_analyzer_toolchain.bzl",
     _rust_analyzer_toolchain = "rust_analyzer_toolchain",
 )
@@ -25,6 +29,10 @@ load(
     _rust_toolchain = "rust_toolchain",
 )
 load(
+    ":rustdoc_toolchain.bzl",
+    _rustdoc_toolchain = "rustdoc_toolchain",
+)
+load(
     ":rustfmt_toolchain.bzl",
     _rustfmt_toolchain = "rustfmt_toolchain",
 )
@@ -33,6 +41,8 @@ rust_toolchain = _rust_toolchain
 rust_stdlib_filegroup = _rust_stdlib_filegroup
 rust_analyzer_toolchain = _rust_analyzer_toolchain
 rustfmt_toolchain = _rustfmt_toolchain
+clippy_toolchain = _clippy_toolchain
+rustdoc_toolchain = _rustdoc_toolchain
 
 def current_rust_analyzer_toolchain(name, **kwargs):
     """Deprecated: use `rust_analyzer_toolchain_alias`.

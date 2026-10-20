@@ -15,6 +15,7 @@ load(
     "make_libstd_and_allocator_ccinfo",
 )
 load("//rust/private:semver.bzl", "semver")
+load("//rust/private:sysroot.bzl", "symlink_sysroot_bin", "symlink_sysroot_tree")
 load(
     "//rust/private:utils.bzl",
     "deduplicate",
@@ -131,74 +132,11 @@ def _resolve_link_std_dylib(ctx):
            enabled and \
            ctx.attr.rust_std[rust_common.stdlib_info].std_dylib != None
 
-def _symlink_sysroot_tree(ctx, name, target, target_files = None):
-    """Generate a set of symlinks to files from another target
-
-    Args:
-        ctx (ctx): The toolchain's context object
-        name (str): The name of the sysroot directory (typically `ctx.label.name`)
-        target (Target): A target owning files to symlink
-        target_files (depset): An optional depset to use in place of `target.files`.
-
-    Returns:
-        depset[File]: A depset of the generated symlink files
-    """
-    tree_files = []
-    if target_files == None:
-        target_files = target.files
-    for file in target_files.to_list():
-        # Parse the path to the file relative to the workspace root so a
-        # symlink matching this path can be created within the sysroot.
-
-        # The code blow attempts to parse any workspace names out of the
-        # path. For local targets, this code is a noop.
-        if target.label.workspace_root:
-            file_path = file.path.split(target.label.workspace_root, 1)[-1]
-        else:
-            file_path = file.path
-
-        symlink = ctx.actions.declare_file("{}/{}".format(name, file_path.lstrip("/")))
-
-        ctx.actions.symlink(
-            output = symlink,
-            target_file = file,
-        )
-
-        tree_files.append(symlink)
-
-    return depset(tree_files)
-
-def _symlink_sysroot_bin(ctx, name, directory, target):
-    """Crete a symlink to a target file.
-
-    Args:
-        ctx (ctx): The rule's context object
-        name (str): A common name for the output directory
-        directory (str): The directory under `name` to put the file in
-        target (File): A File object to symlink to
-
-    Returns:
-        File: A newly generated symlink file
-    """
-    symlink = ctx.actions.declare_file("{}/{}/{}".format(
-        name,
-        directory,
-        target.basename,
-    ))
-
-    ctx.actions.symlink(
-        output = symlink,
-        target_file = target,
-        is_executable = True,
-    )
-
-    return symlink
-
 def _generate_sysroot(
         ctx,
         rustc,
-        rustdoc,
         rustc_lib,
+        rustdoc = None,
         cargo = None,
         clippy = None,
         cargo_clippy = None,
@@ -212,8 +150,8 @@ def _generate_sysroot(
     Args:
         ctx (ctx): A context object from a `rust_toolchain` rule.
         rustc (File): The path to a `rustc` executable.
-        rustdoc (File): The path to a `rustdoc` executable.
         rustc_lib (Target): A collection of Files containing dependencies of `rustc`.
+        rustdoc (File, optional): The path to a `rustdoc` executable.
         cargo (File, optional): The path to a `cargo` executable.
         cargo_clippy (File, optional): The path to a `cargo-clippy` executable.
         clippy (File, optional): The path to a `clippy-driver` executable.
@@ -232,42 +170,48 @@ def _generate_sysroot(
     direct_files = []
     transitive_file_sets = []
 
+    # Relative paths placed in the tree so far; components which overlap
+    # (see `symlink_sysroot_tree`) do not claim a path twice.
+    declared = {}
+
     # Rustc
-    sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
+    sysroot_rustc = symlink_sysroot_bin(ctx, name, "bin", rustc)
     direct_files.append(sysroot_rustc)
 
     # Rustc dependencies
     sysroot_rustc_lib = None
     if rustc_lib:
-        sysroot_rustc_lib = _symlink_sysroot_tree(ctx, name, rustc_lib)
+        sysroot_rustc_lib = symlink_sysroot_tree(ctx, name, rustc_lib, declared = declared)
         transitive_file_sets.extend([sysroot_rustc_lib])
 
     # Rustdoc
-    sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
-    direct_files.append(sysroot_rustdoc)
+    sysroot_rustdoc = None
+    if rustdoc:
+        sysroot_rustdoc = symlink_sysroot_bin(ctx, name, "bin", rustdoc)
+        direct_files.append(sysroot_rustdoc)
 
     # Clippy
     sysroot_clippy = None
     if clippy:
-        sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
+        sysroot_clippy = symlink_sysroot_bin(ctx, name, "bin", clippy)
         direct_files.append(sysroot_clippy)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
-        sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
+        sysroot_cargo = symlink_sysroot_bin(ctx, name, "bin", cargo)
         direct_files.append(sysroot_cargo)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
-        sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
+        sysroot_cargo_clippy = symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
         direct_files.append(sysroot_cargo_clippy)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
-        sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
+        sysroot_rustfmt = symlink_sysroot_bin(ctx, name, "bin", rustfmt)
         direct_files.append(sysroot_rustfmt)
 
     # Linker
@@ -289,8 +233,8 @@ def _generate_sysroot(
             idx = linker_bin.dirname.find("/lib/rustlib/")
             dest = linker_bin.dirname[idx + 1:]
 
-        sysroot_linker = _symlink_sysroot_bin(ctx, name, dest, linker_bin)
-        sysroot_linker_files = _symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files)
+        sysroot_linker = symlink_sysroot_bin(ctx, name, dest, linker_bin)
+        sysroot_linker_files = symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files, declared = declared)
         direct_files.append(sysroot_linker)
         transitive_file_sets.append(sysroot_linker_files)
 
@@ -303,23 +247,24 @@ def _generate_sysroot(
         if "/lib/rustlib/" in rust_objcopy.dirname:
             idx = rust_objcopy.dirname.find("/lib/rustlib/")
             dest = rust_objcopy.dirname[idx + 1:]
-        sysroot_rust_objcopy = _symlink_sysroot_bin(ctx, name, dest, rust_objcopy)
+        sysroot_rust_objcopy = symlink_sysroot_bin(ctx, name, dest, rust_objcopy)
         direct_files.append(sysroot_rust_objcopy)
 
     # Llvm tools
     sysroot_llvm_tools = None
     if llvm_tools:
-        sysroot_llvm_tools = _symlink_sysroot_tree(ctx, name, llvm_tools)
+        sysroot_llvm_tools = symlink_sysroot_tree(ctx, name, llvm_tools, declared = declared)
         transitive_file_sets.extend([sysroot_llvm_tools])
 
     # Rust standard library
     sysroot_rust_std = None
+    extra_file_sets = []
     if rust_std:
-        sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
+        sysroot_rust_std = symlink_sysroot_tree(ctx, name, rust_std, declared = declared)
         transitive_file_sets.extend([sysroot_rust_std])
 
         # Made available to support $(location) expansion in stdlib_linkflags and extra_rustc_flags.
-        transitive_file_sets.append(depset(ctx.files.rust_std))
+        extra_file_sets.append(depset(ctx.files.rust_std))
 
     # Declare a file in the root of the sysroot to make locating the sysroot easy
     sysroot_anchor = ctx.actions.declare_file("{}/rust.sysroot".format(name))
@@ -339,11 +284,17 @@ def _generate_sysroot(
         ]),
     )
 
-    # Create a depset of all sysroot files (symlinks and their real paths)
-    all_files = depset(direct_files, transitive = transitive_file_sets)
+    # The files of the sysroot tree itself. Companion toolchains derive their
+    # own sysroot from these, so nothing outside the tree belongs here.
+    tree_files = depset(direct_files + [sysroot_anchor], transitive = transitive_file_sets)
+
+    # Everything a consumer of the toolchain needs: the tree and the files
+    # referenced outside of it.
+    all_files = depset(transitive = [tree_files] + extra_file_sets)
 
     return struct(
         all_files = all_files,
+        tree_files = tree_files,
         cargo = sysroot_cargo,
         cargo_clippy = sysroot_cargo_clippy,
         clippy = sysroot_clippy,
@@ -453,15 +404,20 @@ def _rust_toolchain_impl(ctx):
     # Variables for make variable expansion
     make_variables = {
         "RUSTC": sysroot.rustc.path,
-        "RUSTDOC": sysroot.rustdoc.path,
         "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
         "RUST_SYSROOT": sysroot_path,
         "RUST_SYSROOT_SHORT": sysroot_short_path,
     }
 
+    # Deprecated tools: their Make variables come from their own toolchains.
     if sysroot.cargo:
         make_variables.update({
             "CARGO": sysroot.cargo.path,
+        })
+
+    if sysroot.rustdoc:
+        make_variables.update({
+            "RUSTDOC": sysroot.rustdoc.path,
         })
 
     if sysroot.rustfmt:
@@ -639,6 +595,7 @@ def _rust_toolchain_impl(ctx):
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_anchor = sysroot.sysroot_anchor,
+        sysroot_files = sysroot.tree_files,
         sysroot_short_path = sysroot_short_path,
         target_arch = target_arch,
         target_flag_value = target_json if target_json else target_triple.str,
@@ -696,7 +653,12 @@ rust_toolchain = rule(
             cfg = "exec",
         ),
         "cargo_clippy": attr.label(
-            doc = "The location of the `cargo_clippy` binary. Can be a direct source or a filegroup containing one item.",
+            doc = (
+                "The location of the `cargo_clippy` binary. Can be a direct source or a filegroup containing one item. " +
+                "**Deprecated**: register a [`clippy_toolchain`](#clippy_toolchain) for " +
+                "`@rules_rust//rust/clippy:toolchain_type` instead. Rules which run Clippy use that toolchain " +
+                "when one is registered and fall back to this attribute when none is."
+            ),
             allow_single_file = True,
             cfg = "exec",
         ),
@@ -705,7 +667,12 @@ rust_toolchain = rule(
             default = "",
         ),
         "clippy_driver": attr.label(
-            doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
+            doc = (
+                "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item. " +
+                "**Deprecated**: register a [`clippy_toolchain`](#clippy_toolchain) for " +
+                "`@rules_rust//rust/clippy:toolchain_type` instead. Rules which run Clippy use that toolchain " +
+                "when one is registered and fall back to this attribute when none is."
+            ),
             allow_single_file = True,
             cfg = "exec",
         ),
@@ -850,10 +817,14 @@ rust_toolchain = rule(
                    "Rust features must be explicitly opted in to using `-Zallow-features=...`."),
         ),
         "rust_doc": attr.label(
-            doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",
+            doc = (
+                "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item. " +
+                "**Deprecated**: register a [`rustdoc_toolchain`](#rustdoc_toolchain) for " +
+                "`@rules_rust//rust/rustdoc:toolchain_type` instead. Rules which run rustdoc use that toolchain " +
+                "when one is registered and fall back to this attribute when none is."
+            ),
             allow_single_file = True,
             cfg = "exec",
-            mandatory = True,
         ),
         "rust_objcopy": attr.label(
             doc = "The location of the `rust-objcopy` binary. Can be a direct source or a filegroup containing one item.",
@@ -997,7 +968,6 @@ rust_toolchain(
     binary_ext = "",
     dylib_ext = ".so",
     exec_triple = "cpuX-unknown-linux-gnu",
-    rust_doc = "@rust_cpuX//:rustdoc",
     rust_std = "@rust_cpuX//:rust_std",
     rustc = "@rust_cpuX//:rustc",
     rustc_lib = "@rust_cpuX//:rustc_lib",
@@ -1022,6 +992,12 @@ toolchain(
 
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass \
 it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
+
+The toolchain carries what every Rust compile action needs: `rustc`, its libraries and the \
+standard library. Companion tools have toolchains of their own, registered alongside it for the \
+same platforms: [`rustdoc_toolchain`](#rustdoc_toolchain), [`clippy_toolchain`](#clippy_toolchain), \
+[`rustfmt_toolchain`](#rustfmt_toolchain) and [`cargo_toolchain`](#cargo_toolchain). Keeping them \
+out of `rust_toolchain` keeps their binaries out of the inputs of every compile action.
 
 To use a platform-specific linker, you can use a `select()` in the `linker` attribute:
 

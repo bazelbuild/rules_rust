@@ -19,6 +19,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:pic_utils.bzl", "should_use_pic")
 load("//rust/private:providers.bzl", "LintsInfo")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
+load("//rust/private:rustdoc_toolchain.bzl", "find_rustdoc")
 load(
     "//rust/private:utils.bzl",
     "dedent",
@@ -72,7 +73,8 @@ def _rustdoc_crate_info(crate_info, output):
 
 def rustdoc_compile_action(
         ctx,
-        toolchain,
+        rust_toolchain,
+        rustdoc_toolchain,
         crate_info,
         lints_info = None,
         output = None,
@@ -83,7 +85,9 @@ def rustdoc_compile_action(
 
     Args:
         ctx (ctx): The rule's context object.
-        toolchain (rust_toolchain): The currently configured `rust_toolchain`.
+        rust_toolchain (ToolchainInfo): The `rust_toolchain` to compile against.
+        rustdoc_toolchain (ToolchainInfo): The `rustdoc_toolchain` to run, as returned by `find_rustdoc`: its
+            `rustdoc` runs with its `sysroot_anchor` as `--sysroot` and its `all_files` as inputs.
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
         lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
@@ -128,7 +132,7 @@ def rustdoc_compile_action(
         file = ctx.file,
         files = ctx.files,
         linkstamps = depset([]),
-        toolchain = toolchain,
+        toolchain = rust_toolchain,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -136,6 +140,7 @@ def rustdoc_compile_action(
         build_info = build_info,
         lint_files = lint_files,
         force_depend_on_objects = force_depend_on_objects,
+        extra_toolchain_files = rustdoc_toolchain.all_files,
         include_linker_inputs = is_test or force_depend_on_objects,
         include_link_flags = False,
     )
@@ -160,9 +165,9 @@ def rustdoc_compile_action(
             feature_configuration = feature_configuration,
             crate_type = crate_info.type,
             compilation_mode = compilation_mode,
-            toolchain = toolchain,
+            toolchain = rust_toolchain,
         )
-        for_windows = toolchain.target_abi == "msvc"
+        for_windows = rust_toolchain.target_abi == "msvc"
         get_lib_name = get_lib_name_for_windows if for_windows else get_lib_name_default
         for dep in dep_info.transitive_noncrates.to_list():
             for lib in dep.libraries:
@@ -176,7 +181,7 @@ def rustdoc_compile_action(
                 else:
                     rustdoc_flags.append("-Clink-arg=%s" % arg)
 
-        # The cc_toolchain's runtime libs (libc++ / libunwind on any toolchain
+        # The cc_toolchain's runtime libs (libc++ / libunwind on any rust_toolchain
         # enabling `static_link_cpp_runtimes`) are NOT part of
         # transitive_noncrates: Bazel injects them into C++ link actions, and
         # rustdoc never runs one -- it drives the link itself.
@@ -207,8 +212,10 @@ def rustdoc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         file = ctx.file,
-        toolchain = toolchain,
-        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
+        toolchain = rust_toolchain,
+        tool_path = rustdoc_toolchain.rustdoc.short_path if is_test else rustdoc_toolchain.rustdoc.path,
+        sysroot_anchor = rustdoc_toolchain.sysroot_anchor,
+        tool_flags = rustdoc_toolchain.extra_rustdoc_flags,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
@@ -233,7 +240,7 @@ def rustdoc_compile_action(
     # a part of runfiles.
     if is_test:
         if "SYSROOT" in env:
-            env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
+            env.update({"SYSROOT": "${{pwd}}/{}".format(rustdoc_toolchain.sysroot_short_path)})
         if "OUT_DIR" in env:
             env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
 
@@ -246,7 +253,7 @@ def rustdoc_compile_action(
         env = env,
         arguments = args.all,
         supports_path_mapping = args.supports_path_mapping,
-        tools = [toolchain.rust_doc],
+        tools = [rustdoc_toolchain.rustdoc],
         static_runtime_libs = static_runtime_libs,
     )
 
@@ -316,9 +323,15 @@ def _rust_doc_impl(ctx):
 
     rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
+    rust_toolchain = find_toolchain(ctx)
+    rustdoc_toolchain = find_rustdoc(ctx, rust_toolchain)
+    if not rustdoc_toolchain:
+        fail("{}: no `rustdoc_toolchain` is registered for the current platform and the `rust_toolchain` has no `rust_doc`".format(ctx.label))
+
     action = rustdoc_compile_action(
         ctx = ctx,
-        toolchain = find_toolchain(ctx),
+        rust_toolchain = rust_toolchain,
+        rustdoc_toolchain = rustdoc_toolchain,
         crate_info = crate_info,
         lints_info = lints_info,
         output = output_dir,
@@ -465,5 +478,6 @@ rust_doc = rule(
     },
     toolchains = [
         str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False),
     ] + use_cc_toolchain(mandatory = False),
 )

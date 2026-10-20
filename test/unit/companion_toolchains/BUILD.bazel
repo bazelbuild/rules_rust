@@ -1,0 +1,12 @@
+load(":companion_toolchains_test.bzl", "companion_toolchains_test_suite")
+load(":sysroot_test.bzl", "sysroot_test_suite")
+
+companion_toolchains_test_suite(
+    name = "companion_toolchains_test_suite",
+)
+
+# Generated sysroots, from rules_rust's own toolchains and from a hand-crafted
+# distribution full of relative symlinks, must work like a copied distribution.
+sysroot_test_suite(
+    name = "sysroot_test_suite",
+)

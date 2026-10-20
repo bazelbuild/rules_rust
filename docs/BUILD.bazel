@@ -268,6 +268,30 @@ stardoc(
 )
 
 stardoc(
+    name = "clippy_toolchain",
+    out = "src/clippy_toolchain.md",
+    input = "@rules_rust//rust:clippy_toolchain.bzl",
+    symbol_names = [
+        "clippy_toolchain",
+        "clippy_toolchain_alias",
+        "find_clippy",
+    ],
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rustdoc_toolchain",
+    out = "src/rustdoc_toolchain.md",
+    input = "@rules_rust//rust:rustdoc_toolchain.bzl",
+    symbol_names = [
+        "find_rustdoc",
+        "rustdoc_toolchain",
+        "rustdoc_toolchain_alias",
+    ],
+    deps = [":all_docs"],
+)
+
+stardoc(
     name = "cargo_toolchain",
     out = "src/cargo_toolchain.md",
     input = "@rules_rust//cargo:cargo_toolchain.bzl",
@@ -367,6 +391,7 @@ mdbook(
         ":cargo_env",
         ":cargo_settings",
         ":cargo_toolchain",
+        ":clippy_toolchain",
         ":crate_universe_bzlmod",
         ":crate_universe_workspace",
         ":extract_cargo_lints",
@@ -399,6 +424,7 @@ mdbook(
         ":rust_unpretty",
         ":rust_unpretty_aspect",
         ":rust_wasm_bindgen",
+        ":rustdoc_toolchain",
         ":rustfmt_aspect",
         ":rustfmt_test",
         ":rustfmt_toolchain",

@@ -16,3 +16,14 @@ tooling that generates the [standard library docs][std_docs] and every crate on
   for hosting on a static site.
 - [rust_doc_test](./rust_doc_test.md) — Compile and run the code samples embedded
   in a crate's doc comments as tests, matching Cargo's `cargo test --doc` behavior.
+
+## Toolchain
+
+- [rustdoc_toolchain](./rustdoc_toolchain.md) — Provide the `rustdoc` the rules
+  above run and that `cargo_build_script` exposes to build scripts as `$RUSTDOC`.
+  Registered for `@rules_rust//rust/rustdoc:toolchain_type` next to every
+  `rust_toolchain` the `rust` module extension registers, so `rustdoc` always
+  matches the compiler.
+  Rules declare the type as `rust_common.rustdoc_toolchain_type`; the same page
+  documents `find_rustdoc`, which falls back to the `rust_doc` of the
+  `rust_toolchain` when no `rustdoc_toolchain` is registered.

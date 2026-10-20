@@ -2,7 +2,9 @@
 
 # buildifier: disable=bzl-visibility
 load("//cargo/private:cargo_toolchain.bzl", "find_cargo")
+load("//rust/private:clippy_toolchain.bzl", "find_clippy")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:rustdoc_toolchain.bzl", "find_rustdoc")
 
 def _toolchain_files_impl(ctx):
     toolchain = ctx.toolchains[str(Label("//rust:toolchain_type"))]
@@ -21,23 +23,29 @@ def _toolchain_files_impl(ctx):
             transitive_files = depset(transitive = [cargo.files, toolchain.rustc_lib]),
         )
     elif ctx.attr.tool == "cargo-clippy":
-        files = depset([toolchain.cargo_clippy])
+        clippy_toolchain = find_clippy(ctx, toolchain)
+        if not clippy_toolchain or not clippy_toolchain.cargo_clippy:
+            fail("{}: neither the registered `clippy_toolchain` nor the `rust_toolchain` provides `cargo-clippy`".format(ctx.label))
+        files = depset([clippy_toolchain.cargo_clippy])
         runfiles = ctx.runfiles(
             files = [
-                toolchain.cargo_clippy,
-                toolchain.clippy_driver,
+                clippy_toolchain.cargo_clippy,
+                clippy_toolchain.clippy_driver,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib,
+            transitive_files = depset(transitive = [clippy_toolchain.all_files, toolchain.rustc_lib]),
         )
     elif ctx.attr.tool == "clippy":
-        files = depset([toolchain.clippy_driver])
+        clippy_toolchain = find_clippy(ctx, toolchain)
+        if not clippy_toolchain:
+            fail("{}: neither the registered `clippy_toolchain` nor the `rust_toolchain` provides `clippy-driver`".format(ctx.label))
+        files = depset([clippy_toolchain.clippy_driver])
         runfiles = ctx.runfiles(
             files = [
-                toolchain.clippy_driver,
+                clippy_toolchain.clippy_driver,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib,
+            transitive_files = depset(transitive = [clippy_toolchain.all_files, toolchain.rustc_lib]),
         )
     elif ctx.attr.tool == "rustc":
         files = depset([toolchain.rustc])
@@ -46,10 +54,13 @@ def _toolchain_files_impl(ctx):
             transitive_files = toolchain.rustc_lib,
         )
     elif ctx.attr.tool == "rustdoc":
-        files = depset([toolchain.rust_doc])
+        rustdoc_toolchain = find_rustdoc(ctx, toolchain)
+        if not rustdoc_toolchain:
+            fail("{}: neither the registered `rustdoc_toolchain` nor the `rust_toolchain` provides `rustdoc`".format(ctx.label))
+        files = depset([rustdoc_toolchain.rustdoc])
         runfiles = ctx.runfiles(
-            files = [toolchain.rust_doc],
-            transitive_files = toolchain.rustc_lib,
+            files = [rustdoc_toolchain.rustdoc],
+            transitive_files = depset(transitive = [rustdoc_toolchain.all_files, toolchain.rustc_lib]),
         )
     elif ctx.attr.tool == "rustfmt":
         files = depset([toolchain.rustfmt])
@@ -70,7 +81,11 @@ def _toolchain_files_impl(ctx):
     )]
 
 toolchain_files = rule(
-    doc = "A rule for fetching files from a rust toolchain for the exec platform.",
+    doc = (
+        "A rule for fetching files from a rust toolchain for the exec platform. " +
+        "`clippy`, `cargo-clippy` and `rustdoc` come from the registered `clippy_toolchain` " +
+        "and `rustdoc_toolchain` when there is one, and from the `rust_toolchain` otherwise."
+    ),
     implementation = _toolchain_files_impl,
     attrs = {
         "tool": attr.string(
@@ -93,6 +108,8 @@ toolchain_files = rule(
     toolchains = [
         str(Label("//rust:toolchain_type")),
         config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False),
     ],
 )
 
@@ -116,7 +133,7 @@ rust_toolchain_alias = rule(
 A target standing in for the `rust_toolchain` resolved for the current platform.
 
 The alias forwards the toolchain's providers, its Make variables (`$(RUSTC)`,
-`$(RUSTDOC)`, ...) and its files, so that targets which run the Rust tools
+`$(RUST_SYSROOT)`, ...) and its files, so that targets which run the Rust tools
 directly, such as `genrule`s, can depend on whichever toolchain Bazel selects
 instead of naming one. `@rules_rust//rust/toolchain:current_rust_toolchain`
 is the alias `rules_rust` declares.

@@ -19,6 +19,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
+load("//rust/private:rustdoc_toolchain.bzl", "find_rustdoc")
 load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
 
 def _construct_writer_arguments(ctx, test_runner, opt_test_params, action):
@@ -109,7 +110,7 @@ def _rlocationpath(file, workspace_name):
         return file.short_path.removeprefix("../")
     return "{}/{}".format(workspace_name, file.short_path)
 
-def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
+def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
     """Implementation for rust_doc_test using pre-compiled doc test binaries.
 
     Compiles doc tests during the build phase using `rustdoc --test --no-run`
@@ -118,6 +119,7 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
     Args:
         ctx (ctx): The rule's context object
         toolchain: The rust toolchain
+        rustdoc_toolchain: The rustdoc toolchain to run, as returned by `find_rustdoc`
         crate_info (CrateInfo): The crate info for doc test compilation
 
     Returns:
@@ -140,7 +142,8 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
 
     action = rustdoc_compile_action(
         ctx = ctx,
-        toolchain = toolchain,
+        rust_toolchain = toolchain,
+        rustdoc_toolchain = rustdoc_toolchain,
         crate_info = crate_info,
         rustdoc_flags = rustdoc_flags,
         is_test = False,
@@ -208,12 +211,13 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, crate_info):
         ),
     ]
 
-def _legacy_rust_doc_test_impl(ctx, toolchain, crate_info):
+def _legacy_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
     """Existing implementation for rust_doc_test using a generated test runner script.
 
     Args:
         ctx (ctx): The rule's context object
         toolchain: The rust toolchain
+        rustdoc_toolchain: The rustdoc toolchain to run, as returned by `find_rustdoc`
         crate_info (CrateInfo): The crate info for doc test compilation
 
     Returns:
@@ -249,7 +253,8 @@ def _legacy_rust_doc_test_impl(ctx, toolchain, crate_info):
 
     action = rustdoc_compile_action(
         ctx = ctx,
-        toolchain = toolchain,
+        rust_toolchain = toolchain,
+        rustdoc_toolchain = rustdoc_toolchain,
         crate_info = crate_info,
         rustdoc_flags = rustdoc_flags,
         is_test = True,
@@ -294,6 +299,9 @@ def _rust_doc_test_impl(ctx):
         list: A list containing a DefaultInfo provider
     """
     toolchain = find_toolchain(ctx)
+    rustdoc_toolchain = find_rustdoc(ctx, toolchain)
+    if not rustdoc_toolchain:
+        fail("{}: no `rustdoc_toolchain` is registered for the current platform and the `rust_toolchain` has no `rust_doc`".format(ctx.label))
     crate_info = _create_crate_info(ctx)
 
     use_compiled_doctest = (
@@ -302,11 +310,11 @@ def _rust_doc_test_impl(ctx):
     )
 
     if use_compiled_doctest:
-        return _compiled_rust_doc_test_impl(ctx, toolchain, crate_info)
+        return _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info)
     else:
         if toolchain.exec_triple.str != toolchain.target_triple.str:
             fail("Cross-built doctests require experimental_compile_rustdoc_tests and a nightly compiler; legacy doctests execute their compiler during the test.")
-        return _legacy_rust_doc_test_impl(ctx, toolchain, crate_info)
+        return _legacy_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info)
 
 rust_doc_test = rule(
     implementation = _rust_doc_test_impl,
@@ -380,6 +388,7 @@ rust_doc_test = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False),
     ] + use_cc_toolchain(mandatory = False),
     doc = dedent("""\
         Runs Rust documentation tests.
