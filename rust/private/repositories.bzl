@@ -8,9 +8,11 @@ load("//rust/private:nightly_versions.bzl", "NIGHTLY_VERSION_TRANSITIONS")
 load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_cargo_toolchain",
+    "BUILD_for_clippy_toolchain",
     "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
+    "BUILD_for_rustdoc_toolchain",
     "BUILD_for_rustfmt_toolchain",
     "BUILD_for_toolchain",
     "DEFAULT_EXTRA_TARGET_TRIPLES",
@@ -53,10 +55,14 @@ _COMPACT_WINDOWS_NAMES = True
 # The toolchains declared next to every `rust_toolchain` in its tools
 # repository, keyed by the name of their target there and in the proxy
 # repository. They come from the same Rust release as `rustc` and must stay
-# with it, so they are registered with the same constraints and target
-# settings as the `rust_toolchain` they accompany and resolve in lockstep.
+# with it (`rustdoc` and `clippy-driver` are rustc drivers which must match
+# `rustc` exactly), so they are registered with the same constraints and
+# target settings as the `rust_toolchain` they accompany and resolve in
+# lockstep.
 COMPANION_TOOLCHAIN_TYPES = {
     "cargo_toolchain": "@rules_rust//cargo:toolchain_type",
+    "clippy_toolchain": "@rules_rust//rust/clippy:toolchain_type",
+    "rustdoc_toolchain": "@rules_rust//rust/rustdoc:toolchain_type",
 }
 
 def _companion_toolchain_labels(tools_repo_name):
@@ -545,13 +551,24 @@ def _rust_toolchain_tools_repository_impl(ctx):
         iso_date = iso_date,
     ))
 
-    # Cargo accompanies the `rust_toolchain` from the same release.
+    # The companions accompany the `rust_toolchain` from the same release.
     build_components.append(BUILD_for_cargo_toolchain(
         name = "cargo_toolchain",
         cargo = "//:cargo",
         version = toolchain_version,
         channel = channel,
         iso_date = iso_date,
+    ))
+
+    build_components.append(BUILD_for_clippy_toolchain(
+        name = "clippy_toolchain",
+        clippy_driver = "//:clippy_driver_bin",
+        cargo_clippy = "//:cargo_clippy_bin",
+    ))
+
+    build_components.append(BUILD_for_rustdoc_toolchain(
+        name = "rustdoc_toolchain",
+        rustdoc = "//:rustdoc",
     ))
 
     # Not all target triples are expected to have dev components

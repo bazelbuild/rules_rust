@@ -16,6 +16,7 @@
 
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+load("//rust/private:clippy_toolchain.bzl", "clippy_toolchain_from_driver", "find_clippy")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:lint_test.bzl",
@@ -109,12 +110,33 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(
+        ctx,
+        clippy_executable = None,
+        process_wrapper = None,
+        crate_info = None,
+        config = None,
+        output = None,
+        success_marker = None,
+        cap_at_warnings = False,
+        extra_clippy_flags = [],
+        error_format = None,
+        clippy_diagnostics_file = None,
+        rust_toolchain = None,
+        clippy_toolchain = None):
     """Run clippy with the specified parameters.
+
+    Clippy comes from `clippy_executable` when set, run from the `rust_toolchain`'s
+    sysroot as before `@rules_rust//rust/clippy:toolchain_type` existed. Otherwise
+    it comes from `clippy_toolchain`, and failing that from the toolchains the
+    caller resolved, through `find_clippy`. Callers which set neither must list
+    `config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False)`
+    in their `toolchains`.
 
     Args:
         ctx (ctx): The aspect's context object. This function should not read ctx.attr, but it might read ctx.rule.attr
-        clippy_executable (File): The clippy executable to run
+        clippy_executable (File, optional): A `clippy-driver` to run instead of the one of the resolved
+            `clippy_toolchain`. It is the only input added for Clippy, so it must find `librustc_driver` itself.
         process_wrapper (File): An executable process wrapper that can run clippy, usually @rules_rust//utils/process_wrapper
         crate_info (CrateInfo): The source crate information
         config (File): The clippy configuration file. Reference: https://doc.rust-lang.org/clippy/configuration.html#configuring-clippy
@@ -124,11 +146,28 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         extra_clippy_flags (List[str]): A list of extra options to pass to clippy. If not set, every warnings will be turned into errors
         error_format (str): Which error format to use. Must be acceptable by rustc: https://doc.rust-lang.org/beta/rustc/command-line-arguments.html#--error-format-control-how-errors-are-produced
         clippy_diagnostics_file (File): File to output diagnostics to. If None, no diagnostics will be written
+        rust_toolchain (ToolchainInfo, optional): The `rust_toolchain` to compile the crate against. Defaults to
+            the one the caller resolved, through `find_toolchain`.
+        clippy_toolchain (ToolchainInfo, optional): The `clippy_toolchain` to run, as returned by `find_clippy`: its
+            `clippy_driver` runs with its `sysroot_anchor` as `--sysroot` and its `all_files` as inputs.
+            Ignored when `clippy_executable` is set.
 
     Returns:
         None
     """
-    toolchain = find_toolchain(ctx)
+    for name, value in (("process_wrapper", process_wrapper), ("crate_info", crate_info), ("config", config)):
+        if value == None:
+            fail("rust_clippy_action: `{}` is required".format(name))
+
+    if rust_toolchain == None:
+        rust_toolchain = find_toolchain(ctx)
+    if clippy_executable:
+        clippy_toolchain = clippy_toolchain_from_driver(ctx, rust_toolchain, clippy_executable)
+    elif clippy_toolchain == None:
+        clippy_toolchain = find_clippy(ctx, rust_toolchain)
+        if not clippy_toolchain:
+            fail("{}: no `clippy_toolchain` is registered for the current platform and the `rust_toolchain` has no `clippy_driver`".format(ctx.label))
+
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, _ = collect_deps(
@@ -155,13 +194,14 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         ctx.rule.files,
         # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
         depset([]),
-        toolchain,
+        rust_toolchain,
         cc_toolchain,
         feature_configuration,
         crate_info,
         dep_info,
         build_info,
         lint_files,
+        sysroot_files = clippy_toolchain.all_files,
     )
 
     if clippy_diagnostics_file:
@@ -173,8 +213,10 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         ctx = ctx,
         attr = ctx.rule.attr,
         file = ctx.file,
-        toolchain = toolchain,
-        tool_file = clippy_executable,
+        toolchain = rust_toolchain,
+        tool_file = clippy_toolchain.clippy_driver,
+        sysroot_anchor = clippy_toolchain.sysroot_anchor,
+        tool_flags = clippy_toolchain.extra_clippy_flags,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -237,7 +279,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         inputs = compile_inputs,
         outputs = outputs + [x for x in [clippy_diagnostics_file] if x],
         env = env,
-        tools = [clippy_executable],
+        tools = [clippy_toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
@@ -256,7 +298,10 @@ def _clippy_aspect_impl(target, ctx):
     if not crate_info:
         return [ClippyInfo(output = depset([]))]
 
-    toolchain = find_toolchain(ctx)
+    rust_toolchain = find_toolchain(ctx)
+    clippy_toolchain = find_clippy(ctx, rust_toolchain)
+    if not clippy_toolchain:
+        fail("{}: no `clippy_toolchain` is registered for the current platform and the `rust_toolchain` has no `clippy_driver`".format(ctx.label))
 
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
@@ -287,7 +332,8 @@ def _clippy_aspect_impl(target, ctx):
     # Run clippy using the extracted function
     rust_clippy_action(
         ctx = ctx,
-        clippy_executable = toolchain.clippy_driver,
+        rust_toolchain = rust_toolchain,
+        clippy_toolchain = clippy_toolchain,
         process_wrapper = ctx.executable._process_wrapper,
         crate_info = crate_info,
         config = ctx.file._config,
@@ -370,6 +416,7 @@ rust_clippy_aspect = aspect(
     ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False),
     ] + use_cc_toolchain(mandatory = False),
     implementation = _clippy_aspect_impl,
     doc = """\

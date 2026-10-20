@@ -34,3 +34,35 @@ build_test(
     name = "cargo_version_build_test",
     targets = [":cargo_version"],
 )
+
+genrule(
+    name = "rustdoc_version",
+    outs = ["rustdoc-version"],
+    # `current_rustdoc_toolchain` is a `rustdoc_toolchain_alias`: it supplies
+    # the `$(RUSTDOC)` Make variable and the binary with the `librustc_driver`
+    # libraries it loads at run time.
+    cmd = "$(RUSTDOC) --version > $@",
+    cmd_bat = "$(RUSTDOC) --version > $@",
+    toolchains = ["@rules_rust//rust/toolchain:current_rustdoc_toolchain"],
+    tools = ["@rules_rust//rust/toolchain:current_rustdoc_toolchain"],
+)
+
+build_test(
+    name = "rustdoc_version_build_test",
+    targets = [":rustdoc_version"],
+)
+
+genrule(
+    name = "clippy_version",
+    outs = ["clippy-version"],
+    # Likewise for `current_clippy_toolchain` and `$(CLIPPY_DRIVER)`.
+    cmd = "$(CLIPPY_DRIVER) --version > $@",
+    cmd_bat = "$(CLIPPY_DRIVER) --version > $@",
+    toolchains = ["@rules_rust//rust/toolchain:current_clippy_toolchain"],
+    tools = ["@rules_rust//rust/toolchain:current_clippy_toolchain"],
+)
+
+build_test(
+    name = "clippy_version_build_test",
+    targets = [":clippy_version"],
+)

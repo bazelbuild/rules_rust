@@ -475,7 +475,6 @@ def _cargo_build_script_impl(ctx):
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
-        "RUSTDOC": toolchain.rust_doc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })

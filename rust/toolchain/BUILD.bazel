@@ -1,4 +1,6 @@
+load("//rust/private:clippy_toolchain.bzl", "clippy_toolchain_alias")
 load("//rust/private:rust_analyzer.bzl", "rust_analyzer_toolchain_alias")
+load("//rust/private:rustdoc_toolchain.bzl", "rustdoc_toolchain_alias")
 load("//rust/private:rustfmt.bzl", "rustfmt_toolchain_alias")
 load("//rust/private:toolchain_utils.bzl", "rust_toolchain_alias", "toolchain_files", "toolchain_files_for_target")
 
@@ -40,6 +42,14 @@ rust_toolchain_alias(
 
 rustfmt_toolchain_alias(
     name = "current_rustfmt_toolchain",
+)
+
+clippy_toolchain_alias(
+    name = "current_clippy_toolchain",
+)
+
+rustdoc_toolchain_alias(
+    name = "current_rustdoc_toolchain",
 )
 
 rust_analyzer_toolchain_alias(
