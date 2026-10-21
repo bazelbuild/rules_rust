@@ -29,7 +29,7 @@ pub(crate) use target_compatible_with::*;
 pub(crate) enum Starlark {
     Load(Load),
     Package(Package),
-    PackageInfo(PackageInfo),
+    PackageMetadata(PackageMetadata),
     License(License),
     ExportsFiles(ExportsFiles),
     Filegroup(Filegroup),
@@ -57,17 +57,21 @@ pub(crate) struct Package {
     pub(crate) default_visibility: Set<String>,
 }
 
-pub(crate) struct PackageInfo {
+/// A `package_metadata` target of the `package_metadata` module.
+pub(crate) struct PackageMetadata {
     pub(crate) name: String,
-    pub(crate) package_name: String,
-    pub(crate) package_url: String,
-    pub(crate) package_version: String,
+    /// The package URL, `pkg:cargo/<name>@<version>`, as SBOM tools identify it.
+    pub(crate) purl: String,
+    /// Labels of the package's attributes, such as its `license`.
+    pub(crate) attributes: Set<String>,
 }
 
+/// A `license` attribute of the `package_metadata` module: one license kind
+/// and, when the crate ships it, the license text.
 pub(crate) struct License {
     pub(crate) name: String,
-    pub(crate) license_kinds: Set<String>,
-    pub(crate) license_text: String,
+    pub(crate) kind: String,
+    pub(crate) text: String,
 }
 
 pub(crate) struct ExportsFiles {

@@ -30,10 +30,66 @@ use crate::utils::{self, sanitize_repository_name};
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
 pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
+/// The `license_kind` targets `@package_metadata//licenses/spdx` declares, by
+/// SPDX identifier, as `//crate_universe/private/spdx/kinds.bzl` records them
+/// for the module `rules_rust` depends on; that package aliases each, and
+/// `//crate_universe/private/spdx:kinds_diff_test` fails when an update changes
+/// the set. A crate license outside this set gets no `license` attribute.
+fn known_license_kinds() -> &'static BTreeSet<String> {
+    static KINDS: std::sync::OnceLock<BTreeSet<String>> = std::sync::OnceLock::new();
+    KINDS.get_or_init(|| {
+        // The generated list is one quoted name per line.
+        include_str!("../private/spdx/kinds.bzl")
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix('"')?.strip_suffix("\","))
+            .map(str::to_owned)
+            .collect()
+    })
+}
+
+/// The package URL of a crate, `pkg:cargo/<name>@<version>`. A crate name is
+/// made of characters a purl takes as they are; of a semver version only the
+/// `+` before build metadata is not, and is percent-encoded as the
+/// `package_metadata` module's builder does.
+fn crate_purl(name: &str, version: &semver::Version) -> String {
+    format!(
+        "pkg:cargo/{name}@{}",
+        version.to_string().replace('+', "%2B")
+    )
+}
+
+/// The label of a crate's license text within its own package, when the file
+/// Cargo names (or the `LICENSE*` file found next to the manifest) lies inside
+/// the package. Anything else cannot be a label there and is left out.
+fn license_text_label(license_file: Option<&str>) -> Option<String> {
+    let file = license_file?;
+    let path = std::path::Path::new(file);
+    let inside = !path.is_absolute()
+        && path
+            .components()
+            .all(|component| matches!(component, std::path::Component::Normal(_)));
+    inside.then(|| file.to_owned())
+}
+
+/// The license kind a crate's `license` attribute declares: the first of its
+/// SPDX identifiers, in order, which `package_metadata` has a kind for. The
+/// module models one license per package, so a crate offered under a choice
+/// of licenses is recorded under one of them.
+fn license_kind(krate: &CrateContext) -> Option<&str> {
+    krate
+        .license_ids
+        .iter()
+        .map(String::as_str)
+        .find(|id| known_license_kinds().contains(*id))
+}
+
 /// A single hub alias — the `alias()` target and the `alias_rule` it uses.
 struct HubAlias {
     alias_rule: AliasRule,
     alias: Alias,
+    /// Aliases for the crate's `package_metadata` and `license` targets, rendered
+    /// next to `alias` so `@<hub>//<name>:license` names the crate's license.
+    metadata: Vec<Alias>,
 }
 
 /// Every top-level alias the hub repository would emit, split by source so
@@ -218,6 +274,9 @@ impl Renderer {
                 BTreeSet::new(),
             )));
             starlark.push(Starlark::Alias(entry.alias.clone()));
+            for alias in &entry.metadata {
+                starlark.push(Starlark::Alias(alias.clone()));
+            }
 
             let subpackage_label = render_module_label(
                 &self.config.crates_module_template,
@@ -335,6 +394,32 @@ impl Renderer {
         })
     }
 
+    /// The `package_metadata` and `license` aliases of a crate's hub subpackage,
+    /// when license metadata is rendered. `alias_name` is the subpackage's own
+    /// alias; a crate named like a metadata target keeps its own alias.
+    fn metadata_aliases(&self, krate: &CrateContext, alias_name: &str) -> Vec<Alias> {
+        if !self.config.generate_rules_license_metadata
+            || self.config.vendor_mode == Some(VendorMode::Local)
+        {
+            return Vec::new();
+        }
+        let mut targets = vec!["package_metadata"];
+        if license_kind(krate).is_some() {
+            targets.push("license");
+        }
+        targets
+            .into_iter()
+            .filter(|target| *target != alias_name)
+            .map(|target| Alias {
+                rule: AliasRule::default().rule(),
+                name: target.to_owned(),
+                actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
+                deprecation: None,
+                tags: BTreeSet::from(["manual".to_owned()]),
+            })
+            .collect()
+    }
+
     /// Collect every alias the hub repository would emit (workspace member
     /// deps, version-disambiguated, renames, `extra_aliased_targets`, and
     /// binary aliases).
@@ -364,11 +449,13 @@ impl Renderer {
                     || !context.has_duplicate_workspace_member_dep_by_version(&dep);
 
                 if add_primary_alias {
+                    let name = format!("{}-{}", krate.name, krate.version);
                     workspace_member.push(HubAlias {
                         alias_rule: alias_rule.clone(),
+                        metadata: self.metadata_aliases(krate, &name),
                         alias: Alias {
                             rule: alias_rule.rule(),
-                            name: format!("{}-{}", krate.name, krate.version),
+                            name,
                             actual: self.crate_label(
                                 &krate.name,
                                 &krate.version.to_string(),
@@ -383,11 +470,13 @@ impl Renderer {
                 let shorthand = if let Some(rename) = dep.alias.as_ref() {
                     // when the alias is the same as the crate name, don't create the alias
                     if krate.name != *rename {
+                        let name = format!("{}-{}", rename, krate.version);
                         workspace_member.push(HubAlias {
                             alias_rule: alias_rule.clone(),
+                            metadata: self.metadata_aliases(krate, &name),
                             alias: Alias {
                                 rule: alias_rule.rule(),
-                                name: format!("{}-{}", rename, krate.version),
+                                name,
                                 actual: self.crate_label(
                                     &krate.name,
                                     &krate.version.to_string(),
@@ -409,6 +498,7 @@ impl Renderer {
                 if !context.has_duplicate_workspace_member_dep_by_alias(&dep) {
                     workspace_member.push(HubAlias {
                         alias_rule: alias_rule.clone(),
+                        metadata: self.metadata_aliases(krate, shorthand),
                         alias: Alias {
                             rule: alias_rule.rule(),
                             name: shorthand.clone(),
@@ -427,6 +517,7 @@ impl Renderer {
             for (alias, target) in &krate.extra_aliased_targets {
                 workspace_member.push(HubAlias {
                     alias_rule: alias_rule.clone(),
+                    metadata: self.metadata_aliases(krate, alias),
                     alias: Alias {
                         rule: alias_rule.rule(),
                         name: alias.clone(),
@@ -443,16 +534,18 @@ impl Renderer {
             let krate = &context.crates[crate_id];
             for rule in &krate.targets {
                 if let Rule::Binary(bin) = rule {
+                    // If duplicates exist, include version to disambiguate them.
+                    let name = if context.has_duplicate_binary_crate(crate_id) {
+                        format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
+                    } else {
+                        format!("{}__{}", krate.name, bin.crate_name)
+                    };
                     binaries.push(HubAlias {
                         alias_rule: AliasRule::default(),
+                        metadata: self.metadata_aliases(krate, &name),
                         alias: Alias {
                             rule: AliasRule::default().rule(),
-                            // If duplicates exist, include version to disambiguate them.
-                            name: if context.has_duplicate_binary_crate(crate_id) {
-                                format!("{}-{}__{}", krate.name, krate.version, bin.crate_name)
-                            } else {
-                                format!("{}__{}", krate.name, bin.crate_name)
-                            },
+                            name,
                             actual: self.crate_label(
                                 &krate.name,
                                 &krate.version.to_string(),
@@ -567,47 +660,43 @@ impl Renderer {
         }));
 
         if self.config.generate_rules_license_metadata {
-            let has_license_ids = !krate.license_ids.is_empty();
-            let mut package_metadata = BTreeSet::from([Label::Relative {
-                target: "package_info".to_owned(),
+            // Every target of the package carries the crate's identity, and its
+            // license when it declares one, as `package_metadata`.
+            let kind = license_kind(&krate);
+            let package_metadata = BTreeSet::from([Label::Relative {
+                target: "package_metadata".to_owned(),
             }]);
 
-            starlark.push(Starlark::Load(Load {
-                bzl: "@rules_license//rules:package_info.bzl".to_owned(),
-                items: BTreeSet::from(["package_info".to_owned()]),
-            }));
-
-            if has_license_ids {
-                starlark.push(Starlark::Load(Load {
-                    bzl: "@rules_license//rules:license.bzl".to_owned(),
-                    items: BTreeSet::from(["license".to_owned()]),
-                }));
-                package_metadata.insert(Label::Relative {
-                    target: "license".to_owned(),
-                });
+            // The rules come through `@rules_rust`, like everything else a
+            // generated BUILD file loads.
+            let mut items = BTreeSet::from(["package_metadata".to_owned()]);
+            if kind.is_some() {
+                items.insert("license".to_owned());
             }
+            starlark.push(Starlark::Verbatim(
+                "# buildifier: disable=bzl-visibility".to_owned(),
+            ));
+            starlark.push(Starlark::Load(Load {
+                bzl: "@rules_rust//crate_universe/private:package_metadata.bzl".to_owned(),
+                items,
+            }));
 
             let package = Package::default_visibility_public(package_metadata);
             starlark.push(Starlark::Package(package));
 
-            starlark.push(Starlark::PackageInfo(starlark::PackageInfo {
-                name: "package_info".to_owned(),
-                package_name: krate.name.clone(),
-                package_url: krate.package_url.clone().unwrap_or_default(),
-                package_version: krate.version.to_string(),
+            starlark.push(Starlark::PackageMetadata(starlark::PackageMetadata {
+                name: "package_metadata".to_owned(),
+                purl: crate_purl(&krate.name, &krate.version),
+                attributes: kind
+                    .map(|_| BTreeSet::from([":license".to_owned()]))
+                    .unwrap_or_default(),
             }));
 
-            if has_license_ids {
-                let mut license_kinds = BTreeSet::new();
-
-                krate.license_ids.clone().into_iter().for_each(|lic| {
-                    license_kinds.insert("@rules_license//licenses/spdx:".to_owned() + &lic);
-                });
-
+            if let Some(kind) = kind {
                 starlark.push(Starlark::License(starlark::License {
                     name: "license".to_owned(),
-                    license_kinds,
-                    license_text: krate.license_file.clone().unwrap_or_default(),
+                    kind: format!("@rules_rust//crate_universe/private/spdx:{kind}"),
+                    text: license_text_label(krate.license_file.as_deref()).unwrap_or_default(),
                 }));
             }
         } else {
@@ -1220,6 +1309,9 @@ mod test {
             repository_name: "test_rendering".to_owned(),
             regen_command: "cargo_bazel_regen_command".to_owned(),
             vendor_mode,
+            // Off here so the many tests about other content stay focused; the
+            // `crate_package_metadata*` tests turn it on.
+            generate_rules_license_metadata: false,
             ..RenderConfig::default()
         })
     }
@@ -2090,8 +2182,12 @@ mod test {
             .contains(&expected.replace(' ', "")));
     }
 
-    #[test]
-    fn crate_package_metadata_without_license_ids() {
+    /// A crate context with only what the metadata tests vary.
+    fn metadata_crate(
+        license: Option<&str>,
+        license_ids: &[&str],
+        license_file: Option<&str>,
+    ) -> Context {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
@@ -2100,142 +2196,196 @@ mod test {
                 name: crate_id.name,
                 version: crate_id.version,
                 package_url: Some("http://www.mock_crate.com/".to_owned()),
-                repository: None,
+                license: license.map(str::to_owned),
+                license_ids: license_ids.iter().map(|id| id.to_string()).collect(),
+                license_file: license_file.map(str::to_owned),
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
                 library_target_name: None,
                 common_attrs: CommonAttributes::default(),
                 build_script_attrs: None,
-                license: None,
-                license_ids: BTreeSet::default(),
-                license_file: None,
-                additive_build_file_content: None,
-                disable_pipelining: false,
-                extra_aliased_targets: BTreeMap::default(),
+                repository: None,
                 alias_rule: None,
                 override_targets: BTreeMap::default(),
             },
         );
+        context
+    }
 
+    fn render_metadata_build_file(context: &Context) -> String {
         let mut render_config = mock_render_config(None);
         Arc::get_mut(&mut render_config)
             .unwrap()
             .generate_rules_license_metadata = true;
         let renderer = Renderer::new(render_config, mock_supported_platform_triples());
-        let output = renderer.render(&context, None).unwrap();
-
-        let build_file_content = output
+        let output = renderer.render(context, None).unwrap();
+        output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
-            .unwrap();
+            .unwrap()
+            .clone()
+    }
 
-        let expected = indoc! {r#"
-            package(
-                default_package_metadata = [":package_info"],
-                default_visibility = ["//visibility:public"],
-            )
+    fn assert_renders(build_file_content: &str, expected: &str) {
+        assert!(
+            build_file_content
+                .replace(' ', "")
+                .contains(&expected.replace(' ', "")),
+            "{build_file_content}"
+        );
+    }
 
-            package_info(
-                name = "package_info",
-                package_name = "mock_crate",
-                package_version = "0.1.0",
-                package_url = "http://www.mock_crate.com/",
-            )
-        "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
+    #[test]
+    fn crate_purl_encodes_build_metadata() {
+        assert_eq!(
+            crate_purl("serde", &semver::Version::new(1, 0, 219)),
+            "pkg:cargo/serde@1.0.219"
+        );
+        assert_eq!(
+            crate_purl(
+                "libbpf-sys",
+                &semver::Version::parse("1.4.0+v1.4.0").unwrap()
+            ),
+            "pkg:cargo/libbpf-sys@1.4.0%2Bv1.4.0"
+        );
+    }
+
+    #[test]
+    fn crate_package_metadata_without_license_ids() {
+        let build_file_content = render_metadata_build_file(&metadata_crate(None, &[], None));
+        let compact: String = build_file_content.split_whitespace().collect();
+        assert!(
+            compact.contains(
+                r#"load("@rules_rust//crate_universe/private:package_metadata.bzl","package_metadata")"#
+            ),
+            "{build_file_content}"
+        );
+        assert_renders(
+            &build_file_content,
+            indoc! {r#"
+                package(
+                    default_package_metadata = [":package_metadata"],
+                    default_visibility = ["//visibility:public"],
+                )
+
+                package_metadata(
+                    name = "package_metadata",
+                    purl = "pkg:cargo/mock_crate@0.1.0",
+                )
+            "#},
+        );
+        assert!(!build_file_content.contains("license("));
     }
 
     #[test]
     fn crate_package_metadata_with_license_ids() {
-        let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
-        context.crates.insert(
-            crate_id.clone(),
-            CrateContext {
-                name: crate_id.name,
-                version: crate_id.version,
-                package_url: Some("http://www.mock_crate.com/".to_owned()),
-                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
-                license_file: None,
-                additive_build_file_content: None,
-                disable_pipelining: false,
-                extra_aliased_targets: BTreeMap::default(),
-                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                library_target_name: None,
-                common_attrs: CommonAttributes::default(),
-                build_script_attrs: None,
-                repository: None,
-                license: None,
-                alias_rule: None,
-                override_targets: BTreeMap::default(),
-            },
+        let context = metadata_crate(Some("MIT OR Apache-2.0"), &["Apache-2.0", "MIT"], None);
+        let build_file_content = render_metadata_build_file(&context);
+        let compact: String = build_file_content.split_whitespace().collect();
+        assert!(
+            compact.contains(
+                r#"load("@rules_rust//crate_universe/private:package_metadata.bzl","license","package_metadata",)"#
+            ),
+            "{build_file_content}"
         );
+        assert_renders(
+            &build_file_content,
+            indoc! {r#"
+                package(
+                    default_package_metadata = [":package_metadata"],
+                    default_visibility = ["//visibility:public"],
+                )
 
-        let mut render_config = mock_render_config(None);
-        Arc::get_mut(&mut render_config)
-            .unwrap()
-            .generate_rules_license_metadata = true;
-        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
-        let output = renderer.render(&context, None).unwrap();
+                package_metadata(
+                    name = "package_metadata",
+                    purl = "pkg:cargo/mock_crate@0.1.0",
+                    attributes = [":license"],
+                )
 
-        let build_file_content = output
-            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
-            .unwrap();
-
-        let expected = indoc! {r#"
-            package(
-                default_package_metadata = [
-                    ":license",
-                    ":package_info",
-                ],
-                default_visibility = ["//visibility:public"],
-            )
-
-            package_info(
-                name = "package_info",
-                package_name = "mock_crate",
-                package_version = "0.1.0",
-                package_url = "http://www.mock_crate.com/",
-            )
-
-            license(
-                name = "license",
-                license_kinds = [
-                    "@rules_license//licenses/spdx:Apache-2.0",
-                    "@rules_license//licenses/spdx:MIT",
-                ],
-            )
-        "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
+                license(
+                    name = "license",
+                    kind = "@rules_rust//crate_universe/private/spdx:Apache-2.0",
+                )
+            "#},
+        );
     }
 
     #[test]
     fn crate_package_metadata_with_license_ids_and_file() {
-        let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
-        context.crates.insert(
-            crate_id.clone(),
-            CrateContext {
-                name: crate_id.name,
-                version: crate_id.version,
-                package_url: Some("http://www.mock_crate.com/".to_owned()),
-                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
-                license_file: Some("LICENSE.txt".to_owned()),
-                additive_build_file_content: None,
-                disable_pipelining: false,
-                extra_aliased_targets: BTreeMap::default(),
-                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                library_target_name: None,
-                common_attrs: CommonAttributes::default(),
-                build_script_attrs: None,
-                repository: None,
-                license: None,
-                alias_rule: None,
-                override_targets: BTreeMap::default(),
-            },
+        let context = metadata_crate(Some("MIT"), &["MIT"], Some("LICENSE.txt"));
+        assert_renders(
+            &render_metadata_build_file(&context),
+            indoc! {r#"
+                license(
+                    name = "license",
+                    kind = "@rules_rust//crate_universe/private/spdx:MIT",
+                    text = "LICENSE.txt",
+                )
+            "#},
         );
+    }
+
+    /// An identifier `package_metadata` declares no kind for is passed over;
+    /// the license is recorded under the kind it does declare.
+    #[test]
+    fn crate_package_metadata_skips_unknown_license_kinds() {
+        let context = metadata_crate(Some("Acme-1.0 OR MIT"), &["Acme-1.0", "MIT"], None);
+        let build_file_content = render_metadata_build_file(&context);
+        assert_renders(
+            &build_file_content,
+            indoc! {r#"
+                license(
+                    name = "license",
+                    kind = "@rules_rust//crate_universe/private/spdx:MIT",
+                )
+            "#},
+        );
+        assert!(!build_file_content.contains("spdx:Acme-1.0"));
+        assert!(!build_file_content.contains("@package_metadata//"));
+    }
+
+    /// A `license` attribute needs a kind, so a license expression nothing is
+    /// known for leaves the crate with its `package_metadata` alone.
+    #[test]
+    fn crate_package_metadata_without_known_license_kind_has_no_license_target() {
+        let context = metadata_crate(Some("NonSPDXLicenseID"), &[], Some("LICENSE"));
+        let build_file_content = render_metadata_build_file(&context);
+        assert!(
+            !build_file_content.contains("license("),
+            "{build_file_content}"
+        );
+        assert!(!build_file_content.contains("attributes"));
+    }
+
+    #[test]
+    fn crate_package_metadata_ignores_license_files_outside_the_package() {
+        for outside in ["../LICENSE", "/usr/share/LICENSE"] {
+            let context = metadata_crate(Some("MIT"), &["MIT"], Some(outside));
+            let build_file_content = render_metadata_build_file(&context);
+            assert!(
+                !build_file_content.contains("text = "),
+                "{outside}: {build_file_content}"
+            );
+            assert!(build_file_content.contains(r#"name = "license""#));
+        }
+    }
+
+    #[test]
+    fn hub_subpackages_alias_the_package_metadata() {
+        let config = Config {
+            generate_binaries: true,
+            ..Config::default()
+        };
+        let annotations = Annotations::new(
+            test::metadata::alias(),
+            &None,
+            test::lockfile::alias(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let context = Context::new(annotations, false).unwrap();
 
         let mut render_config = mock_render_config(None);
         Arc::get_mut(&mut render_config)
@@ -2244,38 +2394,19 @@ mod test {
         let renderer = Renderer::new(render_config, mock_supported_platform_triples());
         let output = renderer.render(&context, None).unwrap();
 
-        let build_file_content = output
-            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+        let subpackage = output
+            .get(&PathBuf::from("names-0.13.0__names/BUILD.bazel"))
             .unwrap();
-
-        let expected = indoc! {r#"
-            package(
-                default_package_metadata = [
-                    ":license",
-                    ":package_info",
-                ],
-                default_visibility = ["//visibility:public"],
-            )
-
-            package_info(
-                name = "package_info",
-                package_name = "mock_crate",
-                package_version = "0.1.0",
-                package_url = "http://www.mock_crate.com/",
-            )
-
-            license(
-                name = "license",
-                license_kinds = [
-                    "@rules_license//licenses/spdx:Apache-2.0",
-                    "@rules_license//licenses/spdx:MIT",
-                ],
-                license_text = "LICENSE.txt",
-            )
-        "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
+        for target in ["package_metadata", "license"] {
+            assert!(
+                subpackage.contains(&format!(r#"name = "{target}","#)),
+                "{subpackage}"
+            );
+        }
+        assert!(
+            subpackage.contains(r#"actual = "@test_rendering__names-0.13.0//:license","#),
+            "{subpackage}"
+        );
     }
 
     #[test]

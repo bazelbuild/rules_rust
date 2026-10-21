@@ -13,7 +13,7 @@ bazel_dep(name = "bazel_features", version = "1.50.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.9")
-bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "package_metadata", version = "0.0.15")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
 
@@ -160,6 +160,7 @@ use_repo(
     crate_universe_internal_dev_deps,
     "cross_rs",
     "cross_rs_host_bin",
+    "spdx_license_kinds",
 )
 
 llvm_tools_fixtures = use_extension("//test/unit/repository_utils:llvm_tools_fixtures.bzl", "fixtures", dev_dependency = True)
