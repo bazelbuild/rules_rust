@@ -1,7 +1,7 @@
 bcr_test_module:
   module_path: ""
   matrix:
-    platform: ["macos_arm64", "ubuntu2004"]
+    platform: ["macos_arm64", "ubuntu2204"]
     bazel: ["7.x", "8.x", "9.x"]
   tasks:
     run_tests:

@@ -47,7 +47,7 @@ jobs:
       matrix:
         # Create a job for each target triple
         include:
-          - os: macOS-14
+          - os: macos-15
             env:
               TARGET: "aarch64-apple-darwin"
           - os: ubuntu-22.04
