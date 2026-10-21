@@ -284,6 +284,8 @@ def pyo3_extension(
             For more details see [rust_shared_library][rsl].
         deps (list, optional): List of other libraries to be linked to this library target.
             For more details see [rust_shared_library][rsl].
+        link_deps (list, optional): List of other cc_libraries to be linked to this library target.
+            For more details see [rust_shared_library][rsl].
         edition (str, optional): The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.
             For more details see [rust_shared_library][rsl].
         lint_config (Label, optional): A target providing the lint configuration for the Rust shared library.
