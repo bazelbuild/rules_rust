@@ -2191,16 +2191,20 @@ def rustc_compile_action(
         outputs = [crate_info.output]
 
     coverage_runfiles = []
+    coverage_collector_runfiles = ctx.runfiles()
     if toolchain.coverage_supported and ctx.configuration.coverage_enabled and crate_info.is_test:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata] + toolchain.llvm_lib
-        collect_cc_coverage = getattr(ctx.executable, "_collect_cc_coverage", None)
-        if not collect_cc_coverage:
-            collect_cc_coverage = getattr(ctx.file, "_collect_cc_coverage", None)
+        collect_cc_coverage = getattr(ctx.attr, "_collect_cc_coverage", None)
 
+        # The collector runs without a runfiles tree of its own, so its
+        # runfiles, such as its `data`, are staged with the test's.
         if collect_cc_coverage:
-            coverage_runfiles.append(collect_cc_coverage)
+            coverage_runfiles.append(collect_cc_coverage[DefaultInfo].files_to_run.executable)
+            coverage_collector_runfiles = collect_cc_coverage[DefaultInfo].default_runfiles
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
+    if experimental_use_coverage_metadata_files:
+        coverage_runfiles = coverage_runfiles + coverage_collector_runfiles.files.to_list()
 
     runfiles = ctx.runfiles(
         files = getattr(ctx.files, "data", []) +
@@ -2210,7 +2214,7 @@ def rustc_compile_action(
                 # Include the stdlib dylib when dynamically linking the standard library.
                 ([toolchain.rust_std_dylib] if link_std_dylib and toolchain.rust_std_dylib else []),
     )
-    transitive_runfiles = []
+    transitive_runfiles = [] if experimental_use_coverage_metadata_files else [coverage_collector_runfiles]
     crate_attr = getattr(ctx.attr, "crate", None)
     for runfiles_attr in (
         getattr(ctx.attr, "srcs", []),
