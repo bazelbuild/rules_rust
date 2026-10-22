@@ -19,6 +19,7 @@ _SUPPORTED_CPU_ARCH = [
     "x86_64",
     "riscv32",
     "riscv64",
+    "loongarch64",
 ]
 
 _SUPPORTED_SYSTEMS = [

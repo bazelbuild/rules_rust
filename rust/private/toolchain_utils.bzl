@@ -88,8 +88,12 @@ toolchain_files = rule(
     ],
 )
 
-def _current_rust_toolchain_impl(ctx):
+def _rust_toolchain_alias_impl(ctx):
     toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain_type"))]
+    if not toolchain:
+        if ctx.attr.mandatory:
+            fail("{}: no `rust_toolchain` is registered for the current platform".format(ctx.label))
+        return []
 
     return [
         toolchain,
@@ -99,11 +103,27 @@ def _current_rust_toolchain_impl(ctx):
         ),
     ]
 
-current_rust_toolchain = rule(
-    doc = "A rule for exposing the current registered `rust_toolchain`.",
-    implementation = _current_rust_toolchain_impl,
+rust_toolchain_alias = rule(
+    doc = """\
+A target standing in for the `rust_toolchain` resolved for the current platform.
+
+The alias forwards the toolchain's providers, its Make variables (`$(RUSTC)`,
+`$(RUSTDOC)`, ...) and its files, so that targets which run the Rust tools
+directly, such as `genrule`s, can depend on whichever toolchain Bazel selects
+instead of naming one. `@rules_rust//rust/toolchain:current_rust_toolchain`
+is the alias `rules_rust` declares.
+
+This follows `cc_toolchain_alias` from `rules_cc`.
+""",
+    implementation = _rust_toolchain_alias_impl,
+    attrs = {
+        "mandatory": attr.bool(
+            doc = "Whether to fail when no toolchain is registered. When `False`, the target provides nothing instead.",
+            default = True,
+        ),
+    },
     toolchains = [
-        str(Label("@rules_rust//rust:toolchain_type")),
+        config_common.toolchain_type(str(Label("@rules_rust//rust:toolchain_type")), mandatory = False),
     ],
 )
 

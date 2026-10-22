@@ -67,6 +67,7 @@ def _rust_impl(module_ctx):
                 "auth": repository_set.auth if repository_set.auth else None,
                 "auth_patterns": repository_set.auth_patterns if repository_set.auth_patterns else None,
                 "dev_components": repository_set.dev_components,
+                "dlltool": str(repository_set.dlltool) if repository_set.dlltool else None,
                 "edition": repository_set.edition,
                 "exec_compatible_with": [str(v) for v in repository_set.exec_compatible_with] if repository_set.exec_compatible_with else None,
                 "exec_triple": repository_set.exec_triple,
@@ -138,6 +139,7 @@ def _rust_impl(module_ctx):
                 extra_exec_rustc_flags = extra_exec_rustc_flags,
                 allocator_library = str(toolchain.allocator_library) if toolchain.allocator_library else None,
                 global_allocator_library = str(toolchain.global_allocator_library) if toolchain.global_allocator_library else None,
+                dlltool = str(toolchain.dlltool) if toolchain.dlltool else None,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
@@ -170,6 +172,9 @@ _COMMON_TAG_KWARGS = {
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
+    ),
+    "dlltool": attr.label(
+        doc = "Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.",
     ),
     "edition": attr.string(
         doc = (

@@ -71,6 +71,7 @@ load(
     _rust_clippy_action = "rust_clippy_action",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
+load("//rust/private:lto.bzl", _rust_lto_flag = "rust_lto_flag")
 load(
     "//rust/private:rust.bzl",
     _rust_binary = "rust_binary",
@@ -179,6 +180,9 @@ extra_exec_rustc_flags = _extra_exec_rustc_flags
 
 per_crate_rustc_flag = _per_crate_rustc_flag
 # See @rules_rust//rust/private:rustc.bzl for a complete description.
+
+rust_lto_flag = _rust_lto_flag
+# See @rules_rust//rust/private:lto.bzl for a complete description.
 
 rust_common = _rust_common
 # See @rules_rust//rust/private:common.bzl for a complete description.

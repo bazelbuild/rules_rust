@@ -1,6 +1,6 @@
-load("//rust/private:rust_analyzer.bzl", "current_rust_analyzer_toolchain")
-load("//rust/private:rustfmt.bzl", "current_rustfmt_toolchain")
-load("//rust/private:toolchain_utils.bzl", "current_rust_toolchain", "toolchain_files", "toolchain_files_for_target")
+load("//rust/private:rust_analyzer.bzl", "rust_analyzer_toolchain_alias")
+load("//rust/private:rustfmt.bzl", "rustfmt_toolchain_alias")
+load("//rust/private:toolchain_utils.bzl", "rust_toolchain_alias", "toolchain_files", "toolchain_files_for_target")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -39,15 +39,15 @@ toolchain_files(
     tool = "rust_stdlib",
 )
 
-current_rust_toolchain(
+rust_toolchain_alias(
     name = "current_rust_toolchain",
 )
 
-current_rustfmt_toolchain(
+rustfmt_toolchain_alias(
     name = "current_rustfmt_toolchain",
 )
 
-current_rust_analyzer_toolchain(
+rust_analyzer_toolchain_alias(
     name = "current_rust_analyzer_toolchain",
     tags = ["manual"],
 )
