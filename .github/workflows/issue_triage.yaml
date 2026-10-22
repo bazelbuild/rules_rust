@@ -1,0 +1,26 @@
+name: Issue Triage
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  triage:
+    name: Add needs-triage label
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+    steps:
+      - name: Add needs-triage label
+      # SHA of v9.0.0 release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['needs-triage']
+            });
+
