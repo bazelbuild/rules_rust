@@ -84,6 +84,7 @@ impl BuildScriptOutput {
             "rustc-link-lib" => Some(BuildScriptOutput::LinkLib(param)),
             "rustc-link-search" => Some(BuildScriptOutput::LinkSearch(param)),
             "rustc-cfg" => Some(BuildScriptOutput::Cfg(param)),
+            "rustc-check-cfg" => Some(BuildScriptOutput::Flags(format!("--check-cfg={param}"))),
             "rustc-flags" => Some(BuildScriptOutput::Flags(param)),
             "rustc-link-arg" => Some(BuildScriptOutput::LinkArg(param)),
             "rustc-env" => Some(BuildScriptOutput::Env(param)),
@@ -327,6 +328,27 @@ impl BuildScriptOutput {
 mod tests {
     use super::*;
     use std::io::Cursor;
+
+    #[test]
+    fn check_cfg_preserves_values_as_one_compiler_argument() {
+        for prefix in ["cargo:", "cargo::"] {
+            let source =
+                format!("{prefix}rustc-check-cfg=cfg(custom, values(\"one value\", \"two\"))\n");
+            let outputs =
+                BuildScriptOutput::outputs_from_reader(BufReader::new(Cursor::new(source)), true);
+            assert_eq!(outputs.len(), 1);
+            let flags = BuildScriptOutput::outputs_to_flags(&outputs, "/execroot", "/out");
+            assert_eq!(
+                flags.compile_flags,
+                "--check-cfg=cfg(custom, values(\"one value\", \"two\"))"
+            );
+            assert!(flags.link_flags.is_empty());
+            assert!(flags.link_search_paths.is_empty());
+            assert!(
+                BuildScriptOutput::outputs_to_dep_env(&outputs, "native", "/execroot").is_empty()
+            );
+        }
+    }
 
     fn from_read_buffer_to_env_and_flags_test_impl(buff: Cursor<&str>) {
         let reader = BufReader::new(buff);
