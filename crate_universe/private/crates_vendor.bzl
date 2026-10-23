@@ -1,6 +1,6 @@
 """Rules for vendoring Bazel targets into existing workspaces"""
 
-load("//cargo:cargo_toolchain.bzl", "find_cargo")
+load("//cargo:cargo_toolchain.bzl", "cargo_version_mismatch", "find_cargo")
 load("//crate_universe/private:generate_utils.bzl", "compile_config", generate_render_config = "render_config")
 load("//crate_universe/private:splicing_utils.bzl", "kebab_case_keys", generate_splicing_config = "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
@@ -393,6 +393,9 @@ def _crates_vendor_impl(ctx):
     cargo = find_cargo(ctx, toolchain)
     if not cargo.cargo:
         fail("{}: no `cargo_toolchain` is registered for the current platform and the `rust_toolchain` has no `cargo`".format(ctx.label))
+    mismatch = cargo_version_mismatch(cargo.toolchain, toolchain)
+    if mismatch:
+        fail("{}: {}".format(ctx.label, mismatch))
     is_windows = _is_windows(ctx)
 
     environ = [
