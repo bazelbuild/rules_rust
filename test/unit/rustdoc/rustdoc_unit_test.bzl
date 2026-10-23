@@ -415,6 +415,11 @@ def _define_targets():
         name = "cc_lib",
         hdrs = ["rustdoc.h"],
         srcs = ["rustdoc.cc"],
+        # Not instrumented for coverage: doctests link this object into a
+        # rustc-linked binary, and the C compiler's LLVM profile record layout
+        # can differ from rustc's (Apple clang vs. rustc 1.99's LLVM 23), which
+        # crashes the process at exit. See COVERAGE_PROFILE_ABI_MISMATCH.md.
+        features = ["-coverage"],
     )
 
     cc_library(

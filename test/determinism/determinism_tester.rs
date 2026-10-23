@@ -276,15 +276,11 @@ async fn hash(args: HashArgs) -> anyhow::Result<()> {
             }
 
             // Skip any file or directory inside a known volatile directory
-            if entry.path().ancestors().any(|ancestor| {
+            !entry.path().ancestors().any(|ancestor| {
                 ancestor
                     .file_name()
                     .is_some_and(|name| name == "testlogs" || name == "_tmp")
-            }) {
-                return false;
-            }
-
-            true
+            })
         })
     {
         let entry = entry?;

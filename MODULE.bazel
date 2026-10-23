@@ -80,10 +80,10 @@ use_repo(
     "rrtd__walkdir-2.5.0",
     "rtra",
     "rtra__serde-1.0.229",
-    "rtra__serde_json-1.0.151",
+    "rtra__serde_json-1.0.154",
     "rtvsc",
     "rtvsc__serde-1.0.229",
-    "rtvsc__serde_json-1.0.151",
+    "rtvsc__serde_json-1.0.154",
     "rules_rust_toolchain_test_target_json",
 )
 
