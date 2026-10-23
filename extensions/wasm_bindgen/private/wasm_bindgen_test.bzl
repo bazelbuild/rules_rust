@@ -1,5 +1,6 @@
 """Bazel test rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_rust//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
@@ -263,8 +264,7 @@ rust_wasm_bindgen_test_binary = rule(
     toolchains = [
         str(Label("//:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     executable = True,
 )
 

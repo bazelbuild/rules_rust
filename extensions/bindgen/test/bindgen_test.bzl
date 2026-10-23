@@ -105,7 +105,7 @@ def _fake_cc_toolchain(name):
     native.toolchain(
         name = name,
         toolchain = name + "_cc_toolchain",
-        toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+        toolchain_type = "@rules_cc//cc:toolchain_type",
     )
 
 def _create_simple_rust_bindgen_library(test_name):

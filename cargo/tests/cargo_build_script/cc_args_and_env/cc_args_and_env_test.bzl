@@ -324,7 +324,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
     native.toolchain(
         name = "%s/test_cc_toolchain" % name,
         toolchain = ":%s/test_cc_toolchain_impl" % name,
-        toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+        toolchain_type = "@rules_cc//cc:toolchain_type",
     )
     cargo_build_script(
         name = "%s/cargo_build_script_impl" % name,
