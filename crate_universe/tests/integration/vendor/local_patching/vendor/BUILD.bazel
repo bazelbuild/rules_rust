@@ -32,6 +32,18 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "getrandom-0.2.15",
+    actual = "//local_patching/forked/getrandom:getrandom",
+    tags = ["manual"],
+)
+
+alias(
+    name = "getrandom",
+    actual = "//local_patching/forked/getrandom:getrandom",
+    tags = ["manual"],
+)
+
+alias(
     name = "rand-0.8.5",
     actual = "//local_patching/vendor/rand-0.8.5:rand",
     tags = ["manual"],
