@@ -172,6 +172,16 @@ compilation environment.</li>
 from a <code>Cargo.toml</code> and produce a <a href="./rust_lint_config.html"><code>rust_lint_config</code></a>
 target from it, so Cargo-defined lints apply to Bazel-built crates.</li>
 </ul>
+<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<ul>
+<li><a href="./cargo_toolchain.html">cargo_toolchain</a> — Provide the <code>cargo</code> binary that
+<code>cargo_build_script</code> exposes to build scripts as <code>$CARGO</code> and that
+<a href="./crates_vendor.html">crates_vendor</a> runs. Registered for
+<code>@rules_rust//cargo:toolchain_type</code>, which rules declare as
+<code>rust_common.cargo_toolchain_type</code>. The same page documents <code>find_cargo</code>, which
+falls back to the <code>cargo</code> of the <code>rust_toolchain</code> when no <code>cargo_toolchain</code> is
+registered.</li>
+</ul>
 
                     </main>
 

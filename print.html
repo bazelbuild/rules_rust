@@ -1393,6 +1393,16 @@ compilation environment.</li>
 from a <code>Cargo.toml</code> and produce a <a href="./rust_lint_config.html"><code>rust_lint_config</code></a>
 target from it, so Cargo-defined lints apply to Bazel-built crates.</li>
 </ul>
+<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<ul>
+<li><a href="./cargo_toolchain.html">cargo_toolchain</a> — Provide the <code>cargo</code> binary that
+<code>cargo_build_script</code> exposes to build scripts as <code>$CARGO</code> and that
+<a href="./crates_vendor.html">crates_vendor</a> runs. Registered for
+<code>@rules_rust//cargo:toolchain_type</code>, which rules declare as
+<code>rust_common.cargo_toolchain_type</code>. The same page documents <code>find_cargo</code>, which
+falls back to the <code>cargo</code> of the <code>rust_toolchain</code> when no <code>cargo_toolchain</code> is
+registered.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="cargo_build_scriptbzl"><a class="header" href="#cargo_build_scriptbzl">cargo_build_script.bzl</a></h1>
 <p><a id="cargo_build_script"></a></p>
@@ -2182,8 +2192,8 @@ code. Individual targets may override this default via the
 <div style="break-before: page; page-break-before: always;"></div><h1 id="toolchains"><a class="header" href="#toolchains">Toolchains</a></h1>
 <p>A Rust build in Bazel selects its compiler, standard library, and companion tools
 through a set of registered <a href="https://bazel.build/extending/toolchains">Bazel toolchains</a>. <code>rules_rust</code>
-ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>, and
-<code>rustfmt</code> can be resolved independently.</p>
+ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>,
+<code>rustfmt</code>, and <code>cargo</code> can be resolved independently.</p>
 <p>Most users register toolchains via the <code>rust</code> module extension (see
 <a href="./rust_bzlmod.html">Bzlmod</a>) rather than declaring these rules directly. The rules
 below exist for users who need to define custom toolchains — for example, to point
@@ -2198,6 +2208,16 @@ cover.</p>
 <li><a href="./rust_analyzer_toolchain.html">rust_analyzer_toolchain</a> — Declare a toolchain
 providing the <code>rust-analyzer</code> binary and proc-macro server used by the
 <a href="./rust_analyzer.html">rust_analyzer</a> integration.</li>
+<li><a href="./cargo_toolchain.html">cargo_toolchain</a> — Declare a toolchain providing the
+<code>cargo</code> binary used by rules which run Cargo, such as
+<a href="./cargo_build_script.html">cargo_build_script</a> and
+<a href="./crates_vendor.html">crates_vendor</a>. The <code>rust</code> module extension declares one
+in the repository of every <code>rust_toolchain</code> it registers and registers the two
+together, so Cargo always comes from the same release as <code>rustc</code>; the
+toolchain carries the same <code>version</code>, <code>iso_date</code> and <code>channel</code> identifiers and
+<code>cargo_build_script</code> fails when they differ. The <code>cargo</code> attribute of
+<code>rust_toolchain</code> is deprecated in its favor and is only consulted when no
+<code>cargo_toolchain</code> is registered.</li>
 </ul>
 <h2 id="data-rules"><a class="header" href="#data-rules">Data rules</a></h2>
 <ul>
@@ -2273,7 +2293,7 @@ toolchain(
 <tr><td style="text-align: left"><a id="rust_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when <code>rust_library</code> targets are embedded in a <code>cc_binary</code>.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//rust/settings:default_allocator_library"</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-binary_ext"></a>binary_ext</td><td style="text-align: left">The extension for binaries created from rustc.</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain-cargo"></a>cargo</td><td style="text-align: left">The location of the <code>cargo</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_toolchain-cargo"></a>cargo</td><td style="text-align: left">The location of the <code>cargo</code> binary. Can be a direct source or a filegroup containing one item. <strong>Deprecated</strong>: register a <a href="rust_toolchain.html#cargo_toolchain"><code>cargo_toolchain</code></a> for <code>@rules_rust//cargo:toolchain_type</code> instead. Rules which run Cargo use that toolchain when one is registered and fall back to this attribute when none is.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-cargo_clippy"></a>cargo_clippy</td><td style="text-align: left">The location of the <code>cargo_clippy</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel (<code>stable</code>, <code>nightly</code>, or <code>beta</code>).</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-clippy_driver"></a>clippy_driver</td><td style="text-align: left">The location of the <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
@@ -2333,6 +2353,80 @@ rustfmt_toolchain(<a href="rustfmt_toolchain.html#rustfmt_toolchain-name">name</
 <tr><td style="text-align: left"><a id="rustfmt_toolchain-rustfmt"></a>rustfmt</td><td style="text-align: left">The location of the <code>rustfmt</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="cargo_toolchainbzl"><a class="header" href="#cargo_toolchainbzl">cargo_toolchain.bzl</a></h1>
+<p><a id="cargo_toolchain"></a></p>
+<h2 id="cargo_toolchain"><a class="header" href="#cargo_toolchain">cargo_toolchain</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "cargo_toolchain")
+
+cargo_toolchain(<a href="cargo_toolchain.html#cargo_toolchain-name">name</a>, <a href="cargo_toolchain.html#cargo_toolchain-cargo">cargo</a>, <a href="cargo_toolchain.html#cargo_toolchain-channel">channel</a>, <a href="cargo_toolchain.html#cargo_toolchain-iso_date">iso_date</a>, <a href="cargo_toolchain.html#cargo_toolchain-version">version</a>)
+</pre>
+<p>A toolchain providing a <a href="https://doc.rust-lang.org/cargo/">Cargo</a> binary.</p>
+<p>Rules which run Cargo on the execution platform, such as <code>crates_vendor</code> and
+<code>cargo_build_script</code>, resolve <code>@rules_rust//cargo:toolchain_type</code> and use the
+binary it provides. The toolchain carries Cargo alone, so compile actions,
+which never run Cargo, do not depend on it.</p>
+<p>Cargo is released together with <code>rustc</code> and is only tested against the
+compiler it shipped with, so the <code>rust</code> module extension declares a
+<code>cargo_toolchain</code> in the same repository as every <code>rust_toolchain</code> it
+registers and registers the two with the same constraints and channel setting.
+The toolchain carries the same <code>version</code>, <code>iso_date</code> and <code>channel</code> identifiers
+as <code>rust_toolchain</code>; <code>cargo_build_script</code> fails when the Cargo and Rust
+toolchains it resolves state different ones.</p>
+<p><code>$(CARGO)</code> and <code>$(CARGO_RLOCATIONPATH)</code> are available as Make variables to
+targets which list <code>@rules_rust//cargo:current_cargo_toolchain</code>, a
+<code>cargo_toolchain_alias</code>, in <code>toolchains</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="cargo_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-cargo"></a>cargo</td><td style="text-align: left">The <code>cargo</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel Cargo comes from (<code>stable</code>, <code>nightly</code>, or <code>beta</code>), as in <code>rust_toolchain.channel</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-iso_date"></a>iso_date</td><td style="text-align: left">The ISO date of the nightly or beta release Cargo comes from, as in <code>rust_toolchain.iso_date</code>. Empty for stable releases.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust release Cargo comes from (e.g. <code>1.94.1</code>), as in <code>rust_toolchain.version</code>. Rules which run Cargo next to <code>rustc</code> compare the two; leave empty to opt out.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="cargo_toolchain_alias"></a></p>
+<h2 id="cargo_toolchain_alias"><a class="header" href="#cargo_toolchain_alias">cargo_toolchain_alias</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "cargo_toolchain_alias")
+
+cargo_toolchain_alias(<a href="cargo_toolchain.html#cargo_toolchain_alias-name">name</a>, <a href="cargo_toolchain.html#cargo_toolchain_alias-mandatory">mandatory</a>)
+</pre>
+<p>A target standing in for the <code>cargo_toolchain</code> resolved for the current platform.</p>
+<p>The alias forwards the toolchain's providers, its Make variables (<code>$(CARGO)</code>,
+<code>$(CARGO_RLOCATIONPATH)</code>) and the <code>cargo</code> binary.
+<code>@rules_rust//cargo:current_cargo_toolchain</code> is the alias <code>rules_rust</code>
+declares. While the deprecated <code>cargo</code> attribute of <code>rust_toolchain</code> exists,
+the alias stands in for it when no <code>cargo_toolchain</code> is registered.</p>
+<p>This follows <code>cc_toolchain_alias</code> from <code>rules_cc</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="cargo_toolchain_alias-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain_alias-mandatory"></a>mandatory</td><td style="text-align: left">Whether to fail when no toolchain is registered. When <code>False</code>, the target provides nothing instead.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="find_cargo"></a></p>
+<h2 id="find_cargo"><a class="header" href="#find_cargo">find_cargo</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "find_cargo")
+
+find_cargo(<a href="cargo_toolchain.html#find_cargo-ctx">ctx</a>, <a href="cargo_toolchain.html#find_cargo-rust_toolchain">rust_toolchain</a>)
+</pre>
+<p>The Cargo binary a rule should run, and the files it needs at run time.</p>
+<p>The registered <code>cargo_toolchain</code> is preferred. When none is registered the
+<code>cargo</code> of the <code>rust_toolchain</code> is used, which is how rules found Cargo
+before <code>@rules_rust//cargo:toolchain_type</code> existed.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="find_cargo-ctx"></a>ctx</td><td style="text-align: left">The rule context. The rule must list <code>config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False)</code> in <code>toolchains</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="find_cargo-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The resolved <code>rust_toolchain</code>, or <code>None</code>.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>struct: <code>cargo</code>, the binary (a <code>File</code>, or <code>None</code> when neither toolchain
+provides one), <code>files</code>, a <code>depset</code> to add to the action's tools, and
+<code>toolchain</code>, the <code>cargo_toolchain</code> used, or <code>None</code> when falling back.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rust_analyzer_toolchainbzl"><a class="header" href="#rust_analyzer_toolchainbzl">rust_analyzer_toolchain.bzl</a></h1>
 <p><a id="rust_analyzer_toolchain"></a></p>
 <h2 id="rust_analyzer_toolchain"><a class="header" href="#rust_analyzer_toolchain">rust_analyzer_toolchain</a></h2>
@@ -2416,7 +2510,7 @@ rust.toolchain(<a href="rust_bzlmod.html#rust.toolchain-aliases">aliases</a>, <a
 </tbody></table>
 </div>
 <p><a id="rust.toolchain"></a></p>
-<h3 id="toolchain"><a class="header" href="#toolchain">toolchain</a></h3>
+<h3 id="toolchain-1"><a class="header" href="#toolchain-1">toolchain</a></h3>
 <p>Tags for defining rust toolchains (where toolchain tools are fetched).</p>
 <p><strong>Attributes</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>

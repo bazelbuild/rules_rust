@@ -1,0 +1,283 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>cargo_toolchain - rules_rust</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">rules_rust</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/bazelbuild/rules_rust" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="cargo_toolchainbzl"><a class="header" href="#cargo_toolchainbzl">cargo_toolchain.bzl</a></h1>
+<p><a id="cargo_toolchain"></a></p>
+<h2 id="cargo_toolchain"><a class="header" href="#cargo_toolchain">cargo_toolchain</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "cargo_toolchain")
+
+cargo_toolchain(<a href="#cargo_toolchain-name">name</a>, <a href="#cargo_toolchain-cargo">cargo</a>, <a href="#cargo_toolchain-channel">channel</a>, <a href="#cargo_toolchain-iso_date">iso_date</a>, <a href="#cargo_toolchain-version">version</a>)
+</pre>
+<p>A toolchain providing a <a href="https://doc.rust-lang.org/cargo/">Cargo</a> binary.</p>
+<p>Rules which run Cargo on the execution platform, such as <code>crates_vendor</code> and
+<code>cargo_build_script</code>, resolve <code>@rules_rust//cargo:toolchain_type</code> and use the
+binary it provides. The toolchain carries Cargo alone, so compile actions,
+which never run Cargo, do not depend on it.</p>
+<p>Cargo is released together with <code>rustc</code> and is only tested against the
+compiler it shipped with, so the <code>rust</code> module extension declares a
+<code>cargo_toolchain</code> in the same repository as every <code>rust_toolchain</code> it
+registers and registers the two with the same constraints and channel setting.
+The toolchain carries the same <code>version</code>, <code>iso_date</code> and <code>channel</code> identifiers
+as <code>rust_toolchain</code>; <code>cargo_build_script</code> fails when the Cargo and Rust
+toolchains it resolves state different ones.</p>
+<p><code>$(CARGO)</code> and <code>$(CARGO_RLOCATIONPATH)</code> are available as Make variables to
+targets which list <code>@rules_rust//cargo:current_cargo_toolchain</code>, a
+<code>cargo_toolchain_alias</code>, in <code>toolchains</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="cargo_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-cargo"></a>cargo</td><td style="text-align: left">The <code>cargo</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel Cargo comes from (<code>stable</code>, <code>nightly</code>, or <code>beta</code>), as in <code>rust_toolchain.channel</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-iso_date"></a>iso_date</td><td style="text-align: left">The ISO date of the nightly or beta release Cargo comes from, as in <code>rust_toolchain.iso_date</code>. Empty for stable releases.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust release Cargo comes from (e.g. <code>1.94.1</code>), as in <code>rust_toolchain.version</code>. Rules which run Cargo next to <code>rustc</code> compare the two; leave empty to opt out.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="cargo_toolchain_alias"></a></p>
+<h2 id="cargo_toolchain_alias"><a class="header" href="#cargo_toolchain_alias">cargo_toolchain_alias</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "cargo_toolchain_alias")
+
+cargo_toolchain_alias(<a href="#cargo_toolchain_alias-name">name</a>, <a href="#cargo_toolchain_alias-mandatory">mandatory</a>)
+</pre>
+<p>A target standing in for the <code>cargo_toolchain</code> resolved for the current platform.</p>
+<p>The alias forwards the toolchain's providers, its Make variables (<code>$(CARGO)</code>,
+<code>$(CARGO_RLOCATIONPATH)</code>) and the <code>cargo</code> binary.
+<code>@rules_rust//cargo:current_cargo_toolchain</code> is the alias <code>rules_rust</code>
+declares. While the deprecated <code>cargo</code> attribute of <code>rust_toolchain</code> exists,
+the alias stands in for it when no <code>cargo_toolchain</code> is registered.</p>
+<p>This follows <code>cc_toolchain_alias</code> from <code>rules_cc</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="cargo_toolchain_alias-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="cargo_toolchain_alias-mandatory"></a>mandatory</td><td style="text-align: left">Whether to fail when no toolchain is registered. When <code>False</code>, the target provides nothing instead.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="find_cargo"></a></p>
+<h2 id="find_cargo"><a class="header" href="#find_cargo">find_cargo</a></h2>
+<pre>
+load("@rules_rust//cargo:cargo_toolchain.bzl", "find_cargo")
+
+find_cargo(<a href="#find_cargo-ctx">ctx</a>, <a href="#find_cargo-rust_toolchain">rust_toolchain</a>)
+</pre>
+<p>The Cargo binary a rule should run, and the files it needs at run time.</p>
+<p>The registered <code>cargo_toolchain</code> is preferred. When none is registered the
+<code>cargo</code> of the <code>rust_toolchain</code> is used, which is how rules found Cargo
+before <code>@rules_rust//cargo:toolchain_type</code> existed.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="find_cargo-ctx"></a>ctx</td><td style="text-align: left">The rule context. The rule must list <code>config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False)</code> in <code>toolchains</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="find_cargo-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The resolved <code>rust_toolchain</code>, or <code>None</code>.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>struct: <code>cargo</code>, the binary (a <code>File</code>, or <code>None</code> when neither toolchain
+provides one), <code>files</code>, a <code>depset</code> to add to the action's tools, and
+<code>toolchain</code>, the <code>cargo_toolchain</code> used, or <code>None</code> when falling back.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="rustfmt_toolchain.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="rust_analyzer_toolchain.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="rustfmt_toolchain.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="rust_analyzer_toolchain.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
