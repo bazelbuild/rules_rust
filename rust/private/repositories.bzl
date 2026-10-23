@@ -781,7 +781,7 @@ def rust_toolchain_repository(
         "exec_compatible_with": exec_compatible_with,
         "name": name,
         "target_compatible_with": target_compatible_with,
-        "target_settings": channel_target_settings + target_settings,
+        "target_settings": target_settings,
         "toolchain_label": "@{name}//:toolchain".format(name = name),
         "toolchain_type": toolchain_type,
         "tools_toolchain_label": tools_toolchain_label,
@@ -1205,11 +1205,15 @@ def rust_repository_set(
             extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
         )
 
+        # The hub registers repository sets without the channel setting their
+        # proxy repositories carry: a set which only provides, say, a nightly
+        # resolves without `--@rules_rust//rust/toolchain/channel=nightly`,
+        # and modules rely on that.
         all_toolchain_details[toolchain.name] = {
             "exec_compatible_with": tc_exec_compatible_with,
             "name": toolchain.name,
             "target_compatible_with": tc_target_compatible_with,
-            "target_settings": channel_target_settings + target_settings,
+            "target_settings": target_settings,
             "toolchain_label": "@{name}//:toolchain".format(name = toolchain.name),
             "toolchain_type": toolchain_type,
             "tools_toolchain_label": tools_toolchain_label,
@@ -1221,7 +1225,7 @@ def rust_repository_set(
                 "exec_compatible_with": tc_exec_compatible_with,
                 "name": companion_name,
                 "target_compatible_with": tc_target_compatible_with,
-                "target_settings": channel_target_settings + target_settings,
+                "target_settings": target_settings,
                 "toolchain_label": "@{name}//:{companion}".format(name = toolchain.name, companion = companion),
                 "toolchain_type": companion_type,
                 "tools_toolchain_label": companion_labels[companion],
