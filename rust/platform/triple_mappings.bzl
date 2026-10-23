@@ -45,6 +45,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
     "aarch64-apple-ios-macabi": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
+    "aarch64-apple-tvos": _support(std = True, host_tools = False),
+    "aarch64-apple-tvos-sim": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
@@ -181,6 +183,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
+    "tvos": "tvos",
     "uefi": "uefi",
     "unknown": None,
     "wasi": "wasi",
@@ -205,6 +208,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "none": "",
     "nto": "",
     "threads": ".wasm",
+    "tvos": "",
     "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
@@ -232,6 +236,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "none": ".a",
     "nto": ".a",
     "threads": ".a",
+    "tvos": ".a",
     "uefi": ".lib",
     "unknown": ".a",
     "wasi": ".a",
@@ -256,6 +261,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "none": ".so",
     "nto": ".a",
     "threads": ".wasm",
+    "tvos": ".dylib",
     "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
     "wasi": ".wasm",
@@ -305,6 +311,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "nto": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
+    "tvos": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
     "uefi": [],
     "unknown": [],
     "uwp": ["ws2_32.lib"],
@@ -377,8 +384,8 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     # if abi == "musl" and system == "linux" and arch == "x86_64":
     # all_abi_constraints.append("//rust/platform/constraints:musl_on")
 
-    # add constraints for iOS + watchOS simulator and device triples
-    if system in ["ios", "watchos"]:
+    # add constraints for iOS, tvOS, and watchOS simulator and device triples
+    if system in ["ios", "tvos", "watchos"]:
         if arch == "x86_64" or abi == "sim":
             all_abi_constraints.append("@apple_support//constraints:simulator")
         else:

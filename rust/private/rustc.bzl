@@ -960,7 +960,7 @@ def _should_add_oso_prefix(toolchain):
     Returns:
         bool: True if -oso_prefix should be added.
     """
-    if not toolchain.target_os.startswith(("mac", "darwin", "ios")):
+    if not toolchain.target_os.startswith(("mac", "darwin", "ios", "tvos")):
         return False
 
     return True
@@ -3078,7 +3078,7 @@ def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
             get_lib_name = get_lib_name_for_windows
         else:
             make_link_flags = _make_link_flags_windows_gnu_direct if use_direct_link_driver else _make_link_flags_windows_gnu_indirect
-    elif target_os.startswith(("mac", "darwin", "ios")):
+    elif target_os.startswith(("mac", "darwin", "ios", "tvos")):
         make_link_flags = _make_link_flags_darwin_direct if use_direct_link_driver else _make_link_flags_darwin_indirect
     else:
         make_link_flags = _make_link_flags_default_direct if use_direct_link_driver else _make_link_flags_default_indirect
