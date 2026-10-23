@@ -107,6 +107,23 @@ def cargo_version_mismatch(cargo_toolchain, rust_toolchain):
 def _cargo_toolchain_alias_impl(ctx):
     toolchain = ctx.toolchains[rust_common.cargo_toolchain_type]
     if not toolchain:
+        # Until the deprecated `rust_toolchain.cargo` is removed, stand in for
+        # it so that this target resolves wherever `find_cargo` would.
+        rust_toolchain = ctx.toolchains[rust_common.toolchain_type]
+        if rust_toolchain and rust_toolchain.cargo:
+            make_variables = platform_common.TemplateVariableInfo({
+                "CARGO": rust_toolchain.cargo.path,
+                "CARGO_RLOCATIONPATH": rlocationpath(rust_toolchain.cargo, ctx.workspace_name),
+            })
+            toolchain = platform_common.ToolchainInfo(
+                cargo = rust_toolchain.cargo,
+                all_files = depset([rust_toolchain.cargo]),
+                make_variables = make_variables,
+                version = rust_toolchain.version,
+                iso_date = rust_toolchain.iso_date,
+                channel = rust_toolchain.channel,
+            )
+    if not toolchain:
         if ctx.attr.mandatory:
             fail("{}: no `cargo_toolchain` is registered for the current platform".format(ctx.label))
         return []
@@ -127,7 +144,8 @@ A target standing in for the `cargo_toolchain` resolved for the current platform
 The alias forwards the toolchain's providers, its Make variables (`$(CARGO)`,
 `$(CARGO_RLOCATIONPATH)`) and the `cargo` binary.
 `@rules_rust//cargo:current_cargo_toolchain` is the alias `rules_rust`
-declares.
+declares. While the deprecated `cargo` attribute of `rust_toolchain` exists,
+the alias stands in for it when no `cargo_toolchain` is registered.
 
 This follows `cc_toolchain_alias` from `rules_cc`.
 """,
@@ -140,6 +158,7 @@ This follows `cc_toolchain_alias` from `rules_cc`.
     },
     toolchains = [
         config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = False),
     ],
 )
 

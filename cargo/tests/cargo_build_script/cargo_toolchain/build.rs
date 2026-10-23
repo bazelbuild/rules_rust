@@ -14,7 +14,7 @@ fn main() {
     // The deprecated `rust_toolchain.cargo` is a symlink inside the
     // generated sysroot, under a `rust_toolchain/` directory.
     assert!(
-        !cargo.contains("/rust_toolchain/"),
+        !cargo.replace('\\', "/").contains("/rust_toolchain/"),
         "`CARGO` should come from the `cargo_toolchain`, not the `rust_toolchain` sysroot, got `{cargo}`"
     );
 

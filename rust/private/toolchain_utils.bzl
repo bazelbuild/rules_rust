@@ -1,17 +1,24 @@
 """A module defining toolchain utilities"""
 
+# buildifier: disable=bzl-visibility
+load("//cargo/private:cargo_toolchain.bzl", "find_cargo")
+load("//rust/private:common.bzl", "rust_common")
+
 def _toolchain_files_impl(ctx):
     toolchain = ctx.toolchains[str(Label("//rust:toolchain_type"))]
 
     runfiles = None
     if ctx.attr.tool == "cargo":
-        files = depset([toolchain.cargo])
+        cargo = find_cargo(ctx, toolchain)
+        if not cargo.cargo:
+            fail("{}: neither the registered `cargo_toolchain` nor the `rust_toolchain` provides `cargo`".format(ctx.label))
+        files = depset([cargo.cargo])
         runfiles = ctx.runfiles(
             files = [
-                toolchain.cargo,
+                cargo.cargo,
                 toolchain.rustc,
             ],
-            transitive_files = toolchain.rustc_lib,
+            transitive_files = depset(transitive = [cargo.files, toolchain.rustc_lib]),
         )
     elif ctx.attr.tool == "cargo-clippy":
         files = depset([toolchain.cargo_clippy])
@@ -85,6 +92,7 @@ toolchain_files = rule(
     },
     toolchains = [
         str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
     ],
 )
 

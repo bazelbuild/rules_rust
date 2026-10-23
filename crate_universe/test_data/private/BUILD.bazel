@@ -4,11 +4,11 @@ py_binary(
     name = "metadata_generator",
     srcs = ["metadata_generator.py"],
     data = [
-        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//cargo:current_cargo_toolchain",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],
     env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CARGO": "$(rootpath @rules_rust//cargo:current_cargo_toolchain)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
 )

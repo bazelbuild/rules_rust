@@ -391,6 +391,8 @@ def generate_config_file(
 def _crates_vendor_impl(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
     cargo = find_cargo(ctx, toolchain)
+    if not cargo.cargo:
+        fail("{}: no `cargo_toolchain` is registered for the current platform and the `rust_toolchain` has no `cargo`".format(ctx.label))
     is_windows = _is_windows(ctx)
 
     environ = [
