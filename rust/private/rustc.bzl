@@ -2009,7 +2009,7 @@ def rustc_compile_action(
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
     interface_library = None
-    if toolchain.target_os == "windows" and crate_info.type == "cdylib":
+    if toolchain.target_os == "windows" and crate_info.type == "cdylib" and not experimental_use_cc_common_link:
         # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
         # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
         interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
