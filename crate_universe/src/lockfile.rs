@@ -336,7 +336,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("6154c8de88bb971f8b94365716f437c005c43ee3bb16190fa7c3b8282757504b".to_owned()),
+            Digest("94341aaf4444650819b3939b321488a1c6ba2297d54844b8ad63bad0c49a5f8c".to_owned()),
             digest,
         );
     }
@@ -381,7 +381,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("f65772987e8f02b9a0a5978bed38ce660694a89b7c7723d3ad7c25c0f260e604".to_owned()),
+            Digest("5e002a60714c73e6b956a23e6d77b8ab49c870ff26f6357d9c6dad12e8300dd6".to_owned()),
             digest,
         );
     }
@@ -400,6 +400,8 @@ mod test {
             )]),
             manifests: BTreeMap::new(),
             cargo_config: None,
+            resolver_version: cargo_toml::Resolver::V2,
+            incompatible_guppy_resolver: true,
         };
 
         let digest = Digest::compute(
@@ -412,7 +414,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("652b70ca28db1763146554856913308e68547119367e9a5799fce7d9931152c4".to_owned()),
+            Digest("0c94f339b573d4de8976457f2a0d820f858694227aa61db4a804159cd0750924".to_owned()),
             digest,
         );
     }
@@ -448,6 +450,8 @@ mod test {
 
         let splicing_metadata = SplicingMetadata {
             cargo_config: Some(cargo_config),
+            resolver_version: cargo_toml::Resolver::V2,
+            incompatible_guppy_resolver: true,
             ..SplicingMetadata::default()
         };
 
@@ -461,7 +465,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("75883a7020d457b9c886fd185688c2e698139f52f4382d82a9261e7ecdc1abc5".to_owned()),
+            Digest("46aa32c561531d402b2ad0112786a184a5a2fd3101ebb4039db6e890db9fa409".to_owned()),
             digest,
         );
     }

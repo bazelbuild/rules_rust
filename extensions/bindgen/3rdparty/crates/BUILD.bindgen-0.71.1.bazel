@@ -39,9 +39,6 @@ rust_library(
         ],
     ),
     crate_features = [
-        "__cli",
-        "experimental",
-        "prettyplease",
         "runtime",
     ],
     crate_root = "lib.rs",
@@ -119,14 +116,10 @@ rust_library(
     version = "0.71.1",
     deps = [
         ":build_script_build",
-        "@rules_rust_bindgen_deps__annotate-snippets-0.11.5//:annotate_snippets",
         "@rules_rust_bindgen_deps__bitflags-2.9.0//:bitflags",
         "@rules_rust_bindgen_deps__cexpr-0.6.0//:cexpr",
         "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
-        "@rules_rust_bindgen_deps__clap-4.5.32//:clap",
-        "@rules_rust_bindgen_deps__clap_complete-4.5.46//:clap_complete",
         "@rules_rust_bindgen_deps__itertools-0.13.0//:itertools",
-        "@rules_rust_bindgen_deps__prettyplease-0.2.31//:prettyplease",
         "@rules_rust_bindgen_deps__proc-macro2-1.0.94//:proc_macro2",
         "@rules_rust_bindgen_deps__quote-1.0.40//:quote",
         "@rules_rust_bindgen_deps__regex-1.11.1//:regex",
@@ -159,9 +152,6 @@ cargo_build_script(
         ],
     ),
     crate_features = [
-        "__cli",
-        "experimental",
-        "prettyplease",
         "runtime",
     ],
     crate_name = "build_script_build",
@@ -182,7 +172,6 @@ cargo_build_script(
     emit_warnings = False,
     link_deps = [
         "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
-        "@rules_rust_bindgen_deps__prettyplease-0.2.31//:prettyplease",
     ],
     pkg_name = "bindgen",
     rustc_env_files = [

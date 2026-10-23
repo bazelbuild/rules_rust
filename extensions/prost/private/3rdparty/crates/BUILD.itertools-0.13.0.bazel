@@ -57,9 +57,9 @@ rust_library(
             "default",  # arm-unknown-linux-gnueabi
             "use_std",  # arm-unknown-linux-gnueabi
         ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "default",  # i686-pc-windows-msvc
-            "use_std",  # i686-pc-windows-msvc
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "default",  # i686-apple-darwin
+            "use_std",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "default",  # i686-unknown-linux-gnu
@@ -68,6 +68,10 @@ rust_library(
         "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
             "default",  # loongarch64-unknown-linux-gnu
             "use_std",  # loongarch64-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
+            "default",  # mips-unknown-linux-gnu
+            "use_std",  # mips-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "default",  # powerpc-unknown-linux-gnu
@@ -80,6 +84,14 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "default",  # s390x-unknown-linux-gnu
             "use_std",  # s390x-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:sparc64-unknown-netbsd": [
+            "default",  # sparc64-unknown-netbsd
+            "use_std",  # sparc64-unknown-netbsd
+        ],
+        "@rules_rust//rust/platform:sparc64-unknown-openbsd": [
+            "default",  # sparc64-unknown-openbsd
+            "use_std",  # sparc64-unknown-openbsd
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "default",  # x86_64-apple-darwin
