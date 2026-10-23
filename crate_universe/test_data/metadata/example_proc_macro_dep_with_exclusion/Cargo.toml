@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["*"]
+exclude = ["excluded-folder"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
