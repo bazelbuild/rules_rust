@@ -1,0 +1,3 @@
+load(":cc_toolchain_path_mapping_test.bzl", "cc_toolchain_path_mapping_test_suite")
+
+cc_toolchain_path_mapping_test_suite(name = "cc_toolchain_path_mapping_test_suite")

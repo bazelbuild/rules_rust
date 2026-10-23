@@ -395,12 +395,29 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
     """
+    linker_config = _get_linker_config(ctx, crate_type, toolchain, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary)
+    return (
+        _get_linker_path(linker_config),
+        linker_config.is_direct_driver,
+        _get_linker_args(linker_config),
+        _get_linker_env(linker_config),
+    )
+
+_LinkerConfigInfo = provider("Linker configuration retained until argument expansion.", fields = [
+    "action_name",
+    "feature_configuration",
+    "is_direct_driver",
+    "rpaths",
+    "rust_linker",
+    "variables",
+])
+
+def _get_linker_config(ctx, crate_type, toolchain, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary):
     user_link_flags = get_cc_user_link_flags(ctx)
 
-    ld = None
-    ld_is_direct_driver = False
-    link_args = []
-    link_env = {}
+    cc_linker = None
+    action_name = None
+    link_variables = None
 
     if cc_toolchain:
         if crate_type in ("bin") or add_flags_for_binary:
@@ -428,35 +445,62 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             runtime_library_search_directories = rpaths,
             user_link_flags = user_link_flags,
         )
+        cc_linker = cc_common.get_tool_for_action(
+            feature_configuration = feature_configuration,
+            action_name = action_name,
+        )
+
+    use_rust_linker = not cc_linker or toolchain.linker_preference == "rust"
+    if use_rust_linker and not toolchain.linker:
+        fail("No linker available for rustc. Either `rust_toolchain.linker` must be set or a `cc_toolchain` configured for the current configuration.")
+
+    # Keep CcToolchainVariables and the Rust linker File until map_each runs so
+    # cc_common and File.path use the Rustc action's path mapper.
+    return _LinkerConfigInfo(
+        feature_configuration = feature_configuration,
+        action_name = action_name,
+        variables = link_variables,
+        rust_linker = toolchain.linker if use_rust_linker else None,
+        is_direct_driver = use_rust_linker and toolchain.linker_type == "direct",
+        rpaths = rpaths,
+    )
+
+def _get_linker_path(linker_config):
+    if linker_config.rust_linker:
+        return linker_config.rust_linker.path
+    return cc_common.get_tool_for_action(
+        feature_configuration = linker_config.feature_configuration,
+        action_name = linker_config.action_name,
+    )
+
+def _get_linker_env(linker_config):
+    if linker_config.variables == None:
+        return {}
+    return cc_common.get_environment_variables(
+        feature_configuration = linker_config.feature_configuration,
+        action_name = linker_config.action_name,
+        variables = linker_config.variables,
+    )
+
+def _get_linker_args(linker_config):
+    link_args = []
+    if linker_config.variables != None:
         link_args.extend(cc_common.get_memory_inefficient_command_line(
-            feature_configuration = feature_configuration,
-            action_name = action_name,
-            variables = link_variables,
+            feature_configuration = linker_config.feature_configuration,
+            action_name = linker_config.action_name,
+            variables = linker_config.variables,
         ))
-        link_env = cc_common.get_environment_variables(
-            feature_configuration = feature_configuration,
-            action_name = action_name,
-            variables = link_variables,
-        )
-        ld = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = action_name,
-        )
-        ld_is_direct_driver = False
 
-    if not ld or toolchain.linker_preference == "rust":
-        ld = toolchain.linker.path
-        ld_is_direct_driver = toolchain.linker_type == "direct"
-
+    if linker_config.rust_linker:
         # Make sure we include RPATHs for Rust ABI dylibs even when no cc_toolchain.
-        if not cc_toolchain and rpaths:
-            for rpath in rpaths.to_list():
+        if linker_config.variables == None and linker_config.rpaths:
+            for rpath in linker_config.rpaths.to_list():
                 link_args.append("-Wl,-rpath,$ORIGIN/" + rpath)
 
         # When using rust-lld directly, we still need library search paths from cc_toolchain
         # to find system libraries that rustc's stdlib depends on (like -lgcc_s, -lutil, etc.)
         # Filter link_args to only include flags that help locate libraries.
-        if cc_toolchain and link_args:
+        if linker_config.variables != None and link_args:
             filtered_args = []
             skip_next = False
             for i, arg in enumerate(link_args):
@@ -466,7 +510,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
                 # Strip -Wl, prefix if using direct driver (it's only for compiler drivers)
                 processed_arg = arg
-                if ld_is_direct_driver and arg.startswith("-Wl,"):
+                if linker_config.is_direct_driver and arg.startswith("-Wl,"):
                     # Remove -Wl, prefix and split on commas (e.g., "-Wl,-rpath,/path" -> ["-rpath", "/path"])
                     # For now, we'll handle common cases; complex -Wl, args might need more sophisticated handling
                     processed_arg = arg[4:]  # Strip "-Wl,"
@@ -501,9 +545,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
                     filtered_args.append(processed_arg)
             link_args = filtered_args
 
-    if not ld:
-        fail("No linker available for rustc. Either `rust_toolchain.linker` must be set or a `cc_toolchain` configured for the current configuration.")
-
+    link_env = _get_linker_env(linker_config)
     if "LIB" in link_env:
         # Needed to ensure that link.exe will use msvcrt.lib from the cc_toolchain,
         # and not a non-hermetic system version.
@@ -516,7 +558,14 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             for element in link_env["LIB"].split(";")
         ])
 
-    return ld, ld_is_direct_driver, link_args, link_env
+    return link_args
+
+def _get_dlltool_path(feature_configuration):
+    linker_path = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+    )
+    return dlltool_path_from_linker_path(linker_path)
 
 # The environment variables rustc reads the Apple deployment target from,
 # keyed by the OS names clang accepts in a `-target` triple and in
@@ -1398,13 +1447,11 @@ def construct_arguments(
         if toolchain.dlltool:
             rustc_flags.add(toolchain.dlltool, format = "--codegen=dlltool=%s")
         elif cc_toolchain:
-            linker_path = cc_common.get_tool_for_action(
-                feature_configuration = feature_configuration,
-                action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+            rustc_flags.add_all(
+                [feature_configuration],
+                map_each = _get_dlltool_path,
+                format_each = "--codegen=dlltool=%s",
             )
-            dlltool_path = dlltool_path_from_linker_path(linker_path)
-            if dlltool_path:
-                rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1424,7 +1471,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
+            linker_config = _get_linker_config(
                 ctx,
                 crate_info.type,
                 toolchain,
@@ -1434,21 +1481,31 @@ def construct_arguments(
                 add_flags_for_binary = add_flags_for_binary,
             )
 
+            ld_is_direct_driver = linker_config.is_direct_driver
+            link_env = _get_linker_env(linker_config)
             env.update(link_env)
 
             # rustc only learns the Apple deployment target from its environment,
             # so mirror the one the cc_toolchain encodes in its link args. A value
             # from `--action_env` is kept; `rustc_env` and the toolchain's `env`
             # are applied below and override this one.
-            for key, value in apple_deployment_target_env(link_args).items():
+            for key, value in apple_deployment_target_env(_get_linker_args(linker_config)).items():
                 if key not in ctx.configuration.default_shell_env:
                     env[key] = value
 
-            rustc_flags.add(ld, format = "--codegen=linker=%s")
+            rustc_flags.add_all(
+                [linker_config],
+                map_each = _get_linker_path,
+                format_each = "--codegen=linker=%s",
+            )
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574
-            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
+            rustc_flags.add_all(
+                [linker_config],
+                map_each = _get_linker_args,
+                format_each = "--codegen=link-arg=%s",
+            )
 
             if remap_path_prefix != None and _should_add_oso_prefix(
                 toolchain,
