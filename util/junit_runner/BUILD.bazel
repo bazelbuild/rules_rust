@@ -1,0 +1,22 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "junit_runner",
+    srcs = ["junit_runner.rs"],
+    edition = "2021",
+    rustc_flags = select({
+        "@platforms//os:linux": ["-Cstrip=debuginfo"],
+        "@platforms//os:macos": ["-Cstrip=symbols"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "junit_runner_test",
+    srcs = ["junit_runner.rs"],
+    edition = "2021",
+    # The runner must not wrap its own unit tests. Force off regardless of the
+    # //rust/settings:experimental_emit_junit_xml build setting.
+    experimental_junit = 0,
+)
