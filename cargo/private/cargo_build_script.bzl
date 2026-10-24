@@ -458,11 +458,6 @@ def _cargo_build_script_impl(ctx):
         ctx.attr._default_use_default_shell_env,
     )
 
-    # If enabled, start with the default shell env, which contains any --action_env
-    # settings passed in on the command line and defaults like $PATH.
-    if use_default_shell_env:
-        env.update(ctx.configuration.default_shell_env)
-
     if cargo.cargo:
         env["CARGO"] = "${pwd}/%s" % cargo.cargo.path
 
