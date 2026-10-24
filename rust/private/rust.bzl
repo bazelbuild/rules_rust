@@ -17,6 +17,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load(":cargo_context.bzl", "CARGO_INPUTS", "CARGO_TARGET", "cargo_context")
 load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
     ":providers.bzl",
@@ -728,6 +729,12 @@ RUSTC_ATTRS = {
     ),
 }
 
+_cargo_transition = transition(
+    implementation = cargo_context,
+    inputs = CARGO_INPUTS,
+    outputs = [CARGO_TARGET],
+)
+
 _COMMON_ATTRS = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
@@ -744,6 +751,9 @@ _COMMON_ATTRS = {
             This attribute is used by the C++ Starlark API when passing CcInfo providers.
         """),
         default = False,
+    ),
+    "cargo_target_triple_map": attr.string_dict(
+        doc = "Optional equivalence map for the originating Cargo target in an execution configuration. Keys omit the `target/` prefix. Use only for contexts with identical dependencies and features, and map canonical values to themselves. Has no effect when `//cargo/settings:cargo_target_triple` is unset or when compiling for the target platform.",
     ),
     "compile_data": attr.label_list(
         doc = dedent("""\
@@ -1031,6 +1041,7 @@ _RUST_TEST_ATTRS = {
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
 rust_library = rule(
+    cfg = _cargo_transition,
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
     attrs = _COMMON_ATTRS | {
@@ -1115,6 +1126,7 @@ rust_library = rule(
 )
 
 rust_dylib_library = rule(
+    cfg = _cargo_transition,
     implementation = _rust_dylib_library_impl,
     provides = COMMON_PROVIDERS,
     attrs = _COMMON_ATTRS | {
@@ -1182,16 +1194,16 @@ def _resolve_platform(settings, attr):
     return platform
 
 def _rust_static_library_transition_impl(settings, attr):
-    return {
+    return cargo_context(settings, attr) | {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_static_library_transition = transition(
     implementation = _rust_static_library_transition_impl,
-    inputs = [
+    inputs = CARGO_INPUTS + [
         "//command_line_option:platforms",
     ],
-    outputs = [
+    outputs = [CARGO_TARGET] + [
         "//command_line_option:platforms",
     ],
 )
@@ -1223,16 +1235,16 @@ rust_static_library = rule(
 )
 
 def _rust_shared_library_transition_impl(settings, attr):
-    return {
+    return cargo_context(settings, attr) | {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_shared_library_transition = transition(
     implementation = _rust_shared_library_transition_impl,
-    inputs = [
+    inputs = CARGO_INPUTS + [
         "//command_line_option:platforms",
     ],
-    outputs = [
+    outputs = [CARGO_TARGET] + [
         "//command_line_option:platforms",
     ],
 )
@@ -1264,6 +1276,7 @@ rust_cdylib_library = rule(
 )
 
 rust_proc_macro = rule(
+    cfg = _cargo_transition,
     implementation = _rust_proc_macro_impl,
     provides = COMMON_PROVIDERS,
     attrs = {name: value for name, value in _COMMON_ATTRS.items() if name != "link_deps"},
@@ -1327,16 +1340,16 @@ _RUST_BINARY_ATTRS = {
 } | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
 def _rust_binary_transition_impl(settings, attr):
-    return {
+    return cargo_context(settings, attr) | {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_binary_transition = transition(
     implementation = _rust_binary_transition_impl,
-    inputs = [
+    inputs = CARGO_INPUTS + [
         "//command_line_option:platforms",
     ],
-    outputs = [
+    outputs = [CARGO_TARGET] + [
         "//command_line_option:platforms",
     ],
 )
@@ -1574,16 +1587,16 @@ rust_test_without_process_wrapper_test = rule(
 )
 
 def _rust_test_transition_impl(settings, attr):
-    return {
+    return cargo_context(settings, attr) | {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_test_transition = transition(
     implementation = _rust_test_transition_impl,
-    inputs = [
+    inputs = CARGO_INPUTS + [
         "//command_line_option:platforms",
     ],
-    outputs = [
+    outputs = [CARGO_TARGET] + [
         "//command_line_option:platforms",
     ],
 )

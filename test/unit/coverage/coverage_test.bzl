@@ -3,6 +3,10 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 
+# The unit test inspects the private transition used by the collector.
+# buildifier: disable=bzl-visibility
+load("//rust/private:cargo_context.bzl", "CARGO_INPUTS", "CARGO_TARGET", "cargo_context")
+
 _CollectorInfo = provider(
     "The configured collector and expected execution platform output root.",
     fields = {"expected_root": "Output root for the test platform", "path": "Collector execution path"},
@@ -13,7 +17,22 @@ def _platform_marker_impl(ctx):
     ctx.actions.write(marker, "")
     return [DefaultInfo(files = depset([marker]))]
 
-platform_marker = rule(implementation = _platform_marker_impl)
+# Match the collector's incoming Cargo normalization before comparing output
+# roots. The assertion still distinguishes compiler and test execution platforms.
+_marker_transition = transition(
+    implementation = cargo_context,
+    inputs = CARGO_INPUTS,
+    outputs = [CARGO_TARGET],
+)
+
+platform_marker = rule(
+    implementation = _platform_marker_impl,
+    cfg = _marker_transition,
+    attrs = {
+        "cargo_target_triple_map": attr.string_dict(),
+        "_allowlist_function_transition": attr.label(default = "@bazel_tools//tools/allowlists/function_transition_allowlist"),
+    },
+)
 
 def _collector_probe_impl(ctx):
     # Forward only analysis information. Coverage must not build the fixture's
