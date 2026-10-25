@@ -81,6 +81,8 @@ CrateGroupInfo = provider(
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
+        "bin_link_flags": "Optional[File]: file of binary-scoped `BIN=-Clink-arg=FLAG` records in emission order. Empty BIN applies to all binaries; otherwise matched exactly against `cargo_bin_name`.",
+        "cdylib_link_flags": "Optional[File]: file of `-Clink-arg`s to pass to rustc only when the crate is built as a cdylib (`cargo::rustc-cdylib-link-arg`); propagated transitively to cdylibs.",
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
         "dep_env": "Optional[File]: extra build script environment variables to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",

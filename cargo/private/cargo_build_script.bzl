@@ -5,6 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("//cargo/private:cargo_toolchain.bzl", "cargo_version_mismatch", "find_cargo")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
 
@@ -139,11 +140,11 @@ def _prefix_pwd_to_flag(args, flag_variations):
     res = []
     prefix_next_arg = False
     for arg in args:
-        # When expecting a path argument and we see -Xclang, skip over it and
+        # When expecting a path argument, skip Clang forwarding tokens and
         # map the next argument instead.
         # ex: -Xclang -internal-isystem -Xclang path
         # to: -Xclang -internal-isystem -Xclang ${pwd}/path
-        if prefix_next_arg and arg == "-Xclang":
+        if prefix_next_arg and arg in ("-Xclang", "-Xpreprocessor"):
             res.append(arg)
             continue
 
@@ -217,7 +218,7 @@ def _pwd_flags_fsanitize_ignorelist(args):
 
 def _pwd_flags_isystem(args):
     """Prefix execroot-relative paths in -isystem-like arguments with ${pwd}."""
-    return _prefix_pwd_to_flag(args, ["-isystem", "-isystem-after", "-internal-isystem", "-cxx-isystem", "-stdlib++-isystem", "/imsvc"])
+    return _prefix_pwd_to_flag(args, ["-isystem", "-isystem-after", "-internal-isystem", "-internal-externc-isystem", "-cxx-isystem", "-stdlib++-isystem", "/imsvc"])
 
 def _pwd_flags_L(args):
     """Prefix execroot-relative paths in -L arguments with ${pwd}."""
@@ -413,6 +414,8 @@ def _cargo_build_script_impl(ctx):
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
+    cdylib_link_flags = ctx.actions.declare_file(ctx.label.name + ".cdyliblinkflags")  # rustc-cdylib-link-arg, applied to cdylib crates (incl. transitively)
+    bin_link_flags = ctx.actions.declare_file(ctx.label.name + ".binlinkflags")  # rustc-link-arg-bins, applied to binary crates
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
     script_data = []
@@ -442,7 +445,11 @@ def _cargo_build_script_impl(ctx):
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
 
-    toolchain_tools = [toolchain.all_files]
+    cargo = find_cargo(ctx, toolchain)
+    mismatch = cargo_version_mismatch(cargo.toolchain, toolchain)
+    if mismatch:
+        fail("{}: {}".format(ctx.label, mismatch))
+    toolchain_tools = [toolchain.all_files, cargo.files]
 
     env = {}
 
@@ -456,8 +463,8 @@ def _cargo_build_script_impl(ctx):
     if use_default_shell_env:
         env.update(ctx.configuration.default_shell_env)
 
-    if toolchain.cargo:
-        env["CARGO"] = "${pwd}/%s" % toolchain.cargo.path
+    if cargo.cargo:
+        env["CARGO"] = "${pwd}/%s" % cargo.cargo.path
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -635,6 +642,8 @@ def _cargo_build_script_impl(ctx):
     args.add(flags_out, format = "--flags_out=%s")
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
+    args.add(cdylib_link_flags, format = "--cdylib_link_flags=%s")
+    args.add(bin_link_flags, format = "--bin_link_flags=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
     args.add(ctx.attr.rundir, format = "--rundir=%s")
 
@@ -709,6 +718,8 @@ def _cargo_build_script_impl(ctx):
             flags_out,
             link_flags,
             link_search_paths,
+            cdylib_link_flags,
+            bin_link_flags,
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
@@ -736,6 +747,8 @@ def _cargo_build_script_impl(ctx):
             flags = flags_out,
             linker_flags = link_flags,
             link_search_paths = link_search_paths,
+            cdylib_link_flags = cdylib_link_flags,
+            bin_link_flags = bin_link_flags,
             compile_data = depset([runfiles_dir] + extra_output, transitive = script_data),
         ),
         OutputGroupInfo(
@@ -934,6 +947,7 @@ cargo_build_script = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )

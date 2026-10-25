@@ -1,0 +1,3 @@
+load(":cdylib_bin_link_args_test.bzl", "cdylib_bin_link_args_test_suite")
+
+cdylib_bin_link_args_test_suite(name = "cdylib_bin_link_args_test_suite")

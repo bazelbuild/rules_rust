@@ -1,5 +1,6 @@
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_library", "rust_test")
+load(":exec_constraints_test.bzl", "exec_constraints_test")
 
 environment_group(
     name = "foo_environment",
@@ -38,4 +39,19 @@ rust_test(
     compatible_with = [":bar"],
     edition = "2018",
     deps = [":empty_build_script"],
+)
+
+cargo_build_script(
+    name = "exec_constrained_build_script",
+    testonly = True,
+    srcs = ["do_nothing.rs"],
+    edition = "2018",
+    exec_compatible_with = ["@platforms//os:linux"],
+    tags = ["manual"],
+)
+
+exec_constraints_test(
+    name = "exec_constraints_test",
+    build_script = "exec_constrained_build_script",
+    constraint = "@platforms//os:linux",
 )

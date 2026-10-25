@@ -109,14 +109,14 @@ rust_test(
     crate = ":cargo_bazel",
     data = glob(["test_data/**"]) + [
         "//crate_universe/test_data/serialized_configs",
-        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//cargo:current_cargo_toolchain",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
     rustc_env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CARGO": "$(rootpath @rules_rust//cargo:current_cargo_toolchain)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
     # TODO: `crate_universe` currently does not work on Windows.
@@ -139,12 +139,12 @@ rust_test(
     srcs = ["tests/cargo_integration_test.rs"],
     aliases = aliases(),
     data = glob(["test_data/**"]) + [
-        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//cargo:current_cargo_toolchain",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],
     edition = "2021",
     env = {
-        "CARGO": "$(rlocationpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CARGO": "$(rlocationpath @rules_rust//cargo:current_cargo_toolchain)",
         "RUSTC": "$(rlocationpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
     proc_macro_deps = all_crate_deps(

@@ -1,0 +1,31 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//rust:defs.bzl", "rust_doc_test", "rust_library")
+load(":input.bzl", "exec_file")
+
+rust_doc_test(
+    name = "generated_environment_test",
+    crate = ":lib",
+    # Legacy doctests require directory runfiles on Windows (#1156).
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    rustc_env_files = [":exec_environment"],
+)
+
+exec_file(
+    name = "exec_environment",
+    src = ":environment",
+)
+
+write_file(
+    name = "environment",
+    out = "environment.txt",
+    content = ["GENERATED_VALUE=from the execution configuration"],
+)

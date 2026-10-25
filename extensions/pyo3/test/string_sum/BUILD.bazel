@@ -1,10 +1,17 @@
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_rust//rust:defs.bzl", "rust_lint_config")
 load("//:defs.bzl", "pyo3_extension")
+
+rust_lint_config(
+    name = "lints",
+    rustc = {"unknown_lints": "allow"},
+)
 
 pyo3_extension(
     name = "string_sum",
     srcs = ["string_sum.rs"],
     edition = "2021",
+    lint_config = ":lints",
 )
 
 py_test(

@@ -60,6 +60,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imac-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-fuchsia": _support(std = True, host_tools = False),
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
@@ -273,7 +274,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # includes `-lunwind` but this might not actually be required.
     # I am not sure which is the common configuration or how we encode it as a link flag.
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
-    "darwin": ["-lSystem", "-lresolv"],
+    "darwin": ["-lSystem"],
     "dragonfly": ["-lpthread"],
     "eabi": [],
     "eabihf": [],
@@ -296,7 +297,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
-    "macos": ["-lSystem", "-lresolv"],
+    "macos": ["-lSystem"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
     "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.

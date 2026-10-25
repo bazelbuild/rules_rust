@@ -248,7 +248,9 @@ def pyo3_extension(
         crate_root = None,
         data = [],
         deps = [],
+        link_deps = [],
         edition = None,
+        lint_config = None,
         imports = [],
         proc_macro_deps = [],
         rustc_env = {},
@@ -282,7 +284,11 @@ def pyo3_extension(
             For more details see [rust_shared_library][rsl].
         deps (list, optional): List of other libraries to be linked to this library target.
             For more details see [rust_shared_library][rsl].
+        link_deps (list, optional): List of other cc_libraries to be linked to this library target.
+            For more details see [rust_shared_library][rsl].
         edition (str, optional): The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.
+            For more details see [rust_shared_library][rsl].
+        lint_config (Label, optional): A target providing the lint configuration for the Rust shared library.
             For more details see [rust_shared_library][rsl].
         imports (list, optional): List of import directories to be added to the `PYTHONPATH`.
             For more details see [py_library.imports][pli].
@@ -334,7 +340,9 @@ def pyo3_extension(
         deps = [
             Label("//private:current_rust_pyo3_toolchain"),
         ] + deps,
+        link_deps = link_deps,
         edition = edition,
+        lint_config = lint_config,
         proc_macro_deps = proc_macro_deps,
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,

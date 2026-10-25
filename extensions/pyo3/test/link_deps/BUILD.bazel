@@ -1,0 +1,22 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:defs.bzl", "pyo3_extension")
+
+cc_library(
+    name = "c_deps",
+    srcs = ["answer.c"],
+)
+
+# Regression test: `link_deps` must only reach the `rust_shared_library`, not
+# the `py_pyo3_library` wrapper (which has no such attribute).
+pyo3_extension(
+    name = "link_deps",
+    srcs = ["link_deps.rs"],
+    link_deps = [":c_deps"],
+)
+
+py_test(
+    name = "link_deps_test",
+    srcs = ["link_deps_test.py"],
+    deps = [":link_deps"],
+)

@@ -1,0 +1,3 @@
+load(":dlltool_test.bzl", "dlltool_test_suite")
+
+dlltool_test_suite(name = "dlltool_test_suite")

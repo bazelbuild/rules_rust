@@ -518,6 +518,71 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
+# The environment variables rustc reads the Apple deployment target from,
+# keyed by the OS names clang accepts in a `-target` triple and in
+# `-m<os>-version-min=`.
+_APPLE_DEPLOYMENT_TARGET_ENV = {
+    "ios": "IPHONEOS_DEPLOYMENT_TARGET",
+    "iphoneos": "IPHONEOS_DEPLOYMENT_TARGET",
+    "macos": "MACOSX_DEPLOYMENT_TARGET",
+    "macosx": "MACOSX_DEPLOYMENT_TARGET",
+    "tvos": "TVOS_DEPLOYMENT_TARGET",
+    "visionos": "XROS_DEPLOYMENT_TARGET",
+    "watchos": "WATCHOS_DEPLOYMENT_TARGET",
+    "xros": "XROS_DEPLOYMENT_TARGET",
+}
+
+def _split_os_version(os_version):
+    """Splits `macosx26.0` into `("macosx", "26.0")`. The version may be empty."""
+    for i in range(len(os_version)):
+        if os_version[i].isdigit():
+            return os_version[:i], os_version[i:]
+    return os_version, ""
+
+def apple_deployment_target_env(link_args):
+    """Derives the Apple deployment target variable rustc expects from linker arguments.
+
+    An Apple cc_toolchain tells clang its deployment target through the
+    `-target` triple (e.g. `arm64-apple-macosx26.0`) or `-m<os>-version-min=`.
+    rustc does not read the link args it forwards: it takes the deployment
+    target from `MACOSX_DEPLOYMENT_TARGET` and its per-OS siblings and, when
+    those are unset, from its own default, which it passes to the linker as
+    `-m<os>-version-min=`. clang then warns about the conflicting options on
+    every link (bazelbuild/rules_rust#4149).
+
+    As in clang, a version carried by the last `-target` triple wins over
+    `-m<os>-version-min=`.
+
+    Args:
+        link_args (list): The linker arguments forwarded to rustc.
+
+    Returns:
+        dict: The deployment target variable to set for rustc, if any.
+    """
+    triple = None
+    version_min = None
+    for i, arg in enumerate(link_args):
+        if arg == "-target" and i + 1 < len(link_args):
+            triple = link_args[i + 1]
+        elif arg.startswith("--target="):
+            triple = arg[len("--target="):]
+        elif arg.startswith("-m") and "-version-min=" in arg:
+            version_min = arg[len("-m"):].split("-version-min=", 1)
+
+    os, version = None, None
+    if triple:
+        parts = triple.split("-")
+        if len(parts) >= 3 and parts[1] == "apple":
+            os, version = _split_os_version(parts[2])
+    if not version and version_min:
+        # `-mios-simulator-version-min=` names the OS before the environment.
+        os, version = version_min[0].split("-")[0], version_min[1]
+
+    var = _APPLE_DEPLOYMENT_TARGET_ENV.get(os)
+    if not var or not version:
+        return {}
+    return {var: version}
+
 def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
@@ -848,6 +913,8 @@ def collect_inputs(
     build_script_compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(
         build_info = build_info,
         dep_info = dep_info,
+        crate_type = crate_info.type,
+        is_test = crate_info.is_test,
         include_link_flags = include_link_flags,
         include_transitive_data = not toolchain._incompatible_do_not_include_transitive_data_in_compile_inputs,
     )
@@ -984,7 +1051,8 @@ def construct_arguments(
         require_explicit_unstable_features = False,
         error_format = None,
         allowed_unstable_rust_features = None,
-        link_std_dylib = False):
+        link_std_dylib = False,
+        bin_link_flags = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1057,6 +1125,7 @@ def construct_arguments(
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
         link_std_dylib (bool): Whether to dynamically link the Rust standard library using `--prefer-dynamic`.
+        bin_link_flags (File, optional): Binary-scoped build-script arguments, selected by `cargo_bin_name`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1083,6 +1152,9 @@ def construct_arguments(
         process_wrapper_flags.add("--env-file", build_env_file)
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
+    if bin_link_flags:
+        process_wrapper_flags.add("--bin-arg-file", bin_link_flags)
+        process_wrapper_flags.add("--cargo-bin-name", getattr(attr, "cargo_bin_name", "") or ctx.label.name)
 
     all_allowed_unstable_features = []
     if getattr(ctx.attr, "unstable_rust_features_config", None):
@@ -1322,14 +1394,17 @@ def construct_arguments(
 
     # gcc runs dlltool internally when acting as the linker, but rustc drives the linker directly so
     # it needs dlltool's path: apply outside the link-emit gate below since rlib compiles need it too.
-    if cc_toolchain and toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
-        linker_path = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
-        )
-        dlltool_path = dlltool_path_from_linker_path(linker_path)
-        if dlltool_path:
-            rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
+    if toolchain.target_os == "windows" and toolchain.target_abi != "msvc":
+        if toolchain.dlltool:
+            rustc_flags.add(toolchain.dlltool, format = "--codegen=dlltool=%s")
+        elif cc_toolchain:
+            linker_path = cc_common.get_tool_for_action(
+                feature_configuration = feature_configuration,
+                action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
+            )
+            dlltool_path = dlltool_path_from_linker_path(linker_path)
+            if dlltool_path:
+                rustc_flags.add(dlltool_path, format = "--codegen=dlltool=%s")
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1360,6 +1435,15 @@ def construct_arguments(
             )
 
             env.update(link_env)
+
+            # rustc only learns the Apple deployment target from its environment,
+            # so mirror the one the cc_toolchain encodes in its link args. A value
+            # from `--action_env` is kept; `rustc_env` and the toolchain's `env`
+            # are applied below and override this one.
+            for key, value in apple_deployment_target_env(link_args).items():
+                if key not in ctx.configuration.default_shell_env:
+                    env[key] = value
+
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
@@ -1756,10 +1840,10 @@ def rustc_compile_action(
 
     # Add flags for any 'rustc' lints that are specified.
     #
-    # Exclude lints if we're building in the exec configuration to prevent crates
-    # used in build scripts from generating warnings.
+    # An explicit lint configuration belongs to the crate in either
+    # configuration, including first-party build scripts and procedural macros.
     lint_files = []
-    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
         rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
         lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
 
@@ -1873,6 +1957,7 @@ def rustc_compile_action(
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
+        bin_link_flags = getattr(build_info, "bin_link_flags", None) if build_info and crate_info.type == "bin" and not crate_info.is_test else None,
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
@@ -2536,6 +2621,8 @@ def add_edition_flags(args, crate):
 def _process_build_scripts(
         build_info,
         dep_info,
+        crate_type,
+        is_test = False,
         include_link_flags = True,
         include_transitive_data = False):
     """Gathers the outputs from a target's `cargo_build_script` action.
@@ -2543,6 +2630,8 @@ def _process_build_scripts(
     Args:
         build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
+        crate_type (str): The consuming crate type.
+        is_test (bool): Whether the consumer is a test harness.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
         include_transitive_data (bool, optional): Whether to include transitive data dependencies in compile inputs.
 
@@ -2580,6 +2669,11 @@ def _process_build_scripts(
             build_flags_files.append(build_info.linker_flags)
             direct_inputs.append(build_info.linker_flags)
 
+        # `cargo::rustc-link-arg-bins` applies only to binary targets, and (like
+        # cargo) only from the crate's own build script — not transitively.
+        if crate_type == "bin" and not is_test and getattr(build_info, "bin_link_flags", None):
+            direct_inputs.append(build_info.bin_link_flags)
+
         transitive_inputs.append(build_info.compile_data)
 
     # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
@@ -2588,6 +2682,14 @@ def _process_build_scripts(
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
         transitive_inputs.append(dep_build_info.compile_data)
+
+        # `cargo::rustc-cdylib-link-arg` applies only to cdylib targets, and (like
+        # cargo, see rust-lang/cargo#9562) propagates transitively to them. The
+        # crate's own build script is included here via `transitive_build_infos`.
+        if crate_type == "cdylib" and not is_test and getattr(dep_build_info, "cdylib_link_flags", None):
+            build_flags_files.append(dep_build_info.cdylib_link_flags)
+            direct_inputs.append(dep_build_info.cdylib_link_flags)
+
     out_dir_compile_inputs = depset(
         direct_inputs,
         transitive = transitive_inputs,

@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_rust_toolchain_test_target_json//:defs.bzl", "TARGET_JSON")
+load("//rust:defs.bzl", "rust_lto_flag")
 load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
 load("//rust/platform:triple.bzl", "triple")
 
@@ -71,6 +72,14 @@ def _toolchain_location_expands_extra_rustc_flags_impl(ctx):
 
     return analysistest.end(env)
 
+def _toolchain_uses_custom_lto_flag_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    toolchain_info = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
+
+    asserts.equals(env, "fat", toolchain_info.lto.mode)
+
+    return analysistest.end(env)
+
 def _std_libs_support_srcs_outside_package_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -91,6 +100,7 @@ toolchain_specifies_target_triple_test = analysistest.make(_toolchain_specifies_
 toolchain_specifies_target_json_test = analysistest.make(_toolchain_specifies_target_json_test_impl)
 toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_location_expands_linkflags_impl)
 toolchain_location_expands_extra_rustc_flags_test = analysistest.make(_toolchain_location_expands_extra_rustc_flags_impl)
+toolchain_uses_custom_lto_flag_test = analysistest.make(_toolchain_uses_custom_lto_flag_test_impl)
 std_libs_support_srcs_outside_package_test = analysistest.make(_std_libs_support_srcs_outside_package_test_impl)
 
 def _define_test_targets():
@@ -201,6 +211,26 @@ def _define_test_targets():
         target_json = encoded_target_json,
     )
 
+    rust_lto_flag(
+        name = "fat_lto",
+        build_setting_default = "fat",
+    )
+
+    rust_toolchain(
+        name = "rust_custom_lto_toolchain",
+        binary_ext = "",
+        dylib_ext = ".so",
+        exec_triple = "x86_64-unknown-none",
+        lto = ":fat_lto",
+        rust_doc = ":mock_rustdoc",
+        rust_std = ":std_libs",
+        rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
+        staticlib_ext = ".a",
+        stdlib_linkflags = [],
+        target_triple = "toolchain-test-triple",
+    )
+
 def toolchain_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -229,6 +259,10 @@ def toolchain_test_suite(name):
         name = "toolchain_location_expands_extra_rustc_flags_test",
         target_under_test = ":rust_location_expand_toolchain",
     )
+    toolchain_uses_custom_lto_flag_test(
+        name = "toolchain_uses_custom_lto_flag_test",
+        target_under_test = ":rust_custom_lto_toolchain",
+    )
     std_libs_support_srcs_outside_package_test(
         name = "std_libs_support_srcs_outside_package_test",
         target_under_test = ":std_libs_with_srcs_outside_package",
@@ -242,6 +276,7 @@ def toolchain_test_suite(name):
             ":toolchain_specifies_inline_target_json_test",
             ":toolchain_location_expands_linkflags_test",
             ":toolchain_location_expands_extra_rustc_flags_test",
+            ":toolchain_uses_custom_lto_flag_test",
             ":std_libs_support_srcs_outside_package_test",
         ],
     )
