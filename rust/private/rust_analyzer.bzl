@@ -268,13 +268,17 @@ def _create_single_crate(ctx, attrs, info):
     # only ones for which we want build file watching and code lens runnables support.
     if not is_external and not is_generated:
         crate["build"] = {
-            "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
             # Emit canonical `//pkg:name` form. Bazel's BEP reports action
             # labels in this form, and the flycheck wrapper matches spec
             # labels against BEP labels to find each action's stderr for
             # diagnostics. Without the leading `//`, the match silently
             # fails and the wrapper emits no diagnostics for the crate.
             "label": "//" + ctx.label.package + ":" + ctx.label.name,
+            # `ctx.build_file_path` is unavailable with
+            # `--incompatible_stop_exporting_build_file_path`, and analysis
+            # cannot tell whether the package uses `BUILD.bazel` or `BUILD`,
+            # so the generator resolves the BUILD file in this directory.
+            "package_dir": _WORKSPACE_TEMPLATE + ctx.label.package,
         }
 
     if is_generated:

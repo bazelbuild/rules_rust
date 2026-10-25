@@ -26,7 +26,7 @@ pub struct CrateSpec {
 #[serde(deny_unknown_fields)]
 pub struct CrateSpecBuild {
     pub label: String,
-    pub build_file: String,
+    pub package_dir: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
@@ -137,7 +137,7 @@ mod test {
                 is_test: false,
                 build: Some(CrateSpecBuild {
                     label: "//:mylib".to_owned(),
-                    build_file: "BUILD.bazel".to_owned(),
+                    package_dir: "".to_owned(),
                 }),
             },
             CrateSpec {
@@ -213,7 +213,7 @@ mod test {
                     is_test: false,
                     build: Some(CrateSpecBuild {
                         label: "//:mylib".to_owned(),
-                        build_file: "BUILD.bazel".to_owned(),
+                        package_dir: "".to_owned(),
                     }),
                 },
                 CrateSpec {
