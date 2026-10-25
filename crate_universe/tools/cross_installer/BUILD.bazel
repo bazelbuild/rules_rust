@@ -18,12 +18,12 @@ rust_binary(
     data = [
         "Cross.toml",
         ":cross",
-        "@rules_rust//rust/toolchain:current_cargo_files",
+        "@rules_rust//cargo:current_cargo_toolchain",
     ],
     edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
-        "CARGO": "$(rlocationpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CARGO": "$(rlocationpath @rules_rust//cargo:current_cargo_toolchain)",
         "CROSS_BIN": "$(rlocationpath :cross)",
         "CROSS_CONFIG_RLOCATION": "$(rlocationpath :Cross.toml)",
     },

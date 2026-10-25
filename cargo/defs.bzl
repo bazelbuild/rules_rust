@@ -20,6 +20,11 @@ load(
     _cargo_env = "cargo_env",
 )
 load(
+    "//cargo:cargo_toolchain.bzl",
+    _cargo_toolchain = "cargo_toolchain",
+    _cargo_toolchain_alias = "cargo_toolchain_alias",
+)
+load(
     "//cargo:extract_cargo_lints.bzl",
     _extract_cargo_lints = "extract_cargo_lints",
 )
@@ -30,6 +35,9 @@ cargo_env = _cargo_env
 
 cargo_build_script = _cargo_build_script
 cargo_dep_env = _cargo_dep_env
+
+cargo_toolchain = _cargo_toolchain
+cargo_toolchain_alias = _cargo_toolchain_alias
 
 extract_cargo_lints = _extract_cargo_lints
 

@@ -5,11 +5,6 @@ load("//rust/private:toolchain_utils.bzl", "rust_toolchain_alias", "toolchain_fi
 package(default_visibility = ["//visibility:public"])
 
 toolchain_files(
-    name = "current_cargo_files",
-    tool = "cargo",
-)
-
-toolchain_files(
     name = "current_clippy_files",
     tool = "clippy",
 )
@@ -56,6 +51,12 @@ toolchain_files_for_target(
     name = "current_rustfmt_toolchain_for_target",
     toolchain_files = ":current_rustfmt_toolchain",
     visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "current_cargo_files",
+    actual = "//cargo:current_cargo_toolchain",
+    deprecation = "Instead use `@rules_rust//cargo:current_cargo_toolchain`",
 )
 
 alias(

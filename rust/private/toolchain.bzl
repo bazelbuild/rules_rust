@@ -685,7 +685,12 @@ rust_toolchain = rule(
             mandatory = True,
         ),
         "cargo": attr.label(
-            doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
+            doc = (
+                "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item. " +
+                "**Deprecated**: register a [`cargo_toolchain`](#cargo_toolchain) for " +
+                "`@rules_rust//cargo:toolchain_type` instead. Rules which run Cargo use that toolchain " +
+                "when one is registered and fall back to this attribute when none is."
+            ),
             allow_single_file = True,
             cfg = "exec",
         ),

@@ -7,6 +7,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:nightly_versions.bzl", "NIGHTLY_VERSION_TRANSITIONS")
 load(
     "//rust/private:repository_utils.bzl",
+    "BUILD_for_cargo_toolchain",
     "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
@@ -48,6 +49,26 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 }
 
 _COMPACT_WINDOWS_NAMES = True
+
+# The toolchains declared next to every `rust_toolchain` in its tools
+# repository, keyed by the name of their target there and in the proxy
+# repository. They come from the same Rust release as `rustc` and must stay
+# with it, so they are registered with the same constraints and target
+# settings as the `rust_toolchain` they accompany and resolve in lockstep.
+COMPANION_TOOLCHAIN_TYPES = {
+    "cargo_toolchain": "@rules_rust//cargo:toolchain_type",
+}
+
+def _companion_toolchain_labels(tools_repo_name):
+    """The `toolchain` implementation labels of the companions in `tools_repo_name`."""
+    return {
+        name: "@{}//:{}".format(tools_repo_name, name)
+        for name in COMPANION_TOOLCHAIN_TYPES
+    }
+
+def _companion_hub_name(toolchain_name, companion):
+    """The name of a companion's `toolchain` target in the hub repository."""
+    return "{}__{}".format(toolchain_name, companion.removesuffix("_toolchain"))
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -215,6 +236,15 @@ def rust_register_toolchains(
             target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
             toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
             toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)] + target_settings
+
+            for companion, companion_type in COMPANION_TOOLCHAIN_TYPES.items():
+                companion_name = _companion_hub_name(toolchain.name, companion)
+                toolchain_names.append(companion_name)
+                toolchain_labels[companion_name] = "@{}//:{}".format(toolchain.name + "_tools", companion)
+                exec_compatible_with_by_toolchain[companion_name] = exec_compatible_with_by_toolchain[toolchain.name]
+                target_compatible_with_by_toolchain[companion_name] = toolchain.target_constraints
+                toolchain_types[companion_name] = companion_type
+                toolchain_target_settings[companion_name] = toolchain_target_settings[toolchain.name]
 
     # Rustfmt toolchains per exec triple
     for exec_triple, name in rustfmt_toolchain_triples.items():
@@ -515,6 +545,15 @@ def _rust_toolchain_tools_repository_impl(ctx):
         iso_date = iso_date,
     ))
 
+    # Cargo accompanies the `rust_toolchain` from the same release.
+    build_components.append(BUILD_for_cargo_toolchain(
+        name = "cargo_toolchain",
+        cargo = "//:cargo",
+        version = toolchain_version,
+        channel = channel,
+        iso_date = iso_date,
+    ))
+
     # Not all target triples are expected to have dev components
     if ctx.attr.dev_components:
         rustc_dev_sha256 = load_rustc_dev_nightly(
@@ -566,14 +605,26 @@ def _toolchain_repository_proxy_impl(repository_ctx):
         repository_ctx.name,
     ))
 
-    repository_ctx.file("BUILD.bazel", BUILD_for_toolchain(
-        name = "toolchain",
-        toolchain = repository_ctx.attr.toolchain,
-        target_settings = repository_ctx.attr.target_settings,
-        toolchain_type = repository_ctx.attr.toolchain_type,
-        target_compatible_with = repository_ctx.attr.target_compatible_with,
-        exec_compatible_with = repository_ctx.attr.exec_compatible_with,
-    ))
+    toolchains = {"toolchain": (repository_ctx.attr.toolchain, repository_ctx.attr.toolchain_type)}
+    for name, toolchain in repository_ctx.attr.extra_toolchains.items():
+        if name not in repository_ctx.attr.extra_toolchain_types:
+            fail("`extra_toolchain_types` is missing the toolchain type of `{}`. Please update {}".format(
+                name,
+                repository_ctx.name,
+            ))
+        toolchains[name] = (toolchain, repository_ctx.attr.extra_toolchain_types[name])
+
+    repository_ctx.file("BUILD.bazel", "\n".join([
+        BUILD_for_toolchain(
+            name = name,
+            toolchain = toolchain,
+            target_settings = repository_ctx.attr.target_settings,
+            toolchain_type = toolchain_type,
+            target_compatible_with = repository_ctx.attr.target_compatible_with,
+            exec_compatible_with = repository_ctx.attr.exec_compatible_with,
+        )
+        for name, (toolchain, toolchain_type) in toolchains.items()
+    ]))
     if hasattr(repository_ctx, "repo_metadata"):
         return repository_ctx.repo_metadata(reproducible = True)
     return None
@@ -587,6 +638,16 @@ toolchain_repository_proxy = repository_rule(
         "exec_compatible_with": attr.string_list(
             doc = "A list of constraints for the execution platform for this toolchain.",
         ),
+        "extra_toolchain_types": attr.string_dict(
+            doc = "The toolchain types of `extra_toolchains`, keyed the same way.",
+        ),
+        "extra_toolchains": attr.string_dict(
+            doc = (
+                "Further toolchain implementation targets to declare with the same constraints and " +
+                "target settings as `toolchain`, keyed by the name of the `toolchain` target to declare. " +
+                "Used for the toolchains which accompany a `rust_toolchain` and must resolve with it."
+            ),
+        ),
         "target_compatible_with": attr.string_list(
             doc = "A list of constraints for the target platform for this toolchain.",
         ),
@@ -594,7 +655,7 @@ toolchain_repository_proxy = repository_rule(
             doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
         "toolchain": attr.string(
-            doc = "The name of the toolchain implementation target.",
+            doc = "The name of the toolchain implementation target, declared as `:toolchain`.",
             mandatory = True,
         ),
         "toolchain_type": attr.string(
@@ -713,6 +774,8 @@ def rust_toolchain_repository(
         toolchain_type = toolchain_type,
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
+        extra_toolchains = _companion_toolchain_labels(tools_repo_name),
+        extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
     )
 
     return {
@@ -1131,6 +1194,7 @@ def rust_repository_set(
         tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
         toolchain_type = "@rules_rust//rust:toolchain"
 
+        companion_labels = _companion_toolchain_labels(tools_repo_name)
         toolchain_repository_proxy(
             name = toolchain.name,
             toolchain = tools_toolchain_label,
@@ -1138,8 +1202,14 @@ def rust_repository_set(
             toolchain_type = toolchain_type,
             exec_compatible_with = tc_exec_compatible_with,
             target_compatible_with = tc_target_compatible_with,
+            extra_toolchains = companion_labels,
+            extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
         )
 
+        # The hub registers repository sets without the channel setting their
+        # proxy repositories carry: a set which only provides, say, a nightly
+        # resolves without `--@rules_rust//rust/toolchain/channel=nightly`,
+        # and modules rely on that.
         all_toolchain_details[toolchain.name] = {
             "exec_compatible_with": tc_exec_compatible_with,
             "name": toolchain.name,
@@ -1149,5 +1219,17 @@ def rust_repository_set(
             "toolchain_type": toolchain_type,
             "tools_toolchain_label": tools_toolchain_label,
         }
+
+        for companion, companion_type in COMPANION_TOOLCHAIN_TYPES.items():
+            companion_name = _companion_hub_name(toolchain.name, companion)
+            all_toolchain_details[companion_name] = {
+                "exec_compatible_with": tc_exec_compatible_with,
+                "name": companion_name,
+                "target_compatible_with": tc_target_compatible_with,
+                "target_settings": target_settings,
+                "toolchain_label": "@{name}//:{companion}".format(name = toolchain.name, companion = companion),
+                "toolchain_type": companion_type,
+                "tools_toolchain_label": companion_labels[companion],
+            }
 
     return all_toolchain_details
