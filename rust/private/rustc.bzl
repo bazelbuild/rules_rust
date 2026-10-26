@@ -1224,28 +1224,25 @@ def construct_arguments(
             expand_directories = False,
         )
 
-    # Build-script flag files (link search paths, link flags) embed the
-    # build script's `out_dir` as a `${<path>}` substitution token, using
-    # the full analysis-time path as the key so each build script gets a
-    # unique token. Add a `--subst` entry for every direct and transitive
-    # build script `out_dir` so `process_wrapper` can resolve each token.
-    # Routing through `File`-typed `Args` entries lets Bazel path mapping
-    # rewrite the value at execution time.
+    # Keep OUT_DIR substitutions local to each producer's flag files. A graph can
+    # contain the same build script in multiple configurations, so a single
+    # global token or a label-derived token would resolve some flags incorrectly.
+    flag_out_dirs = {}
     for dep_build_info in dep_info.transitive_build_infos.to_list():
         if dep_build_info.out_dir:
-            process_wrapper_flags.add_all(
-                [dep_build_info.out_dir],
-                before_each = "--subst",
-                format_each = dep_build_info.out_dir.path + "=%s",
-                expand_directories = False,
-            )
-    if out_dir != None:
-        process_wrapper_flags.add_all(
-            [out_dir],
-            before_each = "--subst",
-            format_each = out_dir.path + "=%s",
-            expand_directories = False,
-        )
+            for flag_file in [
+                dep_build_info.linker_flags,
+                dep_build_info.link_search_paths,
+                getattr(dep_build_info, "cdylib_link_flags", None),
+                getattr(dep_build_info, "bin_link_flags", None),
+            ]:
+                if flag_file:
+                    flag_out_dirs[flag_file] = dep_build_info.out_dir
+    for flag_file in build_flags_files.to_list() + ([bin_link_flags] if bin_link_flags else []):
+        if flag_file in flag_out_dirs:
+            process_wrapper_flags.add("--arg-file-out-dir")
+            process_wrapper_flags.add(flag_file)
+            process_wrapper_flags.add_all([flag_out_dirs[flag_file]], expand_directories = False)
 
     # Arguments for launching rustc from the process wrapper. When a `File` is
     # provided via `tool_file`, add it directly so Bazel's path mapping can

@@ -14,6 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // `bin_link` target links against it via `-l`, forcing the linker to
     // locate the file through the transitive link search path. If the
     // path resolves incorrectly, linking fails with "library not found".
+    let archive = env::var("OUT_DIR_TEST_ARCHIVE").unwrap_or_else(|_| "cross_crate_lib".to_owned());
+    let archive = format!("lib{archive}.a");
     let ld = env::var("LD").unwrap_or_default();
     if is_msvc_linker(Path::new(&ld)) {
         // MSVC's link.exe requires a first-linker-member (symbol
@@ -28,10 +30,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         ar.extend_from_slice(b"4         "); // size  (10 bytes)
         ar.extend_from_slice(b"`\n"); // end   ( 2 bytes)
         ar.extend_from_slice(&[0, 0, 0, 0]); // 0 symbols (big-endian u32)
-        fs::write(out.join("libcross_crate_lib.a"), &ar)?;
+        fs::write(out.join(&archive), &ar)?;
     } else {
         // GNU ld / gold / lld / Apple ld all accept bare ar magic.
-        fs::write(out.join("libcross_crate_lib.a"), b"!<arch>\n")?;
+        fs::write(out.join(&archive), b"!<arch>\n")?;
     }
 
     println!("cargo:rustc-link-search={}", out.display());
