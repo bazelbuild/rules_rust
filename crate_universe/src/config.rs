@@ -645,7 +645,7 @@ struct CrateIdVisitor;
 impl Visitor<'_> for CrateIdVisitor {
     type Value = CrateId;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("Expected string value of `{name} {version}`.")
     }
 
@@ -680,7 +680,7 @@ impl<'de> Deserialize<'de> for CrateId {
 }
 
 impl std::fmt::Display for CrateId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&format!("{} {}", self.name, self.version), f)
     }
 }
@@ -723,7 +723,7 @@ struct GenBinariesVisitor;
 impl<'de> Visitor<'de> for GenBinariesVisitor {
     type Value = GenBinaries;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("boolean, or array of bin names")
     }
 
@@ -856,7 +856,7 @@ struct CrateNameAndVersionReqVisitor;
 impl Visitor<'_> for CrateNameAndVersionReqVisitor {
     type Value = CrateNameAndVersionReq;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("Expected string value of `{name} {version}`.")
     }
 

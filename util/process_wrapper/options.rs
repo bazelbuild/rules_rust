@@ -16,7 +16,7 @@ pub(crate) enum OptionError {
 }
 
 impl fmt::Display for OptionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FlagError(e) => write!(f, "error parsing flags: {e}"),
             Self::Generic(s) => write!(f, "{s}"),
