@@ -51,6 +51,48 @@ _empty_repository = repository_rule(
     implementation = _empty_repository_impl,
 )
 
+def _parse_rust_toolchain_file(module_ctx, label):
+    """Read the `channel` from a `rust-toolchain.toml` file using `yq`.
+
+    See https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file
+
+    Args:
+        module_ctx (module_ctx): The module extension's context.
+        label (Label): The label of the `rust-toolchain.toml` file.
+
+    Returns:
+        str: The toolchain channel, e.g. `1.92.0` or `nightly-2024-01-01`.
+    """
+    yq = module_ctx.path(Label("@yq//:yq"))
+    path = module_ctx.path(label)
+
+    # `module_ctx.execute` does not watch its inputs, so register the file
+    # explicitly to have the extension re-evaluated when it changes.
+    module_ctx.watch(path)
+
+    result = module_ctx.execute([
+        str(yq),
+        "--input-format=toml",
+        "--output-format=yaml",
+        "--unwrapScalar",
+        ".toolchain.channel // \"\"",
+        str(path),
+    ])
+    if result.return_code != 0:
+        fail("Failed to read {} with yq:\n{}".format(label, result.stderr))
+
+    channel = result.stdout.strip()
+    if not channel:
+        fail("No `channel` found in the `[toolchain]` table of {}".format(label))
+
+    # rustup spells dated channels as `nightly-YYYY-MM-DD` while rules_rust
+    # expects `nightly/YYYY-MM-DD`.
+    for prefix in ("nightly-", "beta-"):
+        if channel.startswith(prefix) and len(channel) > len(prefix):
+            channel = prefix[:-1] + "/" + channel[len(prefix):]
+
+    return channel
+
 def _rust_impl(module_ctx):
     # Toolchain configuration is only allowed in the root module, or in
     # rules_rust.
@@ -121,7 +163,10 @@ def _rust_impl(module_ctx):
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
         if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
             fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
-        if len(toolchain.versions) == 0:
+        versions = toolchain.versions
+        if toolchain.rust_toolchain_file:
+            versions = [_parse_rust_toolchain_file(module_ctx, toolchain.rust_toolchain_file)]
+        if len(versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
             # so that the `register_toolchains()` in MODULES.bazel is still
@@ -148,7 +193,7 @@ def _rust_impl(module_ctx):
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
-                versions = toolchain.versions,
+                versions = versions,
                 compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -290,6 +335,14 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "rustfmt_toolchain_triples": attr.string_dict(
             doc = "Like toolchain_triples, but for rustfmt toolchains. Mapping of rust target triple to repository name.",
         ),
+        "rust_toolchain_file": attr.label(
+            doc = (
+                "A `rust-toolchain.toml` file to read the toolchain version from. The `channel` entry of " +
+                "its `[toolchain]` table is used as the single entry of `versions`, which is otherwise " +
+                "ignored. This keeps the Bazel toolchain in sync with the version rustup uses."
+            ),
+            allow_single_file = True,
+        ),
         "strip_level": attr.string_dict(
             doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
         ),
@@ -300,7 +353,8 @@ _RUST_TOOLCHAIN_TAG = tag_class(
             doc = (
                 "A list of toolchain versions to download. This parameter only accepts one version " +
                 "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
-                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
+                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains. " +
+                "Ignored when `rust_toolchain_file` is set."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
         ),
