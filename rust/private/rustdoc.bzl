@@ -14,6 +14,7 @@
 
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:pic_utils.bzl", "should_use_pic")
 load("//rust/private:providers.bzl", "LintsInfo")
@@ -464,6 +465,5 @@ rust_doc = rule(
     },
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
 )

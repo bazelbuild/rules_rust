@@ -31,9 +31,9 @@ load(":providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.98.0"
+DEFAULT_RUST_VERSION = "1.99.1"
 
-DEFAULT_NIGHTLY_ISO_DATE = "2026-08-20"
+DEFAULT_NIGHTLY_ISO_DATE = "2026-10-15"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider
@@ -67,6 +67,32 @@ def _create_crate_info(**kwargs):
         kwargs.update({"root_path": ""})
     if not "owner" in kwargs:
         kwargs.update({"owner": None})
+    if not "aliases" in kwargs:
+        kwargs.update({"aliases": {}})
+    if not "cfgs" in kwargs:
+        kwargs.update({"cfgs": []})
+    if not "compile_data" in kwargs:
+        kwargs.update({"compile_data": depset([])})
+    if not "compile_data_targets" in kwargs:
+        kwargs.update({"compile_data_targets": depset([])})
+    if not "deps" in kwargs:
+        kwargs.update({"deps": depset([])})
+    if not "edition" in kwargs:
+        kwargs.update({"edition": "2015"})
+    if not "is_test" in kwargs:
+        kwargs.update({"is_test": False})
+    if not "output" in kwargs:
+        kwargs.update({"output": None})
+    if not "proc_macro_deps" in kwargs:
+        kwargs.update({"proc_macro_deps": depset([])})
+    if not "root" in kwargs:
+        kwargs.update({"root": None})
+    if not "rustc_env" in kwargs:
+        kwargs.update({"rustc_env": {}})
+    if not "srcs" in kwargs:
+        kwargs.update({"srcs": depset([])})
+    if not "std_dylib" in kwargs:
+        kwargs.update({"std_dylib": None})
     return CrateInfo(**kwargs)
 
 rust_common = struct(
@@ -78,6 +104,13 @@ rust_common = struct(
     test_crate_info = TestCrateInfo,
     crate_group_info = CrateGroupInfo,
     default_version = DEFAULT_RUST_VERSION,
+    # The toolchain types `rules_rust` defines, for rules which resolve them:
+    # `toolchains = [config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False)]`
+    # and `ctx.toolchains[rust_common.cargo_toolchain_type]`.
+    toolchain_type = Label("//rust:toolchain_type"),
+    cargo_toolchain_type = Label("//cargo:toolchain_type"),
+    rust_analyzer_toolchain_type = Label("//rust/rust_analyzer:toolchain_type"),
+    rustfmt_toolchain_type = Label("//rust/rustfmt:toolchain_type"),
 )
 
 COMMON_PROVIDERS = [

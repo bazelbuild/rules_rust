@@ -15,6 +15,7 @@
 """A module defining clippy rules"""
 
 load("@bazel_skylib//lib:structs.bzl", "structs")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:lint_test.bzl",
@@ -142,11 +143,11 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     lint_files = []
     if hasattr(ctx.rule.attr, "lint_config") and ctx.rule.attr.lint_config:
         clippy_flags = clippy_flags + \
-                       ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags + \
-                       ctx.rule.attr.lint_config[LintsInfo].rustc_lint_flags
+                       ctx.rule.attr.lint_config[LintsInfo].rustc_lint_flags + \
+                       ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags
         lint_files = lint_files + \
-                     ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files + \
-                     ctx.rule.attr.lint_config[LintsInfo].rustc_lint_files
+                     ctx.rule.attr.lint_config[LintsInfo].rustc_lint_files + \
+                     ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
@@ -369,8 +370,7 @@ rust_clippy_aspect = aspect(
     ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     implementation = _clippy_aspect_impl,
     doc = """\
 Executes the clippy checker on specified targets.

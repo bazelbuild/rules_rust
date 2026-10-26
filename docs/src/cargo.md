@@ -19,3 +19,13 @@ generated env vars, `[lints]` tables) without switching build systems.
 - [extract_cargo_lints](./extract_cargo_lints.md) — Read the `[lints]` table
   from a `Cargo.toml` and produce a [`rust_lint_config`](./rust_lint_config.md)
   target from it, so Cargo-defined lints apply to Bazel-built crates.
+
+## Toolchain
+
+- [cargo_toolchain](./cargo_toolchain.md) — Provide the `cargo` binary that
+  `cargo_build_script` exposes to build scripts as `$CARGO` and that
+  [crates_vendor](./crates_vendor.md) runs. Registered for
+  `@rules_rust//cargo:toolchain_type`, which rules declare as
+  `rust_common.cargo_toolchain_type`. The same page documents `find_cargo`, which
+  falls back to the `cargo` of the `rust_toolchain` when no `cargo_toolchain` is
+  registered.

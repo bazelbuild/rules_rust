@@ -1,5 +1,6 @@
 """A module defining Rust 'unpretty' rules"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:rust.bzl",
@@ -246,8 +247,7 @@ rust_unpretty_aspect = aspect(
     } | RUSTC_ATTRS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    ] + use_cc_toolchain(mandatory = False),
     required_providers = [
         [rust_common.crate_info],
         [rust_common.test_crate_info],

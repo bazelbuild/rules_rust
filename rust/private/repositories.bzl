@@ -7,6 +7,7 @@ load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:nightly_versions.bzl", "NIGHTLY_VERSION_TRANSITIONS")
 load(
     "//rust/private:repository_utils.bzl",
+    "BUILD_for_cargo_toolchain",
     "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
@@ -22,6 +23,7 @@ load(
     "load_llvm_tools",
     "load_rust_analyzer",
     "load_rust_compiler",
+    "load_rust_mingw",
     "load_rust_src",
     "load_rust_stdlib",
     "load_rustc_dev_nightly",
@@ -36,6 +38,7 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_macos_aarch64",
     "aarch64-pc-windows-msvc": "rust_windows_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
+    "loongarch64-unknown-linux-gnu": "rust_linux_loongarch64",
     "powerpc64le-unknown-linux-gnu": "rust_linux_powerpc64le",
     "riscv64gc-unknown-linux-gnu": "rust_linux_riscv64",
     "s390x-unknown-linux-gnu": "rust_linux_s390x",
@@ -46,6 +49,26 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 }
 
 _COMPACT_WINDOWS_NAMES = True
+
+# The toolchains declared next to every `rust_toolchain` in its tools
+# repository, keyed by the name of their target there and in the proxy
+# repository. They come from the same Rust release as `rustc` and must stay
+# with it, so they are registered with the same constraints and target
+# settings as the `rust_toolchain` they accompany and resolve in lockstep.
+COMPANION_TOOLCHAIN_TYPES = {
+    "cargo_toolchain": "@rules_rust//cargo:toolchain_type",
+}
+
+def _companion_toolchain_labels(tools_repo_name):
+    """The `toolchain` implementation labels of the companions in `tools_repo_name`."""
+    return {
+        name: "@{}//:{}".format(tools_repo_name, name)
+        for name in COMPANION_TOOLCHAIN_TYPES
+    }
+
+def _companion_hub_name(toolchain_name, companion):
+    """The name of a companion's `toolchain` target in the hub repository."""
+    return "{}__{}".format(toolchain_name, companion.removesuffix("_toolchain"))
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -58,6 +81,7 @@ def rust_register_toolchains(
         edition = None,
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         rustfmt_version = None,
         rust_analyzer_version = None,
         sha256s = None,
@@ -96,6 +120,7 @@ def rust_register_toolchains(
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its `edition` attribute.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
         rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
@@ -184,6 +209,7 @@ def rust_register_toolchains(
             extra_target_triples = extra_target_triples,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
+            dlltool = dlltool,
             rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
@@ -210,6 +236,15 @@ def rust_register_toolchains(
             target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
             toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
             toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)] + target_settings
+
+            for companion, companion_type in COMPANION_TOOLCHAIN_TYPES.items():
+                companion_name = _companion_hub_name(toolchain.name, companion)
+                toolchain_names.append(companion_name)
+                toolchain_labels[companion_name] = "@{}//:{}".format(toolchain.name + "_tools", companion)
+                exec_compatible_with_by_toolchain[companion_name] = exec_compatible_with_by_toolchain[toolchain.name]
+                target_compatible_with_by_toolchain[companion_name] = toolchain.target_constraints
+                toolchain_types[companion_name] = companion_type
+                toolchain_target_settings[companion_name] = toolchain_target_settings[toolchain.name]
 
     # Rustfmt toolchains per exec triple
     for exec_triple, name in rustfmt_toolchain_triples.items():
@@ -280,6 +315,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
     ),
+    "dlltool": attr.string(
+        doc = "Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.",
+    ),
     "edition": attr.string(
         doc = (
             "The rust edition to be used by default (2015, 2018, or 2021). " +
@@ -339,6 +377,10 @@ def _include_rust_objcopy(version, iso_date):
     if version in ("nightly", "beta"):
         return iso_date > "2024-10-17"
     return semver(version).minor >= 84
+
+def _is_windows_gnu(triple):
+    """Whether `triple` is a `*-pc-windows-gnu` triple, for which rust-mingw is published"""
+    return triple.vendor == "pc" and triple.system == "windows" and triple.abi == "gnu"
 
 def _resolve_nightly_version(iso_date):
     """Resolve a nightly iso_date to its underlying Rust semver version.
@@ -465,6 +507,18 @@ def _rust_toolchain_tools_repository_impl(ctx):
     build_components.append(rust_stdlib_content)
     sha256s.update(rust_stdlib_sha256)
 
+    dlltool = ctx.attr.dlltool
+    if not dlltool and _is_windows_gnu(exec_triple) and _is_windows_gnu(target_triple):
+        rust_mingw_content, rust_mingw_sha256 = load_rust_mingw(
+            ctx = ctx,
+            target_triple = exec_triple,
+            version = version,
+            iso_date = iso_date,
+        )
+        build_components.append(rust_mingw_content)
+        sha256s.update(rust_mingw_sha256)
+        dlltool = "//:rust_mingw_dlltool"
+
     stdlib_linkflags = None
     if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
         stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
@@ -474,6 +528,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         exec_triple = exec_triple,
         allocator_library = ctx.attr.allocator_library,
         global_allocator_library = ctx.attr.global_allocator_library,
+        dlltool = dlltool,
         target_triple = target_triple,
         stdlib_linkflags = stdlib_linkflags,
         default_edition = ctx.attr.edition,
@@ -485,6 +540,15 @@ def _rust_toolchain_tools_repository_impl(ctx):
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
         strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
+        version = toolchain_version,
+        channel = channel,
+        iso_date = iso_date,
+    ))
+
+    # Cargo accompanies the `rust_toolchain` from the same release.
+    build_components.append(BUILD_for_cargo_toolchain(
+        name = "cargo_toolchain",
+        cargo = "//:cargo",
         version = toolchain_version,
         channel = channel,
         iso_date = iso_date,
@@ -541,14 +605,26 @@ def _toolchain_repository_proxy_impl(repository_ctx):
         repository_ctx.name,
     ))
 
-    repository_ctx.file("BUILD.bazel", BUILD_for_toolchain(
-        name = "toolchain",
-        toolchain = repository_ctx.attr.toolchain,
-        target_settings = repository_ctx.attr.target_settings,
-        toolchain_type = repository_ctx.attr.toolchain_type,
-        target_compatible_with = repository_ctx.attr.target_compatible_with,
-        exec_compatible_with = repository_ctx.attr.exec_compatible_with,
-    ))
+    toolchains = {"toolchain": (repository_ctx.attr.toolchain, repository_ctx.attr.toolchain_type)}
+    for name, toolchain in repository_ctx.attr.extra_toolchains.items():
+        if name not in repository_ctx.attr.extra_toolchain_types:
+            fail("`extra_toolchain_types` is missing the toolchain type of `{}`. Please update {}".format(
+                name,
+                repository_ctx.name,
+            ))
+        toolchains[name] = (toolchain, repository_ctx.attr.extra_toolchain_types[name])
+
+    repository_ctx.file("BUILD.bazel", "\n".join([
+        BUILD_for_toolchain(
+            name = name,
+            toolchain = toolchain,
+            target_settings = repository_ctx.attr.target_settings,
+            toolchain_type = toolchain_type,
+            target_compatible_with = repository_ctx.attr.target_compatible_with,
+            exec_compatible_with = repository_ctx.attr.exec_compatible_with,
+        )
+        for name, (toolchain, toolchain_type) in toolchains.items()
+    ]))
     if hasattr(repository_ctx, "repo_metadata"):
         return repository_ctx.repo_metadata(reproducible = True)
     return None
@@ -562,6 +638,16 @@ toolchain_repository_proxy = repository_rule(
         "exec_compatible_with": attr.string_list(
             doc = "A list of constraints for the execution platform for this toolchain.",
         ),
+        "extra_toolchain_types": attr.string_dict(
+            doc = "The toolchain types of `extra_toolchains`, keyed the same way.",
+        ),
+        "extra_toolchains": attr.string_dict(
+            doc = (
+                "Further toolchain implementation targets to declare with the same constraints and " +
+                "target settings as `toolchain`, keyed by the name of the `toolchain` target to declare. " +
+                "Used for the toolchains which accompany a `rust_toolchain` and must resolve with it."
+            ),
+        ),
         "target_compatible_with": attr.string_list(
             doc = "A list of constraints for the target platform for this toolchain.",
         ),
@@ -569,7 +655,7 @@ toolchain_repository_proxy = repository_rule(
             doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
         "toolchain": attr.string(
-            doc = "The name of the toolchain implementation target.",
+            doc = "The name of the toolchain implementation target, declared as `:toolchain`.",
             mandatory = True,
         ),
         "toolchain_type": attr.string(
@@ -593,6 +679,7 @@ def rust_toolchain_repository(
         channel = None,
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         rustfmt_version = None,
         edition = None,
         dev_components = False,
@@ -619,6 +706,7 @@ def rust_toolchain_repository(
         target_settings (list of labels as strings, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
             toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
@@ -656,6 +744,7 @@ def rust_toolchain_repository(
         exec_triple = exec_triple,
         allocator_library = allocator_library,
         global_allocator_library = global_allocator_library,
+        dlltool = dlltool,
         target_triple = target_triple,
         version = version,
         rustfmt_version = rustfmt_version,
@@ -685,6 +774,8 @@ def rust_toolchain_repository(
         toolchain_type = toolchain_type,
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
+        extra_toolchains = _companion_toolchain_labels(tools_repo_name),
+        extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
     )
 
     return {
@@ -991,6 +1082,7 @@ def rust_repository_set(
         target_settings = [],
         allocator_library = None,
         global_allocator_library = None,
+        dlltool = None,
         extra_target_triples = {},
         rustfmt_version = None,
         edition = None,
@@ -1020,6 +1112,7 @@ def rust_repository_set(
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are
             embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions a global allocator is used with cc_common.link.
+        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
         extra_target_triples (list or map, optional): Additional rust-style targets that this set of
             toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
         rustfmt_version (str, optional):  The version of rustfmt to be associated with the
@@ -1080,6 +1173,7 @@ def rust_repository_set(
             exec_triple = exec_triple,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
+            dlltool = dlltool,
             target_triple = toolchain.target_triple,
             version = toolchain.channel.version,
             rustfmt_version = rustfmt_version,
@@ -1100,6 +1194,7 @@ def rust_repository_set(
         tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
         toolchain_type = "@rules_rust//rust:toolchain"
 
+        companion_labels = _companion_toolchain_labels(tools_repo_name)
         toolchain_repository_proxy(
             name = toolchain.name,
             toolchain = tools_toolchain_label,
@@ -1107,8 +1202,14 @@ def rust_repository_set(
             toolchain_type = toolchain_type,
             exec_compatible_with = tc_exec_compatible_with,
             target_compatible_with = tc_target_compatible_with,
+            extra_toolchains = companion_labels,
+            extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
         )
 
+        # The hub registers repository sets without the channel setting their
+        # proxy repositories carry: a set which only provides, say, a nightly
+        # resolves without `--@rules_rust//rust/toolchain/channel=nightly`,
+        # and modules rely on that.
         all_toolchain_details[toolchain.name] = {
             "exec_compatible_with": tc_exec_compatible_with,
             "name": toolchain.name,
@@ -1118,5 +1219,17 @@ def rust_repository_set(
             "toolchain_type": toolchain_type,
             "tools_toolchain_label": tools_toolchain_label,
         }
+
+        for companion, companion_type in COMPANION_TOOLCHAIN_TYPES.items():
+            companion_name = _companion_hub_name(toolchain.name, companion)
+            all_toolchain_details[companion_name] = {
+                "exec_compatible_with": tc_exec_compatible_with,
+                "name": companion_name,
+                "target_compatible_with": tc_target_compatible_with,
+                "target_settings": target_settings,
+                "toolchain_label": "@{name}//:{companion}".format(name = toolchain.name, companion = companion),
+                "toolchain_type": companion_type,
+                "tools_toolchain_label": companion_labels[companion],
+            }
 
     return all_toolchain_details

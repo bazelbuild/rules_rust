@@ -7,10 +7,6 @@ This is a generated file -- see //util/fetch_shas
 # version changed. To resolve a given iso_date, find the latest
 # entry whose date is <= the target date.
 NIGHTLY_VERSION_TRANSITIONS = {
-    "2023-09-19": "1.74.0",
-    "2023-10-05": "1.75.0",
-    "2023-11-16": "1.76.0",
-    "2023-12-28": "1.77.0",
     "2024-02-08": "1.78.0",
     "2024-03-21": "1.79.0",
     "2024-05-02": "1.80.0",
@@ -33,4 +29,5 @@ NIGHTLY_VERSION_TRANSITIONS = {
     "2026-05-28": "1.98.0",
     "2026-07-09": "1.99.0",
     "2026-08-20": "1.100.0",
+    "2026-10-01": "1.101.0",
 }
