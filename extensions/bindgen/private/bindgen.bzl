@@ -273,14 +273,17 @@ def _rust_bindgen_impl(ctx):
     rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
     user_flags = [f.split("=")[0] for f in ctx.attr.bindgen_flags]
 
-    # Ignore `nightly` or `beta` versions.
-    if rust_toolchain.version and rust_toolchain.version[0].isdigit():
+    # Ignore `nightly` or `beta` versions (`version_semver` is `None` for channel labels).
+    version_semver = getattr(rust_toolchain, "version_semver", None)
+    if version_semver:
         # Pass `--rust-target` so bindgen knows the actual toolchain version.
         # Without this, bindgen defaults to it's built-in `LATEST_STABLE_RUST`
         # which may be older than the actual toolchain version and would
         # reject newer editions (e.g. edition 2024 requires `rust-target >= 1.85.0`).
+        # bindgen only accepts `MAJOR.MINOR[.PATCH]`, so drop any pre-release
+        # (`-nightly`) or build-metadata (`+...`) part of the version.
         if "--rust-target" not in user_flags:
-            args.add("--rust-target=%s" % rust_toolchain.version)
+            args.add("--rust-target=%d.%d.%d" % (version_semver.major, version_semver.minor, version_semver.patch))
 
     if "--rust-edition" not in user_flags:
         args.add("--rust-edition=%s" % rust_toolchain.default_edition)
