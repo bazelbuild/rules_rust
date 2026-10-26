@@ -268,6 +268,18 @@ stardoc(
 )
 
 stardoc(
+    name = "cargo_toolchain",
+    out = "src/cargo_toolchain.md",
+    input = "@rules_rust//cargo:cargo_toolchain.bzl",
+    symbol_names = [
+        "cargo_toolchain",
+        "cargo_toolchain_alias",
+        "find_cargo",
+    ],
+    deps = [":all_docs"],
+)
+
+stardoc(
     name = "crate_universe_workspace",
     out = "src/crate_universe_workspace.md",
     input = "@rules_rust//crate_universe:defs.bzl",
@@ -354,6 +366,7 @@ mdbook(
         ":cargo_build_script",
         ":cargo_env",
         ":cargo_settings",
+        ":cargo_toolchain",
         ":crate_universe_bzlmod",
         ":crate_universe_workspace",
         ":extract_cargo_lints",

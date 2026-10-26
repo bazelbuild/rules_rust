@@ -20,6 +20,7 @@ load(
     "CPP_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_library")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@rules_rust//rust:rust_common.bzl", "BuildInfo")
@@ -531,8 +532,7 @@ rust_bindgen = rule(
         config_common.toolchain_type("//:toolchain_type"),
         config_common.toolchain_type("@rules_rust//rust:toolchain_type"),
         config_common.toolchain_type("@rules_rust//rust/rustfmt:toolchain_type", mandatory = False),
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type"),
-    ],
+    ] + use_cc_toolchain(),
 )
 
 def _rust_bindgen_toolchain_impl(ctx):

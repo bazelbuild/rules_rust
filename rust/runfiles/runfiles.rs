@@ -684,17 +684,22 @@ mod test {
     /// depending on the system but each mode is explicitly covered in other tests.
     #[test]
     fn test_standard_lookup() {
-        let r = Runfiles::create().unwrap();
+        // This test reads the real environment, so it must hold the same lock
+        // as the tests that mock environment variables. Otherwise a concurrently
+        // running test can swap `RUNFILES_*`/`TEST_SRCDIR` out from under it.
+        with_mock_env([("FAKE", None::<&str>)], || {
+            let r = Runfiles::create().unwrap();
 
-        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+            let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
 
-        let mut f = File::open(&f)
-            .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+            let mut f = File::open(&f)
+                .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer).unwrap();
 
-        assert_eq!("Example Text!", buffer);
+            assert_eq!("Example Text!", buffer);
+        })
     }
 
     /// Only `RUNFILES_DIR` is set.

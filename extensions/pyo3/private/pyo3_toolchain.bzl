@@ -38,6 +38,8 @@ def _pyo3_toolchain_impl(ctx):
                 libs.append(library.dynamic_library)
             if library.static_library:
                 libs.append(library.static_library)
+            if library.interface_library:
+                libs.append(library.interface_library)
 
     implementation = PY_IMPLEMENTATIONS[py_runtime.implementation_name.lower()]
 

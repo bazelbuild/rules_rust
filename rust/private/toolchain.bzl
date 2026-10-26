@@ -4,6 +4,7 @@ Toolchain rules for Rust.
 """
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
@@ -685,7 +686,12 @@ rust_toolchain = rule(
             mandatory = True,
         ),
         "cargo": attr.label(
-            doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
+            doc = (
+                "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item. " +
+                "**Deprecated**: register a [`cargo_toolchain`](#cargo_toolchain) for " +
+                "`@rules_rust//cargo:toolchain_type` instead. Rules which run Cargo use that toolchain " +
+                "when one is registered and fall back to this attribute when none is."
+            ),
             allow_single_file = True,
             cfg = "exec",
         ),
@@ -820,7 +826,10 @@ rust_toolchain = rule(
         "lto": attr.label(
             providers = [RustLtoInfo],
             default = Label("//rust/settings:lto"),
-            doc = "Label to an LTO setting whether which can enable custom LTO settings",
+            doc = (
+                "A `rust_lto_flag` target that sets the link time optimization mode " +
+                "for crates built with this toolchain."
+            ),
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
@@ -970,9 +979,7 @@ rust_toolchain = rule(
             ),
         ),
     },
-    toolchains = [
-        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
-    ],
+    toolchains = use_cc_toolchain(mandatory = False),
     doc = """Declares a Rust toolchain for use.
 
 This is for declaring a custom toolchain, eg. for configuring a particular version of rust or supporting a new platform.
