@@ -354,6 +354,96 @@ def _test_optimization_flags(name):
         },
     )
 
+def _fake_rust_toolchain(name, version):
+    """Registers a `rust_toolchain` with mock tools whose only property of interest is `version`.
+    The toolchain is only ever used for analysis (the test never executes `rustc`), so empty
+    executables and an arbitrary file standing in for the standard library are sufficient.
+    """
+    mock_rustc = name + "_mock_rustc"
+    write_file(
+        name = mock_rustc,
+        out = name + "/mock_rustc.exe",
+        content = [],
+        is_executable = True,
+    )
+    mock_rustdoc = name + "_mock_rustdoc"
+    write_file(
+        name = mock_rustdoc,
+        out = name + "/mock_rustdoc.exe",
+        content = [],
+        is_executable = True,
+    )
+    std_libs = name + "_std_libs"
+    rust_stdlib_filegroup(
+        name = std_libs,
+        srcs = [mock_rustc],
+    )
+    rust_toolchain(
+        name = name + "_rust_toolchain",
+        binary_ext = "",
+        default_edition = "2021",
+        dylib_ext = ".so",
+        exec_triple = "x86_64-unknown-linux-gnu",
+        rust_doc = mock_rustdoc,
+        rust_std = std_libs,
+        rustc = mock_rustc,
+        staticlib_ext = ".a",
+        stdlib_linkflags = [],
+        target_triple = "x86_64-unknown-linux-gnu",
+        version = version,
+    )
+    native.toolchain(
+        name = name,
+        toolchain = name + "_rust_toolchain",
+        toolchain_type = "@rules_rust//rust:toolchain_type",
+    )
+def _test_rust_target_from_prerelease_version_impl(env, target):
+    env.expect.that_int(len(target.actions)).is_greater_than(0)
+    env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    # bindgen only accepts `MAJOR.MINOR[.PATCH]` (or the literal `nightly`) for
+    # `--rust-target`; a pre-release suffix such as `-nightly` makes it fail with
+    # "the patch version number must be an unsigned 64-bit integer".
+    env.expect.that_action(target.actions[0]).contains_at_least_args(
+        ["--rust-target=1.87.0"],
+    )
+    env.expect.that_action(target.actions[0]).not_contains_arg(
+        "--rust-target=1.87.0-nightly",
+    )
+def _test_rust_target_from_prerelease_version(name):
+    # Test that a `rust_toolchain` declaring a pre-release `version` (as
+    # toolchains built from a nightly commit do) results in a plain
+    # `MAJOR.MINOR.PATCH` `--rust-target`.
+    _fake_rust_toolchain(name + "_toolchain", version = "1.87.0-nightly")
+    _create_simple_rust_bindgen_library(name)
+    analysis_test(
+        name = name,
+        target = name + "_rust_bindgen__bindgen",
+        impl = _test_rust_target_from_prerelease_version_impl,
+        config_settings = {
+            "//command_line_option:extra_toolchains": [str(native.package_relative_label(name + "_toolchain"))],
+        },
+    )
+def _test_no_rust_target_for_channel_label_impl(env, target):
+    env.expect.that_int(len(target.actions)).is_greater_than(0)
+    env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+    env.expect.that_action(target.actions[0]).argv().not_contains_predicate(
+        matching.str_startswith("--rust-target="),
+    )
+def _test_no_rust_target_for_channel_label(name):
+    # Test that a `rust_toolchain` whose `version` is a bare channel label
+    # (`nightly`, `beta`) does not produce a `--rust-target` flag, leaving
+    # bindgen on its built-in default.
+    _fake_rust_toolchain(name + "_toolchain", version = "nightly")
+    _create_simple_rust_bindgen_library(name)
+    analysis_test(
+        name = name,
+        target = name + "_rust_bindgen__bindgen",
+        impl = _test_no_rust_target_for_channel_label_impl,
+        config_settings = {
+            "//command_line_option:extra_toolchains": [str(native.package_relative_label(name + "_toolchain"))],
+        },
+    )
+
 def bindgen_test_suite(name):
     test_suite(
         name = name,
@@ -365,5 +455,7 @@ def bindgen_test_suite(name):
             _test_strip_xclang,
             _test_isystem_preservation,
             _test_optimization_flags,
+            _test_rust_target_from_prerelease_version,
+            _test_no_rust_target_for_channel_label,
         ],
     )
