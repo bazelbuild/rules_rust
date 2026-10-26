@@ -294,19 +294,10 @@ impl BuildScriptOutput {
         }
     }
 
-    /// Redact for flags (link flags, link search paths): uses the full
-    /// `out_dir` relative path as the substitution key so each build
-    /// script gets a unique token. This avoids collisions when flag files
-    /// are consumed transitively by a target whose `--out-dir` points to
-    /// a different build script. The corresponding `--subst` entries are
-    /// added on the Starlark side for every transitive build info.
+    /// Flag files are resolved with the producing build script's output directory
+    /// before they are combined, so their token does not need a configuration path.
     fn redact_flags(value: &str, exec_root: &str, out_dir: &str) -> String {
-        let with_pwd = Self::redact_exec_root(value, exec_root);
-        if out_dir.is_empty() {
-            with_pwd
-        } else {
-            with_pwd.replace(out_dir, &format!("${{{out_dir}}}"))
-        }
+        Self::redact_paths(value, exec_root, out_dir)
     }
 
     // The process-wrapper treats trailing backslashes as escapes for following newlines.
@@ -433,7 +424,7 @@ non-assignment-instructions-are-ignored",
         assert_eq!(
             flags.bin_link_flags,
             "=-Clink-arg=-before\n\
-             my-bin=-Clink-arg=${pwd}/${out}/file=with=equals\n\
+             my-bin=-Clink-arg=${pwd}/${out_dir}/file=with=equals\n\
              my_bin=-Clink-arg=-other\n\
              =-Clink-arg=-after"
         );
@@ -584,12 +575,9 @@ cargo::include=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir/include
         );
     }
 
-    /// Link search paths use the full `out_dir` path as the substitution
-    /// key so each build script gets a unique token. This avoids
-    /// collisions when the flag file is consumed transitively by a target
-    /// whose `--out-dir` points to a different build script.
+    /// Serialized flags remain identical when only the output configuration changes.
     #[test]
-    fn out_dir_in_flags_uses_full_path_as_substitution_key() {
+    fn out_dir_in_flags_uses_configuration_independent_token() {
         let buff = Cursor::new(
             "
 cargo::rustc-link-search=/abs/exec_root/bazel-out/cfg/bin/pkg/_bs.out_dir
@@ -607,11 +595,43 @@ cargo::rustc-link-search=/abs/exec_root/other/path
             CompileAndLinkFlags {
                 compile_flags: "".to_owned(),
                 link_flags: "".to_owned(),
-                link_search_paths:
-                    "-L${pwd}/${bazel-out/cfg/bin/pkg/_bs.out_dir}\n-L${pwd}/other/path".to_owned(),
+                link_search_paths: "-L${pwd}/${out_dir}\n-L${pwd}/other/path".to_owned(),
                 cdylib_link_flags: "".to_owned(),
                 bin_link_flags: "".to_owned(),
             }
+        );
+    }
+
+    #[test]
+    fn serialized_link_flags_do_not_include_the_configuration() {
+        let flags = |configuration| {
+            let out_dir = format!("bazel-out/{configuration}/bin/pkg/build.out_dir");
+            let path = format!("/exec/{out_dir}/native");
+            BuildScriptOutput::outputs_to_flags(
+                &[
+                    BuildScriptOutput::LinkLib(format!("static={path}")),
+                    BuildScriptOutput::LinkSearch(format!("native={path}")),
+                    BuildScriptOutput::CdylibLinkArg(path.clone()),
+                    BuildScriptOutput::BinLinkArg(path.clone()),
+                    BuildScriptOutput::NamedBinLinkArg {
+                        name: "app".to_owned(),
+                        flag: path,
+                    },
+                ],
+                "/exec",
+                &out_dir,
+            )
+        };
+        assert_eq!(flags("config-A"), flags("config-B"));
+        let flags = flags("config-A");
+        assert_eq!(flags.link_search_paths, "-Lnative=${pwd}/${out_dir}/native");
+        assert_eq!(
+            flags.cdylib_link_flags,
+            "-Clink-arg=${pwd}/${out_dir}/native"
+        );
+        assert_eq!(
+            flags.bin_link_flags,
+            "=-Clink-arg=${pwd}/${out_dir}/native\napp=-Clink-arg=${pwd}/${out_dir}/native"
         );
     }
 }
