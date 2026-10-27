@@ -9,7 +9,7 @@ fn answer() -> u32 { 42 }
 extern crate test;
 #[rustc_test_marker = "test_answer_macro"]
 #[doc(hidden)]
-pub const test_answer_macro: test::TestDescAndFn =
+pub static test_answer_macro: test::TestDescAndFn =
     test::TestDescAndFn {
         desc: test::TestDesc {
             name: test::StaticTestName("test_answer_macro"),
@@ -28,14 +28,13 @@ pub const test_answer_macro: test::TestDescAndFn =
         testfn: test::StaticTestFn(#[coverage(off)] ||
                 test::assert_test_result(test_answer_macro())),
     };
-#[rustc_test_entrypoint_marker]
 fn test_answer_macro() {
     { ::std::io::_print(format_args!("{0}\n", answer())); };
 }
+extern crate test;
 #[rustc_main]
 #[coverage(off)]
 #[doc(hidden)]
-pub fn main() -> () {
-    extern crate test;
-    test::test_main_static(&[&test_answer_macro])
+pub fn main() -> test::ExitCode {
+    test::test_main_env_args(&[&test_answer_macro])
 }

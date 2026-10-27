@@ -18,3 +18,19 @@ build_test(
     name = "inspect_build_test",
     targets = [":inspect"],
 )
+
+genrule(
+    name = "cargo_version",
+    outs = ["cargo-version"],
+    # `current_cargo_toolchain` is a `cargo_toolchain_alias`: it supplies the
+    # `$(CARGO)` Make variable and the binary as a tool.
+    cmd = "$(CARGO) --version > $@",
+    cmd_bat = "$(CARGO) --version > $@",
+    toolchains = ["@rules_rust//cargo:current_cargo_toolchain"],
+    tools = ["@rules_rust//cargo:current_cargo_toolchain"],
+)
+
+build_test(
+    name = "cargo_version_build_test",
+    targets = [":cargo_version"],
+)

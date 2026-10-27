@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.74.0",
+    version = "0.75.0",
 )
 
 ###############################################################################
@@ -12,7 +12,7 @@ module(
 bazel_dep(name = "bazel_features", version = "1.50.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "rules_cc", version = "0.2.9")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
@@ -80,10 +80,10 @@ use_repo(
     "rrtd__walkdir-2.5.0",
     "rtra",
     "rtra__serde-1.0.229",
-    "rtra__serde_json-1.0.151",
+    "rtra__serde_json-1.0.154",
     "rtvsc",
     "rtvsc__serde-1.0.229",
-    "rtvsc__serde_json-1.0.151",
+    "rtvsc__serde_json-1.0.154",
     "rules_rust_toolchain_test_target_json",
 )
 

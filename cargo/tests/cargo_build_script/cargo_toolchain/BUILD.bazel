@@ -1,0 +1,22 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+load(":cargo_toolchain_test.bzl", "cargo_toolchain_test_suite")
+
+# `cargo_build_script` hands build scripts the Cargo of the registered
+# `cargo_toolchain` as `$CARGO`, not the one of the `rust_toolchain`.
+cargo_build_script(
+    name = "cargo_toolchain_build_rs",
+    srcs = ["build.rs"],
+    edition = "2021",
+)
+
+rust_test(
+    name = "cargo_toolchain_test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":cargo_toolchain_build_rs"],
+)
+
+cargo_toolchain_test_suite(
+    name = "cargo_toolchain_test_suite",
+)
