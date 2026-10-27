@@ -55,6 +55,21 @@ def _proc_macro_platform_test_impl(ctx):
     )
     return analysistest.end(env)
 
+def _build_script_platform_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    probe = analysistest.target_under_test(env)[_ProbeInfo]
+    runs = [action for action in probe.target.actions if action.mnemonic == "CargoBuildScriptRun"]
+    asserts.equals(env, 1, len(runs))
+    scripts = [input.path for input in runs[0].inputs.to_list() if input.basename.startswith("build_script_")]
+    asserts.true(env, len(scripts) > 0, "The build script must be an input of its run")
+    for tool in [runs[0].argv[0]] + scripts:
+        asserts.true(
+            env,
+            tool.startswith(probe.expected_root + "/"),
+            "A build script and its runner must be built for the platform they run on: {} (expected under {})".format(tool, probe.expected_root),
+        )
+    return analysistest.end(env)
+
 def _make_platform_test(impl, auto_exec_groups):
     return analysistest.make(
         impl,
@@ -74,3 +89,7 @@ process_wrapper_platform_auto_exec_groups_test = _make_platform_test(_process_wr
 proc_macro_platform_test = _make_platform_test(_proc_macro_platform_test_impl, False)
 
 proc_macro_platform_auto_exec_groups_test = _make_platform_test(_proc_macro_platform_test_impl, True)
+
+build_script_platform_test = _make_platform_test(_build_script_platform_test_impl, False)
+
+build_script_platform_auto_exec_groups_test = _make_platform_test(_build_script_platform_test_impl, True)

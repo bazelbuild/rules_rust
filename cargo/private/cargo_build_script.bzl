@@ -11,6 +11,9 @@ load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
+load("//rust/private:common.bzl", "RUST_TOOLCHAIN_EXEC_GROUP")
+
+# buildifier: disable=bzl-visibility
 load(
     "//rust/private:rustc.bzl",
     "get_compilation_mode_opts",
@@ -732,7 +735,7 @@ def _cargo_build_script_impl(ctx):
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
-        toolchain = None,
+        toolchain = rust_common.toolchain_type,
         use_default_shell_env = use_default_shell_env,
     )
 
@@ -802,7 +805,7 @@ cargo_build_script = rule(
         "deps": attr.label_list(
             doc = "The Rust build-dependencies of the crate",
             providers = [[DepInfo], [CrateGroupInfo]],
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
         ),
         "emit_warnings": attr.bool(
             doc = dedent("""\
@@ -854,13 +857,13 @@ cargo_build_script = rule(
             doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             mandatory = True,
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
             providers = [rust_common.crate_info],
         ),
         "tools": attr.label_list(
             doc = "Tools required by the build script.",
             allow_files = True,
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
         ),
         "use_cc_toolchain": attr.int(
             doc = dedent("""\
@@ -903,7 +906,7 @@ cargo_build_script = rule(
             executable = True,
             allow_files = True,
             default = Label("//cargo/private/cargo_build_script_runner:runner"),
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
         ),
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
             default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
@@ -924,25 +927,28 @@ cargo_build_script = rule(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
         "_fallback_ar": attr.label(
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_ar"),
         ),
         "_fallback_cc": attr.label(
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_cc"),
         ),
         "_fallback_cxx": attr.label(
-            cfg = "exec",
+            cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_cxx"),
         ),
         "_out_dir_volatile_file_basenames": attr.label(
             default = Label("//cargo/settings:out_dir_volatile_file_basenames"),
+        ),
+        "_use_auto_exec_groups": attr.bool(
+            default = True,
         ),
     },
     fragments = ["cpp"],
