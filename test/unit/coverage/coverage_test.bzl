@@ -1,4 +1,4 @@
-"""The collector runs with the test, which can have its own execution platform."""
+"""Tests of the collector that collects the coverage of a `rust_test`."""
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
@@ -56,4 +56,71 @@ collector_platform_test = analysistest.make(
     } | ({
         str(Label("@bazel_tools//tools/test:incompatible_use_default_test_toolchain")): True,
     } if bazel_features.toolchains.has_default_test_toolchain_type else {}),
+)
+
+_FAKE_COLLECTOR_DATA = "test/unit/coverage/fake_collector_data.txt"
+
+def _short_paths(files):
+    return [file.short_path for file in files.to_list()]
+
+def _coverage_collector_flag_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    collector = target[RunEnvironmentInfo].environment["CC_CODE_COVERAGE_SCRIPT"]
+    asserts.true(
+        env,
+        collector.endswith("/test/unit/coverage/fake_collector") or collector.endswith("/test/unit/coverage/fake_collector.exe"),
+        "Coverage collector must be the one that the flag selects: " + collector,
+    )
+    return analysistest.end(env)
+
+coverage_collector_flag_test = analysistest.make(
+    _coverage_collector_flag_test_impl,
+    config_settings = {
+        "//command_line_option:collect_code_coverage": True,
+        str(Label("//rust/settings:coverage_collector")): str(Label(":fake_collector")),
+    },
+)
+
+def _coverage_collector_metadata_files_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    asserts.true(
+        env,
+        _FAKE_COLLECTOR_DATA in _short_paths(target[InstrumentedFilesInfo].metadata_files),
+        "The coverage collector's runfiles must be coverage metadata files of the test",
+    )
+    asserts.false(
+        env,
+        _FAKE_COLLECTOR_DATA in _short_paths(target[DefaultInfo].default_runfiles.files),
+        "The coverage collector's runfiles must not be runfiles of the test",
+    )
+    return analysistest.end(env)
+
+coverage_collector_metadata_files_test = analysistest.make(
+    _coverage_collector_metadata_files_test_impl,
+    config_settings = {
+        "//command_line_option:collect_code_coverage": True,
+        str(Label("//rust/settings:coverage_collector")): str(Label(":fake_collector")),
+        str(Label("//rust/settings:experimental_use_coverage_metadata_files")): True,
+    },
+)
+
+def _coverage_collector_runfiles_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    asserts.true(
+        env,
+        _FAKE_COLLECTOR_DATA in _short_paths(target[DefaultInfo].default_runfiles.files),
+        "The coverage collector's runfiles must be runfiles of the test",
+    )
+    return analysistest.end(env)
+
+coverage_collector_runfiles_test = analysistest.make(
+    _coverage_collector_runfiles_test_impl,
+    config_settings = {
+        "//command_line_option:collect_code_coverage": True,
+        str(Label("//rust/settings:coverage_collector")): str(Label(":fake_collector")),
+        str(Label("//rust/settings:experimental_use_coverage_metadata_files")): False,
+    },
 )
