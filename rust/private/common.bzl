@@ -113,6 +113,17 @@ rust_common = struct(
     rustfmt_toolchain_type = Label("//rust/rustfmt:toolchain_type"),
 )
 
+def _automatic_exec_group(toolchain_type):
+    name = str(toolchain_type)
+    if name.startswith(
+        # buildifier: disable=canonical-repository
+        "@@//",
+    ):
+        return name[2:]
+    return name
+
+RUST_TOOLCHAIN_EXEC_GROUP = _automatic_exec_group(rust_common.toolchain_type)
+
 COMMON_PROVIDERS = [
     CrateInfo,
     DepInfo,
