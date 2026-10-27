@@ -444,6 +444,7 @@ def _fake_rust_toolchain(name, version):
 def _test_rust_target_from_prerelease_version_impl(env, target):
     env.expect.that_int(len(target.actions)).is_greater_than(0)
     env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
+
     # bindgen only accepts `MAJOR.MINOR[.PATCH]` (or the literal `nightly`) for
     # `--rust-target`; a pre-release suffix such as `-nightly` makes it fail with
     # "the patch version number must be an unsigned 64-bit integer".
