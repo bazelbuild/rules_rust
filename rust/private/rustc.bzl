@@ -2175,7 +2175,7 @@ def rustc_compile_action(
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             additional_linker_outputs.append(pdb_file)
 
-        cc_common.link(
+        linking_outputs = cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
@@ -2189,6 +2189,13 @@ def rustc_compile_action(
         )
 
         outputs = [crate_info.output]
+        if toolchain.target_os == "windows" and crate_info.type == "cdylib" and linking_outputs.library_to_link:
+            interface_library = (
+                linking_outputs.library_to_link.resolved_symlink_interface_library or
+                linking_outputs.library_to_link.interface_library
+            )
+            if interface_library:
+                outputs.append(interface_library)
 
     coverage_runfiles = []
     if toolchain.coverage_supported and ctx.configuration.coverage_enabled and crate_info.is_test:
