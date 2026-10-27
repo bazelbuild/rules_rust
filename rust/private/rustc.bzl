@@ -1702,6 +1702,10 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
     if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec:
         flags.extend(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
 
+    # Only `rust_test` declares this attribute.
+    if hasattr(ctx.attr, "_extra_test_rustc_flag") and not is_exec:
+        flags.extend(ctx.attr._extra_test_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+
     if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec:
         per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
         flags.extend(_collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags))
@@ -3374,6 +3378,20 @@ extra_rustc_flag = rule(
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _extra_rustc_flag_impl,
+    build_setting = config.string_list(flag = True, repeatable = True),
+)
+
+def _extra_test_rustc_flag_impl(ctx):
+    return ExtraRustcFlagsInfo(extra_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+extra_test_rustc_flag = rule(
+    doc = (
+        "Add additional rustc_flag to `rust_test` targets from the command line with `--@rules_rust//rust/settings:extra_test_rustc_flag`. " +
+        "Multiple uses are accumulated and appended after the extra_rustc_flag. " +
+        "Flags in a target's own `rustc_flags` still come last and can override them."
+    ),
+    implementation = _extra_test_rustc_flag_impl,
+    attrs = {"scope": attr.string(default = "universal")},
     build_setting = config.string_list(flag = True, repeatable = True),
 )
 

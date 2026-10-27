@@ -25,6 +25,7 @@ load(
     "extra_rustc_env",
     "extra_rustc_flag",
     "extra_rustc_flags",
+    "extra_test_rustc_flag",
     "incompatible_change_clippy_error_format",
     "incompatible_do_not_include_data_in_compile_data",
     "incompatible_do_not_include_transitive_data_in_compile_inputs",
@@ -109,6 +110,8 @@ extra_rustc_env()
 extra_rustc_flag()
 
 extra_rustc_flags()
+
+extra_test_rustc_flag()
 
 incompatible_change_clippy_error_format()
 
