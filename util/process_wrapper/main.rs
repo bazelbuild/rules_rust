@@ -104,6 +104,7 @@ fn process_line(
     if line.starts_with(" WARN ")
         || line.contains("is not a recognized feature for this target (ignoring feature)")
         || line.contains("is not a recognized processor for this target (ignoring processor)")
+        || line.starts_with("warning: No debug information")
     {
         if let Ok(json_str) = json_warning(&line).stringify() {
             line = json_str;
@@ -301,6 +302,7 @@ mod test {
             "'+zaamo' is not a recognized feature for this target (ignoring feature)",
             "'westmere' is not a recognized processor for this target (ignoring processor)",
             " WARN rustc_errors::emitter Invalid span...",
+            "warning: No debug information found in function main: Function profile not used",
         ] {
             let LineOutput::Message(msg) = process_line(
                 text.to_string(),
