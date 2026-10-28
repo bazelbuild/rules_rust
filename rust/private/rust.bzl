@@ -18,7 +18,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
+load(":common.bzl", "COMMON_PROVIDERS", "RUST_TOOLCHAIN_EXEC_GROUP", "rust_common")
 load(
     ":providers.bzl",
     "BuildInfo",
@@ -688,6 +688,15 @@ def _stamp_attribute(default_value):
         values = [1, 0, -1],
     )
 
+def _process_wrapper_attr(cfg):
+    return attr.label(
+        doc = "A process wrapper for running rustc on all platforms.",
+        default = Label("//util/process_wrapper"),
+        executable = True,
+        allow_single_file = True,
+        cfg = cfg,
+    )
+
 # Internal attributes core to Rustc actions.
 RUSTC_ATTRS = {
     "_always_enable_metadata_output_groups": attr.label(
@@ -717,15 +726,16 @@ RUSTC_ATTRS = {
     "_per_crate_rustc_flag": attr.label(
         default = Label("//rust/settings:per_crate_rustc_flag"),
     ),
-    "_process_wrapper": attr.label(
-        doc = "A process wrapper for running rustc on all platforms.",
-        default = Label("//util/process_wrapper"),
-        executable = True,
-        allow_single_file = True,
-        cfg = "exec",
-    ),
+    "_process_wrapper": _process_wrapper_attr("exec"),
     "_rustc_output_diagnostics": attr.label(
         default = Label("//rust/settings:rustc_output_diagnostics"),
+    ),
+}
+
+_RUST_TOOLCHAIN_EXEC_GROUP_ATTRS = {
+    "_process_wrapper": _process_wrapper_attr(config.exec(RUST_TOOLCHAIN_EXEC_GROUP)),
+    "_use_auto_exec_groups": attr.bool(
+        default = True,
     ),
 }
 
@@ -826,7 +836,7 @@ _COMMON_ATTRS = {
         doc = dedent("""\
             List of `rust_proc_macro` targets used to help build this library target.
         """),
-        cfg = "exec",
+        cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
         providers = [[CrateInfo], [CrateGroupInfo]],
     ),
     "require_explicit_unstable_features": attr.int(
@@ -921,7 +931,7 @@ _COMMON_ATTRS = {
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
         default = Label("//rust/settings:collect_cfgs"),
     ),
-} | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS
+} | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS | _RUST_TOOLCHAIN_EXEC_GROUP_ATTRS
 
 _PLATFORM_ATTRS = {
     "platform": attr.label(
@@ -1445,14 +1455,14 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
         default = None,
         executable = True,
         allow_single_file = True,
-        cfg = "exec",
+        cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
     )
 
     new_attr["_bootstrap_process_wrapper"] = attr.label(
         default = Label("//util/process_wrapper:bootstrap_process_wrapper"),
         executable = True,
         allow_single_file = True,
-        cfg = "exec",
+        cfg = config.exec(RUST_TOOLCHAIN_EXEC_GROUP),
     )
 
     # fix stamp = 0

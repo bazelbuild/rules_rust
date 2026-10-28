@@ -1,0 +1,125 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
+load(
+    ":exec_groups_test.bzl",
+    "build_script_platform_auto_exec_groups_test",
+    "build_script_platform_test",
+    "exec_probe",
+    "platform_marker",
+    "proc_macro_platform_auto_exec_groups_test",
+    "proc_macro_platform_test",
+    "process_wrapper_platform_auto_exec_groups_test",
+    "process_wrapper_platform_test",
+)
+
+process_wrapper_platform_test(
+    name = "process_wrapper_platform_test",
+    target_under_test = ":probe",
+)
+
+process_wrapper_platform_auto_exec_groups_test(
+    name = "process_wrapper_platform_auto_exec_groups_test",
+    target_under_test = ":probe",
+)
+
+build_script_platform_test(
+    name = "build_script_platform_test",
+    target_under_test = ":build_script_probe",
+)
+
+build_script_platform_auto_exec_groups_test(
+    name = "build_script_platform_auto_exec_groups_test",
+    target_under_test = ":build_script_probe",
+)
+
+exec_probe(
+    name = "build_script_probe",
+    dep = ":build_script",
+    exec_compatible_with = [":compiler"],
+    marker = ":marker",
+    tags = ["manual"],
+)
+
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    edition = "2021",
+    tags = ["manual"],
+)
+
+proc_macro_platform_test(
+    name = "proc_macro_platform_test",
+    target_under_test = ":proc_macro_probe",
+)
+
+proc_macro_platform_auto_exec_groups_test(
+    name = "proc_macro_platform_auto_exec_groups_test",
+    target_under_test = ":proc_macro_probe",
+)
+
+exec_probe(
+    name = "proc_macro_probe",
+    dep = ":uses_proc_macro",
+    exec_compatible_with = [":compiler"],
+    marker = ":marker",
+    tags = ["manual"],
+)
+
+exec_probe(
+    name = "probe",
+    dep = ":lib",
+    exec_compatible_with = [":compiler"],
+    marker = ":marker",
+    tags = ["manual"],
+)
+
+platform_marker(name = "marker")
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    tags = ["manual"],
+)
+
+rust_proc_macro(
+    name = "answer_macro",
+    srcs = ["answer_macro.rs"],
+    edition = "2021",
+    tags = ["manual"],
+)
+
+rust_library(
+    name = "uses_proc_macro",
+    srcs = ["uses_proc_macro.rs"],
+    edition = "2021",
+    proc_macro_deps = [":answer_macro"],
+    tags = ["manual"],
+)
+
+constraint_setting(name = "execution_role")
+
+constraint_value(
+    name = "compiler",
+    constraint_setting = ":execution_role",
+)
+
+constraint_value(
+    name = "toolless",
+    constraint_setting = ":execution_role",
+)
+
+platform(
+    name = "compiler_platform",
+    constraint_values = [":compiler"],
+    parents = ["@platforms//host"],
+)
+
+platform(
+    name = "toolless_platform",
+    constraint_values = [
+        ":toolless",
+        "@platforms//cpu:riscv64",
+    ],
+    parents = ["@platforms//host"],
+)
