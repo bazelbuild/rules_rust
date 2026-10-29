@@ -1,18 +1,22 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//cargo/private:cargo_build_script.bzl", "cargo_build_script_runfiles", run_build_script = "cargo_build_script")
 load("//rust:defs.bzl", "rust_binary", "rust_test")
-load(":tool_inputs_test.bzl", "generated_tool", "tool_inputs_test", "transitioned_script")
+load(":tool_inputs_test.bzl", "tool_inputs_test", "transitioned_script")
 
 rust_binary(
-    name = "tool_binary",
+    name = "fixture_tool",
     srcs = ["tool.rs"],
+    data = [":fixture_tool.runtime"],
     edition = "2021",
+    deps = ["//rust/runfiles"],
 )
 
-generated_tool(
-    name = "fixture_tool",
-    executable = ":tool_binary",
+write_file(
+    name = "tool_runtime",
+    out = "fixture_tool.runtime",
+    content = ["declared runtime input"],
 )
 
 cargo_build_script(
@@ -38,7 +42,6 @@ tool_inputs_test(
 string_flag(
     name = "script_context",
     build_setting_default = "",
-    scope = "universal",
 )
 
 transitioned_script(
