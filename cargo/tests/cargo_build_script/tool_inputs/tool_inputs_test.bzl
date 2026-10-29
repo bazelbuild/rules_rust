@@ -3,19 +3,6 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:rust_common.bzl", "rust_common")
 
-def _generated_tool_impl(ctx):
-    executable = ctx.actions.declare_file(ctx.label.name + (".exe" if ctx.executable.executable.basename.endswith(".exe") else ""))
-    runtime = ctx.actions.declare_file(executable.basename + ".runtime")
-    ctx.actions.symlink(output = executable, target_file = ctx.executable.executable, is_executable = True)
-    ctx.actions.write(runtime, "declared runtime input")
-    return [DefaultInfo(executable = executable, files = depset([executable]), runfiles = ctx.runfiles(files = [runtime]))]
-
-generated_tool = rule(
-    implementation = _generated_tool_impl,
-    executable = True,
-    attrs = {"executable": attr.label(executable = True, cfg = "exec", mandatory = True)},
-)
-
 def _tool_inputs_impl(ctx):
     env = analysistest.begin(ctx)
     actions = [action for action in analysistest.target_actions(env) if action.mnemonic == "CargoBuildScriptRun"]
@@ -23,7 +10,8 @@ def _tool_inputs_impl(ctx):
     inputs = [file.path for file in actions[0].inputs.to_list()]
     tool = actions[0].env["CODEGEN"].removeprefix("${pwd}/")
     asserts.true(env, tool in inputs, "Tool execution path is missing: " + tool)
-    asserts.true(env, tool + ".runtime" in inputs, "Tool runtime file is missing: " + tool)
+
+    # The execution tests check runtime data through the tool's own runfiles.
     return analysistest.end(env)
 
 tool_inputs_test = analysistest.make(_tool_inputs_impl)
@@ -38,7 +26,8 @@ _script_context = transition(implementation = _script_context_impl, inputs = [],
 
 def _transitioned_script_impl(ctx):
     source = ctx.attr.binary
-    executable = ctx.actions.declare_file(ctx.label.name + (".exe" if ctx.executable.binary.basename.endswith(".exe") else ""))
+    ext = "." + ctx.executable.binary.extension if ctx.executable.binary.extension else ""
+    executable = ctx.actions.declare_file(ctx.label.name + ext)
     ctx.actions.symlink(output = executable, target_file = ctx.executable.binary, is_executable = True)
     return [
         DefaultInfo(executable = executable, runfiles = source[DefaultInfo].default_runfiles),

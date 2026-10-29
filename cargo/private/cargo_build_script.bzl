@@ -623,20 +623,11 @@ def _cargo_build_script_impl(ctx):
             known_variables,
         ))
 
-    # `build_script_env` names tools by `$(execpath)`, so the tools and their
-    # runfiles must be inputs at those paths, not only in the script's runfiles.
-    tool_files = []
-    for tool in ctx.attr.tools:
-        info = tool[DefaultInfo]
-        tool_files.append(info.files)
-        if info.default_runfiles:
-            tool_files.append(info.default_runfiles.files)
-
     tools = depset(
         direct = [
             ctx.executable._cargo_build_script_runner,
         ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
-        transitive = script_data + toolchain_tools + tool_files,
+        transitive = script_data + toolchain_tools,
     )
 
     # dep_env_file contains additional environment variables coming from
@@ -733,10 +724,11 @@ def _cargo_build_script_impl(ctx):
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
+        # Preserve the runfiles of tools in the action's execution configuration.
         tools = [
             ctx.attr.script[DefaultInfo].files_to_run,
             tools,
-        ],
+        ] + [tool[DefaultInfo].files_to_run for tool in ctx.attr.tools],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),

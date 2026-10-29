@@ -2,8 +2,11 @@ use std::process::Command;
 
 fn main() {
     let tool = std::env::var("CODEGEN").expect("CODEGEN is declared");
+    // Discover the tool's own runfiles, not those inherited from this script.
     let result = Command::new(&tool)
-        .arg(format!("{tool}.runtime"))
+        .env_remove("RUNFILES_DIR")
+        .env_remove("RUNFILES_MANIFEST_FILE")
+        .env_remove("TEST_SRCDIR")
         .output()
         .expect("run declared tool");
     assert!(
