@@ -16,6 +16,7 @@ bazel_dep(name = "rules_cc", version = "0.2.9")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -43,6 +44,11 @@ use_repo(
     "rrc__semver-1.0.25",
     "rrc__toml-0.8.20",
 )
+
+# `yq` is used by the `rust` extension to read `rust-toolchain.toml` files.
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.yq()
+use_repo(bazel_lib_toolchains, "yq")
 
 rust = use_extension("//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
