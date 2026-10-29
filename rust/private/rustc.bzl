@@ -748,7 +748,8 @@ def collect_inputs(
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
         include_linker_inputs = False,
-        include_link_flags = True):
+        include_link_flags = True,
+        extra_toolchain_files = None):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -772,6 +773,8 @@ def collect_inputs(
             rust binaries.
         include_linker_inputs (bool, optional): Whether to include linker inputs in transitive dependencies.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
+        extra_toolchain_files (depset, optional): Files of a companion toolchain, such as the sysroot of a
+            `rustdoc_toolchain`, to add to the inputs.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -865,7 +868,7 @@ def collect_inputs(
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
             toolchain.all_files,
-        ] + ([] if experimental_use_cc_common_link else [
+        ] + ([extra_toolchain_files] if extra_toolchain_files != None else []) + ([] if experimental_use_cc_common_link else [
             runtime_libs,
             linker_depset,
         ]),
@@ -1038,6 +1041,8 @@ def construct_arguments(
         build_flags_files,
         tool_file = None,
         tool_path = None,
+        sysroot_anchor = None,
+        tool_flags = [],
         emit = ["dep-info", "link"],
         force_all_deps_direct = False,
         add_flags_for_binary = False,
@@ -1107,6 +1112,11 @@ def construct_arguments(
             added to the `Args` as a `File` so that Bazel's path mapping
             (`--experimental_output_paths=strip`) can rewrite its location.
             Falls back to `tool_path` (a plain string) when `None`.
+        sysroot_anchor (File, optional): The anchor of the sysroot to pass as `--sysroot`, when the tool runs
+            from a companion toolchain's sysroot rather than the `rust_toolchain`'s. Defaults to the latter.
+        tool_flags (list, optional): Flags of the tool's own toolchain, such as
+            `rustdoc_toolchain.extra_rustdoc_flags`, added after the `rust_toolchain`'s `extra_rustc_flags`
+            and before `rust_flags`, so that targets and the command line can override them.
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
@@ -1552,7 +1562,7 @@ def construct_arguments(
     # path mapping can rewrite it.
     if toolchain._toolchain_generated_sysroot:
         rustc_flags.add_all(
-            [toolchain.sysroot_anchor],
+            [sysroot_anchor or toolchain.sysroot_anchor],
             map_each = _get_dirname,
             format_each = "--sysroot=%s",
         )
@@ -1587,6 +1597,7 @@ def construct_arguments(
         if require_explicit_unstable_features:
             process_wrapper_flags.add("--require-explicit-unstable-features", "true")
     rustc_flags.add_all(extra_rustc_flags, map_each = map_flag)
+    rustc_flags.add_all(tool_flags, map_each = map_flag)
 
     if is_no_std(ctx, toolchain, crate_info.is_test):
         rustc_flags.add('--cfg=feature="no_std"')

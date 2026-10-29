@@ -9,6 +9,7 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//cargo/private:cargo_toolchain.bzl", "cargo_version_mismatch", "find_cargo")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
+load("//rust:rustdoc_toolchain.bzl", "find_rustdoc")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -450,7 +451,8 @@ def _cargo_build_script_impl(ctx):
     mismatch = cargo_version_mismatch(cargo.toolchain, toolchain)
     if mismatch:
         fail("{}: {}".format(ctx.label, mismatch))
-    toolchain_tools = [toolchain.all_files, cargo.files]
+    rustdoc_toolchain = find_rustdoc(ctx, toolchain)
+    toolchain_tools = [toolchain.all_files, cargo.files] + ([rustdoc_toolchain.all_files] if rustdoc_toolchain else [])
 
     env = {}
 
@@ -467,6 +469,9 @@ def _cargo_build_script_impl(ctx):
     if cargo.cargo:
         env["CARGO"] = "${pwd}/%s" % cargo.cargo.path
 
+    if rustdoc_toolchain:
+        env["RUSTDOC"] = rustdoc_toolchain.rustdoc.path
+
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
         "CARGO_MANIFEST_DIR": manifest_dir,
@@ -475,7 +480,6 @@ def _cargo_build_script_impl(ctx):
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
-        "RUSTDOC": toolchain.rust_doc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
@@ -949,6 +953,7 @@ cargo_build_script = rule(
     toolchains = [
         config_common.toolchain_type(rust_common.toolchain_type, mandatory = True),
         config_common.toolchain_type(rust_common.cargo_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False),
     ] + use_cc_toolchain(mandatory = False),
 )
 
