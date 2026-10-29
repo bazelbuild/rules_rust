@@ -27,6 +27,7 @@ load(
     _extra_rustc_env = "extra_rustc_env",
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
+    _extra_test_rustc_flag = "extra_test_rustc_flag",
     _no_std = "no_std",
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
@@ -480,6 +481,22 @@ def extra_rustc_flag():
     _extra_rustc_flag(
         name = "extra_rustc_flag",
         build_setting_default = [],
+    )
+
+# buildifier: disable=unnamed-macro
+def extra_test_rustc_flag():
+    """Add additional rustc_flag to `rust_test` targets from the command line with `--@rules_rust//rust/settings:extra_test_rustc_flag`.
+
+    Multiple uses are accumulated and appended after the `extra_rustc_flag`. The flags apply only to
+    `rust_test` in non-exec configuration, and a target's own `rustc_flags` still come last, so a
+    test can override them. This can be useful for compiling tests with different codegen options
+    than the code they test, such as a lower `-Copt-level`.
+    """
+    _extra_test_rustc_flag(
+        name = "extra_test_rustc_flag",
+        build_setting_default = [],
+        # Unused in exec configurations. Setting it must not change their configuration.
+        scope = "target",
     )
 
 # buildifier: disable=unnamed-macro
