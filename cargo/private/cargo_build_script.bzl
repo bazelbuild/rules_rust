@@ -724,10 +724,11 @@ def _cargo_build_script_impl(ctx):
             dep_env_out,
             runfiles_dir,
         ] + extra_output,
+        # Preserve the runfiles of tools in the action's execution configuration.
         tools = [
             ctx.attr.script[DefaultInfo].files_to_run,
             tools,
-        ],
+        ] + [tool[DefaultInfo].files_to_run for tool in ctx.attr.tools],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
