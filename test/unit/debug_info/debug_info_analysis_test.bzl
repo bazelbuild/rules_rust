@@ -81,9 +81,10 @@ def _dsym_folder_test_impl(ctx):
 dsym_folder_test = analysistest.make(_dsym_folder_test_impl)
 
 # rustc packs debug info into a dSYM on every Apple target, not only macOS, so
-# check an iOS target too. A mock toolchain keeps this runnable on any host. Only
-# the library is checked: `bazel coverage` builds a binary under test, which the
-# mock rustc cannot do, and both crate types take the same path in rustc.bzl.
+# check an iOS target too, through a mock Rust toolchain. The library's toolchain
+# still needs a C++ toolchain for iOS, which only a macOS host has. Only the
+# library is checked: `bazel coverage` builds a binary under test, which the mock
+# rustc cannot do, and both crate types take the same path in rustc.bzl.
 dsym_folder_ios_test = analysistest.make(
     _dsym_folder_test_impl,
     config_settings = {
@@ -129,7 +130,7 @@ def _define_ios_mock_toolchain():
     for tool in ["ios_mock_rustc", "ios_mock_rustdoc"]:
         write_file(
             name = tool,
-            out = tool,
+            out = tool + ".exe",
             content = [],
             is_executable = True,
         )
@@ -313,6 +314,7 @@ def debug_info_analysis_test_suite(name):
     dsym_folder_ios_test(
         name = "lib_dsym_ios_test",
         target_under_test = ":mylib.dSYM",
+        target_compatible_with = ["@platforms//os:macos"],
     )
 
     rust_binary(
