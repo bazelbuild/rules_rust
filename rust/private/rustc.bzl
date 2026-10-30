@@ -2025,15 +2025,15 @@ def rustc_compile_action(
     # Get the compilation mode for the current target.
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
 
-    # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
-    # types that benefit from having debug information in a separate file.
+    # Rustc generates a pdb file (on Windows) or a dsym folder (on Apple platforms) so provide it in an output group
+    # for crate types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
         if toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif toolchain.target_os in ["macos", "darwin"]:
+        elif toolchain.target_os.startswith(("mac", "darwin", "ios")):
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
