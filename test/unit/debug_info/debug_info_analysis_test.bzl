@@ -129,8 +129,8 @@ def _define_ios_mock_toolchain():
 
     for tool in ["ios_mock_rustc", "ios_mock_rustdoc"]:
         write_file(
-            name = tool,
-            out = tool + ".exe",
+            name = "gen_" + tool,
+            out = tool,
             content = [],
             is_executable = True,
         )
