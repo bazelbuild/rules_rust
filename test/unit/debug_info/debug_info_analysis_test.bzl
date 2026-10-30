@@ -1,8 +1,10 @@
 """Analysis tests for debug info in cdylib and bin targets."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_shared_library", "rust_test")
+load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
 load(
     "//test/unit:common.bzl",
     "assert_argv_contains",
@@ -77,6 +79,61 @@ def _dsym_folder_test_impl(ctx):
     return analysistest.end(env)
 
 dsym_folder_test = analysistest.make(_dsym_folder_test_impl)
+
+# rustc packs debug info into a dSYM on every Apple target, not only macOS, so
+# check an iOS target too, through a mock Rust toolchain. The library's toolchain
+# still needs a C++ toolchain for iOS, which only a macOS host has. Only the
+# library is checked: `bazel coverage` builds a binary under test, which the mock
+# rustc cannot do, and both crate types take the same path in rustc.bzl.
+dsym_folder_ios_test = analysistest.make(
+    _dsym_folder_test_impl,
+    config_settings = {
+        "//command_line_option:extra_toolchains": [str(Label(":ios_mock_toolchain"))],
+        "//command_line_option:platforms": str(Label(":ios_arm64")),
+    },
+)
+
+def _define_ios_mock_toolchain():
+    native.platform(
+        name = "ios_arm64",
+        constraint_values = [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:ios",
+        ],
+    )
+
+    rust_toolchain(
+        name = "ios_mock_rust_toolchain",
+        binary_ext = "",
+        dylib_ext = ".dylib",
+        exec_triple = "x86_64-unknown-linux-gnu",
+        rust_doc = ":ios_mock_rustdoc",
+        rust_std = ":ios_mock_std_libs",
+        rustc = ":ios_mock_rustc",
+        staticlib_ext = ".a",
+        stdlib_linkflags = [],
+        target_triple = "aarch64-apple-ios",
+    )
+
+    native.toolchain(
+        name = "ios_mock_toolchain",
+        target_compatible_with = ["@platforms//os:ios"],
+        toolchain = ":ios_mock_rust_toolchain",
+        toolchain_type = "@rules_rust//rust:toolchain",
+    )
+
+    rust_stdlib_filegroup(
+        name = "ios_mock_std_libs",
+        srcs = [],
+    )
+
+    for tool in ["ios_mock_rustc", "ios_mock_rustdoc"]:
+        write_file(
+            name = "gen_" + tool,
+            out = tool,
+            content = [],
+            is_executable = True,
+        )
 
 def _fission_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -221,6 +278,8 @@ def debug_info_analysis_test_suite(name):
     Args:
         name: the test suite name
     """
+    _define_ios_mock_toolchain()
+
     rust_shared_library(
         name = "mylib",
         srcs = ["lib.rs"],
@@ -248,6 +307,12 @@ def debug_info_analysis_test_suite(name):
 
     dsym_folder_test(
         name = "lib_dsym_test",
+        target_under_test = ":mylib.dSYM",
+        target_compatible_with = ["@platforms//os:macos"],
+    )
+
+    dsym_folder_ios_test(
+        name = "lib_dsym_ios_test",
         target_under_test = ":mylib.dSYM",
         target_compatible_with = ["@platforms//os:macos"],
     )
@@ -396,6 +461,7 @@ def debug_info_analysis_test_suite(name):
         name = name,
         tests = [
             ":lib_dsym_test",
+            ":lib_dsym_ios_test",
             ":bin_dsym_test",
             ":test_dsym_test",
             ":lib_fission_test",
