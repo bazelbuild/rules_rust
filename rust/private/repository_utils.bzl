@@ -56,6 +56,7 @@ filegroup(
         [
             "bin/*{dylib_ext}",
             "lib/*{dylib_ext}*",
+            "lib/rustlib/{target_triple}/bin/*{dylib_ext}",
             "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/lib/*.rmeta",
@@ -323,6 +324,7 @@ rust_stdlib_filegroup(
     name = "rust_std-{target_triple}",
     srcs = glob(
         [
+            "lib/rustlib/{target_triple}/lib/*.o",
             "lib/rustlib/{target_triple}/lib/*.rlib",
             "lib/rustlib/{target_triple}/lib/*.rmeta",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
