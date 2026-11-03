@@ -115,6 +115,12 @@ def _should_prefix_pwd(path):
     if path.startswith("${pwd}"):
         return False
 
+    # Paths starting with `=` are resolved by the compiler relative to
+    # --sysroot (e.g. toolchains_llvm passes `-isystem=/usr/include/c++/v1`),
+    # so they must not have PWD prefixed either.
+    if path.startswith("="):
+        return False
+
     for placeholder in _BAZEL_PATH_PLACEHOLDERS:
         if path.startswith(placeholder):
             return False

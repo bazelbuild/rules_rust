@@ -457,6 +457,7 @@ def clippy_flag():
     _clippy_flag(
         name = "clippy_flag",
         build_setting_default = [],
+        scope = "universal",
     )
 
 # buildifier: disable=unnamed-macro

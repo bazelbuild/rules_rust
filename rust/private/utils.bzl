@@ -530,6 +530,10 @@ def is_exec_configuration(ctx):
         True if the exec configuration is detected, False otherwise.
     """
 
+    # Workaround for webpack_bin blurring the line between exec and target configurations
+    if ctx.target_platform_has_constraint(ctx.attr._wasm32_constraint[platform_common.ConstraintValueInfo]):
+        return False
+
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec") != -1
 

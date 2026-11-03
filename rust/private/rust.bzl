@@ -102,9 +102,8 @@ def _assert_correct_dep_mapping(ctx, crate_type):
         # that should ideally be in 'link_deps'.
         # `proc_macro` doesn't support link_deps, so we exclude it from the warning.
         if CcInfo in dep and crate_type != "proc-macro":
-            # buildifier: disable=print
-            print(
-                ("\nWARNING: Target {dep} in 'deps' of {target} is a C++ library. " +
+            fail(
+                ("Target {dep} in 'deps' of {target} is a C++ library. " +
                  "Only Rust targets are allowed in 'deps'. " +
                  "Please use 'link_deps' for manual FFI linkage. " +
                  "Support for C++ libraries in 'deps' is deprecated and will be removed in a future release.").format(
@@ -920,6 +919,9 @@ _COMMON_ATTRS = {
     "_collect_cfgs": attr.label(
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
         default = Label("//rust/settings:collect_cfgs"),
+    ),
+    "_wasm32_constraint": attr.label(
+        default = Label("@platforms//cpu:wasm32"),
     ),
 } | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS
 

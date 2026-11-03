@@ -18,6 +18,13 @@ fi
 workspace_name="${phys_pwd##*/}"
 exec_root="${output_base}/execroot/${workspace_name}"
 
+# Resolve ${pwd} in environment variables that need absolute paths.
+# The Rust process_wrapper binary handles this via --subst, but the
+# bootstrap path uses this shell script which must do it manually.
+if [[ -n "${SDKROOT-}" ]]; then
+    export SDKROOT="${SDKROOT//\$\{pwd\}/$PWD}"
+fi
+
 for arg in "$@"; do
     case "$arg" in
         *'${pwd}'*)

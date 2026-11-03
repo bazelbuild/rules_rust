@@ -204,9 +204,7 @@ def cargo_build_script(
     script_kwargs["target_compatible_with"] = exec_compatible_with
     script_kwargs["exec_compatible_with"] = exec_compatible_with
 
-    binary_tags = depset(
-        (tags if tags else []) + ["manual"],
-    ).to_list()
+    binary_tags = depset(tags if tags else []).to_list()
 
     # This target exists as the actual build script.
     rust_binary(

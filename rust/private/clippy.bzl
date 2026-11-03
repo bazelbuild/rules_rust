@@ -61,6 +61,10 @@ clippy_flag = rule(
     ),
     implementation = _clippy_flag_impl,
     build_setting = config.string_list(flag = True, repeatable = True),
+    attrs = {
+        # Read by Bazel itself: "universal" keeps the flag's value in exec configurations.
+        "scope": attr.string(),
+    },
 )
 
 def _clippy_flags_impl(ctx):
@@ -361,6 +365,9 @@ rust_clippy_aspect = aspect(
             default = Label("//util/process_wrapper"),
             executable = True,
             cfg = "exec",
+        ),
+        "_wasm32_constraint": attr.label(
+            default = Label("@platforms//cpu:wasm32"),
         ),
     },
     provides = [ClippyInfo],

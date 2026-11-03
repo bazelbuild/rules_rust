@@ -541,6 +541,7 @@ def _generate_hub_and_spokes(
         skip_cargo_lockfile_overwrite,
         strip_internal_dependencies_from_cargo_lockfile,
         is_root,
+        module,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -568,6 +569,7 @@ def _generate_hub_and_spokes(
             across rust / cargo / rules_rust versions between the producing module and the consumer,
             and the producer's lockfile typically lives in a read-only bzlmod cache that can't be
             repinned anyway.
+        module (bazel_module): Module object this hub is being generated for.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -617,12 +619,18 @@ def _generate_hub_and_spokes(
     # and the consumer, and the producer's lockfile typically lives in a
     # read-only bzlmod cache so repinning isn't an option anyway.
     if not is_root:
-        if not lockfile:
-            fail(("crate_universe extension call `{}` is in a non-root module " +
+        if module.name == "protobuf":
+            # `protobuf` v33.5 relies on older (incorrect) rules_rust behaviour where non-root modules did not require a lockfile.
+            # See https://github.com/bazelbuild/rules_rust/issues/1738
+            # This is a temporary workaround.
+            repin = True
+        elif not lockfile:
+            fail(("crate_universe extension call `{}` is in a non-root module {} " +
                   "but has no lockfile. Transitive crate_universe repositories " +
                   "must ship a `lockfile = ...` because repinning is not " +
-                  "supported across module boundaries.").format(cfg.name))
-        repin = False
+                  "supported across module boundaries.").format(cfg.name, module.name))
+        else:
+            repin = False
     else:
         repin = not lockfile or determine_repin(
             repository_ctx = module_ctx,
@@ -708,8 +716,55 @@ def _generate_hub_and_spokes(
         print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)
+    contents = json.decode(module_ctx.read(lockfile))
+    # Post-process the hub BUILD.bazel to fix two classes of cargo-bazel code generation bugs:
+    #
+    # 1. Workspace members with build scripts: cargo-bazel generates hub aliases pointing to
+    #    @crate_index__<name>-<version> repos, but those repos are never created for workspace
+    #    members (this loop skips them). If override_targets.lib is set on such a crate,
+    #    redirect the hub alias to the override label instead.
+    #
+    # 2. Proc-macro crates with binary targets: cargo-bazel places the proc-macro lib in deps
+    #    of binary targets instead of proc_macro_deps, violating rules_rust 0.68.1+ validation.
+    #    Redirect hub aliases for such binary targets to point to the proc-macro lib itself,
+    #    avoiding the analysis failure (these development binaries are never built by consumers).
+    hub_build_bazel = module_ctx.read(crates_dir.get_child("BUILD.bazel"))
+    for _fix_crate in contents["crates"].values():
+        _fix_repo_name = "{repo_name}__{name}-{version}".format(
+            repo_name = cfg.name,
+            name = _fix_crate["name"],
+            version = _fix_crate["version"].replace("+", "-"),
+        )
+        _fix_lib_target = _fix_crate.get("library_target_name")
+        if _fix_crate.get("repository") == None:
+            # Case 1: workspace member — fix dangling hub alias if override_targets.lib is set
+            _fix_override_lib = (_fix_crate.get("override_targets") or {}).get("lib")
+            if _fix_override_lib and _fix_lib_target:
+                _fix_dangling = "@{repo}//:{target}".format(
+                    repo = _fix_repo_name, target = _fix_lib_target
+                )
+                hub_build_bazel = hub_build_bazel.replace(_fix_dangling, _fix_override_lib)
+        elif _fix_lib_target:
+            # Case 2: external proc-macro crate — redirect binary aliases to the lib target
+            _fix_is_proc_macro = False
+            for _fix_target in _fix_crate.get("targets", []):
+                if "ProcMacro" in _fix_target:
+                    _fix_is_proc_macro = True
+                    break
+            if _fix_is_proc_macro:
+                for _fix_target in _fix_crate.get("targets", []):
+                    if "Binary" not in _fix_target:
+                        continue
+                    _fix_bin = _fix_target["Binary"]["crate_name"]
+                    _fix_old = "@{repo}//:{bin}__bin".format(
+                        repo = _fix_repo_name, bin = _fix_bin
+                    )
+                    _fix_new = "@{repo}//:{lib}".format(
+                        repo = _fix_repo_name, lib = _fix_lib_target
+                    )
+                    hub_build_bazel = hub_build_bazel.replace(_fix_old, _fix_new)
     hub_contents = {
-        "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
+        "BUILD.bazel": hub_build_bazel,
         "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
         "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
         "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
@@ -728,8 +783,6 @@ def _generate_hub_and_spokes(
         name = cfg.name,
         contents = hub_contents,
     )
-
-    contents = json.decode(module_ctx.read(lockfile))
 
     for crate in contents["crates"].values():
         repo = crate["repository"]
@@ -987,6 +1040,7 @@ def _filter_dict(dict):
     }
 
 def _crate_impl(module_ctx):
+    # type: (module_ctx) -> None
     reproducible = True
     host_triple = get_host_triple(module_ctx, abi = {
         "aarch64-unknown-linux": "musl",
@@ -1211,6 +1265,7 @@ def _crate_impl(module_ctx):
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
                 is_root = mod.is_root,
+                module = mod,
             )
 
             # Watch cfg.lockfile AFTER generation. The generator may modify it during

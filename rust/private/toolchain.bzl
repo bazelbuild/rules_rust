@@ -978,6 +978,9 @@ rust_toolchain = rule(
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:toolchain_generated_sysroot."
             ),
         ),
+        "_wasm32_constraint": attr.label(
+            default = Label("@platforms//cpu:wasm32"),
+        ),
     },
     toolchains = use_cc_toolchain(mandatory = False),
     doc = """Declares a Rust toolchain for use.

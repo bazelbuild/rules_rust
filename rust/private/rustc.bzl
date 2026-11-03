@@ -229,8 +229,10 @@ def collect_deps(
         else:
             crate_deps.append(dep)
 
+    # Alias keys are Targets, or `struct(label = ...)` stand-ins from protobuf's
+    # rust_proto_library aspect, which cannot be indexed by provider.
     aliases = {
-        (k[rust_common.crate_info].owner if rust_common.crate_info in k else k.label): v
+        (k[rust_common.crate_info].owner if type(k) == "Target" and rust_common.crate_info in k else k.label): v
         for k, v in aliases.items()
     }
     for dep in crate_deps:
@@ -516,6 +518,17 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             for element in link_env["LIB"].split(";")
         ])
 
+    # On macOS, rustc sets SDKROOT on the linker subprocess to the host
+    # system SDK path (via xcrun), independently of --sysroot. This leaks
+    # the host macOS version into the LC_BUILD_VERSION Mach-O load command
+    # even with a hermetic CC toolchain and SDK, breaking remote cache hits
+    # across machines running different macOS versions. Override SDKROOT
+    # with the CC toolchain sysroot so rustc passes the hermetic SDK path
+    # to the linker instead. The process_wrapper resolves ${pwd} to the
+    # absolute execroot path at execution time.
+    if toolchain.target_os in ("ios", "macos", "darwin") and cc_toolchain.sysroot:
+        link_env = dict(link_env, SDKROOT = "${pwd}/" + cc_toolchain.sysroot)
+
     return ld, ld_is_direct_driver, link_args, link_env
 
 # The environment variables rustc reads the Apple deployment target from,
@@ -583,7 +596,7 @@ def apple_deployment_target_env(link_args):
         return {}
     return {var: version}
 
-def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
+def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib, pic_hashless = False):
     """Constructs a disambiguating symlink for a library dependency.
 
     Args:
@@ -591,6 +604,10 @@ def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
       toolchain: The Rust toolchain object.
       crate_info (CrateInfo): The target crate's info.
       lib (File): The library to symlink to.
+      pic_hashless (bool): For a `.pic`-infixed static archive whose canonical name is
+        unambiguous in this link, name the symlink `lib<name>.a` with no disambiguating
+        hash so the canonical `-l<name>` (including one emitted by a depending crate's
+        `#[link(name = "<name>")]` attribute) resolves against it.
 
     Returns:
       (File): The disambiguating symlink for the library.
@@ -604,6 +621,7 @@ def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     path_hash = abs(hash(lib.path))
     lib_name = get_lib_name_for_windows(lib) if toolchain.target_abi == "msvc" else get_lib_name_default(lib)
 
+    hashless = False
     if toolchain.target_abi == "msvc":
         prefix = ""
         extension = ".lib"
@@ -611,15 +629,24 @@ def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
         # Strip the .pic suffix
         lib_name = lib_name[:-4]
         prefix = "lib"
-        extension = ".pic.a"
+        if pic_hashless:
+            # Normalize the Bazel PIC marker away for `#[link(name = "<name>")]`
+            extension = ".a"
+            hashless = True
+        else:
+            extension = ".pic.a"
     else:
         prefix = "lib"
         extension = ".a"
 
     # Ensure the symlink follows the lib<name>.a pattern on Unix-like platforms
     # or <name>.lib on Windows.
-    # Add a hash of the original library path to disambiguate libraries with the same basename.
-    symlink_name = "{}{}-{}{}".format(prefix, lib_name, path_hash, extension)
+    # Add a hash of the original library path to disambiguate libraries with the same basename
+    # (PIC-normalized names are exempt; see above).
+    if hashless:
+        symlink_name = "{}{}{}".format(prefix, lib_name, extension)
+    else:
+        symlink_name = "{}{}-{}{}".format(prefix, lib_name, path_hash, extension)
 
     # Add the symlink to a target crate-specific _ambiguous_libs/ subfolder,
     # to avoid possible collisions with sibling crates that may depend on the
@@ -659,6 +686,21 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
     # symlink.
     ambiguous_libs = {}
 
+    # Count canonical (`.pic`-stripped) names of the preferred static-library artifacts in
+    # this link, deduplicated by path, so PIC normalization (see `symlink_for_ambiguous_lib`)
+    # only drops the disambiguating hash when the canonical name is unambiguous.
+    canonical_by_path = {}
+    for link_input in dep_info.transitive_noncrates.to_list():
+        for lib in link_input.libraries:
+            if _is_dylib(lib):
+                continue
+            counted = get_preferred_artifact(lib, use_pic)
+            counted_name = get_lib_name_for_windows(counted) if toolchain.target_os.startswith("windows") else get_lib_name_default(counted)
+            canonical_by_path[counted.path] = counted_name[:-4] if counted_name.endswith(".pic") else counted_name
+    canonical_counts = {}
+    for counted_canonical in canonical_by_path.values():
+        canonical_counts[counted_canonical] = canonical_counts.get(counted_canonical, 0) + 1
+
     # A dictionary maintaining a mapping from preferred library name to the
     # last visited artifact with that name.
     visited_libs = {}
@@ -682,7 +724,8 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             # we could use -lstatic:+verbatim instead.
             needs_symlink_to_standardize_name = (
                 toolchain.target_os.startswith(("linux", "mac", "darwin")) and
-                artifact.basename.endswith(".a") and not artifact.basename.startswith("lib")
+                artifact.basename.endswith(".a") and
+                (not artifact.basename.startswith("lib") or artifact.basename.endswith(".pic.a"))
             ) or (
                 toolchain.target_os.startswith("windows") and not artifact.basename.endswith(".lib")
             )
@@ -705,7 +748,13 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
                     old_short_path = visited_libs[name].short_path
                     if old_short_path not in ambiguous_libs:
                         ambiguous_libs[old_short_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
-                ambiguous_libs[artifact.short_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
+                ambiguous_libs[artifact.short_path] = symlink_for_ambiguous_lib(
+                    actions,
+                    toolchain,
+                    crate_info,
+                    artifact,
+                    pic_hashless = canonical_counts.get(name[:-4] if name.endswith(".pic") else name, 0) == 1,
+                )
 
             visited_libs[name] = artifact
     return ambiguous_libs
