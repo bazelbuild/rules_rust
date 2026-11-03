@@ -2040,6 +2040,12 @@ def rustc_compile_action(
     if use_split_debuginfo:
         action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
+    exec_group = (
+        "rust_link"
+        if ("link" in emit and crate_info.type not in ("rlib", "lib") and "rust_link" in ctx.exec_groups)
+        else None
+    )
+
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -2057,6 +2063,7 @@ def rustc_compile_action(
                 "" if len(srcs) == 1 else "s",
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            exec_group = exec_group,
             resource_set = get_rustc_resource_set(toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
@@ -2097,6 +2104,7 @@ def rustc_compile_action(
                 "" if len(srcs) == 1 else "s",
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            exec_group = exec_group,
             resource_set = get_rustc_resource_set(toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
