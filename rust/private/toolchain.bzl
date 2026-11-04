@@ -151,9 +151,11 @@ def _symlink_sysroot_tree(ctx, name, target, target_files = None):
         # symlink matching this path can be created within the sysroot.
 
         # The code blow attempts to parse any workspace names out of the
-        # path. For local targets, this code is a noop.
-        if target.label.workspace_root:
-            file_path = file.path.split(target.label.workspace_root, 1)[-1]
+        # path. For local files, this code is a noop. Each file's own
+        # repository is used since `target` may forward files from others.
+        workspace_root = file.owner.workspace_root
+        if workspace_root:
+            file_path = file.path.split(workspace_root, 1)[-1]
         else:
             file_path = file.path
 
@@ -231,6 +233,7 @@ def _generate_sysroot(
     # Define runfiles
     direct_files = []
     transitive_file_sets = []
+    tool_files = []
 
     # Rustc
     sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
@@ -244,31 +247,31 @@ def _generate_sysroot(
 
     # Rustdoc
     sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
-    direct_files.append(sysroot_rustdoc)
+    tool_files.append(sysroot_rustdoc)
 
     # Clippy
     sysroot_clippy = None
     if clippy:
         sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
-        direct_files.append(sysroot_clippy)
+        tool_files.append(sysroot_clippy)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
-        direct_files.append(sysroot_cargo)
+        tool_files.append(sysroot_cargo)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
         sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
-        direct_files.append(sysroot_cargo_clippy)
+        tool_files.append(sysroot_cargo_clippy)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
         sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
-        direct_files.append(sysroot_rustfmt)
+        tool_files.append(sysroot_rustfmt)
 
     # Linker
     sysroot_linker = None
@@ -339,14 +342,18 @@ def _generate_sysroot(
         ]),
     )
 
+    # Rustc actions don't run `tool_files`; the actions that do add them themselves.
+    compile_files = depset(direct_files, transitive = transitive_file_sets)
+
     # Create a depset of all sysroot files (symlinks and their real paths)
-    all_files = depset(direct_files, transitive = transitive_file_sets)
+    all_files = depset(tool_files, transitive = [compile_files])
 
     return struct(
         all_files = all_files,
         cargo = sysroot_cargo,
         cargo_clippy = sysroot_cargo_clippy,
         clippy = sysroot_clippy,
+        compile_files = compile_files,
         linker = sysroot_linker,
         rust_std = sysroot_rust_std,
         rustc = sysroot_rustc,
@@ -589,6 +596,13 @@ def _rust_toolchain_impl(ctx):
     if ctx.file.dlltool:
         all_files_depsets.append(depset([ctx.file.dlltool]))
 
+    # rustc runs dlltool for every Windows GNU crate type, from beside the C++ linker unless set.
+    compile_files_depsets = [sysroot.compile_files]
+    if ctx.file.dlltool:
+        compile_files_depsets.append(depset([ctx.file.dlltool]))
+    elif cc_toolchain and target_os == "windows" and target_abi != "msvc":
+        compile_files_depsets.append(cc_toolchain.all_files)
+
     # Parse the version string once so downstream rules can branch on the
     # semver components without re-parsing. `None` for empty or non-semver
     # values (e.g. unset, or channel labels like "nightly" without a version).
@@ -602,6 +616,7 @@ def _rust_toolchain_impl(ctx):
         clippy_driver = sysroot.clippy,
         cargo_clippy = sysroot.cargo_clippy,
         compilation_mode_opts = compilation_mode_opts,
+        compile_files = depset(transitive = compile_files_depsets),
         default_edition = ctx.attr.default_edition,
         dlltool = ctx.file.dlltool,
         dylib_ext = ctx.attr.dylib_ext,

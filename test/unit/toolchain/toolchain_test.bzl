@@ -96,12 +96,27 @@ def _std_libs_support_srcs_outside_package_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _sysroot_strips_forwarded_files_repository_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    rustc_lib = tut[platform_common.ToolchainInfo].rustc_lib.to_list()
+
+    # rustc finds its libraries relative to the sysroot, wherever the target forwarding them lives.
+    asserts.equals(
+        env,
+        ["{}/{}/defs.bzl".format(tut.label.package, tut.label.name)],
+        [file.short_path for file in rustc_lib],
+    )
+
+    return analysistest.end(env)
+
 toolchain_specifies_target_triple_test = analysistest.make(_toolchain_specifies_target_triple_test_impl)
 toolchain_specifies_target_json_test = analysistest.make(_toolchain_specifies_target_json_test_impl)
 toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_location_expands_linkflags_impl)
 toolchain_location_expands_extra_rustc_flags_test = analysistest.make(_toolchain_location_expands_extra_rustc_flags_impl)
 toolchain_uses_custom_lto_flag_test = analysistest.make(_toolchain_uses_custom_lto_flag_test_impl)
 std_libs_support_srcs_outside_package_test = analysistest.make(_std_libs_support_srcs_outside_package_test_impl)
+sysroot_strips_forwarded_files_repository_test = analysistest.make(_sysroot_strips_forwarded_files_repository_test_impl)
 
 def _define_test_targets():
     native.filegroup(
@@ -231,6 +246,26 @@ def _define_test_targets():
         target_triple = "toolchain-test-triple",
     )
 
+    # A main repository target forwarding another repository's files.
+    native.filegroup(
+        name = "forwarded_rustc_lib",
+        srcs = ["@rules_rust_toolchain_test_target_json//:defs.bzl"],
+    )
+
+    rust_toolchain(
+        name = "rust_forwarded_rustc_lib_toolchain",
+        binary_ext = "",
+        dylib_ext = ".so",
+        exec_triple = "x86_64-unknown-none",
+        rust_doc = ":mock_rustdoc",
+        rust_std = ":std_libs",
+        rustc = ":mock_rustc",
+        rustc_lib = ":forwarded_rustc_lib",
+        staticlib_ext = ".a",
+        stdlib_linkflags = [],
+        target_triple = "toolchain-test-triple",
+    )
+
 def toolchain_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -267,6 +302,10 @@ def toolchain_test_suite(name):
         name = "std_libs_support_srcs_outside_package_test",
         target_under_test = ":std_libs_with_srcs_outside_package",
     )
+    sysroot_strips_forwarded_files_repository_test(
+        name = "sysroot_strips_forwarded_files_repository_test",
+        target_under_test = ":rust_forwarded_rustc_lib_toolchain",
+    )
 
     native.test_suite(
         name = name,
@@ -278,5 +317,6 @@ def toolchain_test_suite(name):
             ":toolchain_location_expands_extra_rustc_flags_test",
             ":toolchain_uses_custom_lto_flag_test",
             ":std_libs_support_srcs_outside_package_test",
+            ":sysroot_strips_forwarded_files_repository_test",
         ],
     )
