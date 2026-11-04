@@ -70,6 +70,12 @@ def _inputs_analysis_test_impl(ctx):
             any([input.path.endswith("/" + expected) for input in inputs]),
             "error: expected '{}' to be in inputs: '{}'".format(expected, inputs),
         )
+    for unexpected in ctx.attr.unexpected_inputs:
+        asserts.false(
+            env,
+            any([input.path.endswith("/" + unexpected) for input in inputs]),
+            "error: expected '{}' not to be in inputs: '{}'".format(unexpected, inputs),
+        )
 
     return analysistest.end(env)
 
@@ -78,6 +84,7 @@ inputs_analysis_test = analysistest.make(
     doc = """An analysistest to examine the inputs of a library target.""",
     attrs = {
         "expected_inputs": attr.string_list(),
+        "unexpected_inputs": attr.string_list(),
     },
 )
 
@@ -177,7 +184,7 @@ def runtime_libs_test(name):
     inputs_analysis_test(
         name = "%s/shared_library" % name,
         target_under_test = "%s/_shared_library" % name,
-        expected_inputs = ["dummy.so"],
+        expected_inputs = ["dummy.so", "empty"],
     )
 
     rust_static_library(
@@ -198,6 +205,28 @@ def runtime_libs_test(name):
         name = "%s/static_library" % name,
         target_under_test = "%s/_static_library" % name,
         expected_inputs = ["dummy.a"],
+    )
+
+    # rustc doesn't link an rlib: it takes neither the C++ toolchain's files nor the Rust tools
+    # that only other actions run.
+    rust_library(
+        name = "%s/__library" % name,
+        edition = "2018",
+        srcs = ["lib.rs"],
+        tags = ["manual", "nobuild"],
+    )
+
+    with_extra_toolchain(
+        name = "%s/_library" % name,
+        extra_toolchain = ":%s/test_cc_toolchain" % name,
+        target = "%s/__library" % name,
+        tags = ["manual"],
+    )
+
+    inputs_analysis_test(
+        name = "%s/library" % name,
+        target_under_test = "%s/_library" % name,
+        unexpected_inputs = ["dummy.a", "empty", "cargo", "cargo-clippy", "clippy-driver", "rustdoc", "rustfmt"],
     )
 
     # A doc test links like a binary, so it needs the static runtime lib named
