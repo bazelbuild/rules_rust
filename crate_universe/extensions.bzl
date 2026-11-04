@@ -634,8 +634,12 @@ def _generate_hub_and_spokes(
         )
 
     # The workspace root when one is explicitly provided.
-    # buildifier: disable=canonical-repository
-    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+    if is_root:
+        # buildifier: disable=canonical-repository
+        nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+    else:
+        # Non-root modules never repin, and the pinned generator only uses this to filter watched paths.
+        nonhermetic_root_bazel_workspace_dir = tag_path
 
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
