@@ -378,6 +378,7 @@ load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "get_auth")
 load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
@@ -852,6 +853,7 @@ def _get_generator(module_ctx, host_triple):
 
     # Download the file into place
     download_kwargs = {
+        "auth": get_auth(module_ctx, [generator_url]),
         "executable": True,
         "output": output,
         "url": generator_url,

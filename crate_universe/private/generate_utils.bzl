@@ -1,5 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "get_auth")
 load(
     ":common_utils.bzl",
     "CARGO_BAZEL_DEBUG",
@@ -78,6 +79,7 @@ def get_generator(repository_ctx, host_triple):
             url = generator_url,
             sha256 = generator_sha256,
             executable = True,
+            auth = get_auth(repository_ctx, [generator_url]),
         )
         return output, None
 
@@ -85,6 +87,7 @@ def get_generator(repository_ctx, host_triple):
         output = output,
         url = generator_url,
         executable = True,
+        auth = get_auth(repository_ctx, [generator_url]),
     )
 
     return output, {host_triple: result.sha256}
