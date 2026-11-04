@@ -130,7 +130,7 @@ def _rust_impl(module_ctx):
 
         else:
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
-            extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_exec_rustc_flags_triples
+            extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_exec_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
