@@ -15,11 +15,11 @@ def _clippy_toolchain_impl(ctx):
     if ctx.file.cargo_clippy:
         bins.append(ctx.file.cargo_clippy)
     sysroot = derive_sysroot(
-        ctx,
-        ctx.label.name,
-        rust_toolchain.sysroot,
-        rust_toolchain.sysroot_files,
-        bins,
+        ctx = ctx,
+        name = ctx.label.name,
+        base_path = rust_toolchain.sysroot,
+        base_files = rust_toolchain.sysroot_files,
+        bins = bins,
     )
     clippy_driver = sysroot.bins[ctx.file.clippy_driver.basename]
     cargo_clippy = sysroot.bins[ctx.file.cargo_clippy.basename] if ctx.file.cargo_clippy else None
@@ -41,7 +41,7 @@ def _clippy_toolchain_impl(ctx):
         cargo_clippy = cargo_clippy,
         # The `rustc` of this sysroot, for actions which run both from it.
         rustc = rustc,
-        extra_clippy_flags = expand_toolchain_flags(ctx, "extra_clippy_flags", rust_toolchain, make_variables),
+        extra_clippy_flags = expand_toolchain_flags(ctx = ctx, attr_name = "extra_clippy_flags", rust_toolchain = rust_toolchain, make_variables = make_variables),
         sysroot = sysroot.path,
         sysroot_anchor = sysroot.anchor,
         sysroot_short_path = sysroot.short_path,

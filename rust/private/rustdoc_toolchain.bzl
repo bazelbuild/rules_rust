@@ -13,11 +13,11 @@ def _rustdoc_toolchain_impl(ctx):
     # run `rustdoc` use this sysroot alone. See `//rust/private:sysroot.bzl`.
     rust_toolchain = companion_rust_toolchain(ctx, "rustdoc")
     sysroot = derive_sysroot(
-        ctx,
-        ctx.label.name,
-        rust_toolchain.sysroot,
-        rust_toolchain.sysroot_files,
-        [ctx.file.rustdoc],
+        ctx = ctx,
+        name = ctx.label.name,
+        base_path = rust_toolchain.sysroot,
+        base_files = rust_toolchain.sysroot_files,
+        bins = [ctx.file.rustdoc],
     )
     rustdoc = sysroot.bins[ctx.file.rustdoc.basename]
     rustc = sysroot.mirrored["bin/" + rust_toolchain.rustc.basename]
@@ -32,7 +32,7 @@ def _rustdoc_toolchain_impl(ctx):
         rustdoc = rustdoc,
         # The `rustc` of this sysroot, for actions which run both from it.
         rustc = rustc,
-        extra_rustdoc_flags = expand_toolchain_flags(ctx, "extra_rustdoc_flags", rust_toolchain, make_variables),
+        extra_rustdoc_flags = expand_toolchain_flags(ctx = ctx, attr_name = "extra_rustdoc_flags", rust_toolchain = rust_toolchain, make_variables = make_variables),
         sysroot = sysroot.path,
         sysroot_anchor = sysroot.anchor,
         sysroot_short_path = sysroot.short_path,

@@ -175,43 +175,43 @@ def _generate_sysroot(
     declared = {}
 
     # Rustc
-    sysroot_rustc = symlink_sysroot_bin(ctx, name, "bin", rustc)
+    sysroot_rustc = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = rustc)
     direct_files.append(sysroot_rustc)
 
     # Rustc dependencies
     sysroot_rustc_lib = None
     if rustc_lib:
-        sysroot_rustc_lib = symlink_sysroot_tree(ctx, name, rustc_lib, declared = declared)
+        sysroot_rustc_lib = symlink_sysroot_tree(ctx = ctx, name = name, target = rustc_lib, declared = declared)
         transitive_file_sets.extend([sysroot_rustc_lib])
 
     # Rustdoc
     sysroot_rustdoc = None
     if rustdoc:
-        sysroot_rustdoc = symlink_sysroot_bin(ctx, name, "bin", rustdoc)
+        sysroot_rustdoc = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = rustdoc)
         direct_files.append(sysroot_rustdoc)
 
     # Clippy
     sysroot_clippy = None
     if clippy:
-        sysroot_clippy = symlink_sysroot_bin(ctx, name, "bin", clippy)
+        sysroot_clippy = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = clippy)
         direct_files.append(sysroot_clippy)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
-        sysroot_cargo = symlink_sysroot_bin(ctx, name, "bin", cargo)
+        sysroot_cargo = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = cargo)
         direct_files.append(sysroot_cargo)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
-        sysroot_cargo_clippy = symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
+        sysroot_cargo_clippy = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = cargo_clippy)
         direct_files.append(sysroot_cargo_clippy)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
-        sysroot_rustfmt = symlink_sysroot_bin(ctx, name, "bin", rustfmt)
+        sysroot_rustfmt = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = rustfmt)
         direct_files.append(sysroot_rustfmt)
 
     # Linker
@@ -233,8 +233,8 @@ def _generate_sysroot(
             idx = linker_bin.dirname.find("/lib/rustlib/")
             dest = linker_bin.dirname[idx + 1:]
 
-        sysroot_linker = symlink_sysroot_bin(ctx, name, dest, linker_bin)
-        sysroot_linker_files = symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files, declared = declared)
+        sysroot_linker = symlink_sysroot_bin(ctx = ctx, name = name, directory = dest, target = linker_bin)
+        sysroot_linker_files = symlink_sysroot_tree(ctx = ctx, name = name, target = linker, target_files = linker[DefaultInfo].default_runfiles.files, declared = declared)
         direct_files.append(sysroot_linker)
         transitive_file_sets.append(sysroot_linker_files)
 
@@ -247,20 +247,20 @@ def _generate_sysroot(
         if "/lib/rustlib/" in rust_objcopy.dirname:
             idx = rust_objcopy.dirname.find("/lib/rustlib/")
             dest = rust_objcopy.dirname[idx + 1:]
-        sysroot_rust_objcopy = symlink_sysroot_bin(ctx, name, dest, rust_objcopy)
+        sysroot_rust_objcopy = symlink_sysroot_bin(ctx = ctx, name = name, directory = dest, target = rust_objcopy)
         direct_files.append(sysroot_rust_objcopy)
 
     # Llvm tools
     sysroot_llvm_tools = None
     if llvm_tools:
-        sysroot_llvm_tools = symlink_sysroot_tree(ctx, name, llvm_tools, declared = declared)
+        sysroot_llvm_tools = symlink_sysroot_tree(ctx = ctx, name = name, target = llvm_tools, declared = declared)
         transitive_file_sets.extend([sysroot_llvm_tools])
 
     # Rust standard library
     sysroot_rust_std = None
     extra_file_sets = []
     if rust_std:
-        sysroot_rust_std = symlink_sysroot_tree(ctx, name, rust_std, declared = declared)
+        sysroot_rust_std = symlink_sysroot_tree(ctx = ctx, name = name, target = rust_std, declared = declared)
         transitive_file_sets.extend([sysroot_rust_std])
 
         # Made available to support $(location) expansion in stdlib_linkflags and extra_rustc_flags.

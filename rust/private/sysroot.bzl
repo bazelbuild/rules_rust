@@ -224,7 +224,7 @@ def distribution_relative_path(file, target):
             return path[len(package) + 1:]
     return path
 
-def symlink_sysroot_tree(ctx, name, target, target_files = None, declared = None):
+def symlink_sysroot_tree(*, ctx, name, target, target_files = None, declared = None):
     """Generate a set of symlinks to files from another target.
 
     Each file is recreated at its `distribution_relative_path`, so the tree
@@ -270,7 +270,7 @@ def symlink_sysroot_tree(ctx, name, target, target_files = None, declared = None
 
     return depset(tree_files)
 
-def symlink_sysroot_bin(ctx, name, directory, target):
+def symlink_sysroot_bin(*, ctx, name, directory, target):
     """Create an executable symlink to a target file.
 
     Args:
@@ -296,7 +296,7 @@ def symlink_sysroot_bin(ctx, name, directory, target):
 
     return symlink
 
-def derive_sysroot(ctx, name, base_path, base_files, bins):
+def derive_sysroot(*, ctx, name, base_path, base_files, bins):
     """Lay out a sysroot under `name` that mirrors another one and adds tools to its `bin/`.
 
     Companion toolchains such as `rustdoc_toolchain` derive their sysroot from
@@ -324,7 +324,7 @@ def derive_sysroot(ctx, name, base_path, base_files, bins):
     prefix = base_path + "/"
     added = {}
     for binary in bins:
-        added[binary.basename] = symlink_sysroot_bin(ctx, name, "bin", binary)
+        added[binary.basename] = symlink_sysroot_bin(ctx = ctx, name = name, directory = "bin", target = binary)
     replaced = {"bin/" + basename: True for basename in added}
 
     files = list(added.values())
@@ -364,7 +364,7 @@ def derive_sysroot(ctx, name, base_path, base_files, bins):
         mirrored = mirrored,
     )
 
-def expand_toolchain_flags(ctx, attr_name, rust_toolchain, make_variables):
+def expand_toolchain_flags(*, ctx, attr_name, rust_toolchain, make_variables):
     """Expand Make variables in a companion toolchain's flag attribute.
 
     Both the `rust_toolchain`'s variables (`RUST_SYSROOT`, `RUSTC`, ...) and
