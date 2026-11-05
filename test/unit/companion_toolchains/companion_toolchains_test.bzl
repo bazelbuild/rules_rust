@@ -8,6 +8,7 @@ actions which run them.
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:clippy_toolchain.bzl", "clippy_toolchain")
@@ -220,14 +221,37 @@ def _companion_fails_test_impl(ctx):
     asserts.expect_failure(env, ctx.attr.expected_message)
     return analysistest.end(env)
 
+# The targets these tests analyze fail in every configuration, so outside the
+# tests they are incompatible rather than broken: `manual` keeps them out of
+# wildcard builds, but `cquery` and `aquery` analyze them all the same. The
+# tests flip this flag through their transition.
+_NEGATIVE_TESTS_FLAG = Label("//test/unit/companion_toolchains:negative_companion_tests")
+
 companion_fails_test = analysistest.make(
     _companion_fails_test_impl,
     attrs = {"expected_message": attr.string()},
     expect_failure = True,
+    config_settings = {str(_NEGATIVE_TESTS_FLAG): True},
 )
 
 def _define_untied_companions():
     """Companions which neither name a `rust_toolchain` nor match the resolved one's release."""
+    bool_flag(
+        name = _NEGATIVE_TESTS_FLAG.name,
+        build_setting_default = False,
+    )
+    native.config_setting(
+        name = "negative_companion_tests_enabled",
+        flag_values = {str(_NEGATIVE_TESTS_FLAG): "True"},
+    )
+    only_under_test = {
+        "tags": ["manual"],
+        "target_compatible_with": select({
+            ":negative_companion_tests_enabled": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
+    }
+
     for tool, rule in (("rustdoc", rustdoc_toolchain), ("clippy", clippy_toolchain)):
         binary = {"clippy": ":mock_clippy_driver", "rustdoc": ":mock_rustdoc"}[tool]
         binary_attr = {"clippy": "clippy_driver", "rustdoc": "rustdoc"}[tool]
@@ -236,16 +260,14 @@ def _define_untied_companions():
         # `rust_toolchain` against.
         rule(
             name = "untied_{}_toolchain".format(tool),
-            tags = ["manual"],
-            **{binary_attr: binary}
+            **(only_under_test | {binary_attr: binary})
         )
 
         # No `rust_toolchain`, and a `version` no `rust_toolchain` has.
         rule(
             name = "other_release_{}_toolchain".format(tool),
             version = "0.0.0",
-            tags = ["manual"],
-            **{binary_attr: binary}
+            **(only_under_test | {binary_attr: binary})
         )
 
         # Both a `rust_toolchain` and a release: two sources of truth.
@@ -253,8 +275,7 @@ def _define_untied_companions():
             name = "doubly_tied_{}_toolchain".format(tool),
             rust_toolchain = ":symlinked_distribution_rust_toolchain",
             channel = "stable",
-            tags = ["manual"],
-            **{binary_attr: binary}
+            **(only_under_test | {binary_attr: binary})
         )
 
 def _companion_of_another_rust_toolchain_fails_test_impl(ctx):
