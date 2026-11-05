@@ -46,10 +46,12 @@ rustfmt_toolchain_alias(
 
 clippy_toolchain_alias(
     name = "current_clippy_toolchain",
+    tags = ["manual"],
 )
 
 rustdoc_toolchain_alias(
     name = "current_rustdoc_toolchain",
+    tags = ["manual"],
 )
 
 rust_analyzer_toolchain_alias(

@@ -113,11 +113,14 @@ distribution_std = rule(
     ],
 )
 
-def symlinked_distribution_toolchains(name):
+def symlinked_distribution_toolchains(name, deprecated_tool_attributes = False):
     """Declare a `rust_toolchain` and its companions over the symlinked distribution.
 
     Args:
         name (str): A prefix for the targets.
+        deprecated_tool_attributes (bool): Declare only the `rust_toolchain`, carrying
+            `rustdoc` and Clippy through its deprecated attributes instead of companions,
+            as toolchains written before the companion toolchain types did.
 
     Returns:
         list[str]: The labels of the `toolchain` targets, for `extra_toolchains`.
@@ -125,6 +128,13 @@ def symlinked_distribution_toolchains(name):
     host = triple(HOST_TRIPLE)
     dist = _SYMLINKED_DISTRIBUTION + "//nested/dist"
 
+    deprecated = {}
+    if deprecated_tool_attributes:
+        deprecated = {
+            "cargo_clippy": dist + ":cargo_clippy",
+            "clippy_driver": dist + ":clippy_driver",
+            "rust_doc": dist + ":rustdoc",
+        }
     rust_toolchain(
         name = name + "_rust_toolchain",
         binary_ext = system_to_binary_ext(host.system),
@@ -137,9 +147,14 @@ def symlinked_distribution_toolchains(name):
         stdlib_linkflags = system_to_stdlib_linkflags(host.system, host.abi),
         target_triple = HOST_TRIPLE,
         tags = ["manual"],
+        **deprecated
     )
+    if deprecated_tool_attributes:
+        return _host_toolchains(name, {"rust": ":{}_rust_toolchain".format(name)})
+
     rustdoc_toolchain(
         name = name + "_rustdoc_toolchain",
+        rust_toolchain = ":" + name + "_rust_toolchain",
         rustdoc = dist + ":rustdoc",
         tags = ["manual"],
     )
@@ -147,6 +162,7 @@ def symlinked_distribution_toolchains(name):
         name = name + "_clippy_toolchain",
         cargo_clippy = dist + ":cargo_clippy",
         clippy_driver = dist + ":clippy_driver",
+        rust_toolchain = ":" + name + "_rust_toolchain",
         tags = ["manual"],
     )
 
@@ -160,7 +176,7 @@ def _host_toolchains(name, toolchains):
 
     Args:
         name (str): A prefix for the targets.
-        toolchains (dict[str, str]): The `rust`, `rustdoc` and `clippy` toolchain labels.
+        toolchains (dict[str, str]): The toolchain labels by kind: `rust`, `rustdoc`, `clippy`.
 
     Returns:
         list[str]: The labels of the `toolchain` targets, for `extra_toolchains`.
@@ -172,6 +188,8 @@ def _host_toolchains(name, toolchains):
         ("rustdoc", "@rules_rust//rust/rustdoc:toolchain_type"),
         ("clippy", "@rules_rust//rust/clippy:toolchain_type"),
     ):
+        if kind not in toolchains:
+            continue
         native.toolchain(
             name = "{}_{}".format(name, kind),
             exec_compatible_with = constraints,

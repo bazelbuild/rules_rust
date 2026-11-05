@@ -552,6 +552,8 @@ def _rust_toolchain_tools_repository_impl(ctx):
     ))
 
     # The companions accompany the `rust_toolchain` from the same release.
+    # Cargo states the release itself; Clippy and rustdoc take theirs from the
+    # `rust_toolchain` they derive their sysroot from.
     build_components.append(BUILD_for_cargo_toolchain(
         name = "cargo_toolchain",
         cargo = "//:cargo",
@@ -564,11 +566,13 @@ def _rust_toolchain_tools_repository_impl(ctx):
         name = "clippy_toolchain",
         clippy_driver = "//:clippy_driver_bin",
         cargo_clippy = "//:cargo_clippy_bin",
+        rust_toolchain = "//:rust_toolchain",
     ))
 
     build_components.append(BUILD_for_rustdoc_toolchain(
         name = "rustdoc_toolchain",
         rustdoc = "//:rustdoc",
+        rust_toolchain = "//:rust_toolchain",
     ))
 
     # Not all target triples are expected to have dev components

@@ -2,15 +2,15 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:lint_test.bzl", "rlocationpath")
-load("//rust/private:sysroot.bzl", "derive_sysroot", "expand_toolchain_flags")
+load("//rust/private:sysroot.bzl", "companion_rust_toolchain", "companion_rust_toolchain_attrs", "derive_sysroot", "expand_toolchain_flags")
 
 def _clippy_toolchain_impl(ctx):
     # `clippy-driver` is a rustc driver: it loads `librustc_driver` from
     # `../lib` relative to itself. The toolchain derives a sysroot of its own
-    # from the one of the resolved `rust_toolchain`, mirroring it and adding
-    # its binaries to `bin/`. Actions which run Clippy use this sysroot alone.
+    # from the one of its `rust_toolchain`, mirroring it and adding its
+    # binaries to `bin/`. Actions which run Clippy use this sysroot alone.
     # See `//rust/private:sysroot.bzl`.
-    rust_toolchain = ctx.toolchains[rust_common.toolchain_type]
+    rust_toolchain = companion_rust_toolchain(ctx, "clippy")
     bins = [ctx.file.clippy_driver]
     if ctx.file.cargo_clippy:
         bins.append(ctx.file.cargo_clippy)
@@ -68,21 +68,30 @@ A toolchain providing [Clippy](https://doc.rust-lang.org/clippy/).
 `@rules_rust//rust/clippy:toolchain_type` and run the `clippy-driver` it
 provides.
 
-The toolchain resolves `@rules_rust//rust:toolchain_type` itself and derives
-its sysroot from that `rust_toolchain`'s: the same `rustc`, libraries and
-standard library, plus `bin/clippy-driver` and `bin/cargo-clippy`.
-`clippy-driver` is a rustc driver which loads `librustc_driver` from beside
-itself, so actions running Clippy use the derived sysroot, and that sysroot is
-complete even where symlinks are materialized as copies. Bazel resolves the
-`rust_toolchain` for the consumer of this toolchain, so the pair always
-matches, and `find_clippy` checks that it does.
+The toolchain derives its sysroot from the one of its `rust_toolchain`: the
+same `rustc`, libraries and standard library, plus `bin/clippy-driver` and
+`bin/cargo-clippy`. `clippy-driver` is a rustc driver which loads
+`librustc_driver` from beside itself, so actions running Clippy use the derived
+sysroot, and that sysroot is complete even where symlinks are materialized as
+copies.
 
 `clippy-driver` must come from the same Rust release as `rustc`. The `rust`
 module extension declares one `clippy_toolchain` in the repository of every
-`rust_toolchain` it registers and registers the two together. The
-`clippy_driver` and `cargo_clippy` attributes of `rust_toolchain` are
-deprecated in favor of this rule and are consulted only when no
-`clippy_toolchain` is registered.
+`rust_toolchain` it registers, bound to it through `rust_toolchain`, and
+registers the two together. A `clippy_toolchain` which leaves `rust_toolchain`
+unset derives from the `rust_toolchain` resolved for
+`@rules_rust//rust:toolchain_type` instead and states its release through
+`version`, `iso_date` and `channel`, which the resolved toolchain must agree
+with; the two ways exclude each other. Either way the toolchain advertises
+the `version`, `iso_date` and `channel` of the `rust_toolchain` it derives
+from. A rule which runs Clippy resolves both toolchain types and `find_clippy`
+checks that the `clippy_toolchain` derives from the `rust_toolchain` the rule
+resolved. When it does not, as when a
+`rust_toolchain` is registered on its own ahead of the generated ones, the
+rule falls back to the deprecated `clippy_driver` and `cargo_clippy` of that
+`rust_toolchain`, or fails when they are unset. Those attributes are
+deprecated in favor of this rule and are consulted only in that case or when
+no `clippy_toolchain` is registered at all.
 
 `$(CLIPPY_DRIVER)`, `$(CLIPPY_DRIVER_RLOCATIONPATH)` and, when `cargo_clippy`
 is set, `$(CARGO_CLIPPY)` and `$(CARGO_CLIPPY_RLOCATIONPATH)` are available as
@@ -91,7 +100,7 @@ Make variables to targets which list
 `clippy_toolchain_alias`, in `toolchains`.
 """,
     implementation = _clippy_toolchain_impl,
-    attrs = {
+    attrs = dict({
         "cargo_clippy": attr.label(
             doc = "The `cargo-clippy` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
@@ -111,14 +120,17 @@ Make variables to targets which list
                 "`CLIPPY_DRIVER`."
             ),
         ),
-    },
+    }, **companion_rust_toolchain_attrs("clippy")),
     toolchains = [
-        config_common.toolchain_type(rust_common.toolchain_type),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = False),
     ],
 )
 
 def _clippy_toolchain_alias_impl(ctx):
-    toolchain = ctx.toolchains[rust_common.clippy_toolchain_type]
+    # Resolved as a rule running Clippy would, so that the alias stands in
+    # for the deprecated `rust_toolchain.clippy_driver` wherever `find_clippy`
+    # falls back to it.
+    toolchain = find_clippy(ctx, ctx.toolchains[rust_common.toolchain_type])
     if not toolchain:
         if ctx.attr.mandatory:
             fail("{}: no `clippy_toolchain` is registered for the current platform".format(ctx.label))
@@ -157,19 +169,22 @@ This follows `cc_toolchain_alias` from `rules_cc`.
     },
     toolchains = [
         config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = False),
     ],
 )
 
 def find_clippy(ctx, rust_toolchain):
     """The `clippy_toolchain` a rule should run Clippy from.
 
-    The registered `clippy_toolchain` is preferred, and its sysroot must derive
-    from the `rust_toolchain` the rule resolved; otherwise toolchain resolution
-    paired the two inconsistently and the rule fails. When none is registered
-    an equivalent toolchain is made from the deprecated `clippy_driver` and
-    `cargo_clippy` of the `rust_toolchain`, running from that toolchain's
-    sysroot, which is how rules found Clippy before
-    `@rules_rust//rust/clippy:toolchain_type` existed.
+    The registered `clippy_toolchain` is preferred when its sysroot derives
+    from the `rust_toolchain` the rule resolved. When it derives from another
+    one, or none is registered, an equivalent toolchain is made from the
+    deprecated `clippy_driver` and `cargo_clippy` of the `rust_toolchain`,
+    running from that toolchain's sysroot, which is how rules found Clippy
+    before `@rules_rust//rust/clippy:toolchain_type` existed. A
+    `clippy_toolchain` of another `rust_toolchain` with nothing to fall back
+    to is an error: its `clippy-driver` would load that other `rustc`'s
+    libraries.
 
     Args:
         ctx (ctx): The rule context. The rule must list
@@ -181,19 +196,26 @@ def find_clippy(ctx, rust_toolchain):
         ToolchainInfo: A `clippy_toolchain`, or `None` when neither toolchain provides Clippy.
     """
     clippy_toolchain = ctx.toolchains[rust_common.clippy_toolchain_type]
-    if clippy_toolchain:
-        if rust_toolchain and clippy_toolchain.rust_sysroot_anchor != rust_toolchain.sysroot_anchor:
+    deprecated_driver = rust_toolchain.clippy_driver if rust_toolchain else None
+
+    # Compared by path: a `rust_toolchain` reached through the companion's
+    # `rust_toolchain` attribute and through toolchain resolution are two
+    # configured targets sharing one sysroot, and `File`s of each differ.
+    if clippy_toolchain and rust_toolchain and clippy_toolchain.rust_sysroot_anchor.path != rust_toolchain.sysroot_anchor.path:
+        if not deprecated_driver:
             fail((
-                "{}: the `clippy_toolchain` derives from the `rust_toolchain` sysroot {} but the " +
-                "`rust_toolchain` resolved for this target is {}. The two toolchains must resolve " +
-                "together; register the `clippy_toolchain` with the same constraints and target " +
-                "settings as its `rust_toolchain`."
+                "{}: the registered `clippy_toolchain` derives from the `rust_toolchain` sysroot {} but the " +
+                "`rust_toolchain` resolved for this target is {}, and that `rust_toolchain` sets no " +
+                "`clippy_driver` to fall back to. Register a `clippy_toolchain` whose `rust_toolchain` is " +
+                "the one in use, alongside it and with the same constraints and target settings."
             ).format(ctx.label, clippy_toolchain.rust_sysroot_anchor.dirname, rust_toolchain.sysroot))
+        clippy_toolchain = None
+    if clippy_toolchain:
         return clippy_toolchain
 
-    if not rust_toolchain or not rust_toolchain.clippy_driver:
+    if not deprecated_driver:
         return None
-    return clippy_toolchain_from_driver(ctx, rust_toolchain, rust_toolchain.clippy_driver, rust_toolchain.cargo_clippy)
+    return clippy_toolchain_from_driver(ctx, rust_toolchain, deprecated_driver, rust_toolchain.cargo_clippy)
 
 def clippy_toolchain_from_driver(ctx, rust_toolchain, clippy_driver, cargo_clippy = None):
     """A `clippy_toolchain` equivalent for a `clippy-driver` which runs from the `rust_toolchain`'s sysroot.

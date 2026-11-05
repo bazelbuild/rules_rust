@@ -13,6 +13,7 @@ load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:clippy_toolchain.bzl", "clippy_toolchain")
 load("//rust:defs.bzl", "rust_clippy_aspect", "rust_common", "rust_doc", "rust_library")
 load("//rust:rustdoc_toolchain.bzl", "rustdoc_toolchain")
+load(":sysroot_test.bzl", "symlinked_distribution_toolchains")
 
 _RUSTDOC = ["rustdoc", "rustdoc.exe"]
 _CLIPPY = ["clippy-driver", "clippy-driver.exe", "cargo-clippy", "cargo-clippy.exe"]
@@ -148,25 +149,33 @@ _FLAG_TEST_ATTRS = {
     "mnemonic": attr.string(),
 }
 
+def _toolchains_setting(names):
+    return {
+        "//command_line_option:extra_toolchains": [
+            str(Label("//test/unit/companion_toolchains:" + name))
+            for name in names
+        ],
+    }
+
+# The flagged companions are bound to the symlinked distribution's
+# `rust_toolchain`, so that one is registered first too.
+# `:symlinked_distribution_rust` is declared by `sysroot_test_suite` in the
+# same package.
 rustdoc_flags_from_own_toolchain_test = analysistest.make(
     _flags_from_own_toolchain_test_impl,
     attrs = _FLAG_TEST_ATTRS,
-    config_settings = {
-        "//command_line_option:extra_toolchains": [str(Label("//test/unit/companion_toolchains:flagged_rustdoc"))],
-    },
+    config_settings = _toolchains_setting(["flagged_rustdoc", "symlinked_distribution_rust"]),
 )
 
 clippy_flags_from_own_toolchain_test = analysistest.make(
     _flags_from_own_toolchain_test_impl,
     attrs = _FLAG_TEST_ATTRS,
-    config_settings = {
-        "//command_line_option:extra_toolchains": [str(Label("//test/unit/companion_toolchains:flagged_clippy"))],
-    },
+    config_settings = _toolchains_setting(["flagged_clippy", "symlinked_distribution_rust"]),
     extra_target_under_test_aspects = [rust_clippy_aspect],
 )
 
 def _define_flagged_companions():
-    """Companion toolchains with `extra_*_flags`, over the registered `rust_toolchain`."""
+    """Companion toolchains with `extra_*_flags`, over the symlinked distribution's `rust_toolchain`."""
     write_file(
         name = "mock_rustdoc",
         out = "mock_rustdoc.exe",
@@ -175,6 +184,7 @@ def _define_flagged_companions():
     )
     rustdoc_toolchain(
         name = "flagged_rustdoc_toolchain",
+        rust_toolchain = ":symlinked_distribution_rust_toolchain",
         rustdoc = ":mock_rustdoc",
         extra_rustdoc_flags = ["--cap-lints=warn", "--sysroot-marker=$(RUST_SYSROOT)"],
         tags = ["manual"],
@@ -194,6 +204,7 @@ def _define_flagged_companions():
     clippy_toolchain(
         name = "flagged_clippy_toolchain",
         clippy_driver = ":mock_clippy_driver",
+        rust_toolchain = ":symlinked_distribution_rust_toolchain",
         extra_clippy_flags = ["-Aclippy::needless_return"],
         tags = ["manual"],
     )
@@ -202,6 +213,117 @@ def _define_flagged_companions():
         toolchain = ":flagged_clippy_toolchain",
         toolchain_type = "@rules_rust//rust/clippy:toolchain_type",
     )
+
+def _companion_fails_test_impl(ctx):
+    """A companion toolchain which cannot be tied to a `rust_toolchain` fails to analyze."""
+    env = analysistest.begin(ctx)
+    asserts.expect_failure(env, ctx.attr.expected_message)
+    return analysistest.end(env)
+
+companion_fails_test = analysistest.make(
+    _companion_fails_test_impl,
+    attrs = {"expected_message": attr.string()},
+    expect_failure = True,
+)
+
+def _define_untied_companions():
+    """Companions which neither name a `rust_toolchain` nor match the resolved one's release."""
+    for tool, rule in (("rustdoc", rustdoc_toolchain), ("clippy", clippy_toolchain)):
+        binary = {"clippy": ":mock_clippy_driver", "rustdoc": ":mock_rustdoc"}[tool]
+        binary_attr = {"clippy": "clippy_driver", "rustdoc": "rustdoc"}[tool]
+
+        # No `rust_toolchain` and no `version`: nothing to check the resolved
+        # `rust_toolchain` against.
+        rule(
+            name = "untied_{}_toolchain".format(tool),
+            tags = ["manual"],
+            **{binary_attr: binary}
+        )
+
+        # No `rust_toolchain`, and a `version` no `rust_toolchain` has.
+        rule(
+            name = "other_release_{}_toolchain".format(tool),
+            version = "0.0.0",
+            tags = ["manual"],
+            **{binary_attr: binary}
+        )
+
+        # Both a `rust_toolchain` and a release: two sources of truth.
+        rule(
+            name = "doubly_tied_{}_toolchain".format(tool),
+            rust_toolchain = ":symlinked_distribution_rust_toolchain",
+            channel = "stable",
+            tags = ["manual"],
+            **{binary_attr: binary}
+        )
+
+def _companion_of_another_rust_toolchain_fails_test_impl(ctx):
+    """A companion derived from a `rust_toolchain` other than the resolved one is rejected.
+
+    `rust_toolchain` alone is registered ahead of the generated toolchains, so
+    the generated companions, bound to their own `rust_toolchain`, still
+    resolve and would load the wrong `librustc_driver`. With no deprecated
+    attribute to fall back to, analysis fails.
+    """
+    env = analysistest.begin(ctx)
+    asserts.expect_failure(env, "derives from the `rust_toolchain` sysroot")
+    asserts.expect_failure(env, "sets no `" + ctx.attr.deprecated_attribute + "` to fall back to")
+    return analysistest.end(env)
+
+_MISMATCH_TEST_ATTRS = {
+    "deprecated_attribute": attr.string(),
+}
+
+clippy_of_another_rust_toolchain_fails_test = analysistest.make(
+    _companion_of_another_rust_toolchain_fails_test_impl,
+    attrs = _MISMATCH_TEST_ATTRS,
+    expect_failure = True,
+    extra_target_under_test_aspects = [rust_clippy_aspect],
+    config_settings = _toolchains_setting(["symlinked_distribution_rust"]),
+)
+
+rustdoc_of_another_rust_toolchain_fails_test = analysistest.make(
+    _companion_of_another_rust_toolchain_fails_test_impl,
+    attrs = _MISMATCH_TEST_ATTRS,
+    expect_failure = True,
+    config_settings = _toolchains_setting(["symlinked_distribution_rust"]),
+)
+
+def _deprecated_attributes_fallback_test_impl(ctx):
+    """A lone `rust_toolchain` with the deprecated tool attributes is used over a mismatched companion.
+
+    The tool and the single sysroot of the action both come from that
+    `rust_toolchain`, as they did before the companion toolchain types.
+    """
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    action = _find_action(target.actions, ctx.attr.mnemonic)
+    tools = [file for file in action.inputs.to_list() if file.basename in ctx.attr.tool_names]
+    asserts.equals(env, 1, len(tools), "Expected exactly one of {} among the inputs of {}".format(ctx.attr.tool_names, ctx.attr.mnemonic))
+    expected_sysroot = "/legacy_distribution_rust_toolchain/"
+    for tool in tools:
+        asserts.true(env, expected_sysroot in tool.path, "{} should come from the `rust_toolchain` sysroot".format(tool.path))
+    sysroot = _assert_single_sysroot(env, action)
+    asserts.true(env, sysroot != None and sysroot.endswith("/legacy_distribution_rust_toolchain"), "{} should run from the `rust_toolchain` sysroot, got {}".format(ctx.attr.mnemonic, sysroot))
+    return analysistest.end(env)
+
+_FALLBACK_TEST_ATTRS = {
+    "mnemonic": attr.string(),
+    "tool_names": attr.string_list(),
+}
+
+clippy_deprecated_attributes_fallback_test = analysistest.make(
+    _deprecated_attributes_fallback_test_impl,
+    attrs = _FALLBACK_TEST_ATTRS,
+    extra_target_under_test_aspects = [rust_clippy_aspect],
+    config_settings = _toolchains_setting(["legacy_distribution_rust"]),
+)
+
+rustdoc_deprecated_attributes_fallback_test = analysistest.make(
+    _deprecated_attributes_fallback_test_impl,
+    attrs = _FALLBACK_TEST_ATTRS,
+    config_settings = _toolchains_setting(["legacy_distribution_rust"]),
+)
 
 _SysrootLayoutInfo = provider(
     doc = "The relative layouts of the rust sysroot and of the companions derived from it.",
@@ -329,6 +451,24 @@ def companion_toolchains_test_suite(name):
     )
 
     _define_flagged_companions()
+    _define_untied_companions()
+
+    for tool in ("rustdoc", "clippy"):
+        companion_fails_test(
+            name = "untied_{}_toolchain_fails_test".format(tool),
+            target_under_test = ":untied_{}_toolchain".format(tool),
+            expected_message = "must name the `rust_toolchain` it accompanies",
+        )
+        companion_fails_test(
+            name = "other_release_{}_toolchain_fails_test".format(tool),
+            target_under_test = ":other_release_{}_toolchain".format(tool),
+            expected_message = "come from different Rust releases",
+        )
+        companion_fails_test(
+            name = "doubly_tied_{}_toolchain_fails_test".format(tool),
+            target_under_test = ":doubly_tied_{}_toolchain".format(tool),
+            expected_message = "`rust_toolchain` and `channel` are exclusive",
+        )
 
     sysroot_layouts(
         name = "sysroot_layouts",
@@ -354,6 +494,37 @@ def companion_toolchains_test_suite(name):
         expected_flags = ["-Aclippy::needless_return"],
     )
 
+    # A `rust_toolchain` registered on its own, ahead of the generated
+    # toolchains and their companions. `:symlinked_distribution_rust` is
+    # declared by `sysroot_test_suite` in the same package.
+    symlinked_distribution_toolchains("legacy_distribution", deprecated_tool_attributes = True)
+
+    clippy_of_another_rust_toolchain_fails_test(
+        name = "clippy_of_another_rust_toolchain_fails_test",
+        target_under_test = ":lib",
+        deprecated_attribute = "clippy_driver",
+    )
+
+    rustdoc_of_another_rust_toolchain_fails_test(
+        name = "rustdoc_of_another_rust_toolchain_fails_test",
+        target_under_test = ":lib_doc",
+        deprecated_attribute = "rust_doc",
+    )
+
+    clippy_deprecated_attributes_fallback_test(
+        name = "clippy_deprecated_attributes_fallback_test",
+        target_under_test = ":lib",
+        mnemonic = "Clippy",
+        tool_names = ["clippy-driver", "clippy-driver.exe"],
+    )
+
+    rustdoc_deprecated_attributes_fallback_test(
+        name = "rustdoc_deprecated_attributes_fallback_test",
+        target_under_test = ":lib_doc",
+        mnemonic = "Rustdoc",
+        tool_names = _RUSTDOC,
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -364,5 +535,15 @@ def companion_toolchains_test_suite(name):
             ":rustdoc_flags_from_own_toolchain_test",
             ":clippy_flags_from_own_toolchain_test",
             ":derived_sysroot_layout_test",
+            ":clippy_of_another_rust_toolchain_fails_test",
+            ":rustdoc_of_another_rust_toolchain_fails_test",
+            ":clippy_deprecated_attributes_fallback_test",
+            ":rustdoc_deprecated_attributes_fallback_test",
+            ":untied_rustdoc_toolchain_fails_test",
+            ":untied_clippy_toolchain_fails_test",
+            ":other_release_rustdoc_toolchain_fails_test",
+            ":other_release_clippy_toolchain_fails_test",
+            ":doubly_tied_rustdoc_toolchain_fails_test",
+            ":doubly_tied_clippy_toolchain_fails_test",
         ],
     )

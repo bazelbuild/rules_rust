@@ -102,6 +102,99 @@ as `--sysroot` since #2223 and done so by default since #2277. Companion
 toolchains derive theirs from it with `derive_sysroot`.
 """
 
+load("//rust/private:common.bzl", "rust_common")
+
+def companion_rust_toolchain_attrs(tool):
+    """The attributes tying a companion toolchain to a `rust_toolchain`.
+
+    Args:
+        tool (str): The tool the companion provides, for the documentation.
+
+    Returns:
+        dict[str, attr]: `rust_toolchain`, `version`, `iso_date` and `channel`.
+    """
+    return {
+        "channel": attr.string(
+            doc = "The Rust release channel `{}` comes from (`stable`, `nightly`, or `beta`), as in `rust_toolchain.channel`.".format(tool),
+            default = "",
+        ),
+        "iso_date": attr.string(
+            doc = "The ISO date of the nightly or beta release `{}` comes from, as in `rust_toolchain.iso_date`. Empty for stable releases.".format(tool),
+            default = "",
+        ),
+        "rust_toolchain": attr.label(
+            doc = (
+                "The `rust_toolchain` whose sysroot this toolchain derives its own from, normally the one " +
+                "declared beside it over the same release. Exclusive with `version`, `iso_date` and `channel`: " +
+                "when unset the `rust_toolchain` resolved for `@rules_rust//rust:toolchain_type` is used " +
+                "instead and `version` is required, so that the resolved toolchain can be checked to come " +
+                "from the same release."
+            ),
+            providers = [platform_common.ToolchainInfo],
+        ),
+        "version": attr.string(
+            doc = (
+                "The version of the Rust release `{tool}` comes from (e.g. `1.94.1`), as in " +
+                "`rust_toolchain.version`. Required when `rust_toolchain` is unset, and not allowed with it. " +
+                "The resolved `rust_toolchain` must agree on `version`, `iso_date` and `channel` wherever " +
+                "both state them."
+            ).format(tool = tool),
+            default = "",
+        ),
+    }
+
+def companion_rust_toolchain(ctx, tool):
+    """The `rust_toolchain` a companion toolchain derives its sysroot from.
+
+    It is the one named by `rust_toolchain`, else the one resolved for
+    `@rules_rust//rust:toolchain_type`, which `version` is required for and
+    must agree with `version`, `iso_date` and `channel` wherever both state
+    them: `tool` would otherwise load the libraries of a `rustc` it was not
+    built with. The two ways exclude each other, so the toolchain has one
+    source of truth for its release, and advertises that `rust_toolchain`'s
+    `version`, `iso_date` and `channel` in either case.
+
+    Args:
+        ctx (ctx): The rule context of a companion toolchain rule, with the
+            attributes of `companion_rust_toolchain_attrs` and
+            `@rules_rust//rust:toolchain_type` among its optional toolchains.
+        tool (str): The tool the companion provides, for diagnostics.
+
+    Returns:
+        ToolchainInfo: The `rust_toolchain`.
+    """
+    release_fields = ("version", "iso_date", "channel")
+    if ctx.attr.rust_toolchain:
+        stated = [field for field in release_fields if getattr(ctx.attr, field)]
+        if stated:
+            fail((
+                "{}: `rust_toolchain` and {} are exclusive. A `{}_toolchain` which names its " +
+                "`rust_toolchain` takes its release from it; state `version`, `iso_date` and `channel` " +
+                "only for one which leaves `rust_toolchain` unset."
+            ).format(ctx.label, ", ".join(["`{}`".format(field) for field in stated]), tool))
+        return ctx.attr.rust_toolchain[platform_common.ToolchainInfo]
+
+    if not ctx.attr.version:
+        fail((
+            "{}: a `{}_toolchain` must name the `rust_toolchain` it accompanies through `rust_toolchain`, " +
+            "or state its release through `version` (and `channel` and `iso_date` where they apply) so " +
+            "that the `rust_toolchain` resolved for `@rules_rust//rust:toolchain_type` can be checked " +
+            "against it."
+        ).format(ctx.label, tool))
+    rust_toolchain = ctx.toolchains[rust_common.toolchain_type]
+    if not rust_toolchain:
+        fail("{}: no `rust_toolchain` is registered for the current platform".format(ctx.label))
+    for field in release_fields:
+        stated = getattr(ctx.attr, field)
+        actual = getattr(rust_toolchain, field, "")
+        if stated and actual and stated != actual:
+            fail((
+                "{}: this `{tool}_toolchain` ({field} {stated}) and the `rust_toolchain` it derives its " +
+                "sysroot from ({field} {actual}) come from different Rust releases. `{tool}` loads the " +
+                "libraries of the `rustc` it was released with; pair it with a `rust_toolchain` of that release."
+            ).format(ctx.label, tool = tool, field = field, stated = stated, actual = actual))
+    return rust_toolchain
+
 def distribution_relative_path(file, target):
     """The path of a distribution file relative to the distribution's root.
 

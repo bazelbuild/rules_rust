@@ -2,16 +2,16 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:lint_test.bzl", "rlocationpath")
-load("//rust/private:sysroot.bzl", "derive_sysroot", "expand_toolchain_flags")
+load("//rust/private:sysroot.bzl", "companion_rust_toolchain", "companion_rust_toolchain_attrs", "derive_sysroot", "expand_toolchain_flags")
 
 def _rustdoc_toolchain_impl(ctx):
     # `rustdoc` is a rustc driver: it loads `librustc_driver` from `../lib`
     # relative to itself, and to build doctests it runs the `rustc` it finds
     # beside itself, never one named through `--sysroot`. The toolchain
-    # therefore derives a sysroot of its own from the one of the resolved
+    # therefore derives a sysroot of its own from the one of its
     # `rust_toolchain`, mirroring it and adding `bin/rustdoc`. Actions which
     # run `rustdoc` use this sysroot alone. See `//rust/private:sysroot.bzl`.
-    rust_toolchain = ctx.toolchains[rust_common.toolchain_type]
+    rust_toolchain = companion_rust_toolchain(ctx, "rustdoc")
     sysroot = derive_sysroot(
         ctx,
         ctx.label.name,
@@ -61,27 +61,37 @@ and run the `rustdoc` it provides. Build scripts do not see it by default; a
 `@rules_rust//rust/toolchain:current_rustdoc_toolchain` in `toolchains` and sets
 `RUSTDOC` to `$(RUSTDOC)` in `build_script_env`.
 
-The toolchain resolves `@rules_rust//rust:toolchain_type` itself and derives
-its sysroot from that `rust_toolchain`'s: the same `rustc`, libraries and
-standard library, plus `bin/rustdoc`. `rustdoc` is a rustc driver which loads
-`librustc_driver` from beside itself and builds doctests with the `rustc`
-beside itself, so actions running `rustdoc` use the derived sysroot, and that
-sysroot is complete even where symlinks are materialized as copies. Bazel
-resolves the `rust_toolchain` for the consumer of this toolchain, so the pair
-always matches, and `find_rustdoc` checks that it does.
+The toolchain derives its sysroot from the one of its `rust_toolchain`: the
+same `rustc`, libraries and standard library, plus `bin/rustdoc`. `rustdoc` is
+a rustc driver which loads `librustc_driver` from beside itself and builds
+doctests with the `rustc` beside itself, so actions running `rustdoc` use the
+derived sysroot, and that sysroot is complete even where symlinks are
+materialized as copies.
 
 `rustdoc` must come from the same Rust release as `rustc`. The `rust` module
 extension declares one `rustdoc_toolchain` in the repository of every
-`rust_toolchain` it registers and registers the two together. The `rust_doc`
-attribute of `rust_toolchain` is deprecated in favor of this rule and is
-consulted only when no `rustdoc_toolchain` is registered.
+`rust_toolchain` it registers, bound to it through `rust_toolchain`, and
+registers the two together. A `rustdoc_toolchain` which leaves
+`rust_toolchain` unset derives from the `rust_toolchain` resolved for
+`@rules_rust//rust:toolchain_type` instead and states its release through
+`version`, `iso_date` and `channel`, which the resolved toolchain must agree
+with; the two ways exclude each other. Either way the toolchain advertises
+the `version`, `iso_date` and `channel` of the `rust_toolchain` it derives
+from. A rule which runs `rustdoc` resolves both toolchain types and
+`find_rustdoc` checks that the `rustdoc_toolchain` derives from the
+`rust_toolchain` the rule resolved. When it does not, as when a
+`rust_toolchain` is registered on its own ahead of the generated ones, the
+rule falls back to the deprecated `rust_doc` of that `rust_toolchain`, or
+fails when it is unset. That attribute is deprecated in favor of this rule and
+is consulted only in that case or when no `rustdoc_toolchain` is registered at
+all.
 
 `$(RUSTDOC)` and `$(RUSTDOC_RLOCATIONPATH)` are available as Make variables to
 targets which list `@rules_rust//rust/toolchain:current_rustdoc_toolchain`, a
 `rustdoc_toolchain_alias`, in `toolchains`.
 """,
     implementation = _rustdoc_toolchain_impl,
-    attrs = {
+    attrs = dict({
         "extra_rustdoc_flags": attr.string_list(
             doc = (
                 "Extra flags to pass to `rustdoc`. They follow the `rust_toolchain`'s `extra_rustc_flags` and " +
@@ -95,14 +105,17 @@ targets which list `@rules_rust//rust/toolchain:current_rustdoc_toolchain`, a
             cfg = "exec",
             mandatory = True,
         ),
-    },
+    }, **companion_rust_toolchain_attrs("rustdoc")),
     toolchains = [
-        config_common.toolchain_type(rust_common.toolchain_type),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = False),
     ],
 )
 
 def _rustdoc_toolchain_alias_impl(ctx):
-    toolchain = ctx.toolchains[rust_common.rustdoc_toolchain_type]
+    # Resolved as a rule running rustdoc would, so that the alias stands in
+    # for the deprecated `rust_toolchain.rust_doc` wherever `find_rustdoc`
+    # falls back to it.
+    toolchain = find_rustdoc(ctx, ctx.toolchains[rust_common.toolchain_type])
     if not toolchain:
         if ctx.attr.mandatory:
             fail("{}: no `rustdoc_toolchain` is registered for the current platform".format(ctx.label))
@@ -141,18 +154,21 @@ This follows `cc_toolchain_alias` from `rules_cc`.
     },
     toolchains = [
         config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False),
+        config_common.toolchain_type(rust_common.toolchain_type, mandatory = False),
     ],
 )
 
 def find_rustdoc(ctx, rust_toolchain):
     """The `rustdoc_toolchain` a rule should run rustdoc from.
 
-    The registered `rustdoc_toolchain` is preferred, and its sysroot must derive
-    from the `rust_toolchain` the rule resolved; otherwise toolchain resolution
-    paired the two inconsistently and the rule fails. When none is registered
-    an equivalent toolchain is made from the deprecated `rust_doc` of the
-    `rust_toolchain`, running from that toolchain's sysroot, which is how rules
-    found rustdoc before `@rules_rust//rust/rustdoc:toolchain_type` existed.
+    The registered `rustdoc_toolchain` is preferred when its sysroot derives
+    from the `rust_toolchain` the rule resolved. When it derives from another
+    one, or none is registered, an equivalent toolchain is made from the
+    deprecated `rust_doc` of the `rust_toolchain`, running from that
+    toolchain's sysroot, which is how rules found rustdoc before
+    `@rules_rust//rust/rustdoc:toolchain_type` existed. A `rustdoc_toolchain`
+    of another `rust_toolchain` with nothing to fall back to is an error: its
+    `rustdoc` would load that other `rustc`'s libraries.
 
     Args:
         ctx (ctx): The rule context. The rule must list
@@ -164,19 +180,43 @@ def find_rustdoc(ctx, rust_toolchain):
         ToolchainInfo: A `rustdoc_toolchain`, or `None` when neither toolchain provides rustdoc.
     """
     rustdoc_toolchain = ctx.toolchains[rust_common.rustdoc_toolchain_type]
-    if rustdoc_toolchain:
-        if rust_toolchain and rustdoc_toolchain.rust_sysroot_anchor != rust_toolchain.sysroot_anchor:
+    deprecated_rustdoc = rust_toolchain.rust_doc if rust_toolchain else None
+
+    # Compared by path: a `rust_toolchain` reached through the companion's
+    # `rust_toolchain` attribute and through toolchain resolution are two
+    # configured targets sharing one sysroot, and `File`s of each differ.
+    if rustdoc_toolchain and rust_toolchain and rustdoc_toolchain.rust_sysroot_anchor.path != rust_toolchain.sysroot_anchor.path:
+        if not deprecated_rustdoc:
             fail((
-                "{}: the `rustdoc_toolchain` derives from the `rust_toolchain` sysroot {} but the " +
-                "`rust_toolchain` resolved for this target is {}. The two toolchains must resolve " +
-                "together; register the `rustdoc_toolchain` with the same constraints and target " +
-                "settings as its `rust_toolchain`."
+                "{}: the registered `rustdoc_toolchain` derives from the `rust_toolchain` sysroot {} but the " +
+                "`rust_toolchain` resolved for this target is {}, and that `rust_toolchain` sets no " +
+                "`rust_doc` to fall back to. Register a `rustdoc_toolchain` whose `rust_toolchain` is " +
+                "the one in use, alongside it and with the same constraints and target settings."
             ).format(ctx.label, rustdoc_toolchain.rust_sysroot_anchor.dirname, rust_toolchain.sysroot))
+        rustdoc_toolchain = None
+    if rustdoc_toolchain:
         return rustdoc_toolchain
 
-    if not rust_toolchain or not rust_toolchain.rust_doc:
+    if not deprecated_rustdoc:
         return None
-    rustdoc = rust_toolchain.rust_doc
+    return rustdoc_toolchain_from_binary(ctx, rust_toolchain, deprecated_rustdoc)
+
+def rustdoc_toolchain_from_binary(ctx, rust_toolchain, rustdoc):
+    """A `rustdoc_toolchain` equivalent for a `rustdoc` which runs from the `rust_toolchain`'s sysroot.
+
+    This is how rules ran rustdoc before `@rules_rust//rust/rustdoc:toolchain_type`
+    existed: the binary is the only extra input, and it must find
+    `librustc_driver` and `rustc` on its own, as the deprecated `rust_doc` of
+    `rust_toolchain` does by living in that toolchain's sysroot.
+
+    Args:
+        ctx (ctx): The rule context.
+        rust_toolchain (ToolchainInfo): The resolved `rust_toolchain`.
+        rustdoc (File): The `rustdoc` to run.
+
+    Returns:
+        ToolchainInfo: A `rustdoc_toolchain`.
+    """
     return platform_common.ToolchainInfo(
         rustdoc = rustdoc,
         rustc = rust_toolchain.rustc,

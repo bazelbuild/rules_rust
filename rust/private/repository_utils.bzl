@@ -520,16 +520,18 @@ clippy_toolchain(
     name = "{name}",
     clippy_driver = "{clippy_driver}",
     cargo_clippy = {cargo_clippy},
+    rust_toolchain = "{rust_toolchain}",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_clippy_toolchain(name, clippy_driver, cargo_clippy = None):
+def BUILD_for_clippy_toolchain(name, clippy_driver, rust_toolchain, cargo_clippy = None):
     """Emits a `clippy_toolchain` target.
 
     Args:
         name (str): The name of the toolchain target.
         clippy_driver (str): The label of the `clippy-driver` binary.
+        rust_toolchain (str): The label of the `rust_toolchain` from the same release, which the toolchain takes its release from.
         cargo_clippy (str, optional): The label of the `cargo-clippy` binary.
 
     Returns:
@@ -539,6 +541,7 @@ def BUILD_for_clippy_toolchain(name, clippy_driver, cargo_clippy = None):
         name = name,
         clippy_driver = clippy_driver,
         cargo_clippy = repr(cargo_clippy),
+        rust_toolchain = rust_toolchain,
     )
 
 _build_file_for_rustdoc_toolchain_template = """\
@@ -547,16 +550,18 @@ load("@rules_rust//rust:rustdoc_toolchain.bzl", "rustdoc_toolchain")
 rustdoc_toolchain(
     name = "{name}",
     rustdoc = "{rustdoc}",
+    rust_toolchain = "{rust_toolchain}",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rustdoc_toolchain(name, rustdoc):
+def BUILD_for_rustdoc_toolchain(name, rustdoc, rust_toolchain):
     """Emits a `rustdoc_toolchain` target.
 
     Args:
         name (str): The name of the toolchain target.
         rustdoc (str): The label of the `rustdoc` binary.
+        rust_toolchain (str): The label of the `rust_toolchain` from the same release, which the toolchain takes its release from.
 
     Returns:
         str: The contents of a BUILD file
@@ -564,6 +569,7 @@ def BUILD_for_rustdoc_toolchain(name, rustdoc):
     return _build_file_for_rustdoc_toolchain_template.format(
         name = name,
         rustdoc = rustdoc,
+        rust_toolchain = rust_toolchain,
     )
 
 _build_file_for_toolchain_template = """\
