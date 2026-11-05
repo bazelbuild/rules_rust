@@ -5,7 +5,6 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_env_value")
 
 _RUST_TOOLCHAIN_ENV = {
-    "ENV_VAR_CARGO": "$(CARGO)",
     "ENV_VAR_RUSTC": "$(RUSTC)",
     "ENV_VAR_RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     "ENV_VAR_RUST_SYSROOT": "$(RUST_SYSROOT)",
@@ -22,6 +21,10 @@ _RUSTDOC_TOOLCHAIN_ENV = {
 _CLIPPY_TOOLCHAIN_ENV = {
     "ENV_VAR_CARGO_CLIPPY": "$(CARGO_CLIPPY)",
     "ENV_VAR_CLIPPY_DRIVER": "$(CLIPPY_DRIVER)",
+}
+
+_CARGO_TOOLCHAIN_ENV = {
+    "ENV_VAR_CARGO": "$(CARGO)",
 }
 
 def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
@@ -54,11 +57,16 @@ def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
             "ENV_VAR_CARGO_CLIPPY": toolchain.cargo_clippy.path,
             "ENV_VAR_CLIPPY_DRIVER": toolchain.clippy_driver.path,
         }
+    elif mnemonic in ["CargoToolchainConsumer", "CurrentCargoToolchainConsumer"]:
+        toolchain = ctx.attr._current_cargo_toolchain[platform_common.ToolchainInfo]
+        env_vars = _CARGO_TOOLCHAIN_ENV
+        expected_values = {
+            "ENV_VAR_CARGO": toolchain.cargo.path,
+        }
     else:
         toolchain = ctx.attr._current_rust_toolchain[platform_common.ToolchainInfo]
         env_vars = _RUST_TOOLCHAIN_ENV
         expected_values = {
-            "ENV_VAR_CARGO": toolchain.cargo.path,
             "ENV_VAR_RUSTC": toolchain.rustc.path,
             "ENV_VAR_RUST_DEFAULT_EDITION": toolchain.default_edition or "",
             "ENV_VAR_RUST_SYSROOT": toolchain.sysroot,
@@ -114,6 +122,17 @@ def clippy_toolchain_make_toolchain_make_variable_test(impl):
             "_current_clippy_toolchain": attr.label(
                 doc = "The currently registered clippy toolchain",
                 default = Label("//rust/toolchain:current_clippy_toolchain"),
+            ),
+        },
+    )
+
+def cargo_toolchain_make_toolchain_make_variable_test(impl):
+    return analysistest.make(
+        impl = impl,
+        attrs = {
+            "_current_cargo_toolchain": attr.label(
+                doc = "The currently registered cargo toolchain",
+                default = Label("//cargo:current_cargo_toolchain"),
             ),
         },
     )
@@ -179,6 +198,20 @@ def _current_clippy_toolchain_make_variable_expansion_test_impl(ctx):
 
 current_clippy_toolchain_make_variable_expansion_test = clippy_toolchain_make_toolchain_make_variable_test(
     impl = _current_clippy_toolchain_make_variable_expansion_test_impl,
+)
+
+def _cargo_env_variable_expansion_test_impl(ctx):
+    return _rust_toolchain_make_variable_expansion_test_common_impl(ctx, "CargoToolchainConsumer")
+
+cargo_env_variable_expansion_test = cargo_toolchain_make_toolchain_make_variable_test(
+    impl = _cargo_env_variable_expansion_test_impl,
+)
+
+def _current_cargo_toolchain_make_variable_expansion_test_impl(ctx):
+    return _rust_toolchain_make_variable_expansion_test_common_impl(ctx, "CurrentCargoToolchainConsumer")
+
+current_cargo_toolchain_make_variable_expansion_test = cargo_toolchain_make_toolchain_make_variable_test(
+    impl = _current_cargo_toolchain_make_variable_expansion_test_impl,
 )
 
 def _rust_toolchain_consumer_common_impl(ctx, mnemonic):
@@ -353,6 +386,27 @@ current_clippy_toolchain_consumer = rule(
     attrs = _CONSUMER_ATTRS,
 )
 
+def _cargo_toolchain_consumer_impl(ctx):
+    return _rust_toolchain_consumer_common_impl(ctx, "CargoToolchainConsumer")
+
+cargo_toolchain_consumer = rule(
+    implementation = _cargo_toolchain_consumer_impl,
+    doc = "A helper rule to test make variable expansion of rules that depend on `cargo_toolchain`.",
+    attrs = _CONSUMER_ATTRS,
+    toolchains = [
+        "@rules_rust//cargo:toolchain_type",
+    ],
+)
+
+def _current_cargo_toolchain_consumer_impl(ctx):
+    return _rust_toolchain_consumer_common_impl(ctx, "CurrentCargoToolchainConsumer")
+
+current_cargo_toolchain_consumer = rule(
+    implementation = _current_cargo_toolchain_consumer_impl,
+    doc = "A helper rule to test make variable expansion of `current_cargo_toolchain`.",
+    attrs = _CONSUMER_ATTRS,
+)
+
 def _define_targets():
     rust_library(
         name = "library",
@@ -433,6 +487,19 @@ def _define_targets():
         writer = ":binary",
     )
 
+    cargo_toolchain_consumer(
+        name = "cargo_toolchain_consumer",
+        env = _CARGO_TOOLCHAIN_ENV,
+        writer = ":binary",
+    )
+
+    current_cargo_toolchain_consumer(
+        name = "current_cargo_toolchain_consumer",
+        env = _CARGO_TOOLCHAIN_ENV,
+        toolchains = ["//cargo:current_cargo_toolchain"],
+        writer = ":binary",
+    )
+
 def toolchain_make_variable_test_suite(name):
     """Defines a test suite
 
@@ -501,6 +568,16 @@ def toolchain_make_variable_test_suite(name):
         target_under_test = ":current_clippy_toolchain_consumer",
     )
 
+    cargo_env_variable_expansion_test(
+        name = "cargo_env_variable_expansion_test",
+        target_under_test = ":cargo_toolchain_consumer",
+    )
+
+    current_cargo_toolchain_make_variable_expansion_test(
+        name = "current_cargo_toolchain_make_variable_expansion_test",
+        target_under_test = ":current_cargo_toolchain_consumer",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -523,5 +600,9 @@ def toolchain_make_variable_test_suite(name):
             # clippy_toolchain tests
             ":clippy_env_variable_expansion_test",
             ":current_clippy_toolchain_make_variable_expansion_test",
+        ] + [
+            # cargo_toolchain tests
+            ":cargo_env_variable_expansion_test",
+            ":current_cargo_toolchain_make_variable_expansion_test",
         ],
     )

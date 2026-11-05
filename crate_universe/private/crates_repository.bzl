@@ -359,7 +359,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
                 "'rustc.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{channel}__cargo//:bin/{tool}",
         ),
         "rust_toolchain_rustc_template": attr.string(
             doc = (
@@ -368,7 +368,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
                 "'cargo.exe') will be replaced in the string if present."
             ),
-            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
+            default = "@rust_{system}_{arch}__{channel}__rustc//:bin/{tool}",
         ),
         "rust_version": attr.string(
             doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
