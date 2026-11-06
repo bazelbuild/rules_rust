@@ -1,46 +1,48 @@
 """Unittests for rust rules."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
+load("@rules_testing//lib:util.bzl", "util")
 load("//rust:defs.bzl", "rust_common", "rust_library")
 
-def _transitive_crate_outputs_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    transitive_crate_outputs = tut[rust_common.dep_info].transitive_crate_outputs.to_list()
+def _transitive_crate_outputs_test_impl(env, target):
+    transitive_crate_outputs = target[rust_common.dep_info].transitive_crate_outputs.to_list()
 
     # Check that the non-crate output baz.a didn't find its way into transitive_crate_outputs
     # while the bar.rlib did.
-    asserts.equals(env, len(transitive_crate_outputs), 1)
-    asserts.equals(env, transitive_crate_outputs[0].extension, "rlib")
+    env.expect.that_int(len(transitive_crate_outputs)).equals(1)
+    env.expect.that_str(transitive_crate_outputs[0].extension).equals("rlib")
 
-    return analysistest.end(env)
-
-transitive_crate_outputs_test = analysistest.make(_transitive_crate_outputs_test_impl)
-
-def _transitive_crate_outputs_test():
-    rust_library(
-        name = "foo",
+def _transitive_crate_outputs_test(name):
+    util.helper_target(
+        rust_library,
+        name = name + "_foo",
         srcs = ["foo.rs"],
         edition = "2018",
-        deps = [":bar", ":baz"],
+        deps = [
+            name + "_bar",
+            name + "_baz",
+        ],
     )
 
-    rust_library(
-        name = "bar",
+    util.helper_target(
+        rust_library,
+        name = name + "_bar",
         srcs = ["bar.rs"],
         edition = "2018",
     )
 
     # buildifier: disable=native-cc
-    cc_library(
-        name = "baz",
+    util.helper_target(
+        cc_library,
+        name = name + "_baz",
         srcs = ["baz.cc"],
     )
 
-    transitive_crate_outputs_test(
-        name = "transitive_crate_outputs_test",
-        target_under_test = ":foo",
+    analysis_test(
+        name = name,
+        target = name + "_foo",
+        impl = _transitive_crate_outputs_test_impl,
     )
 
 def transitive_crate_outputs_test_suite(name):
@@ -49,11 +51,9 @@ def transitive_crate_outputs_test_suite(name):
     Args:
         name: Name of the macro.
     """
-    _transitive_crate_outputs_test()
-
-    native.test_suite(
+    test_suite(
         name = name,
         tests = [
-            ":transitive_crate_outputs_test",
+            _transitive_crate_outputs_test,
         ],
     )
