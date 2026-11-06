@@ -40,6 +40,8 @@
     - [Cargo Settings](./cargo_settings.md)
 - [Toolchains](./rust_toolchains.md)
     - [rust_toolchain](./rust_toolchain.md)
+    - [rustdoc_toolchain](./rustdoc_toolchain.md)
+    - [clippy_toolchain](./clippy_toolchain.md)
     - [rustfmt_toolchain](./rustfmt_toolchain.md)
     - [cargo_toolchain](./cargo_toolchain.md)
     - [rust_analyzer_toolchain](./rust_analyzer_toolchain.md)

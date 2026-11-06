@@ -366,7 +366,6 @@ load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 rust_toolchain(
     name = "{toolchain_name}",
-    rust_doc = "//:rustdoc",
     rust_std = "//:rust_std-{target_triple}",
     rustc = "//:rustc",
     linker = {linker_label},
@@ -374,8 +373,6 @@ rust_toolchain(
     rust_objcopy = {rust_objcopy_label},
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
-    clippy_driver = "//:clippy_driver_bin",
-    cargo_clippy = "//:cargo_clippy_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     llvm_lib = {llvm_lib_label},
@@ -514,6 +511,65 @@ def BUILD_for_rust_toolchain(
         version = version,
         channel = channel,
         iso_date = repr(iso_date),
+    )
+
+_build_file_for_clippy_toolchain_template = """\
+load("@rules_rust//rust:clippy_toolchain.bzl", "clippy_toolchain")
+
+clippy_toolchain(
+    name = "{name}",
+    clippy_driver = "{clippy_driver}",
+    cargo_clippy = {cargo_clippy},
+    rust_toolchain = "{rust_toolchain}",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_clippy_toolchain(name, clippy_driver, rust_toolchain, cargo_clippy = None):
+    """Emits a `clippy_toolchain` target.
+
+    Args:
+        name (str): The name of the toolchain target.
+        clippy_driver (str): The label of the `clippy-driver` binary.
+        rust_toolchain (str): The label of the `rust_toolchain` from the same release, which the toolchain takes its release from.
+        cargo_clippy (str, optional): The label of the `cargo-clippy` binary.
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    return _build_file_for_clippy_toolchain_template.format(
+        name = name,
+        clippy_driver = clippy_driver,
+        cargo_clippy = repr(cargo_clippy),
+        rust_toolchain = rust_toolchain,
+    )
+
+_build_file_for_rustdoc_toolchain_template = """\
+load("@rules_rust//rust:rustdoc_toolchain.bzl", "rustdoc_toolchain")
+
+rustdoc_toolchain(
+    name = "{name}",
+    rustdoc = "{rustdoc}",
+    rust_toolchain = "{rust_toolchain}",
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rustdoc_toolchain(name, rustdoc, rust_toolchain):
+    """Emits a `rustdoc_toolchain` target.
+
+    Args:
+        name (str): The name of the toolchain target.
+        rustdoc (str): The label of the `rustdoc` binary.
+        rust_toolchain (str): The label of the `rust_toolchain` from the same release, which the toolchain takes its release from.
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    return _build_file_for_rustdoc_toolchain_template.format(
+        name = name,
+        rustdoc = rustdoc,
+        rust_toolchain = rust_toolchain,
     )
 
 _build_file_for_toolchain_template = """\

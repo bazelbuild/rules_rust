@@ -57,9 +57,13 @@ fn main() {
     }
 
     // Assert that some env variables are set.
-    for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS", "RUSTDOC"] {
+    for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS"] {
         assert!(std::env::var(env_var).is_ok());
     }
+
+    // Cargo sets `RUSTDOC` for build scripts. `cargo_build_script` does not,
+    // so that build scripts depend on the `rust_toolchain` alone.
+    assert!(std::env::var("RUSTDOC").is_err());
 
     assert_eq!(std::env::var("CARGO_MANIFEST_LINKS").unwrap(), "beep");
 }
