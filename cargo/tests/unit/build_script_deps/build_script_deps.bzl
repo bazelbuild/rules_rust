@@ -12,13 +12,15 @@ DepActionsInfo = provider(
 def _collect_dep_actions_aspect_impl(target, ctx):
     actions = []
     actions.extend(target.actions)
-    for dep in ctx.rule.attr.deps:
+    for dep in getattr(ctx.rule.attr, "deps", []):
         actions.extend(dep[DepActionsInfo].actions)
+    if getattr(ctx.rule.attr, "script", None):
+        actions.extend(ctx.rule.attr.script[DepActionsInfo].actions)
     return [DepActionsInfo(actions = actions)]
 
 collect_dep_actions_aspect = aspect(
     implementation = _collect_dep_actions_aspect_impl,
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "script"],
 )
 
 def _outputs_contain(outputs, substring):
