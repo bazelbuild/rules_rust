@@ -102,9 +102,9 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
 
 def _pwd_tool(path):
     """Makes an execroot-relative tool path absolute at run time; the runner expands ${pwd}."""
-    if path.startswith("/") or path.startswith("${pwd}"):
-        return path
-    return "${pwd}/" + path
+    if _should_prefix_pwd(path):
+        return "${pwd}/" + path
+    return path
 
 # These get replaced with the non-hermetic values magically, and result in
 # absolute paths, so they shouldn't have PWD prefixed.
@@ -586,6 +586,10 @@ def _cargo_build_script_impl(ctx):
         )
         toolchain_tools.append(exec_cc_toolchain.all_files)
         exec_tools = {
+            "AR": cc_common.get_tool_for_action(
+                feature_configuration = exec_feature_configuration,
+                action_name = ACTION_NAMES.cpp_link_static_library,
+            ) or exec_cc_toolchain.ar_executable,
             "CC": cc_common.get_tool_for_action(
                 feature_configuration = exec_feature_configuration,
                 action_name = ACTION_NAMES.c_compile,
@@ -594,10 +598,6 @@ def _cargo_build_script_impl(ctx):
                 feature_configuration = exec_feature_configuration,
                 action_name = ACTION_NAMES.cpp_compile,
             ),
-            "AR": cc_common.get_tool_for_action(
-                feature_configuration = exec_feature_configuration,
-                action_name = ACTION_NAMES.cpp_link_static_library,
-            ) or exec_cc_toolchain.ar_executable,
         }
         for name, tool in exec_tools.items():
             if tool and "libtool" not in tool:
@@ -957,6 +957,10 @@ cargo_build_script = rule(
         "_emit_build_script_warnings": attr.label(
             default = Label("//cargo/settings:emit_build_script_warnings"),
         ),
+        "_exec_cc_toolchain": attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
+            cfg = "exec",
+        ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
@@ -977,10 +981,6 @@ cargo_build_script = rule(
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_cxx"),
-        ),
-        "_exec_cc_toolchain": attr.label(
-            default = Label("@rules_cc//cc:current_cc_toolchain"),
-            cfg = "exec",
         ),
         "_out_dir_volatile_file_basenames": attr.label(
             default = Label("//cargo/settings:out_dir_volatile_file_basenames"),
