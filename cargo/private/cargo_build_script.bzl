@@ -102,9 +102,9 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
 
 def _pwd_tool(path):
     """Makes an execroot-relative tool path absolute at run time; the runner expands ${pwd}."""
-    if path.startswith("/") or path.startswith("${pwd}"):
-        return path
-    return "${pwd}/" + path
+    if _should_prefix_pwd(path):
+        return "${pwd}/" + path
+    return path
 
 # These get replaced with the non-hermetic values magically, and result in
 # absolute paths, so they shouldn't have PWD prefixed.
