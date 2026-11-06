@@ -1347,6 +1347,10 @@ rust_binary = rule(
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
+    outputs = {
+        "dwp_file": "%{name}.dwp",
+        "stripped_binary": "%{name}.stripped",
+    },
     doc = dedent("""\
         Builds a Rust binary crate.
 
