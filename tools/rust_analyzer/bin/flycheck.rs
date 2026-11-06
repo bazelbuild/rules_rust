@@ -28,8 +28,8 @@ use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use gen_rust_project_lib::{
-    bazel_command, bazel_info, bep, flycheck_output_base, install_dir, user_config, BazelInfo,
-    ToolchainInfoSidecar, TOOLCHAIN_INFO_SIDECAR,
+    bazel_command, bazel_info, bep, flycheck_output_base, install_dir, user_config,
+    user_config::UserConfig, BazelInfo, ToolchainInfoSidecar, TOOLCHAIN_INFO_SIDECAR,
 };
 use serde_json::Value;
 
@@ -63,6 +63,27 @@ struct Args {
     /// default derivation (see [`derive_output_base`]).
     #[clap(long)]
     output_base: Option<Utf8PathBuf>,
+
+    /// Run clippy alongside rustc. Overrides `clippy` in
+    /// `user_config.json`, so editors can opt in from
+    /// `check.overrideCommand`. The last of `--clippy` / `--no-clippy` wins.
+    #[clap(long, overrides_with = "no_clippy")]
+    clippy: bool,
+
+    /// Don't run clippy, even if `user_config.json` enables it.
+    #[clap(long, overrides_with = "clippy")]
+    no_clippy: bool,
+}
+
+/// Precedence: CLI > user_config.
+fn clippy_enabled(args: &Args, user: &UserConfig) -> bool {
+    if args.clippy {
+        true
+    } else if args.no_clippy {
+        false
+    } else {
+        user.clippy
+    }
 }
 
 fn main() -> ExitCode {
@@ -100,6 +121,7 @@ fn run() -> Result<u8> {
     let _bep_cleanup = scopeguard(bep_path.clone());
 
     let user = user_config::load(&launcher_dir);
+    let clippy = clippy_enabled(&args, &user);
 
     // Dedicated `--output_base` for the inner `bazel build` so its
     // `--error_format=json` doesn't thrash the primary Bazel server's
@@ -130,7 +152,7 @@ fn run() -> Result<u8> {
         .arg(format!("--output_groups=+{}", bep::RUSTC_OUTPUT_GROUP))
         .arg("--keep_going")
         .arg(format!("--build_event_json_file={bep_path}"));
-    if user.clippy {
+    if clippy {
         // `clippy_error_format=json` is separate from `error_format`
         // (which only covers rustc). Without it the aspect writes
         // rendered ANSI to `.clippy.diagnostics`, our JSON parser
@@ -156,7 +178,7 @@ fn run() -> Result<u8> {
             Vec::new()
         }
     };
-    if user.clippy {
+    if clippy {
         // Additive: clippy's JSON goes to the declared
         // `.clippy.diagnostics` file (exposed via `clippy_output`),
         // not stderr, when `clippy_output_diagnostics=true`.
@@ -532,6 +554,39 @@ mod tests {
     use super::*;
     use gen_rust_project_lib::make_workspace;
     use serde_json::json;
+
+    fn clippy_for(argv: &[&str], user_clippy: bool) -> bool {
+        let args = Args::try_parse_from(argv).unwrap();
+        let user = UserConfig {
+            clippy: user_clippy,
+            ..Default::default()
+        };
+        clippy_enabled(&args, &user)
+    }
+
+    #[test]
+    fn clippy_defaults_to_user_config() {
+        assert!(clippy_for(&["flycheck", "//:lib"], true));
+        assert!(!clippy_for(&["flycheck", "//:lib"], false));
+    }
+
+    #[test]
+    fn clippy_flag_overrides_user_config() {
+        assert!(clippy_for(&["flycheck", "--clippy", "//:lib"], false));
+        assert!(!clippy_for(&["flycheck", "--no-clippy", "//:lib"], true));
+    }
+
+    #[test]
+    fn last_clippy_flag_wins() {
+        assert!(!clippy_for(
+            &["flycheck", "--clippy", "--no-clippy", "//:lib"],
+            true
+        ));
+        assert!(clippy_for(
+            &["flycheck", "--no-clippy", "--clippy", "//:lib"],
+            false
+        ));
+    }
 
     #[test]
     fn find_owning_package_test() {

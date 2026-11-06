@@ -80,6 +80,8 @@ Re-runnable at any time. Global flags work on any subcommand.
 
 The `--clippy` and `--per-package-workspaces` toggles are **per-user**: they mutate `<launcher-dir>/user_config.json` (gitignored) instead of the shared committed settings file. Two developers on the same workspace can hold different preferences without touching the checked-in configuration. Editing `user_config.json` by hand works too.
 
+The `flycheck` binary also accepts `--clippy` / `--no-clippy`, which override `user_config.json` for that run. Use them in `rust-analyzer.check.overrideCommand` to turn clippy on from editor settings.
+
 The `vscode` subcommand adds:
 
 | Flag | Effect |
