@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>clippy_toolchain - rules_rust</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">rules_rust</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/bazelbuild/rules_rust" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="clippy_toolchainbzl"><a class="header" href="#clippy_toolchainbzl">clippy_toolchain.bzl</a></h1>
+<p><a id="clippy_toolchain"></a></p>
+<h2 id="clippy_toolchain"><a class="header" href="#clippy_toolchain">clippy_toolchain</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "clippy_toolchain")
+
+clippy_toolchain(<a href="#clippy_toolchain-name">name</a>, <a href="#clippy_toolchain-cargo_clippy">cargo_clippy</a>, <a href="#clippy_toolchain-channel">channel</a>, <a href="#clippy_toolchain-clippy_driver">clippy_driver</a>, <a href="#clippy_toolchain-extra_clippy_flags">extra_clippy_flags</a>, <a href="#clippy_toolchain-iso_date">iso_date</a>,
+                 <a href="#clippy_toolchain-rust_toolchain">rust_toolchain</a>, <a href="#clippy_toolchain-version">version</a>)
+</pre>
+<p>A toolchain providing <a href="https://doc.rust-lang.org/clippy/">Clippy</a>.</p>
+<p><code>rust_clippy_aspect</code>, <code>rust_clippy</code> and <code>rust_clippy_test</code> resolve
+<code>@rules_rust//rust/clippy:toolchain_type</code> and run the <code>clippy-driver</code> it
+provides.</p>
+<p>The toolchain derives its sysroot from the one of its <code>rust_toolchain</code>: the
+same <code>rustc</code>, libraries and standard library, plus <code>bin/clippy-driver</code> and
+<code>bin/cargo-clippy</code>. <code>clippy-driver</code> is a rustc driver which loads
+<code>librustc_driver</code> from beside itself, so actions running Clippy use the derived
+sysroot, and that sysroot is complete even where symlinks are materialized as
+copies.</p>
+<p><code>clippy-driver</code> must come from the same Rust release as <code>rustc</code>. The <code>rust</code>
+module extension declares one <code>clippy_toolchain</code> in the repository of every
+<code>rust_toolchain</code> it registers, bound to it through <code>rust_toolchain</code>, and
+registers the two together. A <code>clippy_toolchain</code> which leaves <code>rust_toolchain</code>
+unset derives from the <code>rust_toolchain</code> resolved for
+<code>@rules_rust//rust:toolchain_type</code> instead and states its release through
+<code>version</code>, <code>iso_date</code> and <code>channel</code>, which the resolved toolchain must agree
+with; the two ways exclude each other. Either way the toolchain advertises
+the <code>version</code>, <code>iso_date</code> and <code>channel</code> of the <code>rust_toolchain</code> it derives
+from. A rule which runs Clippy resolves both toolchain types and <code>find_clippy</code>
+checks that the <code>clippy_toolchain</code> derives from the <code>rust_toolchain</code> the rule
+resolved. When it does not, as when a
+<code>rust_toolchain</code> is registered on its own ahead of the generated ones, the
+rule falls back to the deprecated <code>clippy_driver</code> and <code>cargo_clippy</code> of that
+<code>rust_toolchain</code>, or fails when they are unset. Those attributes are
+deprecated in favor of this rule and are consulted only in that case or when
+no <code>clippy_toolchain</code> is registered at all.</p>
+<p><code>$(CLIPPY_DRIVER)</code>, <code>$(CLIPPY_DRIVER_RLOCATIONPATH)</code> and, when <code>cargo_clippy</code>
+is set, <code>$(CARGO_CLIPPY)</code> and <code>$(CARGO_CLIPPY_RLOCATIONPATH)</code> are available as
+Make variables to targets which list
+<code>@rules_rust//rust/toolchain:current_clippy_toolchain</code>, a
+<code>clippy_toolchain_alias</code>, in <code>toolchains</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="clippy_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-cargo_clippy"></a>cargo_clippy</td><td style="text-align: left">The <code>cargo-clippy</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel <code>clippy</code> comes from (<code>stable</code>, <code>nightly</code>, or <code>beta</code>), as in <code>rust_toolchain.channel</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-clippy_driver"></a>clippy_driver</td><td style="text-align: left">The <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-extra_clippy_flags"></a>extra_clippy_flags</td><td style="text-align: left">Extra flags to pass to <code>clippy-driver</code>. They follow the <code>rust_toolchain</code>'s <code>extra_rustc_flags</code> and precede the lints of the target and the flags of the command line. Subject to Make variable expansion with respect to the <code>rust_toolchain</code>'s variables (<code>RUST_SYSROOT</code>, <code>RUSTC</code>, ...) and <code>CLIPPY_DRIVER</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-iso_date"></a>iso_date</td><td style="text-align: left">The ISO date of the nightly or beta release <code>clippy</code> comes from, as in <code>rust_toolchain.iso_date</code>. Empty for stable releases.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The <code>rust_toolchain</code> whose sysroot this toolchain derives its own from, normally the one declared beside it over the same release. Exclusive with <code>version</code>, <code>iso_date</code> and <code>channel</code>: when unset the <code>rust_toolchain</code> resolved for <code>@rules_rust//rust:toolchain_type</code> is used instead and <code>version</code> is required, so that the resolved toolchain can be checked to come from the same release.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust release <code>clippy</code> comes from (e.g. <code>1.94.1</code>), as in <code>rust_toolchain.version</code>. Required when <code>rust_toolchain</code> is unset, and not allowed with it. The resolved <code>rust_toolchain</code> must agree on <code>version</code>, <code>iso_date</code> and <code>channel</code> wherever both state them.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="clippy_toolchain_alias"></a></p>
+<h2 id="clippy_toolchain_alias"><a class="header" href="#clippy_toolchain_alias">clippy_toolchain_alias</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "clippy_toolchain_alias")
+
+clippy_toolchain_alias(<a href="#clippy_toolchain_alias-name">name</a>, <a href="#clippy_toolchain_alias-mandatory">mandatory</a>)
+</pre>
+<p>A target standing in for the <code>clippy_toolchain</code> resolved for the current platform.</p>
+<p>The alias forwards the toolchain's providers, its Make variables
+(<code>$(CLIPPY_DRIVER)</code>, <code>$(CARGO_CLIPPY)</code>, ...) and its files: the sysroot
+<code>clippy-driver</code> runs from, so that it runs from a <code>genrule</code>'s <code>tools</code> on any
+executor. <code>@rules_rust//rust/toolchain:current_clippy_toolchain</code> is the alias
+<code>rules_rust</code> declares.</p>
+<p>This follows <code>cc_toolchain_alias</code> from <code>rules_cc</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="clippy_toolchain_alias-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain_alias-mandatory"></a>mandatory</td><td style="text-align: left">Whether to fail when no toolchain is registered. When <code>False</code>, the target provides nothing instead.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="find_clippy"></a></p>
+<h2 id="find_clippy"><a class="header" href="#find_clippy">find_clippy</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "find_clippy")
+
+find_clippy(<a href="#find_clippy-ctx">ctx</a>, <a href="#find_clippy-rust_toolchain">rust_toolchain</a>)
+</pre>
+<p>The <code>clippy_toolchain</code> a rule should run Clippy from.</p>
+<p>The registered <code>clippy_toolchain</code> is preferred when its sysroot derives
+from the <code>rust_toolchain</code> the rule resolved. When it derives from another
+one, or none is registered, an equivalent toolchain is made from the
+deprecated <code>clippy_driver</code> and <code>cargo_clippy</code> of the <code>rust_toolchain</code>,
+running from that toolchain's sysroot, which is how rules found Clippy
+before <code>@rules_rust//rust/clippy:toolchain_type</code> existed. A
+<code>clippy_toolchain</code> of another <code>rust_toolchain</code> with nothing to fall back
+to is an error: its <code>clippy-driver</code> would load that other <code>rustc</code>'s
+libraries.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="find_clippy-ctx"></a>ctx</td><td style="text-align: left">The rule context. The rule must list <code>config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False)</code> in <code>toolchains</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="find_clippy-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The resolved <code>rust_toolchain</code>, or <code>None</code>.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>ToolchainInfo: A <code>clippy_toolchain</code>, or <code>None</code> when neither toolchain provides Clippy.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="rustdoc_toolchain.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="rustfmt_toolchain.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="rustdoc_toolchain.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="rustfmt_toolchain.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -179,6 +179,16 @@ fails the build on lint findings. Attach one per target for explicit gating.</li
 <li><a href="./rust_clippy_test.html">rust_clippy_test</a> — Test rule that reports clippy findings as
 test failures, useful in CI where a failing test is more visible than a failing build.</li>
 </ul>
+<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<ul>
+<li><a href="./clippy_toolchain.html">clippy_toolchain</a> — Provide the <code>clippy-driver</code> the
+rules above run. Registered for <code>@rules_rust//rust/clippy:toolchain_type</code> next
+to every <code>rust_toolchain</code> the <code>rust</code> module extension registers, so the driver
+always matches the compiler.
+Rules declare the type as <code>rust_common.clippy_toolchain_type</code>; the same page
+documents <code>find_clippy</code>, which falls back to the <code>clippy_driver</code> of the
+<code>rust_toolchain</code> when no <code>clippy_toolchain</code> is registered.</li>
+</ul>
 
                     </main>
 

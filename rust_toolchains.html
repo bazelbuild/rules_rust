@@ -158,8 +158,9 @@
                         <h1 id="toolchains"><a class="header" href="#toolchains">Toolchains</a></h1>
 <p>A Rust build in Bazel selects its compiler, standard library, and companion tools
 through a set of registered <a href="https://bazel.build/extending/toolchains">Bazel toolchains</a>. <code>rules_rust</code>
-ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>,
-<code>rustfmt</code>, and <code>cargo</code> can be resolved independently.</p>
+ships one toolchain type per companion tool so that Rust, <code>rustdoc</code>, <code>clippy</code>,
+<code>rustfmt</code>, <code>cargo</code>, and <code>rust-analyzer</code> can be resolved independently, and so
+that a compile action depends only on the compiler it runs.</p>
 <p>Most users register toolchains via the <code>rust</code> module extension (see
 <a href="./rust_bzlmod.html">Bzlmod</a>) rather than declaring these rules directly. The rules
 below exist for users who need to define custom toolchains — for example, to point
@@ -168,7 +169,23 @@ cover.</p>
 <h2 id="toolchain-rules"><a class="header" href="#toolchain-rules">Toolchain rules</a></h2>
 <ul>
 <li><a href="./rust_toolchain.html">rust_toolchain</a> — Declare a Rust compilation toolchain: the
-<code>rustc</code> binary, standard library, linker, and per-target compilation settings.</li>
+<code>rustc</code> binary, standard library, linker, and per-target compilation settings.
+Only what every compile action needs lives here; the tools below have
+toolchains of their own so their binaries stay out of compile inputs.</li>
+<li><a href="./rustdoc_toolchain.html">rustdoc_toolchain</a> — Declare a toolchain providing the
+<code>rustdoc</code> binary used by <a href="./rust_doc.html">rust_doc</a> and <a href="./rust_doc_test.html">rust_doc_test</a>.
+Build scripts do not see it unless a <a href="./cargo_build_script.html">cargo_build_script</a>
+lists it in <code>toolchains</code> and maps <code>$(RUSTDOC)</code> in <code>build_script_env</code>. The <code>rust</code>
+module extension registers one next to every <code>rust_toolchain</code>, from the same
+distribution, since <code>rustdoc</code> must match <code>rustc</code> exactly. The <code>rust_doc</code>
+attribute of <code>rust_toolchain</code> is deprecated in its favor and is only consulted
+when no <code>rustdoc_toolchain</code> is registered.</li>
+<li><a href="./clippy_toolchain.html">clippy_toolchain</a> — Declare a toolchain providing the
+<code>clippy-driver</code> (and optionally <code>cargo-clippy</code>) binary used by the
+<a href="./clippy.html">clippy</a> rules. Registered next to every <code>rust_toolchain</code> in the
+same way. The <code>clippy_driver</code> and <code>cargo_clippy</code> attributes of <code>rust_toolchain</code>
+are deprecated in its favor and are only consulted when no <code>clippy_toolchain</code>
+is registered.</li>
 <li><a href="./rustfmt_toolchain.html">rustfmt_toolchain</a> — Declare a toolchain providing the
 <code>rustfmt</code> binary used by <a href="./rustfmt.html">rustfmt</a> rules.</li>
 <li><a href="./rust_analyzer_toolchain.html">rust_analyzer_toolchain</a> — Declare a toolchain
@@ -185,6 +202,18 @@ toolchain carries the same <code>version</code>, <code>iso_date</code> and <code
 <code>rust_toolchain</code> is deprecated in its favor and is only consulted when no
 <code>cargo_toolchain</code> is registered.</li>
 </ul>
+<h2 id="rule-author-helpers"><a class="header" href="#rule-author-helpers">Rule author helpers</a></h2>
+<p><code>rust_common</code> carries the label of every toolchain type <code>rules_rust</code> defines:
+<code>toolchain_type</code>, <code>rustdoc_toolchain_type</code>, <code>clippy_toolchain_type</code>,
+<code>rustfmt_toolchain_type</code>, <code>rust_analyzer_toolchain_type</code> and
+<code>cargo_toolchain_type</code>. A rule declares the ones it needs in <code>toolchains</code>, for
+example <code>config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False)</code>, and reads them back with <code>ctx.toolchains[...]</code>.</p>
+<p>While the deprecated <code>rust_doc</code>, <code>clippy_driver</code>, <code>cargo_clippy</code> and <code>cargo</code>
+attributes of <code>rust_toolchain</code> remain, the matching
+<a href="./rustdoc_toolchain.html#find_rustdoc">find_rustdoc</a>,
+<a href="./clippy_toolchain.html#find_clippy">find_clippy</a> and
+<a href="./cargo_toolchain.html#find_cargo">find_cargo</a> helpers prefer the registered
+toolchain and fall back to those attributes.</p>
 <h2 id="data-rules"><a class="header" href="#data-rules">Data rules</a></h2>
 <ul>
 <li><a href="./rust_stdlib_filegroup.html">rust_stdlib_filegroup</a> — Group the files of a Rust

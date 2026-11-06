@@ -168,6 +168,16 @@ for hosting on a static site.</li>
 <li><a href="./rust_doc_test.html">rust_doc_test</a> — Compile and run the code samples embedded
 in a crate's doc comments as tests, matching Cargo's <code>cargo test --doc</code> behavior.</li>
 </ul>
+<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<ul>
+<li><a href="./rustdoc_toolchain.html">rustdoc_toolchain</a> — Provide the <code>rustdoc</code> the rules
+above run. Registered for <code>@rules_rust//rust/rustdoc:toolchain_type</code> next to every
+<code>rust_toolchain</code> the <code>rust</code> module extension registers, so <code>rustdoc</code> always
+matches the compiler.
+Rules declare the type as <code>rust_common.rustdoc_toolchain_type</code>; the same page
+documents <code>find_rustdoc</code>, which falls back to the <code>rust_doc</code> of the
+<code>rust_toolchain</code> when no <code>rustdoc_toolchain</code> is registered.</li>
+</ul>
 
                     </main>
 

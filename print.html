@@ -1028,6 +1028,16 @@ fails the build on lint findings. Attach one per target for explicit gating.</li
 <li><a href="./rust_clippy_test.html">rust_clippy_test</a> — Test rule that reports clippy findings as
 test failures, useful in CI where a failing test is more visible than a failing build.</li>
 </ul>
+<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<ul>
+<li><a href="./clippy_toolchain.html">clippy_toolchain</a> — Provide the <code>clippy-driver</code> the
+rules above run. Registered for <code>@rules_rust//rust/clippy:toolchain_type</code> next
+to every <code>rust_toolchain</code> the <code>rust</code> module extension registers, so the driver
+always matches the compiler.
+Rules declare the type as <code>rust_common.clippy_toolchain_type</code>; the same page
+documents <code>find_clippy</code>, which falls back to the <code>clippy_driver</code> of the
+<code>rust_toolchain</code> when no <code>clippy_toolchain</code> is registered.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rust_clippybzl"><a class="header" href="#rust_clippybzl">rust_clippy.bzl</a></h1>
 <p><a id="rust_clippy"></a></p>
@@ -1284,6 +1294,16 @@ for hosting on a static site.</li>
 <li><a href="./rust_doc_test.html">rust_doc_test</a> — Compile and run the code samples embedded
 in a crate's doc comments as tests, matching Cargo's <code>cargo test --doc</code> behavior.</li>
 </ul>
+<h2 id="toolchain-1"><a class="header" href="#toolchain-1">Toolchain</a></h2>
+<ul>
+<li><a href="./rustdoc_toolchain.html">rustdoc_toolchain</a> — Provide the <code>rustdoc</code> the rules
+above run. Registered for <code>@rules_rust//rust/rustdoc:toolchain_type</code> next to every
+<code>rust_toolchain</code> the <code>rust</code> module extension registers, so <code>rustdoc</code> always
+matches the compiler.
+Rules declare the type as <code>rust_common.rustdoc_toolchain_type</code>; the same page
+documents <code>find_rustdoc</code>, which falls back to the <code>rust_doc</code> of the
+<code>rust_toolchain</code> when no <code>rustdoc_toolchain</code> is registered.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rust_docbzl"><a class="header" href="#rust_docbzl">rust_doc.bzl</a></h1>
 <p><a id="rust_doc"></a></p>
@@ -1393,7 +1413,7 @@ compilation environment.</li>
 from a <code>Cargo.toml</code> and produce a <a href="./rust_lint_config.html"><code>rust_lint_config</code></a>
 target from it, so Cargo-defined lints apply to Bazel-built crates.</li>
 </ul>
-<h2 id="toolchain"><a class="header" href="#toolchain">Toolchain</a></h2>
+<h2 id="toolchain-2"><a class="header" href="#toolchain-2">Toolchain</a></h2>
 <ul>
 <li><a href="./cargo_toolchain.html">cargo_toolchain</a> — Provide the <code>cargo</code> binary that
 <code>cargo_build_script</code> exposes to build scripts as <code>$CARGO</code> and that
@@ -2192,8 +2212,9 @@ code. Individual targets may override this default via the
 <div style="break-before: page; page-break-before: always;"></div><h1 id="toolchains"><a class="header" href="#toolchains">Toolchains</a></h1>
 <p>A Rust build in Bazel selects its compiler, standard library, and companion tools
 through a set of registered <a href="https://bazel.build/extending/toolchains">Bazel toolchains</a>. <code>rules_rust</code>
-ships one toolchain type per companion tool so that Rust, <code>rust-analyzer</code>,
-<code>rustfmt</code>, and <code>cargo</code> can be resolved independently.</p>
+ships one toolchain type per companion tool so that Rust, <code>rustdoc</code>, <code>clippy</code>,
+<code>rustfmt</code>, <code>cargo</code>, and <code>rust-analyzer</code> can be resolved independently, and so
+that a compile action depends only on the compiler it runs.</p>
 <p>Most users register toolchains via the <code>rust</code> module extension (see
 <a href="./rust_bzlmod.html">Bzlmod</a>) rather than declaring these rules directly. The rules
 below exist for users who need to define custom toolchains — for example, to point
@@ -2202,7 +2223,23 @@ cover.</p>
 <h2 id="toolchain-rules"><a class="header" href="#toolchain-rules">Toolchain rules</a></h2>
 <ul>
 <li><a href="./rust_toolchain.html">rust_toolchain</a> — Declare a Rust compilation toolchain: the
-<code>rustc</code> binary, standard library, linker, and per-target compilation settings.</li>
+<code>rustc</code> binary, standard library, linker, and per-target compilation settings.
+Only what every compile action needs lives here; the tools below have
+toolchains of their own so their binaries stay out of compile inputs.</li>
+<li><a href="./rustdoc_toolchain.html">rustdoc_toolchain</a> — Declare a toolchain providing the
+<code>rustdoc</code> binary used by <a href="./rust_doc.html">rust_doc</a> and <a href="./rust_doc_test.html">rust_doc_test</a>.
+Build scripts do not see it unless a <a href="./cargo_build_script.html">cargo_build_script</a>
+lists it in <code>toolchains</code> and maps <code>$(RUSTDOC)</code> in <code>build_script_env</code>. The <code>rust</code>
+module extension registers one next to every <code>rust_toolchain</code>, from the same
+distribution, since <code>rustdoc</code> must match <code>rustc</code> exactly. The <code>rust_doc</code>
+attribute of <code>rust_toolchain</code> is deprecated in its favor and is only consulted
+when no <code>rustdoc_toolchain</code> is registered.</li>
+<li><a href="./clippy_toolchain.html">clippy_toolchain</a> — Declare a toolchain providing the
+<code>clippy-driver</code> (and optionally <code>cargo-clippy</code>) binary used by the
+<a href="./clippy.html">clippy</a> rules. Registered next to every <code>rust_toolchain</code> in the
+same way. The <code>clippy_driver</code> and <code>cargo_clippy</code> attributes of <code>rust_toolchain</code>
+are deprecated in its favor and are only consulted when no <code>clippy_toolchain</code>
+is registered.</li>
 <li><a href="./rustfmt_toolchain.html">rustfmt_toolchain</a> — Declare a toolchain providing the
 <code>rustfmt</code> binary used by <a href="./rustfmt.html">rustfmt</a> rules.</li>
 <li><a href="./rust_analyzer_toolchain.html">rust_analyzer_toolchain</a> — Declare a toolchain
@@ -2219,6 +2256,18 @@ toolchain carries the same <code>version</code>, <code>iso_date</code> and <code
 <code>rust_toolchain</code> is deprecated in its favor and is only consulted when no
 <code>cargo_toolchain</code> is registered.</li>
 </ul>
+<h2 id="rule-author-helpers"><a class="header" href="#rule-author-helpers">Rule author helpers</a></h2>
+<p><code>rust_common</code> carries the label of every toolchain type <code>rules_rust</code> defines:
+<code>toolchain_type</code>, <code>rustdoc_toolchain_type</code>, <code>clippy_toolchain_type</code>,
+<code>rustfmt_toolchain_type</code>, <code>rust_analyzer_toolchain_type</code> and
+<code>cargo_toolchain_type</code>. A rule declares the ones it needs in <code>toolchains</code>, for
+example <code>config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False)</code>, and reads them back with <code>ctx.toolchains[...]</code>.</p>
+<p>While the deprecated <code>rust_doc</code>, <code>clippy_driver</code>, <code>cargo_clippy</code> and <code>cargo</code>
+attributes of <code>rust_toolchain</code> remain, the matching
+<a href="./rustdoc_toolchain.html#find_rustdoc">find_rustdoc</a>,
+<a href="./clippy_toolchain.html#find_clippy">find_clippy</a> and
+<a href="./cargo_toolchain.html#find_cargo">find_cargo</a> helpers prefer the registered
+toolchain and fall back to those attributes.</p>
 <h2 id="data-rules"><a class="header" href="#data-rules">Data rules</a></h2>
 <ul>
 <li><a href="./rust_stdlib_filegroup.html">rust_stdlib_filegroup</a> — Group the files of a Rust
@@ -2253,7 +2302,6 @@ rust_toolchain(
     binary_ext = "",
     dylib_ext = ".so",
     exec_triple = "cpuX-unknown-linux-gnu",
-    rust_doc = "@rust_cpuX//:rustdoc",
     rust_std = "@rust_cpuX//:rust_std",
     rustc = "@rust_cpuX//:rustc",
     rustc_lib = "@rust_cpuX//:rustc_lib",
@@ -2276,6 +2324,7 @@ toolchain(
 )
 </code></pre>
 <p>Then, either add the label of the toolchain rule to <code>register_toolchains</code> in the WORKSPACE, or pass it to the <code>"--extra_toolchains"</code> flag for Bazel, and it will be used.</p>
+<p>The toolchain carries what every Rust compile action needs: <code>rustc</code>, its libraries and the standard library. Companion tools have toolchains of their own, registered alongside it for the same platforms: <a href="rust_toolchain.html#rustdoc_toolchain"><code>rustdoc_toolchain</code></a>, <a href="rust_toolchain.html#clippy_toolchain"><code>clippy_toolchain</code></a>, <a href="rust_toolchain.html#rustfmt_toolchain"><code>rustfmt_toolchain</code></a> and <a href="rust_toolchain.html#cargo_toolchain"><code>cargo_toolchain</code></a>. Keeping them out of <code>rust_toolchain</code> keeps their binaries out of the inputs of every compile action.</p>
 <p>To use a platform-specific linker, you can use a <code>select()</code> in the <code>linker</code> attribute:</p>
 <pre><code class="language-python">rust_toolchain(
     name = "rust_toolchain_impl",
@@ -2294,9 +2343,9 @@ toolchain(
 <tr><td style="text-align: left"><a id="rust_toolchain-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when <code>rust_library</code> targets are embedded in a <code>cc_binary</code>.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//rust/settings:default_allocator_library"</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-binary_ext"></a>binary_ext</td><td style="text-align: left">The extension for binaries created from rustc.</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-cargo"></a>cargo</td><td style="text-align: left">The location of the <code>cargo</code> binary. Can be a direct source or a filegroup containing one item. <strong>Deprecated</strong>: register a <a href="rust_toolchain.html#cargo_toolchain"><code>cargo_toolchain</code></a> for <code>@rules_rust//cargo:toolchain_type</code> instead. Rules which run Cargo use that toolchain when one is registered and fall back to this attribute when none is.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain-cargo_clippy"></a>cargo_clippy</td><td style="text-align: left">The location of the <code>cargo_clippy</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_toolchain-cargo_clippy"></a>cargo_clippy</td><td style="text-align: left">The location of the <code>cargo_clippy</code> binary. Can be a direct source or a filegroup containing one item. <strong>Deprecated</strong>: register a <a href="rust_toolchain.html#clippy_toolchain"><code>clippy_toolchain</code></a> for <code>@rules_rust//rust/clippy:toolchain_type</code> instead. Rules which run Clippy use that toolchain when one is registered and fall back to this attribute when none is.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel (<code>stable</code>, <code>nightly</code>, or <code>beta</code>).</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain-clippy_driver"></a>clippy_driver</td><td style="text-align: left">The location of the <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_toolchain-clippy_driver"></a>clippy_driver</td><td style="text-align: left">The location of the <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item. <strong>Deprecated</strong>: register a <a href="rust_toolchain.html#clippy_toolchain"><code>clippy_toolchain</code></a> for <code>@rules_rust//rust/clippy:toolchain_type</code> instead. Rules which run Clippy use that toolchain when one is registered and fall back to this attribute when none is.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-debug_info"></a>debug_info</td><td style="text-align: left">Rustc debug info levels per compilation mode (keyed by <code>dbg</code>, <code>fastbuild</code>, <code>opt</code>).</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{"dbg": "2", "fastbuild": "0", "opt": "0"}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-default_edition"></a>default_edition</td><td style="text-align: left">The edition to use for rust_* rules that don't specify an edition. If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-dlltool"></a>dlltool</td><td style="text-align: left">The <code>dlltool</code> binary rustc uses to generate import libraries. If unset, it is derived from the <code>cc_toolchain</code>'s linker path, which assumes a MinGW binutils layout.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
@@ -2322,7 +2371,7 @@ toolchain(
 <tr><td style="text-align: left"><a id="rust_toolchain-opt_level"></a>opt_level</td><td style="text-align: left">Rustc optimization levels.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{"dbg": "0", "fastbuild": "0", "opt": "3"}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-per_crate_rustc_flags"></a>per_crate_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in non-exec configuration</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-require_explicit_unstable_features"></a>require_explicit_unstable_features</td><td style="text-align: left">Label to a boolean build setting that controls whether all uses of unstable Rust features must be explicitly opted in to using <code>-Zallow-features=...</code>.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//rust/settings:require_explicit_unstable_features"</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain-rust_doc"></a>rust_doc</td><td style="text-align: left">The location of the <code>rustdoc</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_toolchain-rust_doc"></a>rust_doc</td><td style="text-align: left">The location of the <code>rustdoc</code> binary. Can be a direct source or a filegroup containing one item. <strong>Deprecated</strong>: register a <a href="rust_toolchain.html#rustdoc_toolchain"><code>rustdoc_toolchain</code></a> for <code>@rules_rust//rust/rustdoc:toolchain_type</code> instead. Rules which run rustdoc use that toolchain when one is registered and fall back to this attribute when none is.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-rust_objcopy"></a>rust_objcopy</td><td style="text-align: left">The location of the <code>rust-objcopy</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-rust_std"></a>rust_std</td><td style="text-align: left">The Rust standard library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_toolchain-rustc"></a>rustc</td><td style="text-align: left">The location of the <code>rustc</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
@@ -2336,6 +2385,201 @@ toolchain(
 <tr><td style="text-align: left"><a id="rust_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust compiler (e.g. <code>1.94.1</code>).</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rustdoc_toolchainbzl"><a class="header" href="#rustdoc_toolchainbzl">rustdoc_toolchain.bzl</a></h1>
+<p><a id="rustdoc_toolchain"></a></p>
+<h2 id="rustdoc_toolchain"><a class="header" href="#rustdoc_toolchain">rustdoc_toolchain</a></h2>
+<pre>
+load("@rules_rust//rust:rustdoc_toolchain.bzl", "rustdoc_toolchain")
+
+rustdoc_toolchain(<a href="rustdoc_toolchain.html#rustdoc_toolchain-name">name</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-channel">channel</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-extra_rustdoc_flags">extra_rustdoc_flags</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-iso_date">iso_date</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-rust_toolchain">rust_toolchain</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-rustdoc">rustdoc</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain-version">version</a>)
+</pre>
+<p>A toolchain providing <a href="https://doc.rust-lang.org/rustdoc/">rustdoc</a>.</p>
+<p><code>rust_doc</code> and <code>rust_doc_test</code> resolve <code>@rules_rust//rust/rustdoc:toolchain_type</code>
+and run the <code>rustdoc</code> it provides. Build scripts do not see it by default; a
+<code>cargo_build_script</code> which needs <code>rustdoc</code> lists
+<code>@rules_rust//rust/toolchain:current_rustdoc_toolchain</code> in <code>toolchains</code> and sets
+<code>RUSTDOC</code> to <code>$(RUSTDOC)</code> in <code>build_script_env</code>.</p>
+<p>The toolchain derives its sysroot from the one of its <code>rust_toolchain</code>: the
+same <code>rustc</code>, libraries and standard library, plus <code>bin/rustdoc</code>. <code>rustdoc</code> is
+a rustc driver which loads <code>librustc_driver</code> from beside itself and builds
+doctests with the <code>rustc</code> beside itself, so actions running <code>rustdoc</code> use the
+derived sysroot, and that sysroot is complete even where symlinks are
+materialized as copies.</p>
+<p><code>rustdoc</code> must come from the same Rust release as <code>rustc</code>. The <code>rust</code> module
+extension declares one <code>rustdoc_toolchain</code> in the repository of every
+<code>rust_toolchain</code> it registers, bound to it through <code>rust_toolchain</code>, and
+registers the two together. A <code>rustdoc_toolchain</code> which leaves
+<code>rust_toolchain</code> unset derives from the <code>rust_toolchain</code> resolved for
+<code>@rules_rust//rust:toolchain_type</code> instead and states its release through
+<code>version</code>, <code>iso_date</code> and <code>channel</code>, which the resolved toolchain must agree
+with; the two ways exclude each other. Either way the toolchain advertises
+the <code>version</code>, <code>iso_date</code> and <code>channel</code> of the <code>rust_toolchain</code> it derives
+from. A rule which runs <code>rustdoc</code> resolves both toolchain types and
+<code>find_rustdoc</code> checks that the <code>rustdoc_toolchain</code> derives from the
+<code>rust_toolchain</code> the rule resolved. When it does not, as when a
+<code>rust_toolchain</code> is registered on its own ahead of the generated ones, the
+rule falls back to the deprecated <code>rust_doc</code> of that <code>rust_toolchain</code>, or
+fails when it is unset. That attribute is deprecated in favor of this rule and
+is consulted only in that case or when no <code>rustdoc_toolchain</code> is registered at
+all.</p>
+<p><code>$(RUSTDOC)</code> and <code>$(RUSTDOC_RLOCATIONPATH)</code> are available as Make variables to
+targets which list <code>@rules_rust//rust/toolchain:current_rustdoc_toolchain</code>, a
+<code>rustdoc_toolchain_alias</code>, in <code>toolchains</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel <code>rustdoc</code> comes from (<code>stable</code>, <code>nightly</code>, or <code>beta</code>), as in <code>rust_toolchain.channel</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-extra_rustdoc_flags"></a>extra_rustdoc_flags</td><td style="text-align: left">Extra flags to pass to <code>rustdoc</code>. They follow the <code>rust_toolchain</code>'s <code>extra_rustc_flags</code> and precede the flags of the target and the command line. Subject to Make variable expansion with respect to the <code>rust_toolchain</code>'s variables (<code>RUST_SYSROOT</code>, <code>RUSTC</code>, ...) and <code>RUSTDOC</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-iso_date"></a>iso_date</td><td style="text-align: left">The ISO date of the nightly or beta release <code>rustdoc</code> comes from, as in <code>rust_toolchain.iso_date</code>. Empty for stable releases.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The <code>rust_toolchain</code> whose sysroot this toolchain derives its own from, normally the one declared beside it over the same release. Exclusive with <code>version</code>, <code>iso_date</code> and <code>channel</code>: when unset the <code>rust_toolchain</code> resolved for <code>@rules_rust//rust:toolchain_type</code> is used instead and <code>version</code> is required, so that the resolved toolchain can be checked to come from the same release.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-rustdoc"></a>rustdoc</td><td style="text-align: left">The <code>rustdoc</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust release <code>rustdoc</code> comes from (e.g. <code>1.94.1</code>), as in <code>rust_toolchain.version</code>. Required when <code>rust_toolchain</code> is unset, and not allowed with it. The resolved <code>rust_toolchain</code> must agree on <code>version</code>, <code>iso_date</code> and <code>channel</code> wherever both state them.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rustdoc_toolchain_alias"></a></p>
+<h2 id="rustdoc_toolchain_alias"><a class="header" href="#rustdoc_toolchain_alias">rustdoc_toolchain_alias</a></h2>
+<pre>
+load("@rules_rust//rust:rustdoc_toolchain.bzl", "rustdoc_toolchain_alias")
+
+rustdoc_toolchain_alias(<a href="rustdoc_toolchain.html#rustdoc_toolchain_alias-name">name</a>, <a href="rustdoc_toolchain.html#rustdoc_toolchain_alias-mandatory">mandatory</a>)
+</pre>
+<p>A target standing in for the <code>rustdoc_toolchain</code> resolved for the current platform.</p>
+<p>The alias forwards the toolchain's providers, its Make variables (<code>$(RUSTDOC)</code>,
+<code>$(RUSTDOC_RLOCATIONPATH)</code>) and its files: the sysroot <code>rustdoc</code> runs from, so
+that it runs from a <code>genrule</code>'s <code>tools</code> on any executor.
+<code>@rules_rust//rust/toolchain:current_rustdoc_toolchain</code> is the alias
+<code>rules_rust</code> declares.</p>
+<p>This follows <code>cc_toolchain_alias</code> from <code>rules_cc</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain_alias-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rustdoc_toolchain_alias-mandatory"></a>mandatory</td><td style="text-align: left">Whether to fail when no toolchain is registered. When <code>False</code>, the target provides nothing instead.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="find_rustdoc"></a></p>
+<h2 id="find_rustdoc"><a class="header" href="#find_rustdoc">find_rustdoc</a></h2>
+<pre>
+load("@rules_rust//rust:rustdoc_toolchain.bzl", "find_rustdoc")
+
+find_rustdoc(<a href="rustdoc_toolchain.html#find_rustdoc-ctx">ctx</a>, <a href="rustdoc_toolchain.html#find_rustdoc-rust_toolchain">rust_toolchain</a>)
+</pre>
+<p>The <code>rustdoc_toolchain</code> a rule should run rustdoc from.</p>
+<p>The registered <code>rustdoc_toolchain</code> is preferred when its sysroot derives
+from the <code>rust_toolchain</code> the rule resolved. When it derives from another
+one, or none is registered, an equivalent toolchain is made from the
+deprecated <code>rust_doc</code> of the <code>rust_toolchain</code>, running from that
+toolchain's sysroot, which is how rules found rustdoc before
+<code>@rules_rust//rust/rustdoc:toolchain_type</code> existed. A <code>rustdoc_toolchain</code>
+of another <code>rust_toolchain</code> with nothing to fall back to is an error: its
+<code>rustdoc</code> would load that other <code>rustc</code>'s libraries.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="find_rustdoc-ctx"></a>ctx</td><td style="text-align: left">The rule context. The rule must list <code>config_common.toolchain_type(rust_common.rustdoc_toolchain_type, mandatory = False)</code> in <code>toolchains</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="find_rustdoc-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The resolved <code>rust_toolchain</code>, or <code>None</code>.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>ToolchainInfo: A <code>rustdoc_toolchain</code>, or <code>None</code> when neither toolchain provides rustdoc.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="clippy_toolchainbzl"><a class="header" href="#clippy_toolchainbzl">clippy_toolchain.bzl</a></h1>
+<p><a id="clippy_toolchain"></a></p>
+<h2 id="clippy_toolchain"><a class="header" href="#clippy_toolchain">clippy_toolchain</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "clippy_toolchain")
+
+clippy_toolchain(<a href="clippy_toolchain.html#clippy_toolchain-name">name</a>, <a href="clippy_toolchain.html#clippy_toolchain-cargo_clippy">cargo_clippy</a>, <a href="clippy_toolchain.html#clippy_toolchain-channel">channel</a>, <a href="clippy_toolchain.html#clippy_toolchain-clippy_driver">clippy_driver</a>, <a href="clippy_toolchain.html#clippy_toolchain-extra_clippy_flags">extra_clippy_flags</a>, <a href="clippy_toolchain.html#clippy_toolchain-iso_date">iso_date</a>,
+                 <a href="clippy_toolchain.html#clippy_toolchain-rust_toolchain">rust_toolchain</a>, <a href="clippy_toolchain.html#clippy_toolchain-version">version</a>)
+</pre>
+<p>A toolchain providing <a href="https://doc.rust-lang.org/clippy/">Clippy</a>.</p>
+<p><code>rust_clippy_aspect</code>, <code>rust_clippy</code> and <code>rust_clippy_test</code> resolve
+<code>@rules_rust//rust/clippy:toolchain_type</code> and run the <code>clippy-driver</code> it
+provides.</p>
+<p>The toolchain derives its sysroot from the one of its <code>rust_toolchain</code>: the
+same <code>rustc</code>, libraries and standard library, plus <code>bin/clippy-driver</code> and
+<code>bin/cargo-clippy</code>. <code>clippy-driver</code> is a rustc driver which loads
+<code>librustc_driver</code> from beside itself, so actions running Clippy use the derived
+sysroot, and that sysroot is complete even where symlinks are materialized as
+copies.</p>
+<p><code>clippy-driver</code> must come from the same Rust release as <code>rustc</code>. The <code>rust</code>
+module extension declares one <code>clippy_toolchain</code> in the repository of every
+<code>rust_toolchain</code> it registers, bound to it through <code>rust_toolchain</code>, and
+registers the two together. A <code>clippy_toolchain</code> which leaves <code>rust_toolchain</code>
+unset derives from the <code>rust_toolchain</code> resolved for
+<code>@rules_rust//rust:toolchain_type</code> instead and states its release through
+<code>version</code>, <code>iso_date</code> and <code>channel</code>, which the resolved toolchain must agree
+with; the two ways exclude each other. Either way the toolchain advertises
+the <code>version</code>, <code>iso_date</code> and <code>channel</code> of the <code>rust_toolchain</code> it derives
+from. A rule which runs Clippy resolves both toolchain types and <code>find_clippy</code>
+checks that the <code>clippy_toolchain</code> derives from the <code>rust_toolchain</code> the rule
+resolved. When it does not, as when a
+<code>rust_toolchain</code> is registered on its own ahead of the generated ones, the
+rule falls back to the deprecated <code>clippy_driver</code> and <code>cargo_clippy</code> of that
+<code>rust_toolchain</code>, or fails when they are unset. Those attributes are
+deprecated in favor of this rule and are consulted only in that case or when
+no <code>clippy_toolchain</code> is registered at all.</p>
+<p><code>$(CLIPPY_DRIVER)</code>, <code>$(CLIPPY_DRIVER_RLOCATIONPATH)</code> and, when <code>cargo_clippy</code>
+is set, <code>$(CARGO_CLIPPY)</code> and <code>$(CARGO_CLIPPY_RLOCATIONPATH)</code> are available as
+Make variables to targets which list
+<code>@rules_rust//rust/toolchain:current_clippy_toolchain</code>, a
+<code>clippy_toolchain_alias</code>, in <code>toolchains</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="clippy_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-cargo_clippy"></a>cargo_clippy</td><td style="text-align: left">The <code>cargo-clippy</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-channel"></a>channel</td><td style="text-align: left">The Rust release channel <code>clippy</code> comes from (<code>stable</code>, <code>nightly</code>, or <code>beta</code>), as in <code>rust_toolchain.channel</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-clippy_driver"></a>clippy_driver</td><td style="text-align: left">The <code>clippy-driver</code> binary. Can be a direct source or a filegroup containing one item.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-extra_clippy_flags"></a>extra_clippy_flags</td><td style="text-align: left">Extra flags to pass to <code>clippy-driver</code>. They follow the <code>rust_toolchain</code>'s <code>extra_rustc_flags</code> and precede the lints of the target and the flags of the command line. Subject to Make variable expansion with respect to the <code>rust_toolchain</code>'s variables (<code>RUST_SYSROOT</code>, <code>RUSTC</code>, ...) and <code>CLIPPY_DRIVER</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-iso_date"></a>iso_date</td><td style="text-align: left">The ISO date of the nightly or beta release <code>clippy</code> comes from, as in <code>rust_toolchain.iso_date</code>. Empty for stable releases.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The <code>rust_toolchain</code> whose sysroot this toolchain derives its own from, normally the one declared beside it over the same release. Exclusive with <code>version</code>, <code>iso_date</code> and <code>channel</code>: when unset the <code>rust_toolchain</code> resolved for <code>@rules_rust//rust:toolchain_type</code> is used instead and <code>version</code> is required, so that the resolved toolchain can be checked to come from the same release.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain-version"></a>version</td><td style="text-align: left">The version of the Rust release <code>clippy</code> comes from (e.g. <code>1.94.1</code>), as in <code>rust_toolchain.version</code>. Required when <code>rust_toolchain</code> is unset, and not allowed with it. The resolved <code>rust_toolchain</code> must agree on <code>version</code>, <code>iso_date</code> and <code>channel</code> wherever both state them.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="clippy_toolchain_alias"></a></p>
+<h2 id="clippy_toolchain_alias"><a class="header" href="#clippy_toolchain_alias">clippy_toolchain_alias</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "clippy_toolchain_alias")
+
+clippy_toolchain_alias(<a href="clippy_toolchain.html#clippy_toolchain_alias-name">name</a>, <a href="clippy_toolchain.html#clippy_toolchain_alias-mandatory">mandatory</a>)
+</pre>
+<p>A target standing in for the <code>clippy_toolchain</code> resolved for the current platform.</p>
+<p>The alias forwards the toolchain's providers, its Make variables
+(<code>$(CLIPPY_DRIVER)</code>, <code>$(CARGO_CLIPPY)</code>, ...) and its files: the sysroot
+<code>clippy-driver</code> runs from, so that it runs from a <code>genrule</code>'s <code>tools</code> on any
+executor. <code>@rules_rust//rust/toolchain:current_clippy_toolchain</code> is the alias
+<code>rules_rust</code> declares.</p>
+<p>This follows <code>cc_toolchain_alias</code> from <code>rules_cc</code>.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="clippy_toolchain_alias-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="clippy_toolchain_alias-mandatory"></a>mandatory</td><td style="text-align: left">Whether to fail when no toolchain is registered. When <code>False</code>, the target provides nothing instead.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="find_clippy"></a></p>
+<h2 id="find_clippy"><a class="header" href="#find_clippy">find_clippy</a></h2>
+<pre>
+load("@rules_rust//rust:clippy_toolchain.bzl", "find_clippy")
+
+find_clippy(<a href="clippy_toolchain.html#find_clippy-ctx">ctx</a>, <a href="clippy_toolchain.html#find_clippy-rust_toolchain">rust_toolchain</a>)
+</pre>
+<p>The <code>clippy_toolchain</code> a rule should run Clippy from.</p>
+<p>The registered <code>clippy_toolchain</code> is preferred when its sysroot derives
+from the <code>rust_toolchain</code> the rule resolved. When it derives from another
+one, or none is registered, an equivalent toolchain is made from the
+deprecated <code>clippy_driver</code> and <code>cargo_clippy</code> of the <code>rust_toolchain</code>,
+running from that toolchain's sysroot, which is how rules found Clippy
+before <code>@rules_rust//rust/clippy:toolchain_type</code> existed. A
+<code>clippy_toolchain</code> of another <code>rust_toolchain</code> with nothing to fall back
+to is an error: its <code>clippy-driver</code> would load that other <code>rustc</code>'s
+libraries.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="find_clippy-ctx"></a>ctx</td><td style="text-align: left">The rule context. The rule must list <code>config_common.toolchain_type(rust_common.clippy_toolchain_type, mandatory = False)</code> in <code>toolchains</code>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="find_clippy-rust_toolchain"></a>rust_toolchain</td><td style="text-align: left">The resolved <code>rust_toolchain</code>, or <code>None</code>.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>ToolchainInfo: A <code>clippy_toolchain</code>, or <code>None</code> when neither toolchain provides Clippy.</p>
+<div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rustfmt_toolchainbzl"><a class="header" href="#rustfmt_toolchainbzl">rustfmt_toolchain.bzl</a></h1>
 <p><a id="rustfmt_toolchain"></a></p>
 <h2 id="rustfmt_toolchain"><a class="header" href="#rustfmt_toolchain">rustfmt_toolchain</a></h2>
@@ -2510,7 +2754,7 @@ rust.toolchain(<a href="rust_bzlmod.html#rust.toolchain-aliases">aliases</a>, <a
 </tbody></table>
 </div>
 <p><a id="rust.toolchain"></a></p>
-<h3 id="toolchain-1"><a class="header" href="#toolchain-1">toolchain</a></h3>
+<h3 id="toolchain-3"><a class="header" href="#toolchain-3">toolchain</a></h3>
 <p>Tags for defining rust toolchains (where toolchain tools are fetched).</p>
 <p><strong>Attributes</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
