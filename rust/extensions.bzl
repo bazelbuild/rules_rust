@@ -78,7 +78,6 @@ def _rust_impl(module_ctx):
                 "name": repository_set.name,
                 "netrc": repository_set.netrc if repository_set.netrc else None,
                 "opt_level": {repository_set.target_triple: repository_set.opt_level} if repository_set.opt_level else None,
-                "rustfmt_version": repository_set.rustfmt_version,
                 "sha256s": repository_set.sha256s,
                 "strip_level": {repository_set.target_triple: repository_set.strip_level} if repository_set.strip_level else None,
                 "target_settings": [str(v) for v in repository_set.target_settings],
@@ -337,6 +336,9 @@ def _rust_host_tools_impl(module_ctx):
     for mod in module_ctx.modules:
         for host_tools in mod.tags.host_tools:
             attrs = {key: getattr(host_tools, key) for key in dir(host_tools)}
+
+            # rustfmt is not a host tool; `rustfmt_toolchain` has its own repository.
+            attrs.pop("rustfmt_version")
 
             # Label attrs must be stringified for the repository rule.
             for label_attr in ("allocator_library", "global_allocator_library"):

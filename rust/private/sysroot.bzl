@@ -19,6 +19,14 @@ rustc derives the following from its own location:
   On Windows there is no rpath and `rustc_driver.dll` is installed beside the
   executables in `bin/`, see `rustc_libdir`:
   https://github.com/rust-lang/rust/blob/1.99.1/src/bootstrap/src/core/builder/mod.rs#L1330-L1335
+  The loader expands `$ORIGIN` from the executable's real path (glibc reads
+  `/proc/self/exe`, dyld the path it opened), so a symlink to a binary only
+  loads libraries beside the binary itself, never beside the symlink. The
+  generated trees below are symlinks wherever Bazel keeps them as such, so
+  every binary they point at must have the libraries beside its real file.
+  `rust_toolchain_tools_repository` sees to that for the repositories it
+  lays out: a repository holding Clippy without the compiler links the
+  compiler's `lib/` beside it.
   Either way `bin/<tool>` needs the compiler libraries at a fixed relative
   path.
 
@@ -305,7 +313,9 @@ def derive_sysroot(*, ctx, name, base_path, base_files, bins):
     and the standard library are all there, and the companion's own binaries
     join `bin/`. A tool run from the derived tree finds `librustc_driver` in
     `../lib` and `rustc` beside itself, and the tree can be passed as
-    `--sysroot`.
+    `--sysroot`. Where symlinks stay symlinks, a tool loads its libraries from
+    its real location rather than from the tree (see the module docs), so a
+    binary must come from a repository laid out like a distribution.
 
     Args:
         ctx (ctx): The toolchain's context object.
