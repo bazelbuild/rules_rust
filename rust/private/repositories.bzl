@@ -80,6 +80,10 @@ COMPANION_TOOLCHAIN_TYPES = {
 #
 # The names are those of the archives on the static file server
 # (`rust-std-1.99.1-x86_64-unknown-linux-gnu.tar.gz`), hyphens included.
+# Listing a component lets a repository hold it; each is downloaded only when
+# the release and the attributes call for it. `rustc-dev` comes only with
+# `dev_components`, `rust-mingw` only for a `*-pc-windows-gnu` execution
+# platform, `llvm-tools` only from the releases which ship it.
 COMPONENT = struct(
     cargo = "cargo",
     clippy = "clippy",
@@ -358,16 +362,16 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
     "cargo_anchor": attr.label(
         doc = (
-            "A file at the root of the repository holding the `cargo` component when it is not in " +
-            "`components`, such as its `BUILD.bazel`. The `cargo_toolchain` declared here takes Cargo from " +
-            "there, so that repository is fetched only when a target runs Cargo."
+            "A label to any file in the repository holding the `cargo` component when it is not in " +
+            "`components`. The `cargo_toolchain` declared here takes Cargo from there, so that repository " +
+            "is fetched only when a target runs Cargo."
         ),
     ),
     "clippy_anchor": attr.label(
         doc = (
-            "A file at the root of the repository holding the `clippy` component when it is not in " +
-            "`components`, such as its `BUILD.bazel`. The `clippy_toolchain` declared here takes Clippy from " +
-            "there, so that repository is fetched only when a target runs Clippy."
+            "A label to any file in the repository holding the `clippy` component when it is not in " +
+            "`components`. The `clippy_toolchain` declared here takes Clippy from there, so that " +
+            "repository is fetched only when a target runs Clippy."
         ),
     ),
     "components": attr.string_list(
@@ -424,11 +428,11 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
     "rustc_anchor": attr.label(
         doc = (
-            "A file at the root of the repository holding the `rustc` component (and `llvm-tools`, `rustfmt` " +
-            "and `rust-mingw`) when it is not in `components`, such as its `BUILD.bazel`. The `rust_toolchain` " +
-            "declared here takes the compiler, its libraries and its tools from there, so one download serves " +
-            "every target triple. A repository holding `clippy` without `rustc` links that repository's " +
-            "libraries beside `clippy-driver`, which loads them relative to its own location."
+            "A label to any file in the repository holding the `rustc` component (and `llvm-tools` and " +
+            "`rust-mingw`) when it is not in `components`. The `rust_toolchain` declared here takes the " +
+            "compiler, its libraries and its tools from there, so one download serves every target triple. " +
+            "A repository holding `clippy` without `rustc` links that repository's libraries beside " +
+            "`clippy-driver`, which loads them relative to its own location."
         ),
     ),
     "sha256s": attr.string_dict(
@@ -436,9 +440,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
     "std_anchor": attr.label(
         doc = (
-            "A file at the root of the repository holding the `rust-std` component for `target_triple` when " +
-            "it is not in `components`, such as its `BUILD.bazel`: the compiler repository, when the target " +
-            "triple is the execution platform's."
+            "A label to any file in the repository holding the `rust-std` component for `target_triple` " +
+            "when it is not in `components`: the compiler repository, when the target triple is the " +
+            "execution platform's."
         ),
     ),
     "strip_level": attr.string_dict(
@@ -498,6 +502,21 @@ def _resolve_nightly_version(iso_date):
         else:
             break
     return result
+
+def _repository_root(ctx, anchor):
+    """The root directory of the repository a label points into.
+
+    Args:
+        ctx (repository_ctx): The repository's context.
+        anchor (Label): A label to any file in the other repository.
+
+    Returns:
+        path: The repository's root. Resolving it fetches that repository.
+    """
+    root = ctx.path(anchor)
+    for _ in [segment for segment in anchor.package.split("/") + anchor.name.split("/") if segment]:
+        root = root.dirname
+    return root
 
 def _link_compiler_libraries(ctx, compiler_root, exec_triple):
     """Link the libraries of the compiler repository at `compiler_root` beside the binaries of this one.
@@ -592,7 +611,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
     if COMPONENT.clippy in components and COMPONENT.rustc not in components:
         if not rustc_anchor:
             fail("{}: `clippy` without `rustc` in `components` needs `rustc_anchor`, whose libraries `clippy-driver` loads".format(ctx.name))
-        compiler_root = ctx.path(rustc_anchor).dirname
+        compiler_root = _repository_root(ctx, rustc_anchor)
 
     build_components = []
 
