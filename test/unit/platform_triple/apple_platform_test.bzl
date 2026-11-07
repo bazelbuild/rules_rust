@@ -1,7 +1,11 @@
 """Tests for Apple platform constraint mappings."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//rust/platform:triple_mappings.bzl", "triple_to_constraint_set")
+load(
+    "//rust/platform:triple_mappings.bzl",
+    "SUPPORTED_T2_PLATFORM_TRIPLES",
+    "triple_to_constraint_set",
+)
 
 def _apple_platform_constraints_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -41,6 +45,24 @@ def _apple_platform_constraints_test_impl(ctx):
         x86_64_ios_constraints,
         "x86_64-apple-ios should remain mapped to iOS simulator constraints",
     )
+
+    for target_triple, environment in [
+        ("aarch64-apple-tvos", "device"),
+        ("aarch64-apple-tvos-sim", "simulator"),
+    ]:
+        asserts.equals(
+            env,
+            [
+                "@platforms//cpu:aarch64",
+                "@platforms//os:tvos",
+                "@apple_support//constraints:" + environment,
+            ],
+            triple_to_constraint_set(target_triple),
+            "{} should map to tvOS {} constraints".format(target_triple, environment),
+        )
+        support = SUPPORTED_T2_PLATFORM_TRIPLES[target_triple]
+        asserts.true(env, support.std)
+        asserts.false(env, support.host_tools)
 
     return unittest.end(env)
 
