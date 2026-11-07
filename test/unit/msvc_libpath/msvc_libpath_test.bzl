@@ -60,6 +60,8 @@ def _libpath_test_impl(ctx):
 libpath_test = analysistest.make(
     _libpath_test_impl,
     config_settings = {
+        # The mock toolchain cannot execute, so coverage must not build :bin.
+        "//command_line_option:collect_code_coverage": False,
         "//command_line_option:extra_toolchains": [
             str(Label(":rust_toolchain")),
             str(Label(":cc_toolchain")),
