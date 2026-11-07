@@ -207,6 +207,11 @@ def find_proc_macro_dylib(toolchain, target):
 rust_analyzer_aspect = aspect(
     attr_aspects = ["srcs", "deps", "proc_macro_deps", "crate", "actual", "proto"],
     implementation = _rust_analyzer_aspect_impl,
+    required_providers = [
+        [rust_common.crate_info],
+        [rust_common.test_crate_info],
+        [rust_common.crate_group_info],
+    ],
     toolchains = [str(Label("//rust:toolchain_type"))],
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
