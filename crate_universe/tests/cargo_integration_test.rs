@@ -397,6 +397,46 @@ fn feature_generator_crate_combined_features() {
     );
 }
 
+#[test]
+fn proc_macro_dep_with_exclusion() {
+    if should_skip_test() {
+        eprintln!("Skipping!");
+        return;
+    }
+
+    let r = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "example_proc_macro_dep_with_exclusion",
+        HashMap::from([(
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.toml"
+            )
+            .unwrap()
+            .to_string_lossy()
+            .to_string(),
+            "//:test_input".to_string(),
+        )]),
+        "rules_rust/crate_universe/test_data/metadata/example_proc_macro_dep_with_exclusion/Cargo.lock",
+    );
+
+    // Check workspace member deps are plumbed though / we didn't forget serde.
+    let tree_metadata = &metadata["metadata"]["cargo-bazel"]["tree_metadata"];
+    assert_eq!(
+        tree_metadata["workspace-member 0.1.0"]["common"]["deps"],
+        json!(["serde 1.0.229"]),
+    );
+
+    // The corresponding proc macro should be propagated to the workspace root,
+    // or it may have not been resolved for the host, which is one of the core
+    // features of the TreeResolver in
+    // crate_universe/src/metadata/cargo_tree_resolver.rs.
+    assert_eq!(
+        tree_metadata["rules_rust_fake_proc_macro_root 0.0.0"]["common"]["deps"],
+        json!(["serde_derive 1.0.229"]),
+    );
+}
+
 // See crate_universe/test_data/metadata/target_cfg_features/Cargo.toml for input.
 #[test]
 fn resolver_2_deps() {

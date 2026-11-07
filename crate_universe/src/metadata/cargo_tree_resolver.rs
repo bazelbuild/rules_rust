@@ -603,15 +603,17 @@ impl TreeResolver {
         // To add dependencies to a virtual workspace, we need to add them to a package inside the workspace,
         // we can't just add them to the workspace directly.
         if !proc_macros.is_empty() && manifest.package.is_none() {
-            if let Some(ref mut workspace) = &mut manifest.workspace {
-                if !workspace.members.contains(&".".to_owned()) {
-                    workspace.members.push(".".to_owned());
-                }
-                manifest.package = Some(cargo_toml::Package::new(
-                    "rules_rust_fake_proc_macro_root",
-                    "0.0.0",
-                ));
-            }
+            // Setting the manifest's package is sufficient to add dependencies.
+            // See the Cargo docs here, whose examples do not add any members to
+            // have a root package:
+            // https://doc.rust-lang.org/cargo/reference/workspaces.html#root-package
+            // Adding "." as a member breaks exclusions, see
+            // proc_macro_dep_with_exclusion in
+            // crate_universe/tests/cargo_integration_test.rs.
+            manifest.package = Some(cargo_toml::Package::new(
+                "rules_rust_fake_proc_macro_root",
+                "0.0.0",
+            ));
             if manifest.lib.is_none() && manifest.bin.is_empty() {
                 manifest.bin.push(cargo_toml::Product {
                     name: Some("rules_rust_fake_proc_macro_root_bin".to_owned()),
