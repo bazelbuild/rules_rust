@@ -243,7 +243,7 @@ fn emit_diagnostics(
             if !is_actionable_diagnostic(&value) {
                 continue;
             }
-            rewrite_file_names(&mut value, workspace, sysroot_src);
+            rewrite_diagnostic_paths(&mut value, workspace, sysroot_src);
             serde_json::to_writer(&mut out, &value)
                 .context("writing rewritten rustc JSON to stdout")?;
             out.write_all(b"\n").context("writing newline to stdout")?;
@@ -314,16 +314,33 @@ fn substitute_rustc_stdlib(input: &str, sysroot_src: &Utf8Path) -> Option<String
 }
 
 /// Rewrite rustc-diagnostic paths in place:
-///  * Relative `file_name` → absolute under `workspace`.
+///  * Relative `file_name` → absolute under `workspace`. Bazel output
+///    symlinks to workspace sources are resolved back to source paths.
 ///  * `/rustc/<sha>/library/…` → `<sysroot_src>/…` in `file_name`,
 ///    `rendered`, and `explanation` strings. RA extracts paths from
 ///    `rendered` for VFS lookup, so rewriting only `file_name` isn't
 ///    enough.
-fn rewrite_file_names(value: &mut Value, workspace: &Utf8Path, sysroot_src: Option<&Utf8Path>) {
+fn rewrite_diagnostic_paths(
+    value: &mut Value,
+    workspace: &Utf8Path,
+    sysroot_src: Option<&Utf8Path>,
+) {
+    let mut source_paths = Vec::new();
+    rewrite_path_fields(value, workspace, sysroot_src, &mut source_paths);
+    rewrite_rendered_paths(value, &source_paths);
+}
+
+/// Rewrite JSON path fields and collect Bazel source links for the rendered-text pass.
+fn rewrite_path_fields(
+    value: &mut Value,
+    workspace: &Utf8Path,
+    sysroot_src: Option<&Utf8Path>,
+    source_paths: &mut Vec<(String, String)>,
+) {
     let Value::Object(map) = value else {
         if let Value::Array(items) = value {
             for item in items.iter_mut() {
-                rewrite_file_names(item, workspace, sysroot_src);
+                rewrite_path_fields(item, workspace, sysroot_src, source_paths);
             }
         }
         return;
@@ -332,8 +349,13 @@ fn rewrite_file_names(value: &mut Value, workspace: &Utf8Path, sysroot_src: Opti
         match key.as_str() {
             "file_name" => {
                 if let Value::String(s) = child {
+                    let original = s.clone();
                     if !s.is_empty() && !std::path::Path::new(s).is_absolute() {
                         *s = workspace.join(&*s).to_string();
+                    }
+                    if let Some(source) = bazel_output_source(Utf8Path::new(s), workspace) {
+                        *s = source.to_string();
+                        source_paths.push((original, s.clone()));
                     }
                     if let (Some(sr), Value::String(s)) = (sysroot_src, &mut *child) {
                         if let Some(replaced) = substitute_rustc_stdlib(s, sr) {
@@ -349,8 +371,63 @@ fn rewrite_file_names(value: &mut Value, workspace: &Utf8Path, sysroot_src: Opti
                     }
                 }
             }
-            _ => rewrite_file_names(child, workspace, sysroot_src),
+            _ => rewrite_path_fields(child, workspace, sysroot_src, source_paths),
         }
+    }
+}
+
+/// A rustc span can point at a symlink in bazel-out even though the editor
+/// opened the corresponding source under the workspace. Keep generated
+/// outputs and missing files unchanged; only remap paths that resolve to a
+/// workspace source outside bazel-out.
+fn bazel_output_source(path: &Utf8Path, workspace: &Utf8Path) -> Option<Utf8PathBuf> {
+    let bazel_out = workspace.join("bazel-out");
+    if !path.starts_with(&bazel_out) {
+        return None;
+    }
+    let canonical = fs::canonicalize(path).ok()?;
+    let canonical_workspace = fs::canonicalize(workspace).ok()?;
+    let relative = canonical.strip_prefix(canonical_workspace).ok()?;
+    let relative = Utf8Path::from_path(relative)?;
+    let source = workspace.join(relative);
+    (!source.starts_with(bazel_out)).then_some(source)
+}
+
+/// Apply Bazel source-path remaps to rustc's human-readable `rendered` text.
+/// This runs after the JSON `file_name` pass because the source mappings are
+/// collected from spans there; rust-analyzer also reads locations from this text.
+fn rewrite_rendered_paths(value: &mut Value, source_paths: &[(String, String)]) {
+    if source_paths.is_empty() {
+        return;
+    }
+    match value {
+        Value::Array(items) => {
+            for item in items {
+                rewrite_rendered_paths(item, source_paths);
+            }
+        }
+        Value::Object(map) => {
+            for (key, child) in map {
+                if key == "rendered" {
+                    if let Value::String(rendered) = child {
+                        for (original, source) in source_paths {
+                            // Only change rustc's file-location lines. A
+                            // relative path can also be a suffix of an
+                            // absolute path elsewhere in the message.
+                            for marker in ["--> ", "::: "] {
+                                *rendered = rendered.replace(
+                                    &format!("{marker}{original}:"),
+                                    &format!("{marker}{source}:"),
+                                );
+                            }
+                        }
+                    }
+                } else {
+                    rewrite_rendered_paths(child, source_paths);
+                }
+            }
+        }
+        _ => {}
     }
 }
 
@@ -592,7 +669,7 @@ mod tests {
                 {"spans": [{"file_name": "src/inner.rs"}]}
             ]
         });
-        rewrite_file_names(&mut v, workspace, None);
+        rewrite_diagnostic_paths(&mut v, workspace, None);
         // Join via Utf8Path so the test passes on Windows too.
         let expect = |rel: &str| Value::String(workspace.join(rel).to_string());
         let spans = v["spans"].as_array().unwrap();
@@ -609,11 +686,56 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn bazel_output_symlink_points_diagnostics_at_workspace_source() {
+        use std::os::unix::fs::symlink;
+
+        let workspace = make_workspace(
+            "flycheck_source_path",
+            &[("src/workspace.rs", "struct Example;")],
+        );
+        let output_dir = workspace.join("bazel-out/k8-fastbuild/bin/src");
+        fs::create_dir_all(&output_dir).unwrap();
+        symlink(
+            workspace.join("src/workspace.rs"),
+            output_dir.join("workspace.rs"),
+        )
+        .unwrap();
+
+        let output_path = "bazel-out/k8-fastbuild/bin/src/workspace.rs";
+        let source_path = workspace.join("src/workspace.rs");
+        let mut diagnostic = json!({
+            "spans": [{"file_name": output_path, "is_primary": true}],
+            "rendered": format!("error: example\n --> {output_path}:1:1\n"),
+        });
+        rewrite_diagnostic_paths(&mut diagnostic, &workspace, None);
+
+        assert_eq!(diagnostic["spans"][0]["file_name"], json!(source_path));
+        assert_eq!(
+            diagnostic["rendered"],
+            json!(format!("error: example\n --> {source_path}:1:1\n")),
+        );
+    }
+
+    #[test]
+    fn missing_bazel_output_path_becomes_absolute_without_source_remap() {
+        let workspace = Utf8Path::new("/abs/ws");
+        let mut diagnostic = json!({
+            "spans": [{"file_name": "bazel-out/k8-fastbuild/bin/generated.rs"}],
+        });
+        rewrite_diagnostic_paths(&mut diagnostic, workspace, None);
+        assert_eq!(
+            diagnostic["spans"][0]["file_name"],
+            json!(workspace.join("bazel-out/k8-fastbuild/bin/generated.rs")),
+        );
+    }
+
     #[test]
     fn empty_file_name_is_left_alone() {
         let workspace = Utf8Path::new("/ws");
         let mut v = json!({"spans": [{"file_name": ""}]});
-        rewrite_file_names(&mut v, workspace, None);
+        rewrite_diagnostic_paths(&mut v, workspace, None);
         assert_eq!(v["spans"][0]["file_name"], json!(""));
     }
 
@@ -667,7 +789,7 @@ mod tests {
                 {"file_name": "/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/bin/rustc.rs"},
             ]
         });
-        rewrite_file_names(&mut v, workspace, Some(sysroot_src));
+        rewrite_diagnostic_paths(&mut v, workspace, Some(sysroot_src));
         let spans = v["spans"].as_array().unwrap();
         // Impl always emits forward slashes at the substitution boundary
         // (rustc's stdlib remap is `/`-separated on every platform).
@@ -689,7 +811,7 @@ mod tests {
         let mut v = json!({
             "spans": [{"file_name": "/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/library/core/src/result.rs"}]
         });
-        rewrite_file_names(&mut v, workspace, None);
+        rewrite_diagnostic_paths(&mut v, workspace, None);
         assert_eq!(
             v["spans"][0]["file_name"],
             json!("/rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/library/core/src/result.rs"),
@@ -705,7 +827,7 @@ mod tests {
         let mut v = json!({
             "rendered": "note: tuple variant defined here\n  --> /rustc/59807616e1fa2540724bfbac14d7976d7e4a3860/library/core/src/result.rs:561:4\n\n"
         });
-        rewrite_file_names(&mut v, workspace, Some(sysroot_src));
+        rewrite_diagnostic_paths(&mut v, workspace, Some(sysroot_src));
         assert_eq!(
             v["rendered"],
             json!("note: tuple variant defined here\n  --> /toolchain/lib/rustlib/src/library/core/src/result.rs:561:4\n\n"),
