@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+# Keep dev-only test rules out of the helper package loaded by downstream users.
+py_test(
+    name = "declared_manifests_test",
+    srcs = ["declared_manifests_test.py"],
+    args = ["$(rlocationpath //cargo/private/cargo_toml_info)"],
+    data = ["//cargo/private/cargo_toml_info"],
+    deps = ["@rules_python//python/runfiles"],
+)
