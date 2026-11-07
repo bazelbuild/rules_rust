@@ -11,6 +11,7 @@
 //! decision on the discover/flycheck side.
 
 use std::{
+    borrow::Cow,
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
@@ -41,10 +42,10 @@ fn logical_name(exe: &Path) -> Option<String> {
 fn resolve_target(paths_path: &Path, logical: &str) -> Result<PathBuf, String> {
     let raw = fs::read_to_string(paths_path)
         .map_err(|e| format!("reading {}: {e}", paths_path.display()))?;
-    let map: HashMap<&str, &str> =
+    let map: HashMap<&str, Cow<'_, str>> =
         serde_json::from_str(&raw).map_err(|e| format!("parsing {}: {e}", paths_path.display()))?;
     map.get(logical)
-        .map(PathBuf::from)
+        .map(|c| PathBuf::from(c.as_ref()))
         .ok_or_else(|| format!("no entry for `{logical}` in {}", paths_path.display()))
 }
 
