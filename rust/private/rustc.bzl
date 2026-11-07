@@ -375,6 +375,14 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
+def _msvc_libpath(arg):
+    """Returns the `-LIBPATH:<dir>` spelling of an MSVC library search path argument, or None."""
+    if arg.startswith("/clang:"):
+        arg = arg[len("/clang:"):]
+    if arg[:9].lower() in ("/libpath:", "-libpath:"):
+        return "-LIBPATH:" + arg[9:]
+    return None
+
 def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
     """Gathers cc_common linker information
 
@@ -480,6 +488,11 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
                 elif processed_arg.startswith("-L"):
                     filtered_args.append(processed_arg)
+
+                    # Keep MSVC library search paths (clang-cl spells them `/clang:/LIBPATH:`)
+                elif _msvc_libpath(processed_arg):
+                    filtered_args.append(_msvc_libpath(processed_arg))
+
                     # Keep sysroot flags (as single or two-part arguments)
 
                 elif processed_arg == "--sysroot" or processed_arg.startswith("--sysroot="):
