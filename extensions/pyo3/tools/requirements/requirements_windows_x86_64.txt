@@ -72,8 +72,9 @@ platformdirs==4.9.4 \
     #   black (>=2)
     #   pylint (>=2.2)
     # https://files.pythonhosted.org/packages/63/d7/97f7e3a6abb67d8080dd406fd4df842c2be0efaf712d1c899c32a075027c/platformdirs-4.9.4-py3-none-any.whl#sha256=68a9a4619a666ea6439f2ff250c12a853cd1cbd5158d258bd824a7df6be2f868
-pylint==4.0.5 \
-    --hash=sha256:00f51c9b14a3b3ae08cff6b2cdd43f28165c78b165b628692e428fb1f8dc2cf2
+pylint==4.0.9 \
+    --hash=sha256:6f1305780229ae720e89b8aff2b3ff857cbb268fbab98c8b586960267667ad34 \
+    --hash=sha256:c4ba5bbaf1e70ecf05f08cd7d6091ea04824b79a2b2d9f5b10dc25fc34cb1124
     # via _main/tools/requirements/requirements.in
     # https://files.pythonhosted.org/packages/d5/6f/9ac2548e290764781f9e7e2aaf0685b086379dabfb29ca38536985471eaf/pylint-4.0.5-py3-none-any.whl#sha256=00f51c9b14a3b3ae08cff6b2cdd43f28165c78b165b628692e428fb1f8dc2cf2
 pytokens==0.4.1 \
