@@ -935,7 +935,7 @@ _PLATFORM_ATTRS = {
 
 _COVERAGE_ATTRS = {
     "_collect_cc_coverage": attr.label(
-        default = Label("//rust/coverage:collect_rust_coverage"),
+        default = Label("//rust/settings:coverage_collector"),
         executable = True,
         cfg = config.exec("test"),
     ),
