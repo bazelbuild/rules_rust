@@ -1,13 +1,13 @@
 #!/usr/bin/env python3.11
 """A script for generating the `//rust:known_shas.bzl` and `//rust:nightly_versions.bzl` files."""
 
+import argparse
 import json
 import logging
 import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 import tomllib
 from pathlib import Path
@@ -17,6 +17,14 @@ KNOWN_SHAS_TEMPLATE = """\
 \"\"\"A module containing a mapping of Rust tools to checksums
 
 This is a generated file -- see //util/fetch_shas
+
+The table covers every stable release from the minimum version `rules_rust`
+supports to the latest, and the nightlies published since that minimum, for the
+platforms `rules_rust` registers toolchains for by default
+(`//util/fetch_shas:fetch_shas_TARGETS.txt`). Other versions and platforms are
+resolved from their channel manifests by the `rust` module extension and
+recorded as facts in the consumer's `MODULE.bazel.lock`; see
+`//rust/private:channel_manifest.bzl`.
 \"\"\"
 
 FILE_KEY_TO_SHA = {}
@@ -115,120 +123,6 @@ def download_manifest_data(
     }
 
 
-def download_direct_sha256s(
-    artifacts: Sequence[str], output_dir: Path
-) -> Dict[str, str]:
-    """_summary_
-
-    This function is mostly here for backward compatibility. There are artifacts
-    referenced by the `channel-rust-*.toml` files which are marked as `available: false`
-    and probably intended to not be downloaded. But for now this is ignored and instead
-    a collection of artifacts whose hash data could not be found is explicitly checked
-    by trying to download the `.sha256` files directly. A 404 indicates the artifact
-    genuinely does not exist and anything else we find is extra data we can retain
-    in `known_shas.bzl`.
-
-    Args:
-        artifacts: A list of paths within `https://static.rust-lang.org/dist` to download.
-        output_dir: The location where the intermediate files should be written.
-
-    Returns:
-        A mapping of `artifacts` entries to their sha256 value.
-    """
-    output_dir.mkdir(exist_ok=True, parents=True)
-    status_config = output_dir / "status" / "curl_config.txt"
-    sha256_config = output_dir / "sha256" / "curl_config.txt"
-    common_config_lines = [
-        "--parallel",
-        "--create-dirs",
-    ]
-    status_config_lines = common_config_lines + [
-        "--silent",
-        "--head",
-    ]
-
-    statuses = {}
-    for url_path in artifacts:
-        output = status_config.parent / f"{url_path}.sha256.status"
-        status_config_lines.extend(
-            [
-                f"--output {output}",
-                f"--url https://static.rust-lang.org/dist/{url_path}.sha256",
-            ]
-        )
-        statuses[url_path] = output
-
-    status_config.parent.mkdir(exist_ok=True, parents=True)
-    status_config.write_text("\n".join(status_config_lines), encoding="utf-8")
-
-    logging.info("Checking for %s missing artifacts...", len(statuses))
-    result = subprocess.run(
-        [
-            "curl",
-            "--config",
-            status_config,
-        ],
-        check=True,
-    )
-    logging.info("Done.")
-
-    checksums = {}
-    missing = []
-    for url_path, status_file in statuses.items():
-        if not status_file.exists():
-            missing.append(f"https://static.rust-lang.org/dist/{url_path}.sha256")
-            continue
-
-        if status_file.read_text(encoding="utf-8").startswith("HTTP/2 404"):
-            continue
-
-        checksums[url_path] = sha256_config.parent / f"{url_path}.sha256"
-
-    if missing:
-        logging.warning(
-            "Status not found for %s artifacts:\n%s",
-            len(missing),
-            json.dumps(sorted(missing), indent=2),
-        )
-
-    logging.info("Downloading %s missing artifacts...", len(checksums))
-    sha256_config_lines = common_config_lines + [
-        "--verbose",
-    ]
-    for url_path, output in checksums.items():
-        sha256_config_lines.extend(
-            [
-                f"--output {output}",
-                f"--url https://static.rust-lang.org/dist/{url_path}.sha256",
-            ]
-        )
-
-    sha256_config.parent.mkdir(exist_ok=True, parents=True)
-    sha256_config.write_text("\n".join(sha256_config_lines), encoding="utf-8")
-    result = subprocess.run(
-        [
-            "curl",
-            "--config",
-            sha256_config,
-        ],
-        encoding="utf-8",
-        check=False,
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-    )
-
-    if result.returncode:
-        print(result.stdout, file=sys.stderr)
-        sys.exit(result.returncode)
-
-    logging.info("Done.")
-
-    return {
-        name: file.read_text(encoding="utf-8").split(" ")[0].strip()
-        for name, file in checksums.items()
-    }
-
-
 def extract_nightly_version_transitions(
     manifest_data: Dict[str, Dict[str, Any]],
 ) -> List[Tuple[str, str]]:
@@ -295,12 +189,32 @@ def load_data(file: Path) -> Sequence[str]:
     return sorted(set(data))
 
 
+def workspace_directory() -> Path:
+    """The root of the `rules_rust` checkout, under `bazel run` or plain Python."""
+    if "BUILD_WORKSPACE_DIRECTORY" in os.environ:
+        return Path(os.environ["BUILD_WORKSPACE_DIRECTORY"])
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--targets",
+        type=Path,
+        default=workspace_directory() / "util/fetch_shas/fetch_shas_TARGETS.txt",
+        help=(
+            "A file listing the platform triples to record, one per line. The default lists "
+            "the platforms `rust_register_toolchains` registers by default."
+        ),
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
     """The  main entrypoint."""
-    if "BUILD_WORKSPACE_DIRECTORY" in os.environ:
-        workspace_dir = Path(os.environ["BUILD_WORKSPACE_DIRECTORY"])
-    else:
-        workspace_dir = Path(__file__).parent.parent.parent
+    args = parse_args()
+    workspace_dir = workspace_directory()
 
     logging.basicConfig(
         level=(
@@ -315,7 +229,8 @@ def main() -> None:
 
     tools = load_data(workspace_dir / "util/fetch_shas/fetch_shas_TOOLS.txt")
     host_tools = load_data(workspace_dir / "util/fetch_shas/fetch_shas_HOST_TOOLS.txt")
-    targets = load_data(workspace_dir / "util/fetch_shas/fetch_shas_TARGETS.txt")
+    targets = load_data(args.targets)
+    logging.info("Recording %s platforms.", len(targets))
     stable_versions = load_data(
         workspace_dir / "util/fetch_shas/fetch_shas_VERSIONS.txt"
     )
@@ -335,11 +250,26 @@ def main() -> None:
 
         file_key_to_sha = {}
 
-        artifacts = []
+        # Nightlies are recorded from the oldest release listed on, the
+        # minimum version `rules_rust` supports. The transition table below
+        # covers every nightly listed, so older dates keep resolving to a
+        # version.
+        release_dates: Dict[Tuple[int, int], str] = {}
+        for version, info in manifest_data["stable"].items():
+            major, minor = (int(part) for part in version.split(".")[:2])
+            date = info["date"]
+            if (major, minor) not in release_dates or date < release_dates[
+                (major, minor)
+            ]:
+                release_dates[(major, minor)] = date
+        sha_cutoff = min(release_dates.values())
+        logging.info("Recording nightly hashes from %s on.", sha_cutoff)
 
         logging.info("Parsing artifacts...")
         for channel, versioned_info in manifest_data.items():
             for version, info in versioned_info.items():
+                if channel == "nightly" and version < sha_cutoff:
+                    continue
                 if channel == "stable":
                     tool_tpl = f"{{pkg}}-{version}-{{target}}.{{ext}}"
                     host_tool_tpl = f"{{pkg}}-{version}.{{ext}}"
@@ -373,51 +303,25 @@ def main() -> None:
                         logging.debug("Skipping %s %s %s", channel, version, pkg_name)
                         continue
 
-                    drain_targets = list(targets)
+                    # Only the platforms in `--targets` are recorded, and only
+                    # the `.tar.xz` archives `rules_rust` downloads by default;
+                    # other platforms and mirrors serving `.tar.gz` resolve
+                    # hashes through facts. Target-independent archives such
+                    # as `rust-src` are listed under the target `*`.
                     for target, target_data in pkg_data["target"].items():
+                        if target != "*" and target not in targets:
+                            continue
+
                         # One variant of the template has an extra format string field.
                         # Replace is used to account for that.
                         template = tool_template.replace("{target}", target)
 
-                        if target not in drain_targets:
-                            continue
-
-                        drain_targets.remove(target)
-
-                        if "hash" in target_data:
-                            file_key_to_sha[
-                                template.format(pkg=pkg_name, ext="tar.gz")
-                            ] = target_data["hash"]
                         if "xz_hash" in target_data:
                             file_key_to_sha[
                                 template.format(pkg=pkg_name, ext="tar.xz")
                             ] = target_data["xz_hash"]
 
-                    # If an artifact is not advertised to be available for a particular
-                    # target then we track this and see if the sha256 data can be
-                    # downloaded directly.
-                    for target in drain_targets:
-                        # One variant of the template has an extra format string field.
-                        # Replace is used to account for that.
-                        template = tool_template.replace("{target}", target)
-
-                        # See if we can download the file directly.
-                        artifacts.extend(
-                            [
-                                template.format(pkg=pkg_name, ext="tar.gz"),
-                                template.format(pkg=pkg_name, ext="tar.xz"),
-                            ]
-                        )
-
         logging.info("Done. Identified %s artifacts.", len(file_key_to_sha))
-
-        # Do a brute force check to find additional sha256 values.
-        file_key_to_sha.update(
-            download_direct_sha256s(
-                artifacts=sorted(set(artifacts)),
-                output_dir=tmp_dir / "retries",
-            )
-        )
 
         nightly_transitions = extract_nightly_version_transitions(manifest_data)
         logging.info(

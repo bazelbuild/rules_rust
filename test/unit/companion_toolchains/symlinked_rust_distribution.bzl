@@ -180,6 +180,9 @@ def _symlinked_rust_distribution_impl(rctx):
     if result.return_code != 0:
         fail("Failed to assemble the symlinked Rust distribution:\n{}{}".format(result.stdout, result.stderr))
 
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if hasattr(rctx, "repo_metadata"):
+        return rctx.repo_metadata(reproducible = True)
     return None
 
 symlinked_rust_distribution = repository_rule(
