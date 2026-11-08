@@ -18,13 +18,13 @@ KNOWN_SHAS_TEMPLATE = """\
 
 This is a generated file -- see //util/fetch_shas
 
-The table covers the last five minor releases of Rust plus the minimum version
-`rules_rust` supports, and the nightlies published since the oldest of those
-five recent releases, for every target those releases publish a standard
-library for (`//util/fetch_shas:fetch_shas_TARGETS.txt`). Other versions, and
-targets published since, are resolved from their channel manifests by the
-`rust` module extension and recorded as facts in the consumer's
-`MODULE.bazel.lock`; see `//rust/private:channel_manifest.bzl`.
+The table covers every stable release from the minimum version `rules_rust`
+supports to the latest, and the nightlies published since that minimum, for the
+platforms `rules_rust` registers toolchains for by default
+(`//util/fetch_shas:fetch_shas_TARGETS.txt`). Other versions and platforms are
+resolved from their channel manifests by the `rust` module extension and
+recorded as facts in the consumer's `MODULE.bazel.lock`; see
+`//rust/private:channel_manifest.bzl`.
 \"\"\"
 
 FILE_KEY_TO_SHA = {}
@@ -203,31 +203,12 @@ def parse_args() -> argparse.Namespace:
         "--targets",
         type=Path,
         default=workspace_directory() / "util/fetch_shas/fetch_shas_TARGETS.txt",
-        help="A file listing the platform triples to record, one per line.",
-    )
-    parser.add_argument(
-        "--update-targets",
-        action="store_true",
         help=(
-            "Add every target the manifests publish a standard library for to "
-            "`--targets`, keeping the targets already listed, and record all of them."
+            "A file listing the platform triples to record, one per line. The default lists "
+            "the platforms `rust_register_toolchains` registers by default."
         ),
     )
     return parser.parse_args()
-
-
-def published_targets(manifest_data: Dict[str, Dict[str, Any]]) -> List[str]:
-    """Every target any of the manifests publishes a `rust-std` for."""
-    targets = set()
-    for versioned_info in manifest_data.values():
-        for info in versioned_info.values():
-            std = info["pkg"].get("rust-std", {}).get("target", {})
-            targets.update(
-                target
-                for target, target_data in std.items()
-                if target != "*" and target_data.get("available")
-            )
-    return sorted(targets)
 
 
 def main() -> None:
@@ -267,29 +248,12 @@ def main() -> None:
             output_dir=tmp_dir,
         )
 
-        published = published_targets(manifest_data)
-        if args.update_targets:
-            targets = sorted(set(targets) | set(published))
-            args.targets.write_text("".join(f"{target}\n" for target in targets))
-            logging.info("Wrote %s targets to %s", len(targets), args.targets)
-        else:
-            missing = sorted(set(published) - set(targets))
-            if missing:
-                logging.warning(
-                    "%s published targets are not in %s; pass --update-targets to add them: %s",
-                    len(missing),
-                    args.targets,
-                    " ".join(missing),
-                )
-
         file_key_to_sha = {}
 
-        # Nightlies are recorded from the oldest of the five most recent
-        # minor releases on. The minimum supported version is older than
-        # that window and does not extend it; hashes for older nightlies
-        # come from facts, like any other version outside the table. The
-        # transition table below still covers every nightly listed, so
-        # older dates keep resolving to a version.
+        # Nightlies are recorded from the oldest release listed on, the
+        # minimum version `rules_rust` supports. The transition table below
+        # covers every nightly listed, so older dates keep resolving to a
+        # version.
         release_dates: Dict[Tuple[int, int], str] = {}
         for version, info in manifest_data["stable"].items():
             major, minor = (int(part) for part in version.split(".")[:2])
@@ -298,8 +262,7 @@ def main() -> None:
                 (major, minor)
             ]:
                 release_dates[(major, minor)] = date
-        recent_minors = sorted(release_dates)[-5:]
-        sha_cutoff = min(release_dates[minor] for minor in recent_minors)
+        sha_cutoff = min(release_dates.values())
         logging.info("Recording nightly hashes from %s on.", sha_cutoff)
 
         logging.info("Parsing artifacts...")
@@ -341,8 +304,8 @@ def main() -> None:
                         continue
 
                     # Only the platforms in `--targets` are recorded, and only
-                    # the `.tar.gz` archives `rules_rust` downloads by default;
-                    # other platforms and mirrors serving `.tar.xz` resolve
+                    # the `.tar.xz` archives `rules_rust` downloads by default;
+                    # other platforms and mirrors serving `.tar.gz` resolve
                     # hashes through facts. Target-independent archives such
                     # as `rust-src` are listed under the target `*`.
                     for target, target_data in pkg_data["target"].items():
@@ -353,10 +316,10 @@ def main() -> None:
                         # Replace is used to account for that.
                         template = tool_template.replace("{target}", target)
 
-                        if "hash" in target_data:
+                        if "xz_hash" in target_data:
                             file_key_to_sha[
-                                template.format(pkg=pkg_name, ext="tar.gz")
-                            ] = target_data["hash"]
+                                template.format(pkg=pkg_name, ext="tar.xz")
+                            ] = target_data["xz_hash"]
 
         logging.info("Done. Identified %s artifacts.", len(file_key_to_sha))
 

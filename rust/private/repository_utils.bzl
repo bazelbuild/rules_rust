@@ -14,11 +14,17 @@ load(
     "system_to_stdlib_linkflags",
 )
 load("//rust/private:known_shas.bzl", "FILE_KEY_TO_SHA")
+load(":channel_manifest.bzl", "archive_extension", "manifest_urls", "parse_manifest")
 load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 load(":semver.bzl", "semver")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
-DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
+
+# `.tar.xz` at the Rust project's request, see
+# https://github.com/bazelbuild/rules_rust/pull/2399: the gzip archives are
+# larger to serve and may stop being published. `urls` picks a mirror or the
+# other format.
+DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
 
 # Toolchains are cheap to declare so we can add common target platforms here
@@ -768,15 +774,15 @@ def load_rust_src(ctx, iso_date, version, sha256 = None):
     url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", version, None)
-    archive_path = tool_path + _get_tool_extension(getattr(ctx.attr, "urls", None))
 
     is_reproducible = True
     if sha256 == None:
-        sha256s = getattr(ctx.attr, "sha256s", {})
-        sha256 = sha256s.get(archive_path, None) or FILE_KEY_TO_SHA.get(archive_path, None)
+        archive_path, sha256 = lookup_tool_sha256(ctx, "rust-src", None, version, iso_date)
         if not sha256:
-            sha256 = ""
+            sha256 = manifest_sha256(ctx, archive_path, None, version, iso_date)
             is_reproducible = False
+    else:
+        archive_path = tool_suburl + archive_extension(getattr(ctx.attr, "urls", None))
 
     result = ctx.download_and_extract(
         url,
@@ -1039,7 +1045,10 @@ def lookup_tool_sha256(
     The lookup order is:
 
     1. The sha256s dict in the context attributes;
-    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`;
+    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`.
+
+    `manifest_sha256` is the third step, taken by the loaders when both come
+    up empty.
 
     Args:
         repository_ctx (repository_ctx): A repository_ctx (no attrs required).
@@ -1052,8 +1061,7 @@ def lookup_tool_sha256(
         str: The sha256 of the tool archive, or an empty string if the hash could not be found.
     """
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    urls = getattr(repository_ctx.attr, "urls", None)
-    archive_path = tool_suburl + _get_tool_extension(urls)
+    archive_path = tool_suburl + archive_extension(getattr(repository_ctx.attr, "urls", None))
     sha256s = getattr(repository_ctx.attr, "sha256s", dict())
 
     from_attr = sha256s.get(archive_path, None)
@@ -1065,6 +1073,40 @@ def lookup_tool_sha256(
         return archive_path, from_builtin
 
     return archive_path, ""
+
+def manifest_sha256(ctx, archive_path, target_triple, version, iso_date):
+    """The sha256 of an archive according to its release's channel manifest.
+
+    This is how an archive outside `known_shas.bzl` is verified when the
+    module extension could not record its hash as a fact: on Bazel versions
+    without facts, or for a repository rule used outside the extensions. The
+    manifest is downloaded once per repository, into `.rules_rust/`, and read
+    again for every further archive of the same release.
+
+    Args:
+        ctx (repository_ctx): A repository_ctx with the `urls` attribute, and `auth` where mirrors need it.
+        archive_path (str): The archive's key, as `lookup_tool_sha256` returns it.
+        target_triple (struct): The archive's target triple, or `None` for a target-independent archive.
+        version (str): The version of the tool among "nightly", "beta", or an exact version.
+        iso_date (str): The date of a nightly or beta release, else `None`.
+
+    Returns:
+        str: The sha256, or an empty string when the manifest cannot be fetched or does not list the archive.
+    """
+    urls = getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES)
+    manifest = ctx.path(".rules_rust/channel-rust-{}{}.toml".format(version, "-" + iso_date if iso_date else ""))
+    if not manifest.exists:
+        manifest_url = manifest_urls(urls, version, iso_date)
+        download = ctx.download(
+            url = manifest_url,
+            output = manifest,
+            auth = _make_auth_dict(ctx, manifest_url),
+            allow_fail = True,
+        )
+        if not download.success:
+            return ""
+    target = target_triple.str if target_triple else "*"
+    return parse_manifest(ctx.read(manifest), [target], iso_date, archive_extension(urls)).get(archive_path, "")
 
 def load_arbitrary_tool(
         ctx,
@@ -1119,12 +1161,16 @@ def load_arbitrary_tool(
 
     tool_path = produce_tool_path(tool_name, version, target_triple)
 
-    archive_path, ctx_sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date)
+    archive_path, known_sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date)
 
     is_reproducible = True
     if sha256 == None:
-        sha256 = ctx_sha256
-        is_reproducible = bool(ctx_sha256)
+        sha256 = known_sha256
+        if not sha256:
+            # Verified all the same, but not from the attributes, so the
+            # repository is reported as not reproducible with this hash.
+            sha256 = manifest_sha256(ctx, archive_path, target_triple, version, iso_date)
+            is_reproducible = False
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent across calls here the
@@ -1185,16 +1231,6 @@ def _make_auth_dict(ctx, urls):
     for url in urls:
         ret[url] = auth
     return ret
-
-def _get_tool_extension(urls = None):
-    if urls == None:
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES
-    if urls[0][-7:] == ".tar.gz":
-        return ".tar.gz"
-    elif urls[0][-7:] == ".tar.xz":
-        return ".tar.xz"
-    else:
-        return ""
 
 def select_rust_version(versions):
     """Select the highest priority version for a list of Rust versions

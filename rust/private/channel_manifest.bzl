@@ -9,12 +9,14 @@ requested platforms could need, and records them as facts in the consumer's
 and the repository rules receive the hashes through their `sha256s` attribute
 so every download is checked and reproducible.
 
-On Bazel versions without facts nothing is downloaded here and the repository
-rules fall back to hashing archives as they fetch them, as they always have.
+On Bazel versions without facts nothing is downloaded here; the repository
+rules read the manifest themselves for any archive they have no hash for
+(`manifest_sha256` in `repository_utils.bzl`), so downloads stay verified
+there too, at the cost of a manifest download per repository and of the
+repository being reported as not reproducible.
 """
 
 load("//rust/private:known_shas.bzl", "FILE_KEY_TO_SHA")
-load("//rust/private:repository_utils.bzl", "DEFAULT_STATIC_RUST_URL_TEMPLATES")
 
 # The key of the facts dict the `rust` extensions record.
 CHANNEL_MANIFEST_FACTS_KEY = "channel_manifests"
@@ -34,20 +36,19 @@ def split_version(version):
     return version, None
 
 def archive_extension(urls):
-    """The archive extension the URL templates download, `.tar.gz` unless they say `.tar.xz`.
+    """The archive extension the URL templates download, `.tar.xz` unless they say `.tar.gz`.
 
     Args:
-        urls (list[str]): URL templates as passed to the repository rules, or empty for the default.
+        urls (list[str]): URL templates as passed to the repository rules; empty means the default.
 
     Returns:
-        str: `.tar.gz` or `.tar.xz`.
+        str: `.tar.xz` or `.tar.gz`.
     """
-    if not urls:
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES
-    for ext in (".tar.gz", ".tar.xz"):
-        if urls[0].endswith(ext):
-            return ext
-    return ".tar.gz"
+    if urls:
+        for ext in (".tar.xz", ".tar.gz"):
+            if urls[0].endswith(ext):
+                return ext
+    return ".tar.xz"
 
 def _builtin_covers(version, iso_date, target, ext):
     """Whether `known_shas.bzl` already describes `version` for `target`.
@@ -93,7 +94,7 @@ def parse_manifest(content, targets, iso_date, ext):
         targets (list[str]): The target triples to keep. Target-independent
             archives such as `rust-src` are always kept.
         iso_date (str): The iso date of a nightly or beta release, else `None`.
-        ext (str): The archive extension to keep, `.tar.gz` or `.tar.xz`.
+        ext (str): The archive extension to keep, `.tar.xz` or `.tar.gz`.
 
     Returns:
         dict[str, str]: Archive key to sha256.

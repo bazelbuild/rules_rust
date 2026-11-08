@@ -1,6 +1,7 @@
 """Unit tests for channel_manifest.bzl: what a channel manifest looks like and what is read out of it."""
 
 load("@rules_testing//lib:test_suite.bzl", "test_suite")
+load("//rust/platform:triple.bzl", "triple")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -10,6 +11,12 @@ load(
     "parse_manifest",
     "split_version",
 )
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:repository_utils.bzl", "manifest_sha256")
+
+_LINUX = triple("x86_64-unknown-linux-gnu")
+_DARWIN = triple("aarch64-apple-darwin")
 
 # An excerpt of `channel-rust-1.99.0.toml`, as published at
 # https://static.rust-lang.org/dist/channel-rust-1.99.0.toml. A release's
@@ -134,8 +141,8 @@ def _test_manifest_urls(env):
     ]).in_order()
 
 def _test_archive_extension(env):
-    """The first template decides the format; the default is `.tar.gz`."""
-    env.expect.that_str(archive_extension([])).equals(".tar.gz")
+    """The first template decides the format; the default is `.tar.xz`."""
+    env.expect.that_str(archive_extension([])).equals(".tar.xz")
     env.expect.that_str(archive_extension(["https://static.rust-lang.org/dist/{}.tar.gz"])).equals(".tar.gz")
     env.expect.that_str(archive_extension(["https://static.rust-lang.org/dist/{}.tar.xz"])).equals(".tar.xz")
 
@@ -148,6 +155,69 @@ def _test_split_version(env):
         ("nightly", ["nightly", None]),
     ):
         env.expect.that_collection(list(split_version(version))).contains_exactly(expected).in_order()
+
+def _fake_repository_ctx(manifest, *, urls, download_succeeds = True, manifest_exists = False):
+    """A stand-in for `repository_ctx` with what `manifest_sha256` touches: `attr`, `path`, `download` and `read`.
+
+    `auth` is set so `_make_auth_dict` needs no `netrc`. Downloads are
+    recorded in the returned `downloads` list.
+    """
+    downloads = []
+    cached = struct(exists = manifest_exists)
+
+    def download(*, url, **_kwargs):
+        downloads.append(url)
+        return struct(success = download_succeeds)
+
+    return struct(
+        attr = struct(urls = urls, auth = {"login": "user", "password": "secret", "type": "basic"}),
+        path = lambda _p: cached,
+        download = download,
+        read = lambda _p: manifest,
+        downloads = downloads,
+    )
+
+def _test_manifest_sha256_reads_the_release_manifest(env):
+    """With no hash known, the repository rule fetches the manifest and reads the archive's hash out of it."""
+    ctx = _fake_repository_ctx(_STABLE_MANIFEST, urls = ["https://static.rust-lang.org/dist/{}.tar.xz"])
+    env.expect.that_str(
+        manifest_sha256(ctx, "rustc-1.99.0-x86_64-unknown-linux-gnu.tar.xz", _LINUX, "1.99.0", None),
+    ).equals("6666666666666666666666666666666666666666666666666666666666666666")
+    env.expect.that_collection(ctx.downloads).contains_exactly([
+        ["https://static.rust-lang.org/dist/channel-rust-1.99.0.toml"],
+    ])
+
+def _test_manifest_sha256_target_independent(env):
+    """`rust-src` has no target; it is read from the manifest's `*` target."""
+    ctx = _fake_repository_ctx(_STABLE_MANIFEST, urls = ["https://static.rust-lang.org/dist/{}.tar.xz"])
+    env.expect.that_str(
+        manifest_sha256(ctx, "rust-src-1.99.0.tar.xz", None, "1.99.0", None),
+    ).equals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
+def _test_manifest_sha256_nightly_in_the_mirrors_format(env):
+    """A mirror serving `.tar.gz` gets the gzip hash, keyed under the nightly's date."""
+    ctx = _fake_repository_ctx(_NIGHTLY_MANIFEST, urls = ["https://mirror.example.com/rust/{}.tar.gz"])
+    env.expect.that_str(
+        manifest_sha256(ctx, "2026-08-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.gz", _LINUX, "nightly", "2026-08-20"),
+    ).equals("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+    env.expect.that_collection(ctx.downloads).contains_exactly([
+        ["https://mirror.example.com/rust/2026-08-20/channel-rust-nightly.toml"],
+    ])
+
+def _test_manifest_sha256_without_a_manifest(env):
+    """When the manifest cannot be fetched there is no hash, and the archive is hashed as it is downloaded."""
+    ctx = _fake_repository_ctx("", urls = ["https://static.rust-lang.org/dist/{}.tar.xz"], download_succeeds = False)
+    env.expect.that_str(
+        manifest_sha256(ctx, "rustc-1.99.0-x86_64-unknown-linux-gnu.tar.xz", _LINUX, "1.99.0", None),
+    ).equals("")
+
+def _test_manifest_sha256_downloads_once_per_repository(env):
+    """A manifest already in the repository is read, not fetched again."""
+    ctx = _fake_repository_ctx(_STABLE_MANIFEST, urls = ["https://static.rust-lang.org/dist/{}.tar.xz"], manifest_exists = True)
+    env.expect.that_str(
+        manifest_sha256(ctx, "rust-std-1.99.0-aarch64-apple-darwin.tar.xz", _DARWIN, "1.99.0", None),
+    ).equals("4444444444444444444444444444444444444444444444444444444444444444")
+    env.expect.that_collection(ctx.downloads).contains_exactly([])
 
 def channel_manifest_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -165,5 +235,10 @@ def channel_manifest_test_suite(name):
             _test_manifest_urls,
             _test_archive_extension,
             _test_split_version,
+            _test_manifest_sha256_reads_the_release_manifest,
+            _test_manifest_sha256_target_independent,
+            _test_manifest_sha256_nightly_in_the_mirrors_format,
+            _test_manifest_sha256_without_a_manifest,
+            _test_manifest_sha256_downloads_once_per_repository,
         ],
     )

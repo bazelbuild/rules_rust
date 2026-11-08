@@ -244,10 +244,10 @@ _COMMON_TAG_KWARGS = {
         doc = (
             "A list of mirror urls containing the tools from the Rust-lang static file server. These must " +
             "contain the '{}' used to substitute the tool being fetched (using .format), and their extension " +
-            "picks the archive format: the default `.tar.gz` archives are larger than `.tar.xz` but extract " +
-            "more than twice as fast, which makes a toolchain ready sooner from an empty cache and on every " +
-            "new output base. `rules_rust` ships the checksums of the `.tar.gz` archives; others are resolved " +
-            "from the release's channel manifest like any version outside the table."
+            "picks the archive format. The default is `.tar.xz`, which the Rust project asks for. " +
+            "`rules_rust` ships the checksums of the `.tar.xz` archives of the platforms it registers by " +
+            "default; others are resolved from the release's channel manifest like any version or platform " +
+            "outside the table."
         ),
         default = _COMMON_TAG_DEFAULTS["urls"],
     ),

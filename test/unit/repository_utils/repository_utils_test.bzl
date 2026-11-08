@@ -94,7 +94,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Release version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.gz", "18ed6559de1b8ea6b77474ea86992b9a507d3a3d134d9ee017d30cf3f406e3ee"),
+        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.xz", "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
@@ -107,7 +107,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Values in //rust/private:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
-        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.gz", "18ed6559de1b8ea6b77474ea86992b9a507d3a3d134d9ee017d30cf3f406e3ee"),
+        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.xz", "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
@@ -120,7 +120,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Nightly version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("2026-08-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.gz", "64600c72503dfe1c8c6f69e3a933cb6ca984fe898016d3d65116160727dc54b2"),
+        ("2026-08-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", "b702c297f09a7cd3dd39974ce7418996e94264770401339a051c35a25c1ce2d4"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
@@ -133,7 +133,7 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Lookup failure (returns "") for a nightly version not included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.gz", ""),
+        ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
