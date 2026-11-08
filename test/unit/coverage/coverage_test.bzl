@@ -49,11 +49,15 @@ collector_platform_test = analysistest.make(
             str(Label(":test_platform")),
         ],
         "//command_line_option:platforms": str(Label(":test_platform")),
-        "//command_line_option:use_target_platform_for_tests": False,
         # Inspect the collector without requesting the synthetic fixture's
         # executable and tools as coverage report metadata.
         str(Label("//rust/settings:experimental_use_coverage_metadata_files")): False,
     } | ({
         str(Label("@bazel_tools//tools/test:incompatible_use_default_test_toolchain")): True,
-    } if bazel_features.toolchains.has_default_test_toolchain_type else {}),
+    } if bazel_features.toolchains.has_default_test_toolchain_type else {
+        # The default test toolchain picks the test execution platform. Bazel 10
+        # removed this flag, which only applies to the legacy test exec group.
+        # https://github.com/bazelbuild/bazel/commit/32f9cf1893
+        "//command_line_option:use_target_platform_for_tests": False,
+    }),
 )
