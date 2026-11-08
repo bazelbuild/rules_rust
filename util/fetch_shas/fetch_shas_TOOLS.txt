@@ -2,8 +2,9 @@ cargo
 clippy
 llvm-tools
 rust
+rust-analyzer
 rust-mingw
 rust-std
 rustc
+rustc-dev
 rustfmt
-rust-analyzer

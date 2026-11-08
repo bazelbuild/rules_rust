@@ -18,7 +18,7 @@ load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 load(":semver.bzl", "semver")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
-DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
+DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.gz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
 
 # Toolchains are cheap to declare so we can add common target platforms here

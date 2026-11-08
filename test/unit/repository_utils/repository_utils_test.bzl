@@ -94,46 +94,46 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Release version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
+        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.gz", "18ed6559de1b8ea6b77474ea86992b9a507d3a3d134d9ee017d30cf3f406e3ee"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
             target_triple = _PLATFORM_TRIPLE,
-            version = "1.80.0",
-            iso_date = "2024-06-13",
+            version = "1.98.0",
+            iso_date = "2026-08-20",
         ),
     )
 
     # Values in //rust/private:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
-        ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
+        ("rustc-1.98.0-x86_64-unknown-linux-gnu.tar.gz", "18ed6559de1b8ea6b77474ea86992b9a507d3a3d134d9ee017d30cf3f406e3ee"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
             target_triple = _PLATFORM_TRIPLE,
-            version = "1.80.0",
-            iso_date = "2024-06-13",
+            version = "1.98.0",
+            iso_date = "2026-08-20",
         ),
     )
 
     # Nightly version included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("2024-06-13/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", "d925acda44aa5f2b5e37a6a17aa3fdea4e190f0078ed33cc7db2d2ee6c2d0010"),
+        ("2026-08-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.gz", "64600c72503dfe1c8c6f69e3a933cb6ca984fe898016d3d65116160727dc54b2"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
             target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
-            iso_date = "2024-06-13",
+            iso_date = "2026-08-20",
         ),
     )
 
     # Lookup failure (returns "") for a nightly version not included in //rust/private:known_shas.bzl
     asserts.equals(
         env,
-        ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),
+        ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.gz", ""),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
