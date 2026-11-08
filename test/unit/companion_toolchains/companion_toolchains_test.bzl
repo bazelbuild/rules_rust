@@ -18,6 +18,7 @@ load(":sysroot_test.bzl", "symlinked_distribution_toolchains")
 
 _RUSTDOC = ["rustdoc", "rustdoc.exe"]
 _CLIPPY = ["clippy-driver", "clippy-driver.exe", "cargo-clippy", "cargo-clippy.exe"]
+_CARGO = ["cargo", "cargo.exe"]
 
 def _find_action(actions, mnemonic):
     for action in actions:
@@ -77,7 +78,7 @@ def _rustc_excludes_companion_tools_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
     action = _find_action(target.actions, "Rustc")
-    _assert_no_inputs_named(env, action, _RUSTDOC + _CLIPPY)
+    _assert_no_inputs_named(env, action, _RUSTDOC + _CLIPPY + _CARGO)
     _assert_single_sysroot(env, action)
     return analysistest.end(env)
 
