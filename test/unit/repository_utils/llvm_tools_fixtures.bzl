@@ -11,6 +11,11 @@ def _fixture_impl(ctx):
         ctx.file("lib/rustlib/" + ctx.attr.triple + "/lib/" + filename, "fixture")
     ctx.file("lib/rustlib/unrelated-target/lib/libLLVM-wrong.dylib", "not selected")
 
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if hasattr(ctx, "repo_metadata"):
+        return ctx.repo_metadata(reproducible = True)
+    return None
+
 _fixture = repository_rule(implementation = _fixture_impl, attrs = {"libraries": attr.string_list(), "triple": attr.string()})
 
 def _fixtures_impl(_ctx):

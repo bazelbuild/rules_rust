@@ -14,10 +14,16 @@ load(
     "system_to_stdlib_linkflags",
 )
 load("//rust/private:known_shas.bzl", "FILE_KEY_TO_SHA")
+load(":channel_manifest.bzl", "archive_extension", "manifest_urls", "parse_manifest")
 load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 load(":semver.bzl", "semver")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
+
+# `.tar.xz` at the Rust project's request, see
+# https://github.com/bazelbuild/rules_rust/pull/2399: the gzip archives are
+# larger to serve and may stop being published. `urls` picks a mirror or the
+# other format.
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
 
@@ -366,17 +372,15 @@ load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
 rust_toolchain(
     name = "{toolchain_name}",
-    rust_std = "//:rust_std-{target_triple}",
-    rustc = "//:rustc",
+    rust_std = "{rust_std_label}",
+    rustc = "{rustc_label}",
     linker = {linker_label},
     linker_type = {linker_type},
     rust_objcopy = {rust_objcopy_label},
-    rustfmt = {rustfmt_label},
-    cargo = "//:cargo",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     llvm_lib = {llvm_lib_label},
-    rustc_lib = "//:rustc_lib",
+    rustc_lib = "{rustc_lib_label}",
     allocator_library = {allocator_library},
     global_allocator_library = {global_allocator_library},
     dlltool = {dlltool},
@@ -410,7 +414,6 @@ def BUILD_for_rust_toolchain(
         global_allocator_library = None,
         dlltool = None,
         default_edition = "",
-        include_rustfmt = False,
         include_llvm_tools = False,
         include_linker = False,
         include_objcopy = False,
@@ -418,7 +421,9 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
-        strip_level = None):
+        strip_level = None,
+        tools_repository = None,
+        std_repository = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -434,7 +439,6 @@ def BUILD_for_rust_toolchain(
                                                   by the `allocator_library` target.
         dlltool (str, optional): Target that provides the `dlltool` binary.
         default_edition (str): Default Rust edition.
-        include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
         include_linker (bool): Whether a linker is available in the toolchain.
         include_objcopy (bool): Whether rust-objcopy is available in the toolchain.
@@ -445,10 +449,18 @@ def BUILD_for_rust_toolchain(
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Optimization level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
+        tools_repository (str, optional): The canonical name of the repository holding the compiler, its
+            libraries and the tools beside it (`llvm-tools`), when it is not the repository this
+            declaration is written to.
+        std_repository (str, optional): The canonical name of the repository holding the standard library
+            for `target_triple`, when it is not the repository this declaration is written to.
 
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
     """
+    tools = "@@{}//:".format(tools_repository) if tools_repository else "//:"  # buildifier: disable=canonical-repository
+    std = "@@{}//:".format(std_repository) if std_repository else "//:"  # buildifier: disable=canonical-repository
+
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join([
             '"%s"' % x
@@ -458,16 +470,13 @@ def BUILD_for_rust_toolchain(
             )
         ])
 
-    rustfmt_label = None
-    if include_rustfmt:
-        rustfmt_label = "//:rustfmt_bin"
     llvm_cov_label = None
     llvm_profdata_label = None
     llvm_lib_label = None
     if include_llvm_tools:
-        llvm_cov_label = "//:llvm_cov_bin"
-        llvm_profdata_label = "//:llvm_profdata_bin"
-        llvm_lib_label = "//:llvm_lib"
+        llvm_cov_label = tools + "llvm_cov_bin"
+        llvm_profdata_label = tools + "llvm_profdata_bin"
+        llvm_lib_label = tools + "llvm_lib"
     allocator_library_label = None
     if allocator_library:
         allocator_library_label = allocator_library
@@ -478,15 +487,18 @@ def BUILD_for_rust_toolchain(
     linker_label = None
     linker_type = None
     if include_linker:
-        linker_label = "//:rust-lld"
+        linker_label = tools + "rust-lld"
         linker_type = "direct"
 
     rust_objcopy_label = None
     if include_objcopy:
-        rust_objcopy_label = "//:rust-objcopy"
+        rust_objcopy_label = tools + "rust-objcopy"
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
+        rust_std_label = std + "rust_std-" + target_triple.str,
+        rustc_label = tools + "rustc",
+        rustc_lib_label = tools + "rustc_lib",
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system, target_triple.abi),
         dylib_ext = system_to_dylib_ext(target_triple.system),
@@ -497,7 +509,6 @@ def BUILD_for_rust_toolchain(
         default_edition = default_edition,
         exec_triple = exec_triple.str,
         target_triple = target_triple.str,
-        rustfmt_label = repr(rustfmt_label),
         llvm_cov_label = repr(llvm_cov_label),
         llvm_profdata_label = repr(llvm_profdata_label),
         llvm_lib_label = repr(llvm_lib_label),
@@ -763,15 +774,15 @@ def load_rust_src(ctx, iso_date, version, sha256 = None):
     url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", version, None)
-    archive_path = tool_path + _get_tool_extension(getattr(ctx.attr, "urls", None))
 
     is_reproducible = True
     if sha256 == None:
-        sha256s = getattr(ctx.attr, "sha256s", {})
-        sha256 = sha256s.get(archive_path, None) or FILE_KEY_TO_SHA.get(archive_path, None)
+        archive_path, sha256 = lookup_tool_sha256(ctx, "rust-src", None, version, iso_date)
         if not sha256:
-            sha256 = ""
+            sha256 = manifest_sha256(ctx, archive_path, None, version, iso_date)
             is_reproducible = False
+    else:
+        archive_path = tool_suburl + archive_extension(getattr(ctx.attr, "urls", None))
 
     result = ctx.download_and_extract(
         url,
@@ -1034,7 +1045,10 @@ def lookup_tool_sha256(
     The lookup order is:
 
     1. The sha256s dict in the context attributes;
-    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`;
+    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`.
+
+    `manifest_sha256` is the third step, taken by the loaders when both come
+    up empty.
 
     Args:
         repository_ctx (repository_ctx): A repository_ctx (no attrs required).
@@ -1047,8 +1061,7 @@ def lookup_tool_sha256(
         str: The sha256 of the tool archive, or an empty string if the hash could not be found.
     """
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    urls = getattr(repository_ctx.attr, "urls", None)
-    archive_path = tool_suburl + _get_tool_extension(urls)
+    archive_path = tool_suburl + archive_extension(getattr(repository_ctx.attr, "urls", None))
     sha256s = getattr(repository_ctx.attr, "sha256s", dict())
 
     from_attr = sha256s.get(archive_path, None)
@@ -1060,6 +1073,40 @@ def lookup_tool_sha256(
         return archive_path, from_builtin
 
     return archive_path, ""
+
+def manifest_sha256(ctx, archive_path, target_triple, version, iso_date):
+    """The sha256 of an archive according to its release's channel manifest.
+
+    This is how an archive outside `known_shas.bzl` is verified when the
+    module extension could not record its hash as a fact: on Bazel versions
+    without facts, or for a repository rule used outside the extensions. The
+    manifest is downloaded once per repository, into `.rules_rust/`, and read
+    again for every further archive of the same release.
+
+    Args:
+        ctx (repository_ctx): A repository_ctx with the `urls` attribute, and `auth` where mirrors need it.
+        archive_path (str): The archive's key, as `lookup_tool_sha256` returns it.
+        target_triple (struct): The archive's target triple, or `None` for a target-independent archive.
+        version (str): The version of the tool among "nightly", "beta", or an exact version.
+        iso_date (str): The date of a nightly or beta release, else `None`.
+
+    Returns:
+        str: The sha256, or an empty string when the manifest cannot be fetched or does not list the archive.
+    """
+    urls = getattr(ctx.attr, "urls", DEFAULT_STATIC_RUST_URL_TEMPLATES)
+    manifest = ctx.path(".rules_rust/channel-rust-{}{}.toml".format(version, "-" + iso_date if iso_date else ""))
+    if not manifest.exists:
+        manifest_url = manifest_urls(urls, version, iso_date)
+        download = ctx.download(
+            url = manifest_url,
+            output = manifest,
+            auth = _make_auth_dict(ctx, manifest_url),
+            allow_fail = True,
+        )
+        if not download.success:
+            return ""
+    target = target_triple.str if target_triple else "*"
+    return parse_manifest(ctx.read(manifest), [target], iso_date, archive_extension(urls)).get(archive_path, "")
 
 def load_arbitrary_tool(
         ctx,
@@ -1114,12 +1161,16 @@ def load_arbitrary_tool(
 
     tool_path = produce_tool_path(tool_name, version, target_triple)
 
-    archive_path, ctx_sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date)
+    archive_path, known_sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date)
 
     is_reproducible = True
     if sha256 == None:
-        sha256 = ctx_sha256
-        is_reproducible = bool(ctx_sha256)
+        sha256 = known_sha256
+        if not sha256:
+            # Verified all the same, but not from the attributes, so the
+            # repository is reported as not reproducible with this hash.
+            sha256 = manifest_sha256(ctx, archive_path, target_triple, version, iso_date)
+            is_reproducible = False
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent across calls here the
@@ -1180,16 +1231,6 @@ def _make_auth_dict(ctx, urls):
     for url in urls:
         ret[url] = auth
     return ret
-
-def _get_tool_extension(urls = None):
-    if urls == None:
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES
-    if urls[0][-7:] == ".tar.gz":
-        return ".tar.gz"
-    elif urls[0][-7:] == ".tar.xz":
-        return ".tar.xz"
-    else:
-        return ""
 
 def select_rust_version(versions):
     """Select the highest priority version for a list of Rust versions

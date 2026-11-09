@@ -3,6 +3,7 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
+load("//rust/private:channel_manifest.bzl", "CHANNEL_MANIFEST_FACTS_KEY", "resolve_sha256s", "sha256_request")
 load(
     "//rust/private:repositories.bzl",
     "DEFAULT_TOOLCHAIN_TRIPLES",
@@ -15,6 +16,7 @@ load(
     "DEFAULT_EXTRA_TARGET_TRIPLES",
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
+    "select_rust_version",
 )
 
 _RUST_TOOLCHAIN_VERSIONS = [
@@ -51,11 +53,29 @@ _empty_repository = repository_rule(
     implementation = _empty_repository_impl,
 )
 
+def _channel_manifest_facts(module_ctx):
+    """The `channel_manifests` facts recorded by a previous evaluation, or `None` without facts support."""
+    if not bazel_features.external_deps.has_facts:
+        return None
+    return dict(module_ctx.facts.get(CHANNEL_MANIFEST_FACTS_KEY, {}))
+
+def _extension_metadata(module_ctx, facts):
+    metadata_kwargs = {}
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        metadata_kwargs["reproducible"] = True
+    if facts != None:
+        metadata_kwargs["facts"] = {CHANNEL_MANIFEST_FACTS_KEY: facts}
+    return module_ctx.extension_metadata(**metadata_kwargs)
+
 def _rust_impl(module_ctx):
     # Toolchain configuration is only allowed in the root module, or in
     # rules_rust.
     # See https://github.com/bazelbuild/bazel/discussions/22024 for discussion.
     root, rules_rust = _find_modules(module_ctx)
+
+    # Hashes of archives outside `known_shas.bzl`, read back from the lockfile
+    # and extended as versions and platforms are requested.
+    facts = _channel_manifest_facts(module_ctx)
 
     toolchain_triples = dict(DEFAULT_TOOLCHAIN_TRIPLES)
 
@@ -78,7 +98,6 @@ def _rust_impl(module_ctx):
                 "name": repository_set.name,
                 "netrc": repository_set.netrc if repository_set.netrc else None,
                 "opt_level": {repository_set.target_triple: repository_set.opt_level} if repository_set.opt_level else None,
-                "rustfmt_version": repository_set.rustfmt_version,
                 "sha256s": repository_set.sha256s,
                 "strip_level": {repository_set.target_triple: repository_set.strip_level} if repository_set.strip_level else None,
                 "target_settings": [str(v) for v in repository_set.target_settings],
@@ -107,6 +126,17 @@ def _rust_impl(module_ctx):
     extra_toolchain_infos = {}
 
     for repository_set in grouped_repository_sets.values():
+        set_targets = [repository_set["exec_triple"]] + list(repository_set["extra_target_triples"].keys())
+        repository_set["sha256s"] = resolve_sha256s(
+            module_ctx,
+            requests = [
+                sha256_request(version = version, targets = set_targets)
+                for version in repository_set["versions"]
+            ],
+            urls = repository_set["urls"],
+            sha256s = repository_set["sha256s"] or {},
+            facts = facts,
+        )
         toolchain_infos = rust_repository_set(
             **repository_set
         )
@@ -132,6 +162,26 @@ def _rust_impl(module_ctx):
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
             extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_exec_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
+            # Every platform the registration below downloads for: the exec
+            # platforms of the Rust, rustfmt and Cargo toolchains and the
+            # extra targets, at every version involved.
+            exec_triples = {triple: True for triple in list(toolchain_triples.keys()) + list(DEFAULT_TOOLCHAIN_TRIPLES.keys()) + list(toolchain.rustfmt_toolchain_triples.keys())}.keys()
+            all_triples = {triple: True for triple in list(exec_triples) + list(toolchain.extra_target_triples)}.keys()
+            sha256s = resolve_sha256s(
+                module_ctx,
+                requests = [
+                    sha256_request(version = version, targets = all_triples)
+                    for version in toolchain.versions
+                ] + [
+                    sha256_request(version = toolchain.rustfmt_version, targets = exec_triples),
+                    sha256_request(version = toolchain.rust_analyzer_version or select_rust_version(toolchain.versions), targets = exec_triples),
+                    sha256_request(version = rust_common.default_version, targets = exec_triples),
+                ],
+                urls = toolchain.urls,
+                sha256s = toolchain.sha256s,
+                facts = facts,
+            )
+
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
@@ -143,7 +193,7 @@ def _rust_impl(module_ctx):
                 dlltool = str(toolchain.dlltool) if toolchain.dlltool else None,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
-                sha256s = toolchain.sha256s,
+                sha256s = sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
@@ -156,10 +206,7 @@ def _rust_impl(module_ctx):
                 target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
             )
-    metadata_kwargs = {}
-    if bazel_features.external_deps.extension_metadata_has_reproducible:
-        metadata_kwargs["reproducible"] = True
-    return module_ctx.extension_metadata(**metadata_kwargs)
+    return _extension_metadata(module_ctx, facts)
 
 _COMMON_TAG_DEFAULTS = {
     "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
@@ -194,7 +241,14 @@ _COMMON_TAG_KWARGS = {
         doc = "A dict associating tool subdirectories to sha256 hashes.",
     ),
     "urls": attr.string_list(
-        doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
+        doc = (
+            "A list of mirror urls containing the tools from the Rust-lang static file server. These must " +
+            "contain the '{}' used to substitute the tool being fetched (using .format), and their extension " +
+            "picks the archive format. The default is `.tar.xz`, which the Rust project asks for. " +
+            "`rules_rust` ships the checksums of the `.tar.xz` archives of the platforms it registers by " +
+            "default; others are resolved from the release's channel manifest like any version or platform " +
+            "outside the table."
+        ),
         default = _COMMON_TAG_DEFAULTS["urls"],
     ),
 }
@@ -333,10 +387,14 @@ _RUST_HOST_TOOLS_TAG = tag_class(
 # marked as reproducible and os and arch dependent
 def _rust_host_tools_impl(module_ctx):
     host_triple = get_host_triple(module_ctx)
+    facts = _channel_manifest_facts(module_ctx)
 
     for mod in module_ctx.modules:
         for host_tools in mod.tags.host_tools:
             attrs = {key: getattr(host_tools, key) for key in dir(host_tools)}
+
+            # rustfmt is not a host tool; `rustfmt_toolchain` has its own repository.
+            attrs.pop("rustfmt_version")
 
             # Label attrs must be stringified for the repository rule.
             for label_attr in ("allocator_library", "global_allocator_library"):
@@ -348,16 +406,23 @@ def _rust_host_tools_impl(module_ctx):
             if attrs["version"] == "nightly":
                 attrs["version"] = DEFAULT_NIGHTLY_VERSION
 
+            attrs["sha256s"] = resolve_sha256s(
+                module_ctx,
+                requests = [
+                    sha256_request(version = attrs["version"], targets = [host_triple.str]),
+                ],
+                urls = attrs["urls"],
+                sha256s = attrs["sha256s"],
+                facts = facts,
+            )
+
             rust_toolchain_tools_repository(
                 exec_triple = host_triple.str,
                 target_triple = host_triple.str,
                 **attrs
             )
 
-    metadata_kwargs = {}
-    if bazel_features.external_deps.extension_metadata_has_reproducible:
-        metadata_kwargs["reproducible"] = True
-    return module_ctx.extension_metadata(**metadata_kwargs)
+    return _extension_metadata(module_ctx, facts)
 
 _conditional_rust_host_tools_args = {
     "arch_dependent": True,

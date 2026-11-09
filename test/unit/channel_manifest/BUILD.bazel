@@ -1,0 +1,4 @@
+load(":channel_manifest_test.bzl", "channel_manifest_test_suite")
+
+############################ UNIT TESTS #############################
+channel_manifest_test_suite(name = "channel_manifest_test_suite")

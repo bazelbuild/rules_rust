@@ -65,6 +65,50 @@ COMPANION_TOOLCHAIN_TYPES = {
     "rustdoc_toolchain": "@rules_rust//rust/rustdoc:toolchain_type",
 }
 
+# The archives of a Rust release a toolchain is assembled from, grouped by the
+# repository `rust_repository_set` downloads them into. The compiler
+# repository is a complete toolchain for its own platform, as a rustup
+# installation is: the compiler, the tools which run beside it and the
+# standard library of the execution platform, so that `rustc` run without
+# `--sysroot` finds `std` from its real location. It is shared by every target
+# triple of the execution platform; the standard library of another target
+# triple is fetched into a repository of its own; Cargo and Clippy are fetched
+# only once a `cargo_toolchain` or `clippy_toolchain` is analyzed, which
+# happens only for targets which run them. rustfmt is not part of a
+# toolchain: `rustfmt_toolchain` has a repository of its own, with the
+# compiler its build requires.
+#
+# The names are those of the archives on the static file server
+# (`rust-std-1.99.1-x86_64-unknown-linux-gnu.tar.gz`), hyphens included.
+# Listing a component lets a repository hold it; each is downloaded only when
+# the release and the attributes call for it. `rustc-dev` comes only with
+# `dev_components`, `rust-mingw` only for a `*-pc-windows-gnu` execution
+# platform, `llvm-tools` only from the releases which ship it.
+COMPONENT = struct(
+    cargo = "cargo",
+    clippy = "clippy",
+    llvm_tools = "llvm-tools",
+    rust_mingw = "rust-mingw",
+    rust_std = "rust-std",
+    rustc = "rustc",
+    rustc_dev = "rustc-dev",
+)
+
+COMPILER_COMPONENTS = [COMPONENT.rustc, COMPONENT.llvm_tools, COMPONENT.rust_mingw, COMPONENT.rust_std, COMPONENT.rustc_dev]
+CARGO_COMPONENTS = [COMPONENT.cargo]
+CLIPPY_COMPONENTS = [COMPONENT.clippy]
+TARGET_COMPONENTS = [COMPONENT.rust_std, COMPONENT.rustc_dev]
+ALL_COMPONENTS = COMPILER_COMPONENTS + CARGO_COMPONENTS + CLIPPY_COMPONENTS
+
+# The repositories shared by the target triples of a toolchain, by the
+# component which names them (`<name>__rustc`, ...) and the components they
+# download.
+_SHARED_REPOSITORIES = {
+    COMPONENT.cargo: CARGO_COMPONENTS,
+    COMPONENT.clippy: CLIPPY_COMPONENTS,
+    COMPONENT.rustc: COMPILER_COMPONENTS,
+}
+
 def _companion_toolchain_labels(tools_repo_name):
     """The `toolchain` implementation labels of the companions in `tools_repo_name`."""
     return {
@@ -216,7 +260,6 @@ def rust_register_toolchains(
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
             dlltool = dlltool,
-            rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
             opt_level = opt_level_by_triple,
@@ -317,6 +360,40 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "auth_patterns": attr.string_list(
         doc = "A list of patterns to match against urls for which the auth object should be used.",
     ),
+    "cargo_anchor": attr.label(
+        doc = (
+            "A label to any file in the repository holding the `cargo` component when it is not in " +
+            "`components`. The `cargo_toolchain` declared here takes Cargo from there, so that repository " +
+            "is fetched only when a target runs Cargo."
+        ),
+    ),
+    "clippy_anchor": attr.label(
+        doc = (
+            "A label to any file in the repository holding the `clippy` component when it is not in " +
+            "`components`. The `clippy_toolchain` declared here takes Clippy from there, so that " +
+            "repository is fetched only when a target runs Clippy."
+        ),
+    ),
+    "components": attr.string_list(
+        doc = (
+            "The archives of the release to download into this repository, among `rustc`, `llvm-tools`, " +
+            "`rust-mingw`, `cargo`, `clippy`, `rust-std` and `rustc-dev`. Each is downloaded only " +
+            "where the release and the attributes call for it (`rustc-dev` needs `dev_components`, " +
+            "`rust-mingw` a `*-pc-windows-gnu` platform, ...). The toolchains declared here (see `declare_toolchains`) " +
+            "take the components not downloaded from `rustc_anchor`, `std_anchor`, " +
+            "`cargo_anchor` and `clippy_anchor`. The default downloads everything into one " +
+            "self-contained repository."
+        ),
+        default = ALL_COMPONENTS,
+    ),
+    "declare_toolchains": attr.bool(
+        doc = (
+            "Whether to declare the `rust_toolchain` for `target_triple` and the `cargo_toolchain`, " +
+            "`clippy_toolchain` and `rustdoc_toolchain` accompanying it. A repository which only holds " +
+            "components for the toolchains of other repositories leaves this unset."
+        ),
+        default = True,
+    ),
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
@@ -349,11 +426,24 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
     ),
-    "rustfmt_version": attr.string(
-        doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+    "rustc_anchor": attr.label(
+        doc = (
+            "A label to any file in the repository holding the `rustc` component (and `llvm-tools` and " +
+            "`rust-mingw`) when it is not in `components`. The `rust_toolchain` declared here takes the " +
+            "compiler, its libraries and its tools from there, so one download serves every target triple. " +
+            "A repository holding `clippy` without `rustc` links that repository's libraries beside " +
+            "`clippy-driver`, which loads them relative to its own location."
+        ),
     ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
+    ),
+    "std_anchor": attr.label(
+        doc = (
+            "A label to any file in the repository holding the `rust-std` component for `target_triple` " +
+            "when it is not in `components`: the compiler repository, when the target triple is the " +
+            "execution platform's."
+        ),
     ),
     "strip_level": attr.string_dict(
         doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
@@ -413,9 +503,56 @@ def _resolve_nightly_version(iso_date):
             break
     return result
 
+def _repository_root(ctx, anchor):
+    """The root directory of the repository a label points into.
+
+    Args:
+        ctx (repository_ctx): The repository's context.
+        anchor (Label): A label to any file in the other repository.
+
+    Returns:
+        path: The repository's root. Resolving it fetches that repository.
+    """
+    root = ctx.path(anchor)
+    for _ in [segment for segment in anchor.package.split("/") + anchor.name.split("/") if segment]:
+        root = root.dirname
+    return root
+
+def _link_compiler_libraries(ctx, compiler_root, exec_triple):
+    """Link the libraries of the compiler repository at `compiler_root` beside the binaries of this one.
+
+    `lib/` is linked whole, or entry by entry where the repository has a
+    `lib/` of its own. On Windows the DLLs live beside the executables, so
+    those of the compiler's `bin/` are linked into `bin/` as well.
+    `repository_ctx.symlink` makes junctions for directories there and, where
+    symbolic links are not enabled, copies files.
+
+    Args:
+        ctx (repository_ctx): The repository's context.
+        compiler_root (path): The root of the compiler repository.
+        exec_triple (struct): The triple the tools run on.
+    """
+    lib = ctx.path("lib")
+    if lib.exists:
+        for entry in compiler_root.get_child("lib").readdir():
+            if not lib.get_child(entry.basename).exists:
+                ctx.symlink(entry, "lib/" + entry.basename)
+    else:
+        ctx.symlink(compiler_root.get_child("lib"), "lib")
+
+    if exec_triple.system == "windows":
+        for entry in compiler_root.get_child("bin").readdir():
+            if entry.basename.endswith(".dll") and not ctx.path("bin/" + entry.basename).exists:
+                ctx.symlink(entry, "bin/" + entry.basename)
+
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
     sha256s = dict(ctx.attr.sha256s)
+    components = ctx.attr.components
+    for component in components:
+        if component not in ALL_COMPONENTS:
+            fail("{}: unknown component `{}` in `components`. Expected any of {}".format(ctx.name, component, ALL_COMPONENTS))
+
     iso_date = None
     version = ctx.attr.version
     version_array = version.split("/")
@@ -437,63 +574,82 @@ def _rust_toolchain_tools_repository_impl(ctx):
             toolchain_version = resolved
 
     exec_triple = triple(ctx.attr.exec_triple)
+    target_triple = triple(ctx.attr.target_triple)
     include_linker = True
 
     # rust-objcopy is only available in Rust 1.84.0+
     include_objcopy = _include_rust_objcopy(version, iso_date)
-
-    rustc_content, rustc_sha256 = load_rust_compiler(
-        ctx = ctx,
-        iso_date = iso_date,
-        target_triple = exec_triple,
-        version = version,
-        include_linker = include_linker,
-        include_objcopy = include_objcopy,
-    )
-    clippy_content, clippy_sha256 = load_clippy(
-        ctx = ctx,
-        iso_date = iso_date,
-        target_triple = exec_triple,
-        version = version,
-    )
-    cargo_content, cargo_sha256 = load_cargo(
-        ctx = ctx,
-        iso_date = iso_date,
-        target_triple = exec_triple,
-        version = version,
-    )
-
-    build_components = [
-        rustc_content,
-        clippy_content,
-        cargo_content,
-    ]
-    sha256s.update(rustc_sha256 | clippy_sha256 | cargo_sha256)
-
-    # Not all target triples are expected to have dev components
-    if ctx.attr.rustfmt_version:
-        rustfmt_version = ctx.attr.rustfmt_version
-        rustfmt_iso_date = None
-        if rustfmt_version in ("nightly", "beta"):
-            if iso_date:
-                rustfmt_iso_date = iso_date
-            else:
-                fail("`rustfmt_version` does not include an iso_date. The following repository should either set `iso_date` or update `rustfmt_version` to include an iso_date suffix: {}".format(
-                    ctx.name,
-                ))
-        elif rustfmt_version.startswith(("nightly", "beta")):
-            rustfmt_version, _, rustfmt_iso_date = rustfmt_version.partition("/")
-        rustfmt_content, rustfmt_sha256 = load_rustfmt(
-            ctx = ctx,
-            target_triple = triple(ctx.attr.exec_triple),
-            version = rustfmt_version,
-            iso_date = rustfmt_iso_date,
-        )
-        build_components.append(rustfmt_content)
-        sha256s.update(rustfmt_sha256)
-
     include_llvm_tools = _include_llvm_tools(version, iso_date)
-    if include_llvm_tools:
+
+    # Where the components this repository leaves out are found: another
+    # repository when its anchor is given, else nowhere, and the targets
+    # needing them are not declared.
+    rustc_anchor = None if COMPONENT.rustc in components else ctx.attr.rustc_anchor
+    std_anchor = None if COMPONENT.rust_std in components else ctx.attr.std_anchor
+    cargo_anchor = None if COMPONENT.cargo in components else ctx.attr.cargo_anchor
+    clippy_anchor = None if COMPONENT.clippy in components else ctx.attr.clippy_anchor
+    has_rustc = COMPONENT.rustc in components or bool(rustc_anchor)
+    has_std = COMPONENT.rust_std in components or bool(std_anchor)
+    has_cargo = COMPONENT.cargo in components or bool(cargo_anchor)
+    has_clippy = COMPONENT.clippy in components or bool(clippy_anchor)
+
+    def tool_label(repository, target):
+        """The label of `target` in `repository` (a `Label` in it), or in this repository when `None`."""
+        if repository:
+            # A `Label` only knows the canonical name of its repository, which
+            # a generated BUILD file may use as any other label.
+            return "@@{}//:{}".format(repository.repo_name, target)  # buildifier: disable=canonical-repository
+        return "//:{}".format(target)
+
+    # A rustc driver loads `librustc_driver` relative to its own real path
+    # (see `//rust/private:sysroot.bzl`), so a repository holding Clippy
+    # without the compiler links the compiler repository's libraries beside
+    # `clippy-driver`, as a rustup toolchain has them. Resolving a path in
+    # another repository may restart this rule, so it happens before any
+    # download.
+    compiler_root = None
+    if COMPONENT.clippy in components and COMPONENT.rustc not in components:
+        if not rustc_anchor:
+            fail("{}: `clippy` without `rustc` in `components` needs `rustc_anchor`, whose libraries `clippy-driver` loads".format(ctx.name))
+        compiler_root = _repository_root(ctx, rustc_anchor)
+
+    build_components = []
+
+    if COMPONENT.rustc in components:
+        rustc_content, rustc_sha256 = load_rust_compiler(
+            ctx = ctx,
+            iso_date = iso_date,
+            target_triple = exec_triple,
+            version = version,
+            include_linker = include_linker,
+            include_objcopy = include_objcopy,
+        )
+        build_components.append(rustc_content)
+        sha256s.update(rustc_sha256)
+
+    if COMPONENT.clippy in components:
+        clippy_content, clippy_sha256 = load_clippy(
+            ctx = ctx,
+            iso_date = iso_date,
+            target_triple = exec_triple,
+            version = version,
+        )
+        build_components.append(clippy_content)
+        sha256s.update(clippy_sha256)
+        if compiler_root:
+            _link_compiler_libraries(ctx, compiler_root, exec_triple)
+
+    if COMPONENT.cargo in components:
+        cargo_content, cargo_sha256 = load_cargo(
+            ctx = ctx,
+            iso_date = iso_date,
+            target_triple = exec_triple,
+            version = version,
+        )
+        build_components.append(cargo_content)
+        sha256s.update(cargo_sha256)
+
+    if include_llvm_tools and COMPONENT.llvm_tools in components:
         llvm_tools_content, llvm_tools_sha256 = load_llvm_tools(
             ctx = ctx,
             target_triple = exec_triple,
@@ -503,18 +659,20 @@ def _rust_toolchain_tools_repository_impl(ctx):
         build_components.append(llvm_tools_content)
         sha256s.update(llvm_tools_sha256)
 
-    target_triple = triple(ctx.attr.target_triple)
-    rust_stdlib_content, rust_stdlib_sha256 = load_rust_stdlib(
-        ctx = ctx,
-        target_triple = target_triple,
-        version = version,
-        iso_date = iso_date,
-    )
-    build_components.append(rust_stdlib_content)
-    sha256s.update(rust_stdlib_sha256)
+    if COMPONENT.rust_std in components:
+        rust_stdlib_content, rust_stdlib_sha256 = load_rust_stdlib(
+            ctx = ctx,
+            target_triple = target_triple,
+            version = version,
+            iso_date = iso_date,
+        )
+        build_components.append(rust_stdlib_content)
+        sha256s.update(rust_stdlib_sha256)
 
+    # `rust-mingw` carries the `dlltool` of a `*-pc-windows-gnu` execution
+    # platform, used by toolchains for a `*-pc-windows-gnu` target.
     dlltool = ctx.attr.dlltool
-    if not dlltool and _is_windows_gnu(exec_triple) and _is_windows_gnu(target_triple):
+    if not dlltool and COMPONENT.rust_mingw in components and _is_windows_gnu(exec_triple) and _is_windows_gnu(target_triple):
         rust_mingw_content, rust_mingw_sha256 = load_rust_mingw(
             ctx = ctx,
             target_triple = exec_triple,
@@ -523,60 +681,11 @@ def _rust_toolchain_tools_repository_impl(ctx):
         )
         build_components.append(rust_mingw_content)
         sha256s.update(rust_mingw_sha256)
-        dlltool = "//:rust_mingw_dlltool"
-
-    stdlib_linkflags = None
-    if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
-        stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
-
-    build_components.append(BUILD_for_rust_toolchain(
-        name = "rust_toolchain",
-        exec_triple = exec_triple,
-        allocator_library = ctx.attr.allocator_library,
-        global_allocator_library = ctx.attr.global_allocator_library,
-        dlltool = dlltool,
-        target_triple = target_triple,
-        stdlib_linkflags = stdlib_linkflags,
-        default_edition = ctx.attr.edition,
-        include_rustfmt = not (not ctx.attr.rustfmt_version),
-        include_llvm_tools = include_llvm_tools,
-        include_linker = include_linker,
-        include_objcopy = include_objcopy,
-        extra_rustc_flags = ctx.attr.extra_rustc_flags,
-        extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
-        opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
-        strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
-        version = toolchain_version,
-        channel = channel,
-        iso_date = iso_date,
-    ))
-
-    # The companions accompany the `rust_toolchain` from the same release.
-    # Cargo states the release itself; Clippy and rustdoc take theirs from the
-    # `rust_toolchain` they derive their sysroot from.
-    build_components.append(BUILD_for_cargo_toolchain(
-        name = "cargo_toolchain",
-        cargo = "//:cargo",
-        version = toolchain_version,
-        channel = channel,
-        iso_date = iso_date,
-    ))
-
-    build_components.append(BUILD_for_clippy_toolchain(
-        name = "clippy_toolchain",
-        clippy_driver = "//:clippy_driver_bin",
-        cargo_clippy = "//:cargo_clippy_bin",
-        rust_toolchain = "//:rust_toolchain",
-    ))
-
-    build_components.append(BUILD_for_rustdoc_toolchain(
-        name = "rustdoc_toolchain",
-        rustdoc = "//:rustdoc",
-        rust_toolchain = "//:rust_toolchain",
-    ))
+    if not dlltool and _is_windows_gnu(exec_triple) and _is_windows_gnu(target_triple) and (COMPONENT.rust_mingw in components or rustc_anchor):
+        dlltool = tool_label(rustc_anchor, "rust_mingw_dlltool")
 
     # Not all target triples are expected to have dev components
-    if ctx.attr.dev_components:
+    if COMPONENT.rustc_dev in components and ctx.attr.dev_components:
         rustc_dev_sha256 = load_rustc_dev_nightly(
             ctx = ctx,
             target_triple = target_triple,
@@ -584,6 +693,69 @@ def _rust_toolchain_tools_repository_impl(ctx):
             iso_date = iso_date,
         )
         sha256s.update(rustc_dev_sha256)
+
+    # One `rust_toolchain` for `target_triple`, with the companions from the
+    # same release beside it.
+    if ctx.attr.declare_toolchains:
+        if not has_rustc or not has_std:
+            fail((
+                "{}: a `rust_toolchain` needs `rustc` and `rust-std`, each either in `components` or " +
+                "named by `rustc_anchor` and `std_anchor`. Set `declare_toolchains = False` for " +
+                "a repository which only holds components."
+            ).format(ctx.name))
+
+        stdlib_linkflags = None
+        if "BAZEL_RUST_STDLIB_LINKFLAGS" in ctx.os.environ:
+            stdlib_linkflags = ctx.os.environ["BAZEL_RUST_STDLIB_LINKFLAGS"].split(":")
+
+        build_components.append(BUILD_for_rust_toolchain(
+            name = "rust_toolchain",
+            exec_triple = exec_triple,
+            allocator_library = ctx.attr.allocator_library,
+            global_allocator_library = ctx.attr.global_allocator_library,
+            dlltool = dlltool,
+            target_triple = target_triple,
+            stdlib_linkflags = stdlib_linkflags,
+            default_edition = ctx.attr.edition,
+            tools_repository = rustc_anchor.repo_name if rustc_anchor else None,
+            std_repository = std_anchor.repo_name if std_anchor else None,
+            include_llvm_tools = include_llvm_tools,
+            include_linker = include_linker,
+            include_objcopy = include_objcopy,
+            extra_rustc_flags = ctx.attr.extra_rustc_flags,
+            extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
+            opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
+            strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
+            version = toolchain_version,
+            channel = channel,
+            iso_date = iso_date,
+        ))
+
+        # The companions accompany the `rust_toolchain` from the same release.
+        # Cargo states the release itself; Clippy and rustdoc take theirs from
+        # the `rust_toolchain` they derive their sysroot from.
+        if has_cargo:
+            build_components.append(BUILD_for_cargo_toolchain(
+                name = "cargo_toolchain",
+                cargo = tool_label(cargo_anchor, "cargo"),
+                version = toolchain_version,
+                channel = channel,
+                iso_date = iso_date,
+            ))
+
+        if has_clippy:
+            build_components.append(BUILD_for_clippy_toolchain(
+                name = "clippy_toolchain",
+                clippy_driver = tool_label(clippy_anchor, "clippy_driver_bin"),
+                cargo_clippy = tool_label(clippy_anchor, "cargo_clippy_bin"),
+                rust_toolchain = "//:rust_toolchain",
+            ))
+
+        build_components.append(BUILD_for_rustdoc_toolchain(
+            name = "rustdoc_toolchain",
+            rustdoc = tool_label(rustc_anchor, "rustdoc"),
+            rust_toolchain = "//:rust_toolchain",
+        ))
 
     ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         ctx.name,
@@ -610,8 +782,17 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
 rust_toolchain_tools_repository = repository_rule(
     doc = (
-        "Composes a single workspace containing the toolchain components for compiling on a given " +
-        "platform to a series of target platforms.\n" +
+        "Composes a workspace containing components of a Rust release for compiling on a given " +
+        "platform to a target platform, and the toolchains assembled from them.\n" +
+        "\n" +
+        "By default every component is downloaded into the one repository. `components` narrows " +
+        "that down so a release can be spread over several repositories which are fetched " +
+        "independently: `rust_repository_set` downloads the compiler, with the standard library of " +
+        "its own platform, once per execution platform, the standard library of every other target " +
+        "triple into a repository of its own, and Cargo and Clippy into repositories which only " +
+        "targets running them fetch. A repository with `declare_toolchains` declares the " +
+        "`rust_toolchain` and its companions, naming the others through `rustc_anchor`, " +
+        "`std_anchor`, `cargo_anchor` and `clippy_anchor`.\n" +
         "\n" +
         "A given instance of this rule should be accompanied by a toolchain_repository_proxy " +
         "invocation to declare its toolchains to Bazel; the indirection allows separating toolchain " +
@@ -687,6 +868,83 @@ toolchain_repository_proxy = repository_rule(
     implementation = _toolchain_repository_proxy_impl,
 )
 
+def _shared_tool_repositories(
+        *,
+        name,
+        exec_triple,
+        version,
+        dlltool,
+        dev_components,
+        aliases,
+        compact_windows_names,
+        **kwargs):
+    """Declare the repositories every target triple of a toolchain shares.
+
+    They are `<name>__rustc`, holding the compiler, the tools which run beside
+    it and the standard library of the execution platform, `<name>__cargo` and
+    `<name>__clippy`. None declares toolchains; the repositories of the target
+    triples do, pointing here.
+
+    Args:
+        name (str): The prefix of the repository names.
+        exec_triple (str): The Rust-style triple the tools run on.
+        version (str): The version of the release, as passed to `rust_toolchain_tools_repository`.
+        dlltool (str): A `dlltool` label which replaces the one of `rust-mingw`, or `None`.
+        dev_components (bool): Whether to download `rustc-dev` for the execution platform.
+        aliases (dict[str, str]): Replacement repository names, keyed by the names declared here.
+            Entries used are removed.
+        compact_windows_names (bool): Whether to hash the names of repositories for Windows
+            execution platforms, to avoid MAX_PATH issues.
+        **kwargs: Download settings for `rust_toolchain_tools_repository` (`sha256s`, `urls`, `auth`, ...).
+
+    Returns:
+        dict[str, str]: A label at the root of each repository, keyed by `rustc`, `cargo` and `clippy`.
+    """
+    names = {}
+    for suffix in _SHARED_REPOSITORIES:
+        repository_name = "{}__{}".format(name, suffix)
+        if repository_name in aliases:
+            repository_name = aliases.pop(repository_name)
+        elif compact_windows_names and "windows" in exec_triple:
+            repository_name = "rw-{}".format(abs(hash(repository_name)))
+        names[suffix] = repository_name
+    repositories = {suffix: "@{}//:BUILD.bazel".format(repository_name) for suffix, repository_name in names.items()}
+
+    for suffix, components in _SHARED_REPOSITORIES.items():
+        is_compiler = suffix == COMPONENT.rustc
+        rust_toolchain_tools_repository(
+            name = names[suffix],
+            exec_triple = exec_triple,
+            target_triple = exec_triple,
+            version = version,
+            components = components,
+            declare_toolchains = False,
+            dlltool = dlltool if is_compiler else None,
+            dev_components = dev_components if is_compiler else False,
+            # Clippy links the compiler's libraries beside `clippy-driver`.
+            rustc_anchor = None if is_compiler else repositories[COMPONENT.rustc],
+            **kwargs
+        )
+    return repositories
+
+def _target_components(exec_triple, target_triple, shared):
+    """What a target triple's repository downloads and where its standard library is.
+
+    The execution platform's own standard library lives in the compiler
+    repository; every other target triple fetches its own.
+
+    Args:
+        exec_triple (str): The Rust-style triple the tools run on.
+        target_triple (str): The Rust-style triple the toolchain builds for.
+        shared (dict[str, str]): The shared repositories, from `_shared_tool_repositories`.
+
+    Returns:
+        dict: `components` and `std_anchor` for `rust_toolchain_tools_repository`.
+    """
+    if target_triple == exec_triple:
+        return {"components": [], "std_anchor": shared[COMPONENT.rustc]}
+    return {"components": TARGET_COMPONENTS, "std_anchor": None}
+
 # N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)
 # without actually downloading the toolchain.
 def rust_toolchain_repository(
@@ -701,7 +959,6 @@ def rust_toolchain_repository(
         allocator_library = None,
         global_allocator_library = None,
         dlltool = None,
-        rustfmt_version = None,
         edition = None,
         dev_components = False,
         extra_rustc_flags = None,
@@ -716,6 +973,11 @@ def rust_toolchain_repository(
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
+    The release is spread over `<name>__rustc` (the compiler, the tools beside it and the
+    standard library of the execution platform), `<name>__cargo`, `<name>__clippy` and
+    `<name>_tools` (the standard library of another target triple and the toolchain
+    declarations), so that Cargo and Clippy are only fetched by targets running them.
+
     Args:
         name (str): The name of the generated repository
         version (str): The version of the tool among "nightly", "beta", or an exact version.
@@ -728,8 +990,6 @@ def rust_toolchain_repository(
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
         dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
-        rustfmt_version (str, optional):  The version of rustfmt to be associated with the
-            toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
@@ -743,7 +1003,7 @@ def rust_toolchain_repository(
         strip_level (dict, optional): Strip level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
+        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
@@ -760,6 +1020,21 @@ def rust_toolchain_repository(
 
     tools_repo_name = "{}_tools".format(name)
 
+    shared = _shared_tool_repositories(
+        name = name,
+        exec_triple = exec_triple,
+        version = version,
+        dlltool = dlltool,
+        dev_components = dev_components,
+        aliases = {},
+        compact_windows_names = False,
+        sha256s = sha256s,
+        urls = urls,
+        auth = auth,
+        netrc = netrc,
+        auth_patterns = auth_patterns,
+    )
+
     rust_toolchain_tools_repository(
         name = tools_repo_name,
         exec_triple = exec_triple,
@@ -768,7 +1043,6 @@ def rust_toolchain_repository(
         dlltool = dlltool,
         target_triple = target_triple,
         version = version,
-        rustfmt_version = rustfmt_version,
         edition = edition,
         dev_components = dev_components,
         extra_rustc_flags = extra_rustc_flags,
@@ -780,6 +1054,10 @@ def rust_toolchain_repository(
         auth = auth,
         netrc = netrc,
         auth_patterns = auth_patterns,
+        rustc_anchor = shared[COMPONENT.rustc],
+        cargo_anchor = shared[COMPONENT.cargo],
+        clippy_anchor = shared[COMPONENT.clippy],
+        **_target_components(exec_triple, target_triple, shared)
     )
 
     channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
@@ -1105,7 +1383,6 @@ def rust_repository_set(
         global_allocator_library = None,
         dlltool = None,
         extra_target_triples = {},
-        rustfmt_version = None,
         edition = None,
         dev_components = False,
         extra_rustc_flags = None,
@@ -1124,6 +1401,12 @@ def rust_repository_set(
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration.
 
+    Per channel in `versions`, the release is spread over `<name>__<channel>__rustc` (the compiler,
+    the tools beside it and the standard library of the execution platform, shared by every target
+    triple), `<name>__<channel>__cargo` and `<name>__<channel>__clippy` (fetched only by targets
+    running Cargo or Clippy), and one `<name>__<target_triple>__<channel>_tools` per target triple
+    holding the toolchain declarations and, for another target triple, its standard library.
+
     Args:
         name (str): The name of the generated repository
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
@@ -1136,8 +1419,6 @@ def rust_repository_set(
         dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
         extra_target_triples (list or map, optional): Additional rust-style targets that this set of
             toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.
-        rustfmt_version (str, optional):  The version of rustfmt to be associated with the
-            toolchain.
         edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is
             required to specify its `edition` attribute.
         dev_components (bool, optional): Whether to download the rustc-dev components.
@@ -1165,6 +1446,7 @@ def rust_repository_set(
     """
 
     all_toolchain_details = {}
+    shared_by_channel = {}
     for toolchain in _get_toolchain_repositories(
         name = name,
         exec_triple = exec_triple,
@@ -1174,6 +1456,25 @@ def rust_repository_set(
         aliases = aliases,
         compact_windows_names = compact_windows_names,
     ):
+        # The compiler, Cargo and Clippy of a release are the same for every
+        # target triple: `<name>__<channel>__rustc` and friends, declared once.
+        if toolchain.channel.name not in shared_by_channel:
+            shared_by_channel[toolchain.channel.name] = _shared_tool_repositories(
+                name = "{}__{}".format(name, toolchain.channel.name),
+                exec_triple = exec_triple,
+                version = toolchain.channel.version,
+                dlltool = dlltool,
+                dev_components = dev_components,
+                aliases = aliases,
+                compact_windows_names = compact_windows_names,
+                sha256s = sha256s,
+                urls = urls,
+                auth = auth,
+                netrc = netrc,
+                auth_patterns = auth_patterns,
+            )
+        shared = shared_by_channel[toolchain.channel.name]
+
         toolchain_extra_exec_rustc_flags = _get_flags_for_triple(
             "extra_exec_rustc_flags",
             extra_exec_rustc_flags,
@@ -1197,7 +1498,6 @@ def rust_repository_set(
             dlltool = dlltool,
             target_triple = toolchain.target_triple,
             version = toolchain.channel.version,
-            rustfmt_version = rustfmt_version,
             edition = edition,
             dev_components = dev_components,
             extra_rustc_flags = toolchain_extra_rustc_flags,
@@ -1209,6 +1509,10 @@ def rust_repository_set(
             auth = auth,
             netrc = netrc,
             auth_patterns = auth_patterns,
+            rustc_anchor = shared[COMPONENT.rustc],
+            cargo_anchor = shared[COMPONENT.cargo],
+            clippy_anchor = shared[COMPONENT.clippy],
+            **_target_components(exec_triple, toolchain.target_triple, shared)
         )
 
         channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
