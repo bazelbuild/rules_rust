@@ -258,7 +258,6 @@ def cargo_build_script(
         use_cc_toolchain = sanitized_use_cc_toolchain,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
-        deps = deps,
         link_deps = link_deps,
         rundir = rundir,
         rustc_flags = rustc_flags,

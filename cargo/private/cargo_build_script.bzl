@@ -8,7 +8,7 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//cargo/private:cargo_toolchain.bzl", "cargo_version_mismatch", "find_cargo")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -674,20 +674,8 @@ def _cargo_build_script_impl(ctx):
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
 
-    for dep in ctx.attr.deps:
-        dep_infos = []
-        if DepInfo in dep:
-            dep_infos = [dep[DepInfo]]
-        else:
-            dep_infos = [
-                dep_variant_info.dep_info
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
-                if dep_variant_info.dep_info
-            ]
-
-        for dep_info in dep_infos:
-            for dep_build_info in dep_info.transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+    for dep_build_info in ctx.attr.script[DepInfo].transitive_build_infos.to_list():
+        build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -798,11 +786,6 @@ cargo_build_script = rule(
             cfg = "target",
             executable = True,
         ),
-        "deps": attr.label_list(
-            doc = "The Rust build-dependencies of the crate",
-            providers = [[DepInfo], [CrateGroupInfo]],
-            cfg = "exec",
-        ),
         "emit_warnings": attr.bool(
             doc = dedent("""\
                 Whether to forward `cargo::warning=` lines from the build script to stderr.
@@ -850,11 +833,11 @@ cargo_build_script = rule(
             """),
         ),
         "script": attr.label(
-            doc = "The binary script to run, generally a `rust_binary` target.",
+            doc = "The `rust_binary` build script target to run.",
             executable = True,
             mandatory = True,
             cfg = "exec",
-            providers = [rust_common.crate_info],
+            providers = [rust_common.crate_info, DepInfo],
         ),
         "tools": attr.label_list(
             doc = "Tools required by the build script.",
