@@ -315,6 +315,11 @@ tasks:
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
     post_shell_commands: *coverage_validation_post_shell_commands
+    # GCC 7.5 predates `-ffile-prefix-map`.
+    build_flags: &gcc7_flags
+      - "--@rules_rust//cargo/settings:build_script_cc_file_prefix_map=False"
+    test_flags: *gcc7_flags
+    coverage_flags: *gcc7_flags
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
     bazel: *minimum_bazel_version
@@ -322,8 +327,13 @@ tasks:
     shell_commands: *minimum_bazel_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
-    build_flags: *aspects_flags
+    build_flags: &gcc7_aspects_flags
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--@rules_rust//cargo/settings:build_script_cc_file_prefix_map=False"
+    test_flags: *gcc7_flags
     coverage_targets: *default_linux_targets
+    coverage_flags: *gcc7_flags
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2204_min_rust_version:
     name: "Min Rust Version"
