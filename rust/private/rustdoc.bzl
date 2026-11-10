@@ -257,7 +257,7 @@ def rustdoc_compile_action(
         static_runtime_libs = static_runtime_libs,
     )
 
-def _zip_action(ctx, input_dir, output_zip, crate_label):
+def _zip_action(ctx, input_dir, output_zip, crate_label, toolchain):
     """Creates an archive of the generated documentation from `rustdoc`
 
     Args:
@@ -265,6 +265,7 @@ def _zip_action(ctx, input_dir, output_zip, crate_label):
         input_dir (File): A directory containing the outputs from rustdoc
         output_zip (File): The location of the output archive containing generated documentation
         crate_label (Label): The label of the crate docs are being generated for.
+        toolchain (rust_toolchain): The current `rust_toolchain`.
     """
     args = ctx.actions.args()
     args.add(ctx.executable._zipper)
@@ -277,7 +278,7 @@ def _zip_action(ctx, input_dir, output_zip, crate_label):
         outputs = [output_zip],
         arguments = [args],
         mnemonic = "RustdocZip",
-        progress_message = "Creating RustdocZip for {}".format(crate_label),
+        progress_message = "RustdocZip %{label}" if toolchain._experimental_simple_progress_messages else "Creating RustdocZip for {}".format(crate_label),
         tools = [ctx.executable._zipper],
     )
 
@@ -340,7 +341,7 @@ def _rust_doc_impl(ctx):
 
     ctx.actions.run(
         mnemonic = "Rustdoc",
-        progress_message = "Generating Rustdoc for {}".format(crate.label),
+        progress_message = "Rustdoc %{label}" if rust_toolchain._experimental_simple_progress_messages else "Generating Rustdoc for {}".format(crate.label),
         outputs = [output_dir],
         executable = action.executable,
         inputs = action.inputs,
@@ -351,7 +352,7 @@ def _rust_doc_impl(ctx):
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
-    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip, crate.label)
+    _zip_action(ctx, output_dir, ctx.outputs.rust_doc_zip, crate.label, rust_toolchain)
 
     return [
         DefaultInfo(

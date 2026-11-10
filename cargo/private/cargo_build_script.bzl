@@ -717,7 +717,7 @@ def _cargo_build_script_impl(ctx):
         ],
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
-        progress_message = "Running Cargo build script {}".format(pkg_name),
+        progress_message = "CargoBuildScriptRun %{label}" if toolchain._experimental_simple_progress_messages else "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
         use_default_shell_env = use_default_shell_env,

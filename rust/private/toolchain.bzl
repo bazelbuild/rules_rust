@@ -626,6 +626,7 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_compile_rustdoc_tests = ctx.attr._experimental_compile_rustdoc_tests[BuildSettingInfo].value,
+        _experimental_simple_progress_messages = ctx.attr._experimental_simple_progress_messages[BuildSettingInfo].value,
         _skip_fission_for_rust = ctx.attr._skip_fission_for_rust[BuildSettingInfo].value,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
@@ -904,6 +905,10 @@ rust_toolchain = rule(
         ),
         "_experimental_compile_rustdoc_tests": attr.label(
             default = Label("//rust/settings:experimental_compile_rustdoc_tests"),
+        ),
+        "_experimental_simple_progress_messages": attr.label(
+            default = Label("//rust/settings:experimental_simple_progress_messages"),
+            providers = [BuildSettingInfo],
         ),
         "_experimental_use_allocator_libraries_with_mangled_symbols_setting": attr.label(
             default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),

@@ -281,6 +281,20 @@ def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
         build_setting_default = False,
     )
 
+def experimental_simple_progress_messages():
+    """A flag to control the progress messages of `rules_rust` actions.
+
+    When enabled (the default), actions such as `Rustc`, `RustcMetadata`, `Rustdoc` \
+    and `CargoBuildScriptRun` report `{mnemonic} {label}` (for example `Rustc //foo:bar`), \
+    matching the other `@rules_rust` actions. When disabled, the legacy messages are \
+    used, which include details like the crate type, version and number of sources.
+    """
+    bool_flag(
+        name = "experimental_simple_progress_messages",
+        build_setting_default = True,
+        scope = "universal",
+    )
+
 def toolchain_linker_preference():
     """A flag to control which linker is preferred for linking Rust binaries.
 
