@@ -1252,28 +1252,52 @@ def construct_arguments(
             expand_directories = False,
         )
 
-    # Build-script flag files (link search paths, link flags) embed the
-    # build script's `out_dir` as a `${<path>}` substitution token, using
-    # the full analysis-time path as the key so each build script gets a
-    # unique token. Add a `--subst` entry for every direct and transitive
-    # build script `out_dir` so `process_wrapper` can resolve each token.
-    # Routing through `File`-typed `Args` entries lets Bazel path mapping
-    # rewrite the value at execution time.
+    # Build script flag files reference `OUT_DIR`s through tokens written by
+    # `cargo_build_script_runner` (see `redact_paths` there). The producing
+    # script's own directory is `${out_dir}`, resolved per flag file right
+    # here; any other build script's directory, forwarded through a `DEP_*`
+    # variable, is `${out_dir:<root relative path>}`, resolved from the
+    # `--subst` entries added below. Every value is sourced from a `File`-typed
+    # `Args` entry so Bazel path mapping (`--experimental_output_paths=strip`)
+    # rewrites it, and neither the tokens nor the keys carry the configuration
+    # segment of a path, so otherwise identical mapped actions are shared
+    # across configurations (https://github.com/bazelbuild/rules_rust/issues/4355).
+    #
+    # `${out_dir}` is bound per file rather than globally because a graph can
+    # contain the same build script in multiple configurations; a global or
+    # label-keyed token would resolve some of those flags to the wrong
+    # directory (https://github.com/bazelbuild/rules_rust/pull/4050).
+    flag_out_dirs = {}
+    for dep_build_info in dep_info.transitive_build_infos.to_list():
+        if dep_build_info.out_dir:
+            for flag_file in [
+                dep_build_info.flags,
+                dep_build_info.linker_flags,
+                dep_build_info.link_search_paths,
+                dep_build_info.cdylib_link_flags,
+                dep_build_info.bin_link_flags,
+            ]:
+                if flag_file:
+                    flag_out_dirs[flag_file] = dep_build_info.out_dir
+    for flag_file in build_flags_files.to_list() + ([bin_link_flags] if bin_link_flags else []):
+        if flag_file in flag_out_dirs:
+            process_wrapper_flags.add("--arg-file-out-dir")
+            process_wrapper_flags.add(flag_file)
+            process_wrapper_flags.add_all([flag_out_dirs[flag_file]], expand_directories = False)
+
+    # `${out_dir:<root relative path>}` for every transitive build script. The
+    # key is the `out_dir` path below `bazel-out/<config>/bin/`, which is what
+    # the runner derives from the real path. Two configurations of one build
+    # script yield the same key; `process_wrapper` rejects a token that would
+    # resolve ambiguously instead of picking one.
     for dep_build_info in dep_info.transitive_build_infos.to_list():
         if dep_build_info.out_dir:
             process_wrapper_flags.add_all(
                 [dep_build_info.out_dir],
                 before_each = "--subst",
-                format_each = dep_build_info.out_dir.path + "=%s",
+                format_each = "out_dir:{}=%s".format(_root_relative_path(dep_build_info.out_dir)),
                 expand_directories = False,
             )
-    if out_dir != None:
-        process_wrapper_flags.add_all(
-            [out_dir],
-            before_each = "--subst",
-            format_each = out_dir.path + "=%s",
-            expand_directories = False,
-        )
 
     # Arguments for launching rustc from the process wrapper. When a `File` is
     # provided via `tool_file`, add it directly so Bazel's path mapping can
@@ -3244,6 +3268,23 @@ def _get_crate_root_path(args):
         return paths.join(file.path, root_path)
     else:
         return file.path
+
+def _root_relative_path(file):
+    """Return a `File`'s path below its root, e.g. `pkg/name.out_dir` for `bazel-out/<config>/bin/pkg/name.out_dir`.
+
+    This is the configuration independent key used for build script `OUT_DIR`
+    substitution tokens; `cargo_build_script_runner` derives the same key from
+    the real path.
+
+    Args:
+        file (File): A generated file.
+
+    Returns:
+        str: The root relative path.
+    """
+    if file.root.path:
+        return file.path[len(file.root.path) + 1:]
+    return file.path
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.

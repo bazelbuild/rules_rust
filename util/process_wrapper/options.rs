@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fmt;
 use std::fs::File;
@@ -61,6 +61,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut out_dir_raw = None;
     let mut arg_file_raw = None;
     let mut bin_arg_file_raw = None;
+    let mut arg_file_out_dir_raw = None;
     let mut cargo_bin_name = None;
     let mut touch_file = None;
     let mut copy_output_raw = None;
@@ -93,6 +94,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--arg-file",
         "File(s) containing command line arguments to pass to the child process.",
         &mut arg_file_raw,
+    );
+    flags.define_repeated_flag(
+        "--arg-file-out-dir",
+        "Pairs of argument files and their build-script output directories. The \
+         ${out_dir} token is substituted only in the associated file.",
+        &mut arg_file_out_dir_raw,
     );
     flags.define_repeated_flag(
         "--bin-arg-file",
@@ -221,6 +228,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         // sync with where the file is actually materialized.
         subst_mappings.push(("out_dir".to_owned(), out_dir.to_owned()));
     }
+    // A key given with different values cannot be resolved meaningfully. This
+    // happens for `out_dir:<path>` when the same build script is present in
+    // more than one configuration. Drop such keys and fail only if something
+    // actually references one, so the rest of the graph keeps building.
+    let ambiguous_keys = ambiguous_subst_keys(&subst_mappings);
+    subst_mappings.retain(|(key, _)| !ambiguous_keys.contains(key));
     let stable_stamp_mappings =
         stable_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
     let volatile_stamp_mappings =
@@ -242,7 +255,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         // handle the working-directory prefix.
         environment_file_block.insert("OUT_DIR".to_owned(), format!("${{pwd}}/{out_dir}"));
     }
-    let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
+    let arg_file_out_dirs = arg_file_out_dirs(arg_file_out_dir_raw.unwrap_or_default())?;
+    let mut file_arguments = args_from_file(
+        arg_file_raw.unwrap_or_default(),
+        &arg_file_out_dirs,
+        &mut read_file_to_array,
+    )?;
     if let Some(paths) = bin_arg_file_raw {
         let name = cargo_bin_name
             .as_deref()
@@ -252,7 +270,10 @@ pub(crate) fn options() -> Result<Options, OptionError> {
                     "--bin-arg-file requires a nonempty --cargo-bin-name".to_owned(),
                 )
             })?;
-        file_arguments.extend(select_binary_args(args_from_file(paths)?, name)?);
+        file_arguments.extend(select_binary_args(
+            args_from_file(paths, &arg_file_out_dirs, &mut read_file_to_array)?,
+            name,
+        )?);
     }
     // Process --copy-output
     let copy_output = copy_output_raw
@@ -306,6 +327,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         None,
         None,
     )?;
+    reject_ambiguous_tokens(&ambiguous_keys, child_args.iter().chain(vars.values()))?;
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
@@ -327,15 +349,85 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     })
 }
 
-fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
+/// Keys of `--subst` entries that were given more than one distinct value.
+fn ambiguous_subst_keys(mappings: &[(String, String)]) -> HashSet<String> {
+    let mut seen: HashMap<&str, &str> = HashMap::new();
+    let mut ambiguous = HashSet::new();
+    for (key, value) in mappings {
+        if let Some(previous) = seen.insert(key, value) {
+            if previous != value {
+                ambiguous.insert(key.clone());
+            }
+        }
+    }
+    ambiguous
+}
+
+/// Fail if any argument or environment value references a token whose key
+/// was dropped by `ambiguous_subst_keys`.
+fn reject_ambiguous_tokens<'a>(
+    keys: &HashSet<String>,
+    values: impl Iterator<Item = &'a String>,
+) -> Result<(), OptionError> {
+    if keys.is_empty() {
+        return Ok(());
+    }
+    for value in values {
+        for key in keys {
+            let token = format!("${{{key}}}");
+            if value.contains(&token) {
+                return Err(OptionError::Generic(format!(
+                    "`{value}` references `{token}`, but `--subst {key}=...` was given with \
+                     different values. This happens when the same build script is present in \
+                     multiple configurations and a dependent build script forwards a path into \
+                     its OUT_DIR."
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn arg_file_out_dirs(values: Vec<String>) -> Result<HashMap<String, String>, OptionError> {
+    let mut dirs = HashMap::new();
+    let mut values = values.into_iter();
+    while let Some(file) = values.next() {
+        let Some(out_dir) = values.next() else {
+            return Err(OptionError::Generic(
+                "--arg-file-out-dir requires FILE OUT_DIR pairs".to_owned(),
+            ));
+        };
+        if let Some(previous) = dirs.insert(file.clone(), out_dir.clone()) {
+            if previous != out_dir {
+                return Err(OptionError::Generic(format!(
+                    "conflicting output directories for argument file '{file}'"
+                )));
+            }
+        }
+    }
+    Ok(dirs)
+}
+
+fn args_from_file(
+    paths: Vec<String>,
+    out_dirs: &HashMap<String, String>,
+    read_file: &mut impl FnMut(&str) -> Result<Vec<String>, String>,
+) -> Result<Vec<String>, OptionError> {
     let mut args = vec![];
     for path in paths.iter() {
-        let mut lines = read_file_to_array(path).map_err(|err| {
+        let mut lines = read_file(path).map_err(|err| {
             OptionError::Generic(format!(
                 "{} while processing args from file paths: {:?}",
                 err, paths
             ))
         })?;
+        // Resolve each producer before merging the files: different configurations
+        // of the same build script may occur in one dependency graph.
+        if let Some(out_dir) = out_dirs.get(path) {
+            for line in &mut lines {
+                *line = line.replace("${out_dir}", out_dir);
+            }
+        }
         args.append(&mut lines);
     }
     Ok(args)
@@ -512,6 +604,141 @@ fn environment_block(
 mod test {
     use super::*;
 
+    #[test]
+    fn argument_file_output_directories_are_scoped_to_the_producer() {
+        // The transitive producer occurs twice in one graph, with the same
+        // short path but different configurations. The direct producer's
+        // global OUT_DIR must not override either of them.
+        for config in ["config-A", "cfg"] {
+            let producers = ["direct", "transitive", "transitive"];
+            let configurations = [config, config, "config-B"];
+            let paths: Vec<String> = producers
+                .iter()
+                .zip(configurations)
+                .map(|(name, cfg)| format!("bazel-out/{cfg}/bin/{name}/build.linksearchpaths"))
+                .collect();
+            let directories: Vec<String> = producers
+                .iter()
+                .zip(configurations)
+                .map(|(name, cfg)| format!("bazel-out/{cfg}/bin/{name}/build.out_dir"))
+                .collect();
+            let bindings = paths
+                .iter()
+                .zip(&directories)
+                .flat_map(|(file, dir)| [file.clone(), dir.clone()])
+                .collect();
+            let mut reader = |_: &str| Ok(vec!["-Lnative=${pwd}/${out_dir}/lib".to_owned()]);
+            let args =
+                args_from_file(paths, &arg_file_out_dirs(bindings).unwrap(), &mut reader).unwrap();
+            let args = prepare_args(
+                args,
+                &[
+                    ("pwd".to_owned(), "/exec".to_owned()),
+                    ("out_dir".to_owned(), "unrelated-direct-out-dir".to_owned()),
+                ],
+                false,
+                None,
+                None,
+            )
+            .unwrap();
+            assert_eq!(
+                args,
+                directories
+                    .iter()
+                    .map(|dir| format!("-Lnative=/exec/{dir}/lib"))
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn argument_file_output_directory_bindings_validate_pairs_and_conflicts() {
+        assert!(arg_file_out_dirs(vec!["file".to_owned()]).is_err());
+        assert!(
+            arg_file_out_dirs(["file", "one", "file", "two"].map(str::to_owned).to_vec()).is_err()
+        );
+        assert_eq!(
+            arg_file_out_dirs(["file", "one", "file", "one"].map(str::to_owned).to_vec())
+                .unwrap()
+                .get("file"),
+            Some(&"one".to_owned())
+        );
+    }
+
+    #[test]
+    fn scoped_binary_arguments_keep_selection_and_substitution_independent() {
+        let bindings = arg_file_out_dirs(
+            ["bin.flags", "bazel-out/cfg/bin/bin.out_dir"]
+                .map(str::to_owned)
+                .to_vec(),
+        )
+        .unwrap();
+        let mut reader = |_: &str| {
+            Ok([
+                "=-Clink-arg=${pwd}/${out_dir}/first",
+                "my-bin=-Clink-arg=${pwd}/${out_dir}/second",
+                "other=-bad",
+            ]
+            .map(str::to_owned)
+            .to_vec())
+        };
+        let args = args_from_file(vec!["bin.flags".to_owned()], &bindings, &mut reader).unwrap();
+        let args = select_binary_args(args, "my-bin").unwrap();
+        assert_eq!(
+            args,
+            [
+                "-Clink-arg=${pwd}/bazel-out/cfg/bin/bin.out_dir/first",
+                "-Clink-arg=${pwd}/bazel-out/cfg/bin/bin.out_dir/second"
+            ]
+        );
+    }
+
+    #[test]
+    fn scoped_output_directories_preserve_windows_paths_and_repeated_files() {
+        let bindings = arg_file_out_dirs(
+            [
+                "build.flags",
+                r"bazel-out\config-A\bin\path with spaces\build.out_dir",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+        )
+        .unwrap();
+        let mut reader = |_: &str| Ok(vec![r"-Lnative=${pwd}\${out_dir}\lib".to_owned()]);
+        let args = args_from_file(
+            vec!["build.flags".to_owned(), "build.flags".to_owned()],
+            &bindings,
+            &mut reader,
+        )
+        .unwrap();
+        assert_eq!(
+            args,
+            [r"-Lnative=${pwd}\bazel-out\config-A\bin\path with spaces\build.out_dir\lib"; 2]
+        );
+    }
+
+    #[test]
+    fn unbound_argument_files_keep_global_substitutions() {
+        let mut reader = |_: &str| Ok(vec!["--cfg=${configuration}".to_owned()]);
+        let args = args_from_file(
+            vec!["legacy.flags".to_owned()],
+            &HashMap::new(),
+            &mut reader,
+        )
+        .unwrap();
+        assert_eq!(
+            prepare_args(
+                args,
+                &[("configuration".to_owned(), "test".to_owned())],
+                false,
+                None,
+                None
+            )
+            .unwrap(),
+            ["--cfg=test"]
+        );
+    }
+
     // https://github.com/bazelbuild/rules_rust/issues/4299
     #[test]
     fn binary_args_match_exact_names_and_preserve_order() {
@@ -623,6 +850,45 @@ mod test {
                 "rustc_params.expanded".to_string(),
                 "-Zallow-features=whitespace_instead_of_curly_braces".to_string()
             )])
+        );
+    }
+
+    #[test]
+    fn ambiguous_substitutions_fail_only_when_referenced() {
+        let mappings = vec![
+            ("pwd".to_owned(), "/exec".to_owned()),
+            (
+                "out_dir:pkg/a.out_dir".to_owned(),
+                "bazel-out/one/bin/pkg/a.out_dir".to_owned(),
+            ),
+            (
+                "out_dir:pkg/a.out_dir".to_owned(),
+                "bazel-out/two/bin/pkg/a.out_dir".to_owned(),
+            ),
+            (
+                "out_dir:pkg/b.out_dir".to_owned(),
+                "bazel-out/one/bin/pkg/b.out_dir".to_owned(),
+            ),
+            (
+                "out_dir:pkg/b.out_dir".to_owned(),
+                "bazel-out/one/bin/pkg/b.out_dir".to_owned(),
+            ),
+        ];
+        let ambiguous = ambiguous_subst_keys(&mappings);
+        assert_eq!(
+            ambiguous,
+            HashSet::from(["out_dir:pkg/a.out_dir".to_owned()])
+        );
+
+        let unrelated = ["-L${pwd}/${out_dir:pkg/b.out_dir}/lib".to_owned()];
+        assert!(reject_ambiguous_tokens(&ambiguous, unrelated.iter()).is_ok());
+
+        let referencing = ["-L${pwd}/${out_dir:pkg/a.out_dir}/lib".to_owned()];
+        let err = reject_ambiguous_tokens(&ambiguous, referencing.iter()).unwrap_err();
+        assert!(
+            err.to_string().contains("${out_dir:pkg/a.out_dir}"),
+            "{}",
+            err
         );
     }
 }
