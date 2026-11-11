@@ -1,0 +1,3 @@
+load(":msvc_libpath_test.bzl", "msvc_libpath_test_suite")
+
+msvc_libpath_test_suite(name = "msvc_libpath_test_suite")
