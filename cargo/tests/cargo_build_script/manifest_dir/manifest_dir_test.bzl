@@ -15,15 +15,9 @@ def _manifest_dir_test_impl(ctx):
     runfiles_dirs = [o for o in action.outputs.to_list() if o.path.endswith(".cargo_runfiles")]
     asserts.equals(env, 1, len(runfiles_dirs), "Expected one runfiles directory output")
 
-    # Windows exec platforms use a short directory for the repository to stay below MAX_PATH.
-    if action.argv[0].endswith(".exe"):
-        repo_dir = "_"
-    else:
-        repo_dir = target.label.workspace_name or ctx.workspace_name
-
     asserts.equals(
         env,
-        "{}/{}/{}".format(runfiles_dirs[0].path, repo_dir, target.label.package),
+        "{}/_/{}".format(runfiles_dirs[0].path, target.label.package),
         action.env["CARGO_MANIFEST_DIR"],
     )
 
