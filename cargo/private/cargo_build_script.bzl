@@ -350,11 +350,12 @@ def _rlocationpath(file, workspace_name):
 
     return "{}/{}".format(workspace_name, file.short_path)
 
-def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
+def _create_runfiles_dir(ctx, script, data_runfiles, retain_list, repo_name, repo_dir):
     """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
 
     Merges runfiles from both the script binary and the data runfiles target,
-    filtering out the fake executable from the data runfiles.
+    filtering out the fake executable from the data runfiles. Files from
+    `repo_name` are placed under `repo_dir` instead of `repo_name`.
 
     Due to the inability to forcibly generate runfiles directories for use as inputs
     to actions, this function creates a custom runfiles directory that can more
@@ -366,6 +367,8 @@ def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
         script (Target): The build script binary target.
         data_runfiles (Target): The `cargo_build_script_runfiles` target providing data files.
         retain_list (list): A list of strings to keep in generated runfiles directories.
+        repo_name (str): The name of the repository that owns the build script.
+        repo_dir (str): The directory name to use for `repo_name` in the runfiles directory.
 
     Returns:
         Tuple[File, Depset[File], Args]:
@@ -380,10 +383,15 @@ def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
 
     fake_exe = ctx.executable.data_runfiles
 
+    repo_prefix = repo_name + "/"
+
     def _runfiles_map(file):
         if file == fake_exe:
             return None
-        return "{}={}".format(file.path, _rlocationpath(file, workspace_name))
+        rlocationpath = _rlocationpath(file, workspace_name)
+        if repo_dir != repo_name and rlocationpath.startswith(repo_prefix):
+            rlocationpath = "{}/{}".format(repo_dir, rlocationpath[len(repo_prefix):])
+        return "{}={}".format(file.path, rlocationpath)
 
     script_rf = script[DefaultInfo].default_runfiles
     data_rf = data_runfiles[DefaultInfo].default_runfiles
@@ -430,6 +438,10 @@ def _cargo_build_script_impl(ctx):
 
     extra_output = []
 
+    # The output path already contains the repository name. On Windows, use a
+    # short directory name for it in the runfiles directory to stay below MAX_PATH.
+    repo_dir = "_" if toolchain.exec_triple.system == "windows" else workspace_name
+
     # Relying on runfiles directories is unreliable when passing data to
     # dependent actions. Instead, an explicit directory should be created
     # until more reliable functionality is implemented in Bazel:
@@ -439,8 +451,10 @@ def _cargo_build_script_impl(ctx):
         script = ctx.attr.script,
         data_runfiles = ctx.attr.data_runfiles,
         retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
+        repo_name = workspace_name,
+        repo_dir = repo_dir,
     )
-    manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
+    manifest_dir = "{}/{}/{}".format(runfiles_dir.path, repo_dir, ctx.label.package)
 
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":

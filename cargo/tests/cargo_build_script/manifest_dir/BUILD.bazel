@@ -1,0 +1,5 @@
+load(":manifest_dir_test.bzl", "manifest_dir_test_suite")
+
+manifest_dir_test_suite(
+    name = "manifest_dir_test_suite",
+)
