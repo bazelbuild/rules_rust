@@ -55,11 +55,14 @@ def _assert_host_and_target_tools_impl(ctx):
     env = analysistest.begin(ctx)
     cargo_action = _find_cargo_action(analysistest.target_under_test(env).actions)
     for var in ("CC", "CXX", "AR"):
+        # The runner drops a libtool `AR`, so no `HOST_AR`/`TARGET_AR` is set for it.
+        expect_set = not (var == "AR" and "libtool" in cargo_action.env.get("AR", ""))
         for prefix in ("HOST_", "TARGET_"):
-            asserts.true(
+            asserts.equals(
                 env,
+                expect_set,
                 cargo_action.env.get(prefix + var, "") != "",
-                "expected env var {}{} to be set".format(prefix, var),
+                "expected env var {}{} to be {}".format(prefix, var, "set" if expect_set else "unset"),
             )
     return analysistest.end(env)
 
