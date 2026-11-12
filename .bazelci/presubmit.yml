@@ -542,6 +542,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Uses `cargo_aliases` as a non-root module from a root module without a root `BUILD.bazel`.
+    post_shell_commands:
+      - cd ../non_root_no_root_build && bazel test //...
   cu_integ_cargo_aliases_macos:
     name: Crate Universe - cargo_aliases
     platform: macos_arm64
@@ -550,23 +553,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-
-  cu_integ_non_root_no_root_build_ubuntu2204:
-    name: Crate Universe - non_root_no_root_build
-    platform: ubuntu2204
-    working_directory: crate_universe/tests/integration/non_root_no_root_build
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  cu_integ_non_root_no_root_build_macos:
-    name: Crate Universe - non_root_no_root_build
-    platform: macos_arm64
-    working_directory: crate_universe/tests/integration/non_root_no_root_build
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
+    # Uses `cargo_aliases` as a non-root module from a root module without a root `BUILD.bazel`.
+    post_shell_commands:
+      - cd ../non_root_no_root_build && bazel test //...
 
   # --- cargo_bindeps (linux only, requires nightly) ---
   cu_integ_cargo_bindeps_ubuntu2204:
