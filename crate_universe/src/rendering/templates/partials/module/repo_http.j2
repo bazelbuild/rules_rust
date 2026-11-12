@@ -4,25 +4,25 @@
     {%- if attrs | get(key="patch_args", default=Null) %}
         patch_args = [
     {%- for arg in attrs.patch_args %}
-            "{{ arg }}",
+            "{{ arg | addslashes }}",
     {%- endfor %}
         ],
     {%- endif %}
     {%- if attrs | get(key="patch_tool", default=Null) %}
-        patch_tool = "{{ attrs.patch_tool }}",
+        patch_tool = "{{ attrs.patch_tool | addslashes }}",
     {%- endif %}
     {%- if attrs | get(key="patches", default=Null) %}
         patches = [
     {%- for patch in attrs.patches %}
-            "{{ patch }}",
+            "{{ patch | addslashes }}",
     {%- endfor %}
         ],
     {%- endif %}
     {%- if attrs | get(key="sha256", default=Null) %}
-        sha256 = "{{ attrs.sha256 }}",
+        sha256 = "{{ attrs.sha256 | addslashes }}",
     {%- endif %}
         type = "tar.gz",
-        urls = ["{{ attrs.url }}"],
-        strip_prefix = "{{ crate.name }}-{{ crate.version }}",
+        urls = ["{{ attrs.url | addslashes }}"],
+        strip_prefix = "{{ crate.name | addslashes }}-{{ crate.version | addslashes }}",
         build_file = Label("{{ crate_build_file(name = crate.name, version = crate.version)}}"),
     )
