@@ -40,6 +40,7 @@ def use_default_shell_env():
     """
     bool_flag(
         name = "use_default_shell_env",
+        scope = "universal",
         build_setting_default = True,
     )
 
