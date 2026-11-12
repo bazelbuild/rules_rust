@@ -1,6 +1,7 @@
 """Helpers for constructing supported Rust platform triples"""
 
 load("//rust/platform:triple.bzl", "triple")
+load("//rust/private:semver.bzl", "semver")
 
 def _support(*, std = False, host_tools = False):
     """Identify the type of support an associated platform triple has.
@@ -264,17 +265,60 @@ _SYSTEM_TO_DYLIB_EXT = {
     "windows": ".dll",
 }
 
-# See https://github.com/rust-lang/rust/blob/master/src/libstd/build.rs
+def _since(version, flags):
+    """Marks `flags` as the stdlib linkflags of Rust releases starting at `version`."""
+    return struct(since = version, flags = flags)
+
+# System libraries the Rust standard library needs, for linkers which do not see
+# the `#[link]` directives inside the rlibs (`cc_common.link` and `cc_binary`).
+#
+# Sources of truth:
+# - https://github.com/rust-lang/rust/blob/1.99.0/library/windows_link/src/lib.rs
+#   (`library/windows_targets` in releases up to at least 1.90.0): the import libraries `std` links on Windows.
+# - https://github.com/rust-lang/rust/blob/1.99.0/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs:
+#   what the Rust test suite links C programs against per platform.
+# - https://github.com/rust-lang/libc/blob/0.2.169/src/unix/mod.rs: the per-OS `#[link]` directives on unix.
+#
+# The libraries a release needs change over time; the history is tracked back to Rust 1.30.0. An
+# entry is either a list of flags, which applies to every release, or a list of
+# `_since(version, flags)` records in ascending `version` order: the record with the newest
+# `version` not newer than the toolchain's release applies, the first record covers releases older
+# than any listed and the last record covers `nightly` and `beta` toolchains whose release is not
+# known.
+#
+# Up to 1.46 the directives lived in `src/libstd/build.rs`; by 1.60 they had moved to `#[link]`
+# attributes in `library/std/src/sys/{,pal/}unix/mod.rs` and `library/unwind/src/lib.rs`.
+
+_APPLE_STDLIB_LINKFLAGS = [
+    _since("1.30.0", ["-lSystem", "-lresolv"]),
+    # https://github.com/rust-lang/rust/pull/102766
+    _since("1.66.0", ["-lSystem"]),
+]
+
+_WINDOWS_GNU_STDLIB_LINKFLAGS = [
+    _since("1.30.0", ["-lws2_32", "-luserenv"]),
+    # `BCryptGenRandom` replaced `RtlGenRandom`.
+    _since("1.57.0", ["-lws2_32", "-luserenv", "-lbcrypt"]),
+    # `std` started calling `Nt*` file APIs directly.
+    _since("1.70.0", ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll"]),
+    # `WaitOnAddress` based locks.
+    _since("1.78.0", ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"]),
+]
+
 _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # NOTE: Rust stdlib `build.rs` treats android as a subset of linux, rust rules treat android
     # as its own system.
-    "android": ["-ldl", "-llog"],
+    "android": [
+        _since("1.30.0", ["-ldl", "-llog", "-lgcc"]),
+        # The unwinder moved from `libgcc` to the `libunwind` the NDK's clang links by itself.
+        _since("1.75.0", ["-ldl", "-llog"]),
+    ],
     "bitrig": [],
     # TODO(gregbowyer): If rust stdlib is compiled for cloudabi with the backtrace feature it
     # includes `-lunwind` but this might not actually be required.
     # I am not sure which is the common configuration or how we encode it as a link flag.
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
-    "darwin": ["-lSystem"],
+    "darwin": _APPLE_STDLIB_LINKFLAGS,
     "dragonfly": ["-lpthread"],
     "eabi": [],
     "eabihf": [],
@@ -294,12 +338,21 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "freebsd": ["-lexecinfo", "-lpthread"],
     "fuchsia": ["-lzircon", "-lfdio"],
     "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
-    "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
+    "ios": [
+        _since("1.30.0", ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"]),
+        # https://github.com/rust-lang/rust/pull/102766
+        _since("1.66.0", ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation"]),
+        _since("1.75.0", ["-lSystem", "-lobjc", "-Wl,-framework,Foundation"]),
+        _since("1.80.0", ["-lSystem"]),
+    ],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
-    "macos": ["-lSystem"],
+    "macos": _APPLE_STDLIB_LINKFLAGS,
     "nacl": [],
-    "netbsd": ["-lpthread", "-lrt"],
+    "netbsd": [
+        _since("1.30.0", ["-lpthread"]),
+        _since("1.32.0", ["-lpthread", "-lrt"]),
+    ],
     "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.
     "none": [],
     "nto": [],
@@ -312,10 +365,23 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "wasip1": [],
     "wasip2": [],
     "windows": {
-        # see https://github.com/rust-lang/rust/blob/c4aa646f15e40bd3e64ddb5017b7b89b3646ac99/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs#L14-L23
-        "gnu": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
-        "gnullvm": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
-        "msvc": ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],
+        # Mirrors `EXTRACFLAGS` of the Rust test suite, e.g.
+        # https://github.com/rust-lang/rust/blob/1.78.0/tests/run-make/tools.mk and since 1.81
+        # https://github.com/rust-lang/rust/blob/1.87.0/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs#L4-L19
+        "gnu": _WINDOWS_GNU_STDLIB_LINKFLAGS,
+        "gnullvm": _WINDOWS_GNU_STDLIB_LINKFLAGS,
+        # `kernel32.lib` is not in `EXTRACFLAGS` because `link.exe` adds it by default; links with
+        # `/NODEFAULTLIB` need it spelled out (https://github.com/bazelbuild/rules_rust/issues/4375).
+        "msvc": [
+            _since("1.30.0", ["ws2_32.lib", "userenv.lib", "shell32.lib", "advapi32.lib", "kernel32.lib"]),
+            _since("1.33.0", ["ws2_32.lib", "userenv.lib", "advapi32.lib", "kernel32.lib"]),
+            _since("1.57.0", ["ws2_32.lib", "userenv.lib", "advapi32.lib", "bcrypt.lib", "kernel32.lib"]),
+            _since("1.70.0", ["ws2_32.lib", "userenv.lib", "advapi32.lib", "bcrypt.lib", "ntdll.lib", "kernel32.lib"]),
+            _since("1.78.0", ["ws2_32.lib", "userenv.lib", "advapi32.lib", "bcrypt.lib", "ntdll.lib", "synchronization.lib", "kernel32.lib"]),
+            # `std` only links `advapi32` for `*-win7-windows-msvc` targets from here on, see
+            # https://github.com/rust-lang/rust/blob/1.87.0/library/windows_targets/src/lib.rs
+            _since("1.87.0", ["ws2_32.lib", "userenv.lib", "bcrypt.lib", "ntdll.lib", "synchronization.lib", "kernel32.lib"]),
+        ],
     },
 }
 
@@ -444,24 +510,55 @@ def system_to_staticlib_ext(system, abi = None):
 def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
 
-def system_to_stdlib_linkflags(system, abi = None):
+def _stdlib_linkflags_for_release(flags, version):
+    """Picks the entry of a versioned `_SYSTEM_TO_STDLIB_LINKFLAGS` value matching a Rust release.
+
+    Args:
+        flags (list): Either plain flags or `_since` records in ascending version order.
+        version (str, optional): The Rust release (e.g. `1.87.0`), `nightly`, `beta` or `None`.
+
+    Returns:
+        list: The flags applying to `version`.
+    """
+    if not flags or type(flags[0]) != "struct":
+        return flags
+
+    if version == None or version in ("nightly", "beta"):
+        return flags[-1].flags
+
+    release = semver(version)
+    release = (release.major, release.minor, release.patch)
+
+    selected = flags[0].flags
+    for entry in flags:
+        since = semver(entry.since)
+        if (since.major, since.minor, since.patch) <= release:
+            selected = entry.flags
+    return selected
+
+def system_to_stdlib_linkflags(system, abi = None, version = None):
     """Return the stdlib linker flags for the given system (and optional abi).
 
     Args:
         system (str): The system component of a Rust target triple (e.g. `linux`, `windows`, `darwin`).
         abi (str, optional): The ABI component of the triple, used to select flag variants on systems (like `windows`) whose stdlib flags depend on the ABI.
+        version (str, optional): The Rust release of the toolchain (e.g. `1.87.0`). Where the libraries
+            `std` needs have changed between releases this selects the matching flags. `None`,
+            `nightly` and `beta` select the flags of the newest known release.
 
     Returns:
         list: A list of linker flag strings to pass to the linker for the given system/abi.
     """
     flags = _SYSTEM_TO_STDLIB_LINKFLAGS[system]
-    if type(flags) == "list":
-        return flags
-    if abi:
-        for prefix, abi_flags in flags.items():
-            if prefix and abi.startswith(prefix):
-                return abi_flags
-    return flags.get(None, [])
+    if type(flags) == "dict":
+        abi_flags = flags.get(None, [])
+        if abi:
+            for prefix, candidate in flags.items():
+                if prefix and abi.startswith(prefix):
+                    abi_flags = candidate
+                    break
+        flags = abi_flags
+    return _stdlib_linkflags_for_release(flags, version)
 
 def triple_to_constraint_set(target_triple):
     """Returns a set of constraints for a given platform triple
