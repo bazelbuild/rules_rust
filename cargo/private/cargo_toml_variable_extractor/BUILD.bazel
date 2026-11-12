@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
 
 rust_binary(
     name = "cargo_toml_variable_extractor",
@@ -11,4 +11,10 @@ rust_binary(
         "//cargo/3rdparty/crates:semver",
         "//cargo/3rdparty/crates:toml",
     ],
+)
+
+rust_test(
+    name = "cargo_toml_variable_extractor_test",
+    crate = ":cargo_toml_variable_extractor",
+    edition = "2021",
 )
