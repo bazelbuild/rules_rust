@@ -315,7 +315,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
         # see https://github.com/rust-lang/rust/blob/c4aa646f15e40bd3e64ddb5017b7b89b3646ac99/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs#L14-L23
         "gnu": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
         "gnullvm": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
-        "msvc": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+        "msvc": ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],
     },
 }
 

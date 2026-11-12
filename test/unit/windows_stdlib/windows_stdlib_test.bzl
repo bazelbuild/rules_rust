@@ -20,7 +20,7 @@ def _stdlib_linkflags_windows_test_impl(ctx):
 
     asserts.equals(
         env,
-        ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+        ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],
         msvc_flags,
     )
     asserts.equals(
@@ -58,7 +58,7 @@ def _build_for_rust_toolchain_windows_flags_test_impl(ctx):
 
     asserts.true(
         env,
-        'stdlib_linkflags = ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],' in rendered_msvc,
+        'stdlib_linkflags = ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],' in rendered_msvc,
         "MSVC toolchain should render .lib stdlib linkflags:\n%s" % rendered_msvc,
     )
     asserts.true(
