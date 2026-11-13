@@ -1,5 +1,6 @@
 load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//local_patching/vendor:crates.bzl", "crate_deps")
 
 crates_vendor(
     name = "crates_vendor",
@@ -22,10 +23,17 @@ rust_binary(
     name = "bin",
     srcs = ["src/main.rs"],
     edition = "2021",
-    deps = ["//local_patching/vendor:rand"],
+    deps = ["//local_patching/vendor:getrandom"] + crate_deps(["rand"]),
 )
 
 rust_test(
     name = "test",
     crate = ":bin",
+)
+
+rust_test(
+    name = "crate_deps_test",
+    srcs = ["src/getrandom_test.rs"],
+    edition = "2021",
+    deps = crate_deps(["getrandom"]),
 )

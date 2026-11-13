@@ -6,11 +6,11 @@ use std::sync::Arc;
 use anyhow::{Context as AnyhowContext, Result};
 use serde_json::{from_value, to_value, Value};
 
-use crate::config::RenderConfig;
+use crate::config::{RenderConfig, VendorMode};
 use crate::context::{Context, SingleBuildFileRenderContext};
 use crate::rendering::{
-    render_crate_bazel_label, render_crate_bazel_repository, render_crate_build_file,
-    render_module_label, CrateContext, Platforms,
+    local_crate_label, render_crate_bazel_label, render_crate_bazel_repository,
+    render_crate_build_file, render_module_label, CrateContext, Platforms,
 };
 use crate::select::Select;
 use crate::utils::sanitize_repository_name;
@@ -98,6 +98,7 @@ impl TemplateEngine {
             crate_alias_fn_generator(
                 render_config.crate_alias_template.clone(),
                 render_config.repository_name.clone(),
+                render_config.vendor_mode,
             ),
         );
         tera.register_function(
@@ -262,12 +263,24 @@ fn crate_label_fn_generator(template: String, repository_name: String) -> impl t
 }
 
 /// Convert a crate name into an alias name by applying transforms to invalid characters.
-fn crate_alias_fn_generator(template: String, repository_name: String) -> impl tera::Function {
+fn crate_alias_fn_generator(
+    template: String,
+    repository_name: String,
+    vendor_mode: Option<VendorMode>,
+) -> impl tera::Function {
     Box::new(
         move |args: &HashMap<String, Value>| -> tera::Result<Value> {
             let name = parse_tera_param!("name", String, args);
             let version = parse_tera_param!("version", String, args);
             let target = parse_tera_param!("target", String, args);
+            let local_path = args.get("local_path").and_then(Value::as_str);
+
+            if let (Some(VendorMode::Local), Some(local_path)) = (vendor_mode, local_path) {
+                let label = local_crate_label(camino::Utf8Path::new(local_path), &target)
+                    .map_err(|err| tera::Error::msg(format!("{err:#}")))?;
+                return to_value(label.to_string())
+                    .map_err(|_| tera::Error::msg("Failed to generate local crate's label"));
+            }
 
             match to_value(render_crate_bazel_label(
                 &template,
@@ -330,4 +343,35 @@ fn local_crate_mirror_options_json_fn_generator(
                 })
         },
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tera::Function;
+
+    #[test]
+    fn local_crate_alias_rejects_invalid_labels() {
+        let function = crate_alias_fn_generator(
+            "@{repository}__{name}-{version}//:{target}".to_owned(),
+            "crate_index".to_owned(),
+            Some(VendorMode::Local),
+        );
+        let args = HashMap::from([
+            ("name".to_owned(), Value::String("patched_crate".to_owned())),
+            ("version".to_owned(), Value::String("0.1.0".to_owned())),
+            (
+                "target".to_owned(),
+                Value::String("patched_crate".to_owned()),
+            ),
+            (
+                "local_path".to_owned(),
+                Value::String("fork/\" + fail(\"injected\") + \"".to_owned()),
+            ),
+        ]);
+
+        let error = function.call(&args).unwrap_err();
+
+        assert!(error.to_string().contains("Failed to generate label"));
+    }
 }
