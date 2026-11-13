@@ -404,7 +404,25 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
     let path = path.as_ref();
     match mode {
         Mode::DirectoryBased(runfiles_dir) => Some(runfiles_dir.join(path)),
-        Mode::ManifestBased(path_mapping) => path_mapping.get(path).cloned(),
+        Mode::ManifestBased(path_mapping) => {
+            if let Some(target) = path_mapping.get(path) {
+                return Some(target.clone());
+            }
+            // A directory runfile (e.g. a TreeArtifact) is listed as a single
+            // row, so a path beneath it has no row of its own. Resolve it
+            // against the longest listed ancestor, like the C++, Java and
+            // Python runfiles libraries. An empty target marks an empty
+            // file, which cannot contain anything.
+            path.ancestors()
+                .skip(1)
+                .filter(|ancestor| !ancestor.as_os_str().is_empty())
+                .find_map(|ancestor| {
+                    let target = path_mapping
+                        .get(ancestor)
+                        .filter(|target| !target.as_os_str().is_empty())?;
+                    Some(target.join(path.strip_prefix(ancestor).ok()?))
+                })
+        }
     }
 }
 
@@ -910,6 +928,64 @@ mod test {
         };
 
         assert_eq!(r.rlocation("does/not/exist"), None);
+    }
+
+    #[test]
+    fn test_manifest_based_file_under_directory() {
+        let r = Runfiles::builder()
+            .manifest(
+                [
+                    "repo/tree /exec/repo/tree",
+                    "repo/tree/sub /exec/other/sub",
+                    "repo/tree/listed.txt /exec/listed.txt",
+                    "repo/empty ",
+                ]
+                .join("\n"),
+            )
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            r.rlocation("repo/tree"),
+            Some(PathBuf::from("/exec/repo/tree"))
+        );
+        assert_eq!(
+            r.rlocation("repo/tree/a/b.txt"),
+            Some(PathBuf::from("/exec/repo/tree/a/b.txt"))
+        );
+        // An exact row wins over its directory.
+        assert_eq!(
+            r.rlocation("repo/tree/listed.txt"),
+            Some(PathBuf::from("/exec/listed.txt"))
+        );
+        // The longest listed ancestor wins.
+        assert_eq!(
+            r.rlocation("repo/tree/sub/c.txt"),
+            Some(PathBuf::from("/exec/other/sub/c.txt"))
+        );
+        // Ancestors match whole components, not string prefixes.
+        assert_eq!(r.rlocation("repo/treehouse/a.txt"), None);
+
+        assert_eq!(r.rlocation("repo/empty/a.txt"), None);
+        assert_eq!(r.rlocation("repo/missing/a.txt"), None);
+    }
+
+    #[test]
+    fn test_manifest_based_file_under_directory_with_repo_mapping() {
+        let r = Runfiles::builder()
+            .manifest("canonical/tree /exec/canonical/tree\n")
+            .repo_mapping("source_repo,apparent_name,canonical\n")
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            r.rlocation_from("apparent_name/tree/a/b.txt", "source_repo"),
+            Some(PathBuf::from("/exec/canonical/tree/a/b.txt"))
+        );
+        assert_eq!(
+            r.rlocation_from("apparent_name/tree/a/b.txt", "other_repo"),
+            None
+        );
     }
 
     fn dedent(text: &str) -> String {
