@@ -267,10 +267,63 @@ fn print_optional_env_str(out: &mut impl Write, key: &str, value: Option<&str>) 
     }
 }
 
+fn format_env_str(key: &str, value: &str) -> String {
+    let lines: Vec<&str> = value.split('\n').collect();
+    let mut out = String::with_capacity(key.len() + 1 + value.len());
+    out.push_str(key);
+    out.push('=');
+    for (i, line) in lines.iter().enumerate() {
+        // process_wrapper's `read_to_array` counts trailing backslashes on each
+        // line: every pair (`\\`) unescapes to a literal `\`, and an odd trailing
+        // backslash (`\`) escapes the line break. Double any trailing backslashes
+        // on each line before appending `\` + `\n` for line continuations so
+        // literal trailing backslashes are preserved without corrupting mid-line
+        // backslashes (such as Windows path separators).
+        let trailing_backslashes = line.chars().rev().take_while(|&c| c == '\\').count();
+        out.push_str(line);
+        for _ in 0..trailing_backslashes {
+            out.push('\\');
+        }
+        if i + 1 < lines.len() {
+            out.push_str("\\\n");
+        }
+    }
+    out
+}
+
 fn print_env_str(out: &mut impl Write, key: &str, value: &str) {
-    writeln!(out, "{}={}", key, value.replace('\n', "\\\n")).expect("Failed to print env var");
+    writeln!(out, "{}", format_env_str(key, value)).expect("Failed to print env var");
 }
 
 fn print_env(out: &mut impl Write, key: &str, value: u64) {
     writeln!(out, "{}={}", key, value).expect("Failed to print env var");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_env_str() {
+        assert_eq!(
+            format_env_str("CARGO_PKG_DESCRIPTION", "just a description"),
+            "CARGO_PKG_DESCRIPTION=just a description",
+        );
+        assert_eq!(
+            format_env_str("CARGO_PKG_DESCRIPTION", "line1\nline2"),
+            "CARGO_PKG_DESCRIPTION=line1\\\nline2",
+        );
+        assert_eq!(
+            format_env_str("CARGO_PKG_DESCRIPTION", "line1\\\nSECOND_LINE=1"),
+            "CARGO_PKG_DESCRIPTION=line1\\\\\\\nSECOND_LINE=1",
+        );
+        assert_eq!(
+            format_env_str("CARGO_PKG_DESCRIPTION", "trailing\\"),
+            "CARGO_PKG_DESCRIPTION=trailing\\\\",
+        );
+        assert_eq!(
+            format_env_str("CARGO_PKG_LICENSE_FILE", r"..\..\LICENSE.txt"),
+            r"CARGO_PKG_LICENSE_FILE=..\..\LICENSE.txt",
+        );
+    }
 }
