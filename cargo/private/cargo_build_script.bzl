@@ -350,11 +350,12 @@ def _rlocationpath(file, workspace_name):
 
     return "{}/{}".format(workspace_name, file.short_path)
 
-def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
+def _create_runfiles_dir(ctx, script, data_runfiles, retain_list, repo_name):
     """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
 
     Merges runfiles from both the script binary and the data runfiles target,
-    filtering out the fake executable from the data runfiles.
+    filtering out the fake executable from the data runfiles. Files from
+    `repo_name` are placed under `_` instead of `repo_name`.
 
     Due to the inability to forcibly generate runfiles directories for use as inputs
     to actions, this function creates a custom runfiles directory that can more
@@ -366,6 +367,7 @@ def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
         script (Target): The build script binary target.
         data_runfiles (Target): The `cargo_build_script_runfiles` target providing data files.
         retain_list (list): A list of strings to keep in generated runfiles directories.
+        repo_name (str): The name of the repository that owns the build script.
 
     Returns:
         Tuple[File, Depset[File], Args]:
@@ -380,10 +382,15 @@ def _create_runfiles_dir(ctx, script, data_runfiles, retain_list):
 
     fake_exe = ctx.executable.data_runfiles
 
+    repo_prefix = repo_name + "/"
+
     def _runfiles_map(file):
         if file == fake_exe:
             return None
-        return "{}={}".format(file.path, _rlocationpath(file, workspace_name))
+        rlocationpath = _rlocationpath(file, workspace_name)
+        if rlocationpath.startswith(repo_prefix):
+            rlocationpath = "_/" + rlocationpath[len(repo_prefix):]
+        return "{}={}".format(file.path, rlocationpath)
 
     script_rf = script[DefaultInfo].default_runfiles
     data_rf = data_runfiles[DefaultInfo].default_runfiles
@@ -439,8 +446,9 @@ def _cargo_build_script_impl(ctx):
         script = ctx.attr.script,
         data_runfiles = ctx.attr.data_runfiles,
         retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
+        repo_name = workspace_name,
     )
-    manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
+    manifest_dir = "{}/_/{}".format(runfiles_dir.path, ctx.label.package)
 
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
