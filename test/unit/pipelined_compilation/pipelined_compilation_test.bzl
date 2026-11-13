@@ -22,8 +22,12 @@ def _second_lib_test_impl(ctx):
     rlib_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
     metadata_action = [act for act in tut.actions if act.mnemonic == "RustcMetadata"][0]
 
-    # Both actions should use the same --emit=
-    assert_argv_contains(env, rlib_action, "--emit=dep-info,link,metadata")
+    # The metadata action emits the .rmeta; the rlib action writes its own copy elsewhere.
+    asserts.true(
+        env,
+        any([a.startswith("--emit=metadata=") and "/_rmeta_full/" in a for a in rlib_action.argv]),
+        "expected Rustc to emit metadata to its own path",
+    )
     assert_argv_contains(env, metadata_action, "--emit=dep-info,link,metadata")
 
     # The metadata action should have a .rmeta as output and the rlib action a .rlib
@@ -86,6 +90,25 @@ def _bin_test_impl(ctx):
 bin_test = analysistest.make(_bin_test_impl, config_settings = ENABLE_PIPELINING)
 second_lib_test = analysistest.make(_second_lib_test_impl, config_settings = ENABLE_PIPELINING)
 
+def _rmeta_paths_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = analysistest.target_under_test(env).actions
+    full = [a for a in actions if a.mnemonic == "Rustc"]
+    meta = [a for a in actions if a.mnemonic == "RustcMetadata"]
+    asserts.equals(env, 1, len(full))
+    asserts.equals(env, 1, len(meta))
+    argv = full[0].argv
+    asserts.true(
+        env,
+        any([a.startswith("--emit=metadata=") and "/_rmeta_full/" in a for a in argv]),
+        "expected --emit=metadata= under _rmeta_full: %s" % argv,
+    )
+    shared = [f for f in full[0].outputs.to_list() if f in meta[0].outputs.to_list()]
+    asserts.equals(env, [], shared)
+    return analysistest.end(env)
+
+rmeta_paths_test = analysistest.make(_rmeta_paths_test_impl, config_settings = ENABLE_PIPELINING)
+
 def _pipelined_compilation_test():
     rust_proc_macro(
         name = "my_macro",
@@ -125,9 +148,15 @@ def _pipelined_compilation_test():
         target_compatible_with = _NO_WINDOWS,
     )
 
+    rmeta_paths_test(
+        name = "rmeta_paths_test",
+        target_under_test = ":second",
+    )
+
     return [
         ":second_lib_test",
         ":bin_test",
+        ":rmeta_paths_test",
     ]
 
 def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):

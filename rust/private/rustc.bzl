@@ -1909,6 +1909,14 @@ def rustc_compile_action(
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
+    # The full action must not write the `.rmeta` that the metadata action declares,
+    # or on Windows (no sandbox) it hits the read-only file left by that action.
+    emit_full = emit
+    full_rmeta = None
+    if build_metadata and not experimental_use_cc_common_link:
+        full_rmeta = ctx.actions.declare_file("_rmeta_full/" + build_metadata.basename, sibling = build_metadata)
+        emit_full = [("metadata", full_rmeta) if kind == "metadata" else kind for kind in emit]
+
     # Declares the outputs of the rustc compile action.
     # By default this is the binary output; if cc_common.link is used, this is
     # the main `.o` file (`output_o` below).
@@ -1975,7 +1983,7 @@ def rustc_compile_action(
         toolchain = toolchain,
         tool_file = toolchain.rustc,
         cc_toolchain = cc_toolchain,
-        emit = emit,
+        emit = emit_full,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
         dep_info = dep_info,
@@ -2046,6 +2054,8 @@ def rustc_compile_action(
 
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
+    if full_rmeta:
+        action_outputs.append(full_rmeta)
     if rustc_output:
         action_outputs.append(rustc_output)
     if profiling_dir:
