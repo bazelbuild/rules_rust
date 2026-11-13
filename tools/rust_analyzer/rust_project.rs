@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     aquery::{CrateSpec, CrateType},
-    buildfile_to_targets, source_file_to_buildfile, ToolchainInfo,
+    buildfile_to_targets, source_file_to_buildfile, ToolchainInfo, BUILD_FILE_NAMES,
 };
 
 /// The argument that `rust-analyzer` can pass to the workspace discovery command.
@@ -625,19 +625,32 @@ pub fn assemble_rust_project(
             env: Some(c.env.clone()),
             is_proc_macro: c.proc_macro_dylib_path.is_some(),
             proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
-            build: c.build.as_ref().map(|b| Build {
-                // `consolidate_crate_specs` already replaces the lib's
-                // build.label with the sibling test's, so `{label}`
-                // substitution in TestOne / Check templates is always a
-                // valid Bazel target.
-                label: b.label.clone(),
-                build_file: b.build_file.clone().into(),
-                target_kind,
-            }),
+            build: match &c.build {
+                Some(b) => Some(Build {
+                    // `consolidate_crate_specs` already replaces the lib's
+                    // build.label with the sibling test's, so `{label}`
+                    // substitution in TestOne / Check templates is always a
+                    // valid Bazel target.
+                    label: b.label.clone(),
+                    build_file: package_build_file(Utf8Path::new(&b.package_dir))
+                        .with_context(|| format!("resolving BUILD file of {}", b.label))?,
+                    target_kind,
+                }),
+                None => None,
+            },
         });
     }
 
     Ok(project)
+}
+
+/// Returns the BUILD file Bazel reads for the package in `package_dir`.
+fn package_build_file(package_dir: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
+    BUILD_FILE_NAMES
+        .iter()
+        .map(|name| package_dir.join(name))
+        .find(|path| path.exists())
+        .with_context(|| format!("no BUILD file found in {package_dir}"))
 }
 
 #[cfg(test)]
@@ -879,6 +892,70 @@ mod tests {
             flycheck.args,
             vec!["{label}".to_owned(), "{saved_file}".to_owned()],
         );
+    }
+
+    fn assemble_with_package_dir(package_dir: &Utf8Path) -> anyhow::Result<RustProject> {
+        let mut crate_spec = spec("ID-a", &[]);
+        crate_spec.build = Some(crate::aquery::CrateSpecBuild {
+            label: "//pkg:a".to_owned(),
+            package_dir: package_dir.to_string(),
+        });
+        assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+                version: String::new(),
+            },
+            &BTreeSet::from([crate_spec]),
+        )
+    }
+
+    #[test]
+    fn build_file_resolves_to_existing_build_file_name() {
+        for (tag, files, expected) in [
+            ("build_bazel", &["pkg/BUILD.bazel"][..], "pkg/BUILD.bazel"),
+            ("build", &["pkg/BUILD"][..], "pkg/BUILD"),
+            (
+                "build_and_build_bazel",
+                &["pkg/BUILD", "pkg/BUILD.bazel"][..],
+                "pkg/BUILD.bazel",
+            ),
+        ] {
+            let files: Vec<(&str, &str)> = files.iter().map(|name| (*name, "")).collect();
+            let workspace = crate::make_workspace(&format!("build_file_{tag}"), &files);
+            let project =
+                assemble_with_package_dir(&workspace.join("pkg")).expect("expect success");
+            assert_eq!(
+                project.crates[0].build.as_ref().unwrap().build_file,
+                workspace.join(expected),
+            );
+            std::fs::remove_dir_all(&workspace).unwrap();
+        }
+    }
+
+    #[test]
+    fn build_file_resolves_in_root_package() {
+        let workspace = crate::make_workspace("build_file_root_package", &[("BUILD.bazel", "")]);
+        let project = assemble_with_package_dir(Utf8Path::new(&format!("{workspace}/")))
+            .expect("expect success");
+        assert_eq!(
+            project.crates[0].build.as_ref().unwrap().build_file,
+            workspace.join("BUILD.bazel"),
+        );
+        std::fs::remove_dir_all(&workspace).unwrap();
+    }
+
+    #[test]
+    fn missing_build_file_fails_assembly() {
+        let workspace = crate::make_workspace("build_file_missing", &[("pkg/lib.rs", "")]);
+        let error = assemble_with_package_dir(&workspace.join("pkg")).unwrap_err();
+        assert_eq!(
+            format!("{error:#}"),
+            format!("resolving BUILD file of //pkg:a: no BUILD file found in {workspace}/pkg"),
+        );
+        std::fs::remove_dir_all(&workspace).unwrap();
     }
 
     // --- diagnose() suite ---
