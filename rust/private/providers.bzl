@@ -58,7 +58,9 @@ CrateInfo = provider(
 DepInfo = provider(
     doc = "A provider containing information about a Crate's dependencies.",
     fields = {
+        "build_script_linker_flags": "File, optional: Direct build-script native link flags not already supplied by a direct Rust library.",
         "dep_env": "File: File with environment variables direct dependencies build scripts rely upon.",
+        "direct_build_info": "BuildInfo, optional: The build script directly attached to this crate, before deduplicating its native link flags.",
         "direct_crates": "depset[AliasableDepInfo]",
         "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
