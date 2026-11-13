@@ -1,0 +1,3 @@
+load(":msvc_pdb_test.bzl", "msvc_pdb_test_suite")
+
+msvc_pdb_test_suite(name = "msvc_pdb_test_suite")
