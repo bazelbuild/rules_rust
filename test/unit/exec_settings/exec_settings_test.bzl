@@ -4,6 +4,8 @@ load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
 load("@rules_testing//lib:util.bzl", "util")
+
+# buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "ExtraExecRustcEnvInfo")
 
 _SettingValueInfo = provider(
