@@ -8,6 +8,7 @@ rust_library(
     aliases = aliases(),
     edition = "2018",
     proc_macro_deps = all_crate_deps(proc_macro = True),
+    visibility = ["//visibility:public"],
     deps = all_crate_deps(normal = True),
 )
 
