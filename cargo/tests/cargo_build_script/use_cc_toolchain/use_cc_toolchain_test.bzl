@@ -1,7 +1,8 @@
 """Analysis tests for the `use_cc_toolchain` attribute of `cargo_build_script`.
 
-Only the disabled paths are exercised; the enabled paths are already covered by
-the pre-existing `cc_args_and_env` suite.
+The disabled paths check that no cc toolchain is used. The enabled path checks
+that the exec toolchain is exposed to cc-rs as `HOST_*` and the target toolchain
+as `TARGET_*`.
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
@@ -50,6 +51,43 @@ _cc_toolchain_absent_with_flag_enabled_test = analysistest.make(
     config_settings = {_USE_CC_TOOLCHAIN_FLAG: True},
 )
 
+def _assert_host_and_target_tools_impl(ctx):
+    env = analysistest.begin(ctx)
+    cargo_action = _find_cargo_action(analysistest.target_under_test(env).actions)
+    for var in ("CC", "CXX", "AR"):
+        # The runner drops a libtool `AR`, so no `HOST_AR`/`TARGET_AR` is set for it.
+        expect_set = not (var == "AR" and "libtool" in cargo_action.env.get("AR", ""))
+        for prefix in ("HOST_", "TARGET_"):
+            asserts.equals(
+                env,
+                expect_set,
+                cargo_action.env.get(prefix + var, "") != "",
+                "expected env var {}{} to be {}".format(prefix, var, "set" if expect_set else "unset"),
+            )
+    return analysistest.end(env)
+
+_host_and_target_tools_test = analysistest.make(
+    impl = _assert_host_and_target_tools_impl,
+    config_settings = {_USE_CC_TOOLCHAIN_FLAG: True},
+)
+
+def _assert_host_and_target_tools_absent_impl(ctx):
+    env = analysistest.begin(ctx)
+    cargo_action = _find_cargo_action(analysistest.target_under_test(env).actions)
+    for var in ("CC", "CXX", "AR"):
+        for prefix in ("HOST_", "TARGET_"):
+            asserts.false(
+                env,
+                prefix + var in cargo_action.env,
+                "expected env var {}{} to be unset".format(prefix, var),
+            )
+    return analysistest.end(env)
+
+_host_and_target_tools_absent_test = analysistest.make(
+    impl = _assert_host_and_target_tools_absent_impl,
+    config_settings = {_USE_CC_TOOLCHAIN_FLAG: False},
+)
+
 def use_cc_toolchain_test_suite(name):
     """Instantiates analysis tests covering `cargo_build_script.use_cc_toolchain`.
 
@@ -87,11 +125,22 @@ def use_cc_toolchain_test_suite(name):
         target_under_test = ":build_script_disabled",
     )
 
+    _host_and_target_tools_test(
+        name = "host_and_target_tools_test",
+        target_under_test = ":build_script_default",
+    )
+    _host_and_target_tools_absent_test(
+        name = "host_and_target_tools_absent_test",
+        target_under_test = ":build_script_disabled",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":default_attr_follows_disabled_flag_test",
             ":disabled_attr_matches_disabled_flag_test",
             ":disabled_attr_overrides_enabled_flag_test",
+            ":host_and_target_tools_test",
+            ":host_and_target_tools_absent_test",
         ],
     )
