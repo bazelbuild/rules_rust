@@ -1,0 +1,38 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@crates_ui//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_rust//wasm_bindgen:defs.bzl", "rust_wasm_bindgen")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "ui-wasm",
+    srcs = [
+        "src/app.rs",
+        "src/main.rs",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:wasm32",
+    ],
+    deps = all_crate_deps(normal = True),
+)
+
+rust_wasm_bindgen(
+    name = "ui-bindgen",
+    target = "web",
+    wasm_file = "ui-wasm",
+)
+
+copy_to_directory(
+    name = "ui-http-root",
+    srcs = [
+        "index.css",
+        "index.html",
+        ":ui-bindgen",
+    ],
+    include_srcs_patterns = [
+        "ui-bindgen_bg.wasm",
+        "ui-bindgen.js",
+        "index*",
+    ],
+)
