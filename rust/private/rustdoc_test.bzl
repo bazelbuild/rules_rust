@@ -157,7 +157,7 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
 
     ctx.actions.run(
         mnemonic = "RustdocTestCompile",
-        progress_message = "RustdocTestCompile {}".format(ctx.attr.crate.label),
+        progress_message = "RustdocTestCompile %{label}" if toolchain._experimental_simple_progress_messages else "RustdocTestCompile {}".format(ctx.attr.crate.label),
         outputs = [doctest_dir, test_metadata],
         executable = ctx.executable._rustdoc_compile_wrapper,
         inputs = action.inputs,
@@ -274,7 +274,7 @@ def _legacy_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
 
     ctx.actions.run(
         mnemonic = "RustdocTestWriter",
-        progress_message = "Generating Rustdoc test runner for {}".format(ctx.attr.crate.label),
+        progress_message = "RustdocTestWriter %{label}" if toolchain._experimental_simple_progress_messages else "Generating Rustdoc test runner for {}".format(ctx.attr.crate.label),
         executable = ctx.executable._test_writer,
         inputs = action.inputs,
         tools = tools,

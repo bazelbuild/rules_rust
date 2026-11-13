@@ -18,6 +18,7 @@ def _cargo_toml_env_vars_impl(ctx):
         inputs = inputs,
         arguments = [args],
         mnemonic = "ExtractCargoTomlEnvVars",
+        progress_message = "ExtractCargoTomlEnvVars %{label}",
     )
 
     return [
