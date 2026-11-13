@@ -2644,4 +2644,50 @@ mod test {
             "proc-macro lib must appear in proc_macro_deps:\n{binary_section}"
         );
     }
+
+    #[test]
+    fn render_crate_repositories_escapes_special_chars() {
+        let mut context = Context::default();
+        let git_id = CrateId::new("git_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            git_id.clone(),
+            CrateContext {
+                name: git_id.name,
+                version: git_id.version,
+                package_url: None,
+                repository: Some(SourceAnnotation::Git {
+                    remote: "https://example.com/repo.git".to_owned(),
+                    commitish: crate::config::Commitish::Rev(
+                        "0123456789abcdef0123456789abcdef01234567".to_owned(),
+                    ),
+                    shallow_since: None,
+                    strip_prefix: Some(r#"crates/sub"dir\with_special"#.to_owned()),
+                    patch_args: Some(vec![r#"-p1"#.to_owned()]),
+                    patch_tool: None,
+                    patches: None,
+                }),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let crates_module = output.get(&PathBuf::from("crates.bzl")).unwrap();
+
+        assert!(
+            crates_module.contains(r#"strip_prefix = "crates/sub\"dir\\with_special","#),
+            "strip_prefix should escape quotes and backslashes in crates.bzl:\n{crates_module}"
+        );
+    }
 }

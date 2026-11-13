@@ -379,7 +379,7 @@ def crate_repositories():
         generator = "{{ generator }}",
         {%- endif %}
         options_json = "{{ local_crate_mirror_options_json(crate_context = crate) | replace(from='\', to='\\') | replace(from='"', to='\"') }}",
-        path = "{{attrs.path}}",
+        path = "{{ attrs.path | addslashes }}",
     )
 
 {%- else %}
