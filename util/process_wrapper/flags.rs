@@ -28,7 +28,7 @@ pub(crate) enum FlagParseError {
 }
 
 impl fmt::Display for FlagParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnknownFlag(ref flag) => write!(f, "unknown flag \"{flag}\""),
             Self::ValueMissing(ref flag) => write!(f, "flag \"{flag}\" missing parameter(s)"),
@@ -50,13 +50,13 @@ struct FlagDef<'a, T> {
 }
 
 impl<T> fmt::Display for FlagDef<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}\t{}", self.name, self.help)
     }
 }
 
 impl<T> fmt::Debug for FlagDef<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FlagDef")
             .field("name", &self.name)
             .field("help", &self.help)
