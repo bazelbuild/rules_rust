@@ -126,6 +126,9 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
 
+/// Target pattern discover uses when it covers the whole workspace.
+pub const ROOT_TARGET_PATTERN: &str = "//...";
+
 /// `.exe` on every platform: Node spawn (the RA VS Code extension)
 /// can't execute extensionless files on Windows without `shell: true`;
 /// POSIX `execve` ignores extensions.
@@ -166,7 +169,7 @@ pub fn generate_rust_project(
     // Discover specs as a build side-effect via BEP. Replaces a
     // separate `bazel aquery` — the dominant cost in a large monorepo.
     let bep_file = output_base.join(format!("rules_rust_ra_bep_{}.json", std::process::id()));
-    let _bep_cleanup = BepCleanup(bep_file.clone());
+    let _bep_cleanup = RemoveOnDrop(bep_file.clone());
 
     let build = generate_crate_info(
         bazel,
@@ -363,9 +366,9 @@ fn parse_and_consolidate(
     consolidate_crate_specs(crate_specs)
 }
 
-/// Best-effort cleanup of the temporary BEP file Bazel wrote.
-struct BepCleanup(Utf8PathBuf);
-impl Drop for BepCleanup {
+/// Best-effort removal of a temporary file when dropped.
+pub struct RemoveOnDrop(pub Utf8PathBuf);
+impl Drop for RemoveOnDrop {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.0);
     }
@@ -400,6 +403,84 @@ pub fn bazel_info(
         .collect();
 
     Ok(info_map)
+}
+
+/// The `bazel query` expression that selects the targets discover builds.
+///
+/// `root_target_query` replaces [`ROOT_TARGET_PATTERN`] only; package
+/// patterns are queried as-is.
+pub fn discovery_query(pattern: &str, root_target_query: Option<&str>) -> String {
+    match root_target_query.map(str::trim) {
+        Some(query) if pattern == ROOT_TARGET_PATTERN && !query.is_empty() => query.to_owned(),
+        _ => pattern.to_owned(),
+    }
+}
+
+/// Runs `bazel query` and returns the matched labels.
+///
+/// Unlike a `bazel build` target pattern, a query keeps targets tagged
+/// `manual`. Partial results from `--keep_going` (exit code 3) are kept.
+pub fn query_targets(
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    output_base: &Utf8Path,
+    bazel_startup_options: &[String],
+    query: &str,
+) -> anyhow::Result<Vec<String>> {
+    log::info!("running bazel query {query}");
+    let output = bazel_command(bazel, Some(workspace), Some(output_base))
+        .args(bazel_startup_options)
+        .arg("query")
+        .arg("--keep_going")
+        .arg("--output=label")
+        .arg(query)
+        .output()
+        .context("running bazel query")?;
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let labels = parse_query_labels(&String::from_utf8_lossy(&output.stdout));
+    match output.status.code() {
+        Some(0) | Some(3) if !labels.is_empty() => {
+            if output.status.code() == Some(3) {
+                log::warn!("bazel query `{query}` returned partial results:\n{stderr}");
+            }
+            log::info!("bazel query matched {} targets", labels.len());
+            Ok(labels)
+        }
+        Some(0) => bail!("bazel query `{query}` matched no targets"),
+        _ => bail!(
+            "bazel query `{query}` failed ({:?}):\n{stderr}",
+            output.status
+        ),
+    }
+}
+
+/// Labels from `bazel query --output=label` stdout.
+fn parse_query_labels(stdout: &str) -> Vec<String> {
+    stdout
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Writes `labels` to a `--target_pattern_file` and returns the build
+/// args that read it.
+///
+/// Explicit labels make Bazel fail on incompatible targets, so the args
+/// also skip those, as `//...` does.
+pub fn write_target_pattern_file(
+    path: &Utf8Path,
+    labels: &[String],
+) -> anyhow::Result<Vec<String>> {
+    let mut content = labels.join("\n");
+    content.push('\n');
+    fs::write(path, content).with_context(|| format!("writing target pattern file {path}"))?;
+    Ok(vec![
+        format!("--target_pattern_file={path}"),
+        "--skip_incompatible_explicit_targets".to_owned(),
+    ])
 }
 
 /// Result of the discovery build. With `--keep_going` a non-`success` exit
@@ -529,7 +610,7 @@ fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::R
 
     let targets = match parent_dir {
         Some(p) if !p.as_str().is_empty() => format!("//{}:all", dir_to_bazel_package(p.as_str())),
-        _ => "//...".to_string(),
+        _ => ROOT_TARGET_PATTERN.to_string(),
     };
 
     Ok(targets)
@@ -602,6 +683,68 @@ mod tests {
             flycheck_output_base(Utf8Path::new("/home/u/.cache/bazel/_bazel_u/abc123")),
             Utf8PathBuf::from("/home/u/.cache/bazel/_bazel_u/abc123_rra"),
         );
+    }
+
+    #[test]
+    fn discovery_query_uses_root_query_for_whole_workspace_only() {
+        let root = Some(r#"kind("rust_.* rule", //...)"#);
+        assert_eq!(
+            discovery_query(ROOT_TARGET_PATTERN, root),
+            r#"kind("rust_.* rule", //...)"#
+        );
+        assert_eq!(discovery_query("//foo/bar:all", root), "//foo/bar:all");
+    }
+
+    #[test]
+    fn discovery_query_defaults_to_the_pattern() {
+        assert_eq!(discovery_query(ROOT_TARGET_PATTERN, None), "//...");
+        assert_eq!(discovery_query(ROOT_TARGET_PATTERN, Some("  ")), "//...");
+        assert_eq!(discovery_query("//foo:all", None), "//foo:all");
+    }
+
+    #[test]
+    fn root_buildfile_maps_to_root_target_pattern() {
+        let workspace = Utf8Path::new("/ws");
+        assert_eq!(
+            buildfile_to_targets(workspace, Utf8Path::new("/ws/BUILD.bazel")).unwrap(),
+            ROOT_TARGET_PATTERN
+        );
+        assert_eq!(
+            buildfile_to_targets(workspace, Utf8Path::new("/ws/foo/BUILD.bazel")).unwrap(),
+            "//foo:all"
+        );
+    }
+
+    #[test]
+    fn parse_query_labels_skips_blank_lines() {
+        let stdout = "//foo:lib\n\n//foo:manual_test\r\n@@dep+//:dep\n";
+        assert_eq!(
+            parse_query_labels(stdout),
+            vec!["//foo:lib", "//foo:manual_test", "@@dep+//:dep"]
+        );
+        assert!(parse_query_labels("").is_empty());
+    }
+
+    #[test]
+    fn write_target_pattern_file_lists_labels_and_skips_incompatible() {
+        let dir = make_workspace("target_pattern_file", &[]);
+        let path = dir.join("targets.txt");
+        let labels = vec!["//foo:lib".to_owned(), "//foo:manual_test".to_owned()];
+
+        let args = write_target_pattern_file(&path, &labels).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "//foo:lib\n//foo:manual_test\n"
+        );
+        assert_eq!(
+            args,
+            vec![
+                format!("--target_pattern_file={path}"),
+                "--skip_incompatible_explicit_targets".to_owned(),
+            ]
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

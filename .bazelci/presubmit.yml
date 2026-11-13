@@ -420,6 +420,7 @@ tasks:
       - "//tools/rust_analyzer:discover_bazel_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
       - "//test/rust_analyzer:partial_failure_test"
+      - "//test/rust_analyzer:target_query_test"
       - "//test/rust_analyzer:flycheck_clippy_test"
   ide_integration_tests_macos:
     name: IDE VSCode Tests
@@ -431,6 +432,7 @@ tasks:
       - "//tools/rust_analyzer:discover_bazel_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
       - "//test/rust_analyzer:partial_failure_test"
+      - "//test/rust_analyzer:target_query_test"
       - "//test/rust_analyzer:flycheck_clippy_test"
   ide_integration_tests_windows:
     name: IDE VSCode Tests

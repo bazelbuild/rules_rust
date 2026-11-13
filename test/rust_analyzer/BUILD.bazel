@@ -12,6 +12,11 @@ sh_binary(
 )
 
 sh_binary(
+    name = "target_query_test",
+    srcs = ["target_query_test_runner.sh"],
+)
+
+sh_binary(
     name = "flycheck_clippy_test",
     srcs = ["flycheck_clippy_test_runner.sh"],
 )
