@@ -3430,6 +3430,7 @@ extra_exec_rustc_env = rule(
         "`--@rules_rust//rust/settings:extra_exec_rustc_env=FOO=bar`. Multiple values may be specified."
     ),
     implementation = _extra_exec_rustc_env_impl,
+    attrs = {"scope": attr.string(default = "universal")},
     build_setting = config.string_list(flag = True),
 )
 

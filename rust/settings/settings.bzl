@@ -294,6 +294,7 @@ def toolchain_linker_preference():
     """
     string_flag(
         name = "toolchain_linker_preference",
+        scope = "universal",
         build_setting_default = "none",
         values = ["rust", "cc", "none"],
     )
@@ -491,6 +492,7 @@ def extra_exec_rustc_env():
     """
     _extra_exec_rustc_env(
         name = "extra_exec_rustc_env",
+        scope = "universal",
         build_setting_default = [],
     )
 
