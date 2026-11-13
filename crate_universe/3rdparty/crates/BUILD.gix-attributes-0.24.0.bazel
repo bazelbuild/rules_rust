@@ -116,7 +116,7 @@ rust_library(
         "@cui__gix-trace-0.1.12//:gix_trace",
         "@cui__kstring-2.0.2//:kstring",
         "@cui__smallvec-1.15.0//:smallvec",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.21//:thiserror",
         "@cui__unicode-bom-2.0.3//:unicode_bom",
     ],
 )
