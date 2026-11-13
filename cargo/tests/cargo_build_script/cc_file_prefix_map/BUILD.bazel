@@ -1,0 +1,32 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+config_setting(
+    name = "file_prefix_map_enabled",
+    flag_values = {"//cargo/settings:build_script_cc_file_prefix_map": "True"},
+)
+
+# The build script compiles `probe.c` with the cc toolchain and fails if the
+# object it writes to `OUT_DIR` contains the exec root.
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    data = ["probe.c"],
+    edition = "2021",
+    # MSVC-style compilers don't get `-ffile-prefix-map`, and there is nothing
+    # to check when the setting turns it off.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }) + select({
+        ":file_prefix_map_enabled": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+rust_test(
+    name = "cc_file_prefix_map_test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_script"],
+)

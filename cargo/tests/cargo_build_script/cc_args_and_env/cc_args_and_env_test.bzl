@@ -153,7 +153,7 @@ def _test_cc_config_impl(ctx):
         target_system_name = "unknown",
         target_cpu = "unknown",
         target_libc = "unknown",
-        compiler = "unknown",
+        compiler = ctx.attr.compiler,
         abi_version = "unknown",
         abi_libc_version = "unknown",
         features = features,
@@ -164,6 +164,7 @@ def _test_cc_config_impl(ctx):
 test_cc_config = rule(
     implementation = _test_cc_config_impl,
     attrs = {
+        "compiler": attr.string(default = "unknown"),
         "extra_ar_flags": attr.string_list(),
         "extra_cc_compile_flags": attr.string_list(),
         "extra_cxx_compile_flags": attr.string_list(),
@@ -242,6 +243,12 @@ def _cc_args_and_env_analysis_test_impl(ctx):
                 flag in actual_flags,
                 "error: expected '{}' to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
             )
+        for flag in ctx.attr.unexpected_flags:
+            asserts.false(
+                env,
+                flag in actual_flags,
+                "error: expected '{}' not to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
+            )
 
     arflags = cargo_action.env["ARFLAGS"]
     asserts.equals(
@@ -272,6 +279,22 @@ cc_args_and_env_analysis_test = analysistest.make(
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
         "expected_include": attr.string(default = ""),
         "legacy_cc_toolchain": attr.bool(default = False),
+        "unexpected_flags": attr.string_list(),
+    },
+)
+
+cc_args_and_env_file_prefix_map_disabled_test = analysistest.make(
+    impl = _cc_args_and_env_analysis_test_impl,
+    doc = """`cc_args_and_env_analysis_test` with `build_script_cc_file_prefix_map` disabled.""",
+    attrs = {
+        "expected_cflags": attr.string_list(default = ["-Wall"]),
+        "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
+        "expected_include": attr.string(default = ""),
+        "legacy_cc_toolchain": attr.bool(default = False),
+        "unexpected_flags": attr.string_list(),
+    },
+    config_settings = {
+        str(Label("//cargo/settings:build_script_cc_file_prefix_map")): False,
     },
 )
 
@@ -282,7 +305,8 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
         extra_include_paths = "",
-        legacy_cc_toolchain = False):
+        legacy_cc_toolchain = False,
+        compiler = "unknown"):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
     This is achieved by creating a cascade of targets:
@@ -299,6 +323,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
       extra_include_paths: INCLUDE environment variable value for the cc_toolchain.
       legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
         cc toolchain.
+      compiler: The `compiler` reported by the cc_toolchain.
     """
 
     test_cc_config(
@@ -308,6 +333,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_ar_flags = extra_ar_flags,
         extra_include_paths = extra_include_paths,
         legacy_cc_toolchain = legacy_cc_toolchain,
+        compiler = compiler,
     )
     cc_toolchain(
         name = "%s/test_cc_toolchain_impl" % name,
@@ -794,3 +820,40 @@ def forwarded_header_paths_test(name):
                     target_under_test = case + "/cargo_build_script",
                     expected_cflags = [forwarding, category, forwarding, expected, "-DKEEP=1"],
                 )
+
+def file_prefix_map_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-Wall", "-ffile-prefix-map=${pwd}=."],
+        expected_cxxflags = ["-fno-rtti", "-ffile-prefix-map=${pwd}=."],
+    )
+
+def file_prefix_map_msvc_test(name):
+    for compiler in ("msvc-cl", "clang-cl"):
+        cargo_build_script_with_extra_cc_compile_flags(
+            name = "%s/%s/cargo_build_script" % (name, compiler),
+            compiler = compiler,
+        )
+        cc_args_and_env_analysis_test(
+            name = "%s/%s" % (name, compiler),
+            target_under_test = "%s/%s/cargo_build_script" % (name, compiler),
+            unexpected_flags = ["-ffile-prefix-map=${pwd}=."],
+        )
+    native.test_suite(
+        name = name,
+        tests = ["%s/%s" % (name, compiler) for compiler in ("msvc-cl", "clang-cl")],
+    )
+
+def file_prefix_map_disabled_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+    )
+    cc_args_and_env_file_prefix_map_disabled_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        unexpected_flags = ["-ffile-prefix-map=${pwd}=."],
+    )

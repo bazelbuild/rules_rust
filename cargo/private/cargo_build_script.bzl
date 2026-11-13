@@ -562,8 +562,22 @@ def _cargo_build_script_impl(ctx):
         # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
         # to determine the deployment target when building for apple platforms (`macosx-version-min`
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
-        env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
-        env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+        c_flags = _pwd_flags(cc_c_args)
+        cxx_flags = _pwd_flags(cc_cxx_args)
+
+        # Build scripts compile with absolute paths under the exec root (the
+        # `${pwd}` prefixes above, `OUT_DIR`, `CARGO_MANIFEST_DIR`), and those
+        # paths end up in debug info and `__FILE__`. Remap the exec root, as
+        # `CARGO_ENCODED_RUSTFLAGS` does for rustc. MSVC-style drivers don't
+        # accept GCC-style flags, and the setting lets toolchains with older
+        # compilers (GCC < 8, Clang < 10) opt out.
+        if (ctx.attr._build_script_cc_file_prefix_map[BuildSettingInfo].value and
+            cc_toolchain.compiler not in ("msvc-cl", "clang-cl")):
+            c_flags = c_flags + ["-ffile-prefix-map=${pwd}=."]
+            cxx_flags = cxx_flags + ["-ffile-prefix-map=${pwd}=."]
+        env["CFLAGS"] = " ".join(c_flags)
+        env["CXXFLAGS"] = " ".join(cxx_flags)
+
         # It may be tempting to forward ARFLAGS, but cc-rs is opinionated enough
         # that doing so is more likely to hurt than help. If you need to change
         # ARFLAGS, make changes to cc-rs.
@@ -880,6 +894,9 @@ cargo_build_script = rule(
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
+        ),
+        "_build_script_cc_file_prefix_map": attr.label(
+            default = Label("//cargo/settings:build_script_cc_file_prefix_map"),
         ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
