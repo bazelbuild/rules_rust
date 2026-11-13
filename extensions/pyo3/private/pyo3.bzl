@@ -221,6 +221,11 @@ py_pyo3_library = rule(
         "module_name": attr.string(
             doc = "A full dotted Python module path implemented by this extension (e.g. `foo.bar`).",
         ),
+        "stubgen": attr.label(
+            doc = "A binary used to generate Python type stubs. Required only when stub generation is enabled.",
+            cfg = "exec",
+            executable = True,
+        ),
         "stubs": attr.int(
             doc = "Whether or not to generate stubs. `-1` will default to the global config, `0` will never generate, and `1` will always generate stubs.",
             default = -1,
@@ -229,11 +234,6 @@ py_pyo3_library = rule(
                 0,
                 1,
             ],
-        ),
-        "stubgen": attr.label(
-            doc = "A binary used to generate Python type stubs. Required only when stub generation is enabled.",
-            cfg = "exec",
-            executable = True,
         ),
     },
     toolchains = [PYO3_TOOLCHAIN],
