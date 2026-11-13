@@ -378,7 +378,7 @@ load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "get_auth")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "read_netrc", "read_user_netrc", "use_netrc")
 load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
@@ -812,6 +812,18 @@ def _package_to_json(p):
         if v or k == "default_features"
     })
 
+def _get_auth(module_ctx, urls):
+    """Build the `auth` dict for `module_ctx.download` from the user's netrc.
+
+    `get_auth` from `bazel_tools` reads `ctx.attr`, which a `module_ctx` does not
+    have, so the netrc lookup is repeated here without the attribute overrides.
+    """
+    if "NETRC" in module_ctx.os.environ:
+        netrc = read_netrc(module_ctx, module_ctx.os.environ["NETRC"])
+    else:
+        netrc = read_user_netrc(module_ctx)
+    return use_netrc(netrc, urls, {})
+
 def _get_generator(module_ctx, host_triple):
     """Query Network Resources to local a `cargo-bazel` binary.
 
@@ -853,7 +865,7 @@ def _get_generator(module_ctx, host_triple):
 
     # Download the file into place
     download_kwargs = {
-        "auth": get_auth(module_ctx, [generator_url]),
+        "auth": _get_auth(module_ctx, [generator_url]),
         "executable": True,
         "output": output,
         "url": generator_url,
