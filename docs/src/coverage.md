@@ -49,3 +49,13 @@ coverage --instrument_test_targets
 | `--instrumentation_filter=<regex>` | Controls which targets are instrumented. Default: `-/javatests[/:],-/test/java[/:]` |
 | `--instrument_test_targets` | Also instrument test targets. Not required for library coverage via `rust_test` with `crate`. |
 | `--combined_report=lcov` | Produce a combined LCOV report (set by default with `bazel coverage`). |
+
+## Custom Coverage Collectors
+
+After a `rust_test` runs under `bazel coverage`, a collector program turns the LLVM profiles that the test wrote into LCOV. The default collector, `@rules_rust//rust/coverage:collect_rust_coverage`, exports them with `llvm-cov`. To use a different collector, such as one that reports more than line coverage, set [`--@rules_rust//rust/settings:coverage_collector`](./rust_settings.md#coverage_collector) to an executable target:
+
+```text
+coverage --@rules_rust//rust/settings:coverage_collector=//tools:my_coverage_collector
+```
+
+The setting's documentation describes what rules_rust gives the collector, and links to the Bazel script that runs it.

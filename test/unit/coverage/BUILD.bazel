@@ -1,6 +1,14 @@
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//rust:defs.bzl", "rust_test")
-load(":coverage_test.bzl", "collector_platform_test", "collector_probe", "platform_marker")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+load(
+    ":coverage_test.bzl",
+    "collector_platform_test",
+    "collector_probe",
+    "coverage_collector_flag_test",
+    "coverage_collector_metadata_files_test",
+    "coverage_collector_runfiles_test",
+    "platform_marker",
+)
 
 collector_platform_test(
     name = "collector_platform_test",
@@ -24,6 +32,28 @@ rust_test(
     name = "test",
     srcs = ["test.rs"],
     edition = "2021",
+)
+
+rust_binary(
+    name = "fake_collector",
+    srcs = ["fake_collector.rs"],
+    data = ["fake_collector_data.txt"],
+    edition = "2021",
+)
+
+coverage_collector_flag_test(
+    name = "coverage_collector_flag_test",
+    target_under_test = ":test",
+)
+
+coverage_collector_metadata_files_test(
+    name = "coverage_collector_metadata_files_test",
+    target_under_test = ":test",
+)
+
+coverage_collector_runfiles_test(
+    name = "coverage_collector_runfiles_test",
+    target_under_test = ":test",
 )
 
 constraint_setting(name = "execution_role")
