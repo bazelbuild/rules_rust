@@ -1595,18 +1595,19 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
         env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
-    # Strip any `-Zallow-features=` entries out of the toolchain's extra
-    # rustc flags into `all_allowed_unstable_features` and, when
-    # `unstable_rust_features_config` is configured to a concrete list,
-    # re-emit a single deduplicated `-Zallow-features=<merged>` arg so
-    # the union of toolchain-wide, target-level, and config-level
-    # features is enforced. When the config is unset or `__all__`,
-    # stripped features are silently dropped — matching the historical
-    # behavior where `__all__` (or no config) means "no restriction".
-    extra_rustc_flags = _extract_allowed_unstable_features_from_flags(
-        collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type),
-        all_allowed_unstable_features,
-    )
+    # When `unstable_rust_features_config` is configured, strip any
+    # `-Zallow-features=` entries out of the toolchain's extra rustc flags
+    # into `all_allowed_unstable_features` and, unless `__all__` is present,
+    # re-emit a single deduplicated `-Zallow-features=<merged>` arg so the
+    # union of toolchain-wide, target-level, and config-level features is
+    # enforced. When `unstable_rust_features_config` is unset, pass
+    # `-Zallow-features=` flags through unchanged.
+    extra_rustc_flags = collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type)
+    if getattr(ctx.attr, "unstable_rust_features_config", None):
+        extra_rustc_flags = _extract_allowed_unstable_features_from_flags(
+            extra_rustc_flags,
+            all_allowed_unstable_features,
+        )
     if getattr(ctx.attr, "unstable_rust_features_config", None) and not "__all__" in all_allowed_unstable_features:
         deduped_allowed = {f: None for f in all_allowed_unstable_features}.keys()
         extra_rustc_flags.append("-Zallow-features=" + ",".join(deduped_allowed))
@@ -1642,7 +1643,9 @@ def construct_arguments(
     if type(rust_flags) == "Args":
         rust_flags_args = rust_flags
     elif rust_flags:
-        for flag in _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
+        if getattr(ctx.attr, "unstable_rust_features_config", None):
+            rust_flags = _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features)
+        for flag in rust_flags:
             if type(flag) in ["tuple", "list"] and len(flag) == 2:
                 rustc_flags.add_all(
                     [flag[1]],
