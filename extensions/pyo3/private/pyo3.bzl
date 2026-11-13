@@ -132,6 +132,8 @@ def _py_pyo3_library_impl(ctx):
 
     stub = None
     if _stubs_enabled(ctx.attr.stubs, toolchain):
+        if ctx.executable.stubgen == None:
+            fail("PyO3 stub generation is enabled but no stub generator was supplied.")
         stub = ctx.actions.declare_file(stub_relpath)
 
         args = ctx.actions.args()
@@ -142,7 +144,7 @@ def _py_pyo3_library_impl(ctx):
             mnemonic = "PyO3StubGen",
             outputs = [stub],
             inputs = [ext],
-            executable = ctx.executable._stubgen,
+            executable = ctx.executable.stubgen,
             arguments = [args],
         )
         files.append(stub)
@@ -219,6 +221,11 @@ py_pyo3_library = rule(
         "module_name": attr.string(
             doc = "A full dotted Python module path implemented by this extension (e.g. `foo.bar`).",
         ),
+        "stubgen": attr.label(
+            doc = "A binary used to generate Python type stubs. Required only when stub generation is enabled.",
+            cfg = "exec",
+            executable = True,
+        ),
         "stubs": attr.int(
             doc = "Whether or not to generate stubs. `-1` will default to the global config, `0` will never generate, and `1` will always generate stubs.",
             default = -1,
@@ -227,12 +234,6 @@ py_pyo3_library = rule(
                 0,
                 1,
             ],
-        ),
-        "_stubgen": attr.label(
-            doc = "A binary used to generate pythons type stubs.",
-            cfg = "exec",
-            executable = True,
-            default = Label("//private:stubgen"),
         ),
     },
     toolchains = [PYO3_TOOLCHAIN],
@@ -355,16 +356,23 @@ def pyo3_extension(
 
     if stubs == None:
         stubs_int = -1
+        stubgen = select({
+            Label("//settings:experimental_stubgen_enabled"): Label("//private:stubgen"),
+            "//conditions:default": None,
+        })
     elif stubs:
         stubs_int = 1
+        stubgen = Label("//private:stubgen")
     else:
         stubs_int = 0
+        stubgen = None
 
     py_pyo3_library(
         name = name,
         extension = name + "_shared",
         compilation_mode = compilation_mode,
         stubs = stubs_int,
+        stubgen = stubgen,
         imports = imports,
         module_name = module_name,
         tags = tags,

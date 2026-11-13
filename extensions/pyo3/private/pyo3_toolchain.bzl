@@ -178,9 +178,8 @@ This toolchain is how the rules know which version of `pyo3` to link against.
             mandatory = True,
         ),
         "pyo3_introspection": attr.label(
-            doc = "The PyO3 introspection library.",
+            doc = "The PyO3 introspection library. Required only when generating Python stubs.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
-            mandatory = True,
         ),
     },
 )
@@ -222,6 +221,8 @@ current_rust_pyo3_toolchain = rule(
 def _current_rust_pyo3_introspection_toolchain_impl(ctx):
     toolchain = ctx.toolchains[RUST_PYO3_TOOLCHAIN]
     target = toolchain.pyo3_introspection
+    if target == None:
+        fail("PyO3 stub generation requires pyo3_introspection in the selected rust_pyo3_toolchain; supply that library or disable stub generation.")
 
     providers = []
 

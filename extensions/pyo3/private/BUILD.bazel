@@ -43,5 +43,6 @@ rust_binary(
     name = "stubgen",
     srcs = ["stubgen.rs"],
     edition = "2021",
+    visibility = ["//visibility:public"],
     deps = [":current_rust_pyo3_introspection_toolchain"],
 )
