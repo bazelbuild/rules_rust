@@ -1,0 +1,3 @@
+load(":transitive_out_dir_paths_test.bzl", "transitive_out_dir_paths_test_suite")
+
+transitive_out_dir_paths_test_suite(name = "transitive_out_dir_paths_test_suite")

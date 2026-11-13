@@ -1,0 +1,7 @@
+load("//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "build_script_native_libs",
+    srcs = ["lib.rs"],
+    visibility = ["//cargo/tests/cargo_build_script:__subpackages__"],
+)
