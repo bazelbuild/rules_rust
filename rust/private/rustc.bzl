@@ -723,7 +723,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             visited_libs[name] = artifact
     return ambiguous_libs
 
-def _depend_on_metadata(crate_info, force_depend_on_objects):
+def _depend_on_metadata(crate_info, force_depend_on_objects, metadata_only = False):
     """Determines if we can depend on metadata for this crate.
 
     By default (when pipelining is disabled or when the crate type needs to link against
@@ -736,12 +736,16 @@ def _depend_on_metadata(crate_info, force_depend_on_objects):
     Args:
         crate_info (CrateInfo): The Crate to determine this for.
         force_depend_on_objects (bool): if set we will not depend on metadata.
+        metadata_only (bool): if set the action only emits metadata, so it depends on metadata for any crate type.
 
     Returns:
         Whether we can depend on metadata for this crate.
     """
     if force_depend_on_objects:
         return False
+
+    if metadata_only:
+        return True
 
     return crate_info.type in ("rlib", "lib")
 
@@ -759,6 +763,7 @@ def collect_inputs(
         lint_files,
         stamp = False,
         force_depend_on_objects = False,
+        metadata_only = False,
         experimental_use_cc_common_link = False,
         include_linker_inputs = False,
         include_link_flags = True,
@@ -780,6 +785,7 @@ def collect_inputs(
         lint_files (list): List of files with rustc args for the Crate's lint settings.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
+        metadata_only (bool, optional): Depend on dependency metadata (`.rmeta`) for any crate type, for actions that only emit metadata.
         force_depend_on_objects (bool, optional): Forces dependencies of this rule to be objects rather than
             metadata, even for libraries. This is used in rustdoc tests.
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
@@ -843,7 +849,7 @@ def collect_inputs(
     linkstamp_outs = []
 
     transitive_crate_outputs = dep_info.transitive_crate_outputs
-    if _depend_on_metadata(crate_info, force_depend_on_objects):
+    if _depend_on_metadata(crate_info, force_depend_on_objects, metadata_only):
         transitive_crate_outputs = dep_info.transitive_metadata_outputs
 
     nolinkstamp_compile_direct_inputs = []
@@ -1070,6 +1076,7 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
+        metadata_only = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None,
@@ -1147,6 +1154,7 @@ def construct_arguments(
             from N_OSO linker entries.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
+        metadata_only (bool): Depend on dependency metadata (`.rmeta`) for any crate type, for actions that only emit metadata.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
@@ -1506,7 +1514,7 @@ def construct_arguments(
         if crate_info.type == "dylib" and toolchain.target_os in ["macos", "darwin"]:
             rustc_flags.add("--codegen=link-arg=-Wl,-install_name,@rpath/" + crate_info.output.basename)
 
-    use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
+    use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects, metadata_only)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)
