@@ -394,6 +394,8 @@ def _rust_binary_impl(ctx):
             owner = ctx.label,
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, ctx.attr.crate_type, crate_is_test = False),
         ),
+        stripped_binary = getattr(ctx.outputs, "stripped_binary", None),
+        dwp_file = getattr(ctx.outputs, "dwp_file", None),
     )
 
     providers.append(RunEnvironmentInfo(
@@ -1347,6 +1349,10 @@ rust_binary = rule(
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
+    outputs = {
+        "dwp_file": "%{name}.dwp",
+        "stripped_binary": "%{name}.stripped",
+    },
     doc = dedent("""\
         Builds a Rust binary crate.
 
@@ -1434,6 +1440,10 @@ rust_binary = rule(
         On Windows, a PDB file containing debugging information is available under
         the key `pdb_file` in `OutputGroupInfo`. Similarly on macOS, a dSYM folder
         is available under the key `dsym_folder` in `OutputGroupInfo`.
+
+        Implicit `%{name}.stripped` and `%{name}.dwp` outputs and the
+        `DebugPackageInfo` provider are also declared, and require a configured C++
+        toolchain (`@rules_cc//cc:toolchain_type`).
 """),
 )
 

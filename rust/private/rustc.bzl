@@ -23,7 +23,10 @@ load(
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_debug_helper.bzl", "create_debug_packager_actions")
+load("@rules_cc//cc/common:cc_helper.bzl", "cc_helper", "linker_mode")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_cc//cc/common:debug_package_info.bzl", "DebugPackageInfo")
 load(":common.bzl", "rust_common")
 load(":lto.bzl", "construct_lto_arguments")
 load(
@@ -1794,7 +1797,9 @@ def rustc_compile_action(
         skip_expanding_rustc_env = False,
         include_coverage = True,
         allowed_unstable_rust_features = None,
-        extra_named_deps = None):
+        extra_named_deps = None,
+        stripped_binary = None,
+        dwp_file = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1814,6 +1819,8 @@ def rustc_compile_action(
         extra_named_deps (depset[AliasableDepInfo], optional): Extra named dependencies, passed
             to the compiler via --extern instead of -L. This function takes care not to flatten
             this depset at analysis time.
+        stripped_binary (File, optional): Predeclared `.stripped` output file for `rust_binary`. Defaults to None.
+        dwp_file (File, optional): Predeclared `.dwp` output file for `rust_binary`. Defaults to None.
 
     Returns:
         list: A list of the following providers:
@@ -1936,12 +1943,19 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
-    use_split_debuginfo = False
     if (
-        feature_configuration and
-        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info") and
-        ctx.fragments.cpp.fission_active_for_current_compilation_mode()
+        ctx.fragments.cpp.fission_active_for_current_compilation_mode() and
+        not toolchain._skip_fission_for_rust and
+        not cc_toolchain
     ):
+        fail(
+            "Split debug info (fission) was requested, which requires a configured `cc_toolchain`, " +
+            "but no `cc_toolchain` was found for target {}. ".format(ctx.label) +
+            "To skip fission for Rust objects and suppress this error, set `--@rules_rust//rust/settings:skip_fission_for_rust`.",
+        )
+
+    use_split_debuginfo = False
+    if _should_create_per_object_debug_info(feature_configuration, ctx.fragments.cpp):
         if toolchain._skip_fission_for_rust:
             use_split_debuginfo = False
         elif toolchain.channel == "nightly":
@@ -2144,19 +2158,11 @@ def rustc_compile_action(
         cco_args["pic_dwo_objects"] = depset([dwo_outputs])  # buildifier: disable=uninitialized
     compilation_outputs = cc_common.create_compilation_outputs(**cco_args)
     debug_context = cc_common.create_debug_context(compilation_outputs)
+    linking_outputs = None
+    dep_cc_infos = None
     if experimental_use_cc_common_link:
-        malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
-
-        # Collect the linking contexts of the standard library and dependencies.
-        linking_contexts = [
-            malloc_library[CcInfo].linking_context,
-            _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib).linking_context,
-            toolchain.stdlib_linkflags.linking_context,
-        ]
-
-        for dep in crate_info.deps.to_list():
-            if dep.cc_info:
-                linking_contexts.append(dep.cc_info.linking_context)
+        dep_cc_infos = _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib)
+        linking_contexts = [cc_info.linking_context for cc_info in dep_cc_infos]
 
         # In the cc_common.link action we need to pass the name of the final
         # binary (output) relative to the package of this target.
@@ -2204,7 +2210,7 @@ def rustc_compile_action(
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             additional_linker_outputs.append(pdb_file)
 
-        cc_common.link(
+        linking_outputs = cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
@@ -2343,10 +2349,24 @@ def rustc_compile_action(
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_type = crate_info.type,
-        compilation_mode = compilation_mode,
+        compilation_mode = ctx.var["COMPILATION_MODE"],
         toolchain = toolchain,
     )
     providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, use_pic, debug_context)
+    providers += _establish_debug_package_info(
+        ctx = ctx,
+        crate_info = crate_info,
+        toolchain = toolchain,
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        compilation_outputs = compilation_outputs,
+        linking_outputs = linking_outputs,
+        dep_cc_infos = dep_cc_infos,
+        link_std_dylib = link_std_dylib,
+        use_pic = use_pic,
+        stripped_file = stripped_binary,
+        dwp_file = dwp_file,
+    )
 
     output_group_info = {}
 
@@ -2382,6 +2402,135 @@ def _should_use_rustc_allocator_libraries(toolchain):
     if use_or_default == -1:
         return toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting
     return bool(use_or_default)
+
+def _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib):
+    """Collects CcInfo providers for the standard library, allocator, and dependencies.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        crate_info (CrateInfo): The `CrateInfo` provider of the target crate.
+        link_std_dylib (bool): Whether the standard library is dynamically linked.
+
+    Returns:
+        list[CcInfo]: `CcInfo` providers for malloc, std/alloc, stdlib linkflags, and crate dependencies.
+    """
+    malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
+    cc_infos = [
+        cc_info
+        for cc_info in [
+            malloc_library[CcInfo],
+            _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib),
+            toolchain.stdlib_linkflags,
+        ]
+        if cc_info
+    ]
+    for dep in crate_info.deps.to_list():
+        if dep.cc_info:
+            cc_infos.append(dep.cc_info)
+    return cc_infos
+
+def _establish_debug_package_info(
+        ctx,
+        crate_info,
+        toolchain,
+        cc_toolchain,
+        feature_configuration,
+        compilation_outputs,
+        linking_outputs,
+        dep_cc_infos,
+        link_std_dylib,
+        use_pic,
+        stripped_file,
+        dwp_file):
+    """Creates `.stripped` and `.dwp` actions for `rust_binary` targets and returns `DebugPackageInfo`.
+
+    Mirrors `cc_binary` behavior in `rules_cc` so `rust_binary` targets expose
+    `%{name}.stripped` and `%{name}.dwp` implicit outputs and provide `DebugPackageInfo`.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        crate_info (CrateInfo): The `CrateInfo` provider of the target crate.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        cc_toolchain (CcToolchainInfo): The current `CcToolchainInfo`.
+        feature_configuration (FeatureConfiguration): Feature configuration to be queried.
+        compilation_outputs (CcCompilationOutputs): The current crate's compilation outputs (`dwo` outputs).
+        linking_outputs (CcLinkingOutputs): Outputs from `cc_common.link`, if used (for LTO `.dwo` artifacts).
+        dep_cc_infos (list[CcInfo], optional): Precomputed dependency `CcInfo` list, if already collected.
+        link_std_dylib (bool): Whether the standard library is dynamically linked.
+        use_pic (bool): Whether the build uses PIC.
+        stripped_file (File, optional): Predeclared `.stripped` output file, or `None` if not applicable.
+        dwp_file (File, optional): Predeclared `.dwp` output file, or `None` if not applicable.
+
+    Returns:
+        list[DebugPackageInfo]: A single-element list with `DebugPackageInfo` for eligible
+            `rust_binary` targets, or an empty list otherwise.
+    """
+    if not stripped_file or not dwp_file:
+        return []
+
+    if not cc_toolchain or not hasattr(cc_toolchain, "_strip_files"):
+        ctx.actions.symlink(output = stripped_file, target_file = crate_info.output)
+        ctx.actions.write(output = dwp_file, content = "")
+        return []
+
+    cc_helper.create_strip_action(
+        ctx,
+        cc_toolchain,
+        ctx.fragments.cpp,
+        crate_info.output,
+        stripped_file,
+        feature_configuration,
+    )
+    if dep_cc_infos == None:
+        dep_cc_infos = _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib)
+    cc_debug_context = cc_helper.merge_cc_debug_contexts(
+        compilation_outputs,
+        dep_cc_infos,
+    )
+
+    # create_debug_packager_actions packages all transitive .dwo files into dwp_file,
+    # or writes an empty dwp_file when fission/split-debuginfo is disabled.
+    dwo_files = create_debug_packager_actions(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        dwp_output = dwp_file,
+        cc_compilation_outputs = compilation_outputs,
+        cc_debug_context = cc_debug_context,
+        feature_configuration = feature_configuration,
+        linking_mode = linker_mode.LINKING_STATIC,
+        use_pic = use_pic,
+        lto_artifacts = linking_outputs.all_lto_artifacts() if linking_outputs else (),
+    )
+    should_create_per_object_debug_info = _should_create_per_object_debug_info(
+        feature_configuration,
+        ctx.fragments.cpp,
+    )
+    debug_package_kwargs = {"dwo_files": dwo_files} if dwo_files != None else {}
+
+    return [
+        DebugPackageInfo(
+            target_label = ctx.label,
+            stripped_file = stripped_file,
+            unstripped_file = crate_info.output,
+            dwp_file = dwp_file if should_create_per_object_debug_info else None,
+            **debug_package_kwargs
+        ),
+    ]
+
+def _should_create_per_object_debug_info(feature_configuration, cpp_configuration):
+    if not feature_configuration:
+        return False
+
+    # cc_helper.should_create_per_object_debug_info calls
+    # feature_configuration.is_enabled(), which does not exist on Bazel 7's
+    # native FeatureConfiguration objects.
+    if hasattr(feature_configuration, "is_enabled") and hasattr(cc_helper, "should_create_per_object_debug_info"):
+        return cc_helper.should_create_per_object_debug_info(feature_configuration, cpp_configuration)
+    return (
+        cpp_configuration.fission_active_for_current_compilation_mode() and
+        cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "per_object_debug_info")
+    )
 
 def _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib):
     # Handles standard libraries and allocator shims.
