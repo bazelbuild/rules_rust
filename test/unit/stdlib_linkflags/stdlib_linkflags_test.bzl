@@ -1,7 +1,10 @@
 """Unit tests for the Rust release history behind `system_to_stdlib_linkflags`."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//rust/platform:triple_mappings.bzl", "system_to_stdlib_linkflags")
+load("//rust/platform:triple_mappings.bzl", "stdlib_linkflags_history", "system_to_stdlib_linkflags")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:semver.bzl", "semver")
 
 _APPLE_WITH_RESOLV = ["-lSystem", "-lresolv"]
 _APPLE = ["-lSystem"]
@@ -95,6 +98,36 @@ def _stdlib_linkflags_history_test_impl(ctx):
 
 stdlib_linkflags_history_test = unittest.make(_stdlib_linkflags_history_test_impl)
 
+def _release_key(version):
+    release = semver(version)
+    return (release.major, release.minor, release.patch)
+
+def _stdlib_linkflags_sorted_test_impl(ctx):
+    """The lookup takes the last record not newer than the release, so records must ascend."""
+    env = unittest.begin(ctx)
+
+    history = stdlib_linkflags_history()
+    for key in ("android", "darwin", "ios", "macos", "netbsd", "windows/gnu", "windows/gnullvm", "windows/msvc"):
+        asserts.true(env, key in history, "expected `{}` to have a release history".format(key))
+
+    for key, records in history.items():
+        previous = None
+        for record in records:
+            asserts.equals(env, "struct", type(record), "{}: records must not mix plain flags with `_since` entries".format(key))
+            asserts.equals(env, "list", type(record.flags), "{}: flags of {} must be a list".format(key, record.since))
+            current = _release_key(record.since)
+            if previous != None:
+                asserts.true(
+                    env,
+                    previous[1] < current,
+                    "{}: record {} must come after {}".format(key, record.since, previous[0]),
+                )
+            previous = (record.since, current)
+
+    return unittest.end(env)
+
+stdlib_linkflags_sorted_test = unittest.make(_stdlib_linkflags_sorted_test_impl)
+
 def stdlib_linkflags_test_suite(name):
     """Entry-point macro for the stdlib linkflags history tests.
 
@@ -104,4 +137,5 @@ def stdlib_linkflags_test_suite(name):
     unittest.suite(
         name,
         stdlib_linkflags_history_test,
+        stdlib_linkflags_sorted_test,
     )

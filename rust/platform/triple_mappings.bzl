@@ -536,6 +536,22 @@ def _stdlib_linkflags_for_release(flags, version):
             selected = entry.flags
     return selected
 
+def stdlib_linkflags_history():
+    """Returns the per-release records behind `system_to_stdlib_linkflags`, for tests.
+
+    Returns:
+        dict: Keyed by `system` or `system/abi` for every entry whose flags changed between Rust
+        releases; each value is the list of records in the order the lookup consults them, as
+        structs with a `since` version and the `flags` applying from that release on.
+    """
+    history = {}
+    for system, flags in _SYSTEM_TO_STDLIB_LINKFLAGS.items():
+        entries = flags.items() if type(flags) == "dict" else [(None, flags)]
+        for abi, abi_flags in entries:
+            if abi_flags and type(abi_flags[0]) == "struct":
+                history["{}/{}".format(system, abi) if abi else system] = abi_flags
+    return history
+
 def system_to_stdlib_linkflags(system, abi = None, version = None):
     """Return the stdlib linker flags for the given system (and optional abi).
 
