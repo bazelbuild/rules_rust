@@ -15,3 +15,8 @@ bool_flag(
     name = "experimental_stubgen",
     build_setting_default = True,
 )
+
+config_setting(
+    name = "experimental_stubgen_enabled",
+    flag_values = {":experimental_stubgen": "true"},
+)

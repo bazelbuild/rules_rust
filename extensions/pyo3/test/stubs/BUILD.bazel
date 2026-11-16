@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//:defs.bzl", "pyo3_extension")
+load(":optional_introspection_test.bzl", "optional_introspection_test_suite")
 
 pyo3_extension(
     name = "string_sum",
@@ -26,3 +27,5 @@ py_test(
     srcs = ["string_sum_test.py"],
     deps = [":string_sum"],
 )
+
+optional_introspection_test_suite(name = "optional_introspection_test_suite")
