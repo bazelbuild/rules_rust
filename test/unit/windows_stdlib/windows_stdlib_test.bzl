@@ -7,28 +7,55 @@ load("//rust/platform:triple_mappings.bzl", "system_to_stdlib_linkflags")
 # buildifier: disable=bzl-visibility
 load("//rust/private:repository_utils.bzl", "BUILD_for_rust_toolchain")
 
+_MSVC_FLAGS_BEFORE_1_87 = ["ws2_32.lib", "userenv.lib", "advapi32.lib", "bcrypt.lib", "ntdll.lib", "synchronization.lib", "kernel32.lib"]
+_MSVC_FLAGS_SINCE_1_87 = ["ws2_32.lib", "userenv.lib", "bcrypt.lib", "ntdll.lib", "synchronization.lib", "kernel32.lib"]
+_GNU_FLAGS = ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"]
+
+def _rendered(flags):
+    """The `stdlib_linkflags` line `BUILD_for_rust_toolchain` renders for `flags`."""
+    return "stdlib_linkflags = [{}],".format(", ".join(['"{}"'.format(flag) for flag in flags]))
+
 def _stdlib_linkflags_windows_test_impl(ctx):
     env = analysistest.begin(ctx)
     analysistest.target_under_test(env)  # Ensure target is configured.
 
     msvc_triple = triple("x86_64-pc-windows-msvc")
-    msvc_flags = system_to_stdlib_linkflags(msvc_triple.system, msvc_triple.abi)
     gnu_triple = triple("x86_64-pc-windows-gnu")
-    gnu_flags = system_to_stdlib_linkflags(gnu_triple.system, gnu_triple.abi)
     gnullvm_triple = triple("aarch64-pc-windows-gnullvm")
-    gnullvm_flags = system_to_stdlib_linkflags(gnullvm_triple.system, gnullvm_triple.abi)
 
+    # Rust 1.87.0 stopped linking `advapi32` into `std` outside of `win7` targets.
+    for version in ("1.85.0", "1.86.1"):
+        asserts.equals(
+            env,
+            _MSVC_FLAGS_BEFORE_1_87,
+            system_to_stdlib_linkflags(msvc_triple.system, msvc_triple.abi, version = version),
+            "msvc flags for {}".format(version),
+        )
+    for version in ("1.87.0", "1.99.0", "nightly", "beta", None):
+        asserts.equals(
+            env,
+            _MSVC_FLAGS_SINCE_1_87,
+            system_to_stdlib_linkflags(msvc_triple.system, msvc_triple.abi, version = version),
+            "msvc flags for {}".format(version),
+        )
+
+    # The gnu flavors have not changed across releases.
+    for version in ("1.85.0", "1.87.0", None):
+        gnu_flags = system_to_stdlib_linkflags(gnu_triple.system, gnu_triple.abi, version = version)
+        asserts.equals(env, _GNU_FLAGS, gnu_flags, "gnu flags for {}".format(version))
+        asserts.equals(
+            env,
+            gnu_flags,
+            system_to_stdlib_linkflags(gnullvm_triple.system, gnullvm_triple.abi, version = version),
+            "gnullvm flags for {}".format(version),
+        )
+
+    # Callers which do not know the release get the newest flags.
     asserts.equals(
         env,
-        ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],
-        msvc_flags,
+        _MSVC_FLAGS_SINCE_1_87,
+        system_to_stdlib_linkflags(msvc_triple.system, msvc_triple.abi),
     )
-    asserts.equals(
-        env,
-        ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
-        gnu_flags,
-    )
-    asserts.equals(env, gnu_flags, gnullvm_flags)
 
     return analysistest.end(env)
 
@@ -45,21 +72,46 @@ def _build_for_rust_toolchain_windows_flags_test_impl(ctx):
         name = "tc_msvc",
         exec_triple = msvc_triple,
         target_triple = msvc_triple,
-        version = "1.75.0",
+        version = "1.87.0",
         channel = "stable",
+    )
+    rendered_msvc_1_85 = BUILD_for_rust_toolchain(
+        name = "tc_msvc",
+        exec_triple = msvc_triple,
+        target_triple = msvc_triple,
+        version = "1.85.0",
+        channel = "stable",
+    )
+    rendered_msvc_nightly = BUILD_for_rust_toolchain(
+        name = "tc_msvc",
+        exec_triple = msvc_triple,
+        target_triple = msvc_triple,
+        version = "nightly",
+        channel = "nightly",
+        iso_date = "2026-01-01",
     )
     rendered_gnu = BUILD_for_rust_toolchain(
         name = "tc_gnu",
         exec_triple = gnu_triple,
         target_triple = gnu_triple,
-        version = "1.75.0",
+        version = "1.87.0",
         channel = "stable",
     )
 
     asserts.true(
         env,
-        'stdlib_linkflags = ["ws2_32.lib", "userenv.lib", "Bcrypt.lib", "ntdll.lib", "advapi32.lib", "kernel32.lib"],' in rendered_msvc,
+        _rendered(_MSVC_FLAGS_SINCE_1_87) in rendered_msvc,
         "MSVC toolchain should render .lib stdlib linkflags:\n%s" % rendered_msvc,
+    )
+    asserts.true(
+        env,
+        _rendered(_MSVC_FLAGS_BEFORE_1_87) in rendered_msvc_1_85,
+        "MSVC 1.85.0 toolchain should render the stdlib linkflags of its release:\n%s" % rendered_msvc_1_85,
+    )
+    asserts.true(
+        env,
+        _rendered(_MSVC_FLAGS_SINCE_1_87) in rendered_msvc_nightly,
+        "MSVC nightly toolchain should render the newest stdlib linkflags:\n%s" % rendered_msvc_nightly,
     )
     asserts.true(
         env,
@@ -68,7 +120,7 @@ def _build_for_rust_toolchain_windows_flags_test_impl(ctx):
     )
     asserts.true(
         env,
-        'stdlib_linkflags = ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],' in rendered_gnu,
+        _rendered(_GNU_FLAGS) in rendered_gnu,
         "GNU toolchain should render -l stdlib linkflags:\n%s" % rendered_gnu,
     )
     asserts.true(

@@ -467,6 +467,7 @@ def BUILD_for_rust_toolchain(
             for x in system_to_stdlib_linkflags(
                 target_triple.system,
                 target_triple.abi,
+                version = version,
             )
         ])
 
