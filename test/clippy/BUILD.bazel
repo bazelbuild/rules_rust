@@ -20,6 +20,13 @@ rust_binary(
     edition = "2018",
 )
 
+rust_binary(
+    name = "ok_binary_with_dep",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = [":ok_library"],
+)
+
 rust_library(
     name = "ok_library",
     srcs = ["src/lib.rs"],

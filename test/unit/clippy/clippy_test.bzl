@@ -93,6 +93,25 @@ def _clippy_aspect_with_explicit_flags_test_impl(ctx):
         _CLIPPY_EXPLICIT_FLAGS + _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
     )
 
+def _clippy_aspect_uses_dep_metadata_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    clippy_action = _find_clippy_action(target.actions)
+    names = [f.basename for f in clippy_action.inputs.to_list()]
+    asserts.true(
+        env,
+        any([n.startswith("libok_library-") and n.endswith(".rmeta") for n in names]),
+        "Expected the dependency's .rmeta in the clippy inputs: {}".format(names),
+    )
+    asserts.false(
+        env,
+        any([n.startswith("libok_library-") and n.endswith(".rlib") for n in names]),
+        "Expected no dependency .rlib in the clippy inputs: {}".format(names),
+    )
+
+    return analysistest.end(env)
+
 def make_clippy_aspect_unittest(impl, **kwargs):
     return analysistest.make(
         impl,
@@ -108,6 +127,13 @@ clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(
     config_settings = {
         str(Label("//rust/settings:clippy_flag")): _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
         str(Label("//rust/settings:clippy_flags")): _CLIPPY_EXPLICIT_FLAGS,
+    },
+)
+
+clippy_aspect_uses_dep_metadata_test = make_clippy_aspect_unittest(
+    _clippy_aspect_uses_dep_metadata_test_impl,
+    config_settings = {
+        str(Label("//rust/settings:pipelined_compilation")): True,
     },
 )
 
@@ -193,6 +219,11 @@ def clippy_test_suite(name):
         target_under_test = Label("//test/clippy:ok_library"),
     )
 
+    clippy_aspect_uses_dep_metadata_test(
+        name = "clippy_aspect_uses_dep_metadata_test",
+        target_under_test = Label("//test/clippy:ok_binary_with_dep"),
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -205,5 +236,6 @@ def clippy_test_suite(name):
             ":clippy_aspect_without_clippy_error_format_test",
             ":clippy_aspect_with_clippy_error_format_test",
             ":clippy_aspect_with_output_diagnostics_test",
+            ":clippy_aspect_uses_dep_metadata_test",
         ],
     )

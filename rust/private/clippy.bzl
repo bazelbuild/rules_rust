@@ -202,6 +202,7 @@ def rust_clippy_action(
         build_info,
         lint_files,
         sysroot_files = clippy_toolchain.all_files,
+        depend_on_metadata = True,
     )
 
     if clippy_diagnostics_file:
@@ -210,6 +211,7 @@ def rust_clippy_action(
         crate_info = rust_common.create_crate_info(**crate_info_dict)
 
     args, env = construct_arguments(
+        depend_on_metadata = True,
         ctx = ctx,
         attr = ctx.rule.attr,
         file = ctx.file,

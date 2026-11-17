@@ -139,7 +139,7 @@ def rustdoc_compile_action(
         dep_info = dep_info,
         build_info = build_info,
         lint_files = lint_files,
-        force_depend_on_objects = force_depend_on_objects,
+        depend_on_metadata = False if force_depend_on_objects else None,
         sysroot_files = rustdoc_toolchain.all_files,
         include_linker_inputs = is_test or force_depend_on_objects,
         include_link_flags = False,
@@ -231,7 +231,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         add_flags_for_binary = True,
         include_link_flags = False,
-        force_depend_on_objects = force_depend_on_objects,
+        depend_on_metadata = False if force_depend_on_objects else None,
         skip_expanding_rustc_env = True,
     )
 
