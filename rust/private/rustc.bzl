@@ -2037,11 +2037,6 @@ def rustc_compile_action(
             link_std_dylib = link_std_dylib,
         )
 
-    env = dict(ctx.configuration.default_shell_env)
-
-    # this is the final list of env vars
-    env.update(env_from_args)
-
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
     else:
@@ -2089,7 +2084,8 @@ def rustc_compile_action(
             executable = ctx.executable._process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
-            env = env,
+            env = env_from_args,
+            use_default_shell_env = True,
             arguments = args.all,
             mnemonic = "Rustc",
             progress_message = "Compiling Rust {} {}{} ({} file{})".format(
@@ -2108,7 +2104,8 @@ def rustc_compile_action(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
-                env = env,
+                env = env_from_args,
+                use_default_shell_env = True,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
                 progress_message = "Compiling Rust metadata {} {}{} ({} file{})".format(
@@ -2129,7 +2126,8 @@ def rustc_compile_action(
             executable = ctx.executable._bootstrap_process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
-            env = env,
+            env = env_from_args,
+            use_default_shell_env = True,
             arguments = [args.rustc_path, args.rustc_flags],
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} file{})".format(
@@ -2329,10 +2327,6 @@ def rustc_compile_action(
         )
 
     if crate_info_dict != None:
-        # Persist only rustc-specific env; the merged `env` above also carries
-        # ctx.configuration.default_shell_env, which must not leak through
-        # CrateInfo -- it would otherwise clobber cc_toolchain link_env in
-        # downstream rust_test(crate = ...) (see bazelbuild/rules_rust#3989).
         crate_info_dict.update({
             "rustc_env": env_from_args,
         })
