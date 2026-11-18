@@ -196,13 +196,18 @@ def should_use_pic(
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         crate_type (str): A Rust target's crate type.
-        compilation_mode: The compilation mode.
+        compilation_mode (str): The compilation mode.
         toolchain (rust_toolchain): The current `rust_toolchain`, used to derive
             the target triple and rustc version for PIE detection.
 
     Returns:
         bool: Whether or not [PIC][pic] should be enabled.
     """
+    if type(compilation_mode) != "string":
+        fail("Expected `compilation_mode` to be a string, got {} ({})".format(
+            repr(compilation_mode),
+            type(compilation_mode),
+        ))
 
     # We use the same logic to select between `pic` and `nopic` outputs as the C++ rules:
     # - For shared libraries - we use `pic`. This covers `dylib`, `cdylib` and `proc-macro` crate types.
