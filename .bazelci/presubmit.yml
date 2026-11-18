@@ -722,6 +722,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Runs the `transitive_host_tools` fixture too; BazelCI caps the number of tasks.
+    post_shell_commands:
+      - cd ../transitive_host_tools && bazel test //...
   cu_integ_remove_internal_deps_macos:
     name: Crate Universe - remove_internal_deps
     platform: macos_arm64
@@ -730,6 +733,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Runs the `transitive_host_tools` fixture too; BazelCI caps the number of tasks.
+    post_shell_commands:
+      - cd ../transitive_host_tools && bazel test //...
 
   # --- external_annotations (linux + macos only, C++ codegen platform issues) ---
   cu_integ_ext_annotations_ubuntu2204:
