@@ -531,6 +531,7 @@ def _collect_splicing_config(module, repository):
     return config
 
 def _own_repo_labels(text, repo_name):
+    # buildifier: disable=canonical-repository
     """Points the `@@//` labels in generated `text` at the canonical repo `repo_name`.
 
     A lockfile pinned while its module was the root module records that
