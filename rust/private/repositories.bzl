@@ -9,6 +9,7 @@ load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_cargo_toolchain",
     "BUILD_for_clippy_toolchain",
+    "BUILD_for_linked_compiler_libraries",
     "BUILD_for_rust_analyzer_proc_macro_srv",
     "BUILD_for_rust_analyzer_toolchain",
     "BUILD_for_rust_toolchain",
@@ -268,6 +269,7 @@ def rust_register_toolchains(
             urls = urls,
             versions = versions,
             aliases = dict(aliases),
+            compact_windows_names = compact_windows_names,
         )
 
         for toolchain in _get_toolchain_repositories(
@@ -295,11 +297,30 @@ def rust_register_toolchains(
                 toolchain_types[companion_name] = companion_type
                 toolchain_target_settings[companion_name] = toolchain_target_settings[toolchain.name]
 
+    # rustfmt loads the compiler libraries of its own release. When the Rust
+    # toolchains of the same execution platform compile with that release by
+    # default, rustfmt links them from their compiler repository instead of
+    # downloading `rustc` again. The compiler repository of another channel
+    # also holds its standard library and llvm-tools and is otherwise only
+    # fetched with `--@rules_rust//rust/toolchain/channel`, so it is not shared.
+    rustfmt_channel = _channel_name(rustfmt_version)
+    rustfmt_shares_compiler = rustfmt_version in versions and (rustfmt_channel == "stable" or len(versions) == 1)
+
     # Rustfmt toolchains per exec triple
     for exec_triple, name in rustfmt_toolchain_triples.items():
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
         if rustfmt_repo_name in aliases:
             rustfmt_repo_name = aliases.pop(rustfmt_repo_name)
+
+        rustc_anchor = None
+        if rustfmt_shares_compiler and exec_triple in toolchain_triples:
+            rustc_anchor = "@{}//:BUILD.bazel".format(_shared_repository_name(
+                name = "{}__{}".format(toolchain_triples[exec_triple], rustfmt_channel),
+                suffix = COMPONENT.rustc,
+                exec_triple = exec_triple,
+                aliases = aliases,
+                compact_windows_names = compact_windows_names,
+            ))
 
         maybe(
             rustfmt_toolchain_tools_repository,
@@ -308,6 +329,7 @@ def rust_register_toolchains(
             urls = urls,
             sha256s = sha256s,
             exec_triple = exec_triple,
+            rustc_anchor = rustc_anchor,
         )
         toolchain_repository_proxy(
             name = rustfmt_repo_name,
@@ -868,6 +890,27 @@ toolchain_repository_proxy = repository_rule(
     implementation = _toolchain_repository_proxy_impl,
 )
 
+def _shared_repository_name(*, name, suffix, exec_triple, aliases, compact_windows_names):
+    """The name of the repository `_shared_tool_repositories` declares for `suffix`.
+
+    Args:
+        name (str): The prefix of the repository names.
+        suffix (str): The component naming the repository: `rustc`, `cargo` or `clippy`.
+        exec_triple (str): The Rust-style triple the tools run on.
+        aliases (dict[str, str]): Replacement repository names, keyed by the names declared here.
+        compact_windows_names (bool): Whether to hash the names of repositories for Windows
+            execution platforms, to avoid MAX_PATH issues.
+
+    Returns:
+        str: The repository name.
+    """
+    repository_name = "{}__{}".format(name, suffix)
+    if repository_name in aliases:
+        return aliases[repository_name]
+    if compact_windows_names and "windows" in exec_triple:
+        return "rw-{}".format(abs(hash(repository_name)))
+    return repository_name
+
 def _shared_tool_repositories(
         *,
         name,
@@ -902,12 +945,14 @@ def _shared_tool_repositories(
     """
     names = {}
     for suffix in _SHARED_REPOSITORIES:
-        repository_name = "{}__{}".format(name, suffix)
-        if repository_name in aliases:
-            repository_name = aliases.pop(repository_name)
-        elif compact_windows_names and "windows" in exec_triple:
-            repository_name = "rw-{}".format(abs(hash(repository_name)))
-        names[suffix] = repository_name
+        names[suffix] = _shared_repository_name(
+            name = name,
+            suffix = suffix,
+            exec_triple = exec_triple,
+            aliases = aliases,
+            compact_windows_names = compact_windows_names,
+        )
+        aliases.pop("{}__{}".format(name, suffix), None)
     repositories = {suffix: "@{}//:BUILD.bazel".format(repository_name) for suffix, repository_name in names.items()}
 
     for suffix, components in _SHARED_REPOSITORIES.items():
@@ -1214,6 +1259,13 @@ _RUSTFMT_TOOLCHAIN_TOOLS_ATTRS = {
     "netrc": attr.string(
         doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive",
     ),
+    "rustc_anchor": attr.label(
+        doc = (
+            "A label to any file in a repository holding the `rustc` component of the same release " +
+            "for `exec_triple`, as `rust_toolchain_tools_repository` lays it out. The compiler's " +
+            "libraries are then linked beside `rustfmt` from there instead of downloading `rustc` again."
+        ),
+    ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
     ),
@@ -1242,20 +1294,39 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         iso_date = version_array[1]
 
     exec_triple = triple(repository_ctx.attr.exec_triple)
+    rustc_anchor = repository_ctx.attr.rustc_anchor
 
-    rustc_content, rustc_sha256 = load_rust_compiler(
-        ctx = repository_ctx,
-        iso_date = iso_date,
-        target_triple = exec_triple,
-        version = version,
-        include_linker = include_linker,
-    )
+    # Resolving a path in another repository may restart this rule, so it
+    # happens before any download.
+    compiler_root = _repository_root(repository_ctx, rustc_anchor) if rustc_anchor else None
+
     rustfmt_content, rustfmt_sha256 = load_rustfmt(
         ctx = repository_ctx,
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
     )
+    sha256s.update(rustfmt_sha256)
+
+    if compiler_root:
+        # rustfmt loads `librustc_driver` relative to its own real path, as
+        # `clippy-driver` does.
+        _link_compiler_libraries(repository_ctx, compiler_root, exec_triple)
+        rustc_content = BUILD_for_linked_compiler_libraries(exec_triple)
+
+        # A `Label` only knows the canonical name of its repository, which a
+        # generated BUILD file may use as any other label.
+        rustc = "@@{}//:rustc".format(rustc_anchor.repo_name)  # buildifier: disable=canonical-repository
+    else:
+        rustc_content, rustc_sha256 = load_rust_compiler(
+            ctx = repository_ctx,
+            iso_date = iso_date,
+            target_triple = exec_triple,
+            version = version,
+            include_linker = include_linker,
+        )
+        sha256s.update(rustc_sha256)
+        rustc = "//:rustc"
 
     build_contents = [
         rustc_content,
@@ -1263,11 +1334,10 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         BUILD_for_rustfmt_toolchain(
             name = "rustfmt_toolchain",
             rustfmt = "//:rustfmt_bin",
-            rustc = "//:rustc",
+            rustc = rustc,
             rustc_lib = "//:rustc_lib",
         ),
     ]
-    sha256s.update(rustc_sha256 | rustfmt_sha256)
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_contents))
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
@@ -1297,6 +1367,12 @@ rustfmt_toolchain_tools_repository = repository_rule(
 
 # --- Internal helpers ---
 
+def _channel_name(version):
+    """The channel of a version as written in `versions`: `stable`, `beta` or `nightly`."""
+    if version.startswith(("beta", "nightly")):
+        return version.partition("/")[0]
+    return "stable"
+
 def _get_toolchain_repositories(
         *,
         name,
@@ -1315,11 +1391,7 @@ def _get_toolchain_repositories(
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:
-            if version.startswith(("beta", "nightly")):
-                channel, _, _ = version.partition("/")
-            else:
-                channel = "stable"
-
+            channel = _channel_name(version)
             if channel in channels:
                 fail("Duplicate {} channels provided for {}: {}".format(channel, name, versions))
 
