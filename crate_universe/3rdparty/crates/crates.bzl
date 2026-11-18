@@ -420,6 +420,8 @@ _PROC_MACRO_DEPENDENCIES = {
 
 _PROC_MACRO_ALIASES = {
     "crate_universe": {
+        _COMMON_CONDITION: {
+        },
     },
     "crate_universe/tools/cross_installer": {
     },
@@ -438,8 +440,6 @@ _PROC_MACRO_DEV_DEPENDENCIES = {
 
 _PROC_MACRO_DEV_ALIASES = {
     "crate_universe": {
-        _COMMON_CONDITION: {
-        },
     },
     "crate_universe/tools/cross_installer": {
     },
