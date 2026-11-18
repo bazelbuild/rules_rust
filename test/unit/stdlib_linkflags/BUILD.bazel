@@ -1,0 +1,3 @@
+load(":stdlib_linkflags_test.bzl", "stdlib_linkflags_test_suite")
+
+stdlib_linkflags_test_suite(name = "stdlib_linkflags_test_suite")
