@@ -1,14 +1,13 @@
 """Unittests for rust rules."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
+load("@rules_testing//lib:util.bzl", "util")
 load("//rust:defs.bzl", "rust_library")
 
-def _interleaving_cc_link_order_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    cc_info = tut[CcInfo]
+def _interleaving_cc_link_order_test_impl(env, target):
+    cc_info = target[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
     a = linker_inputs[0]
     b = linker_inputs[1]
@@ -16,48 +15,50 @@ def _interleaving_cc_link_order_test_impl(ctx):
     d = linker_inputs[3]
     e = linker_inputs[4]
 
-    asserts.equals(env, "a", a.owner.name)
-    asserts.equals(env, "b", b.owner.name)
-    asserts.equals(env, "c", c.owner.name)
-    asserts.equals(env, "d", d.owner.name)
-    asserts.equals(env, "e", e.owner.name)
+    env.expect.that_str(a.owner.name).equals("interleaving_cc_link_order_test_a")
+    env.expect.that_str(b.owner.name).equals("interleaving_cc_link_order_test_b")
+    env.expect.that_str(c.owner.name).equals("interleaving_cc_link_order_test_c")
+    env.expect.that_str(d.owner.name).equals("interleaving_cc_link_order_test_d")
+    env.expect.that_str(e.owner.name).equals("interleaving_cc_link_order_test_e")
 
-    return analysistest.end(env)
-
-interleaving_cc_link_order_test = analysistest.make(_interleaving_cc_link_order_test_impl)
-
-def _interleaving_link_order_test():
-    rust_library(
-        name = "a",
+def _interleaving_cc_link_order_test(name):
+    util.helper_target(
+        rust_library,
+        name = name + "_a",
         srcs = ["a.rs"],
         edition = "2018",
-        deps = [":b"],
+        deps = [":" + name + "_b"],
     )
-    cc_library(
-        name = "b",
+    util.helper_target(
+        cc_library,
+        name = name + "_b",
         srcs = ["b.cc"],
-        deps = [":c"],
+        deps = [":" + name + "_c"],
     )
-    rust_library(
-        name = "c",
+    util.helper_target(
+        rust_library,
+        name = name + "_c",
         srcs = ["c.rs"],
         edition = "2018",
-        deps = [":d"],
+        deps = [":" + name + "_d"],
     )
-    cc_library(
-        name = "d",
+    util.helper_target(
+        cc_library,
+        name = name + "_d",
         srcs = ["d.cc"],
-        deps = [":e"],
+        deps = [":" + name + "_e"],
     )
-    rust_library(
-        name = "e",
+    util.helper_target(
+        rust_library,
+        name = name + "_e",
         srcs = ["e.rs"],
         edition = "2018",
     )
 
-    interleaving_cc_link_order_test(
-        name = "interleaving_cc_link_order_test",
-        target_under_test = ":a",
+    analysis_test(
+        name = name,
+        target = ":" + name + "_a",
+        impl = _interleaving_cc_link_order_test_impl,
     )
 
 def interleaved_cc_info_test_suite(name):
@@ -66,11 +67,9 @@ def interleaved_cc_info_test_suite(name):
     Args:
         name: Name of the macro.
     """
-    _interleaving_link_order_test()
-
-    native.test_suite(
+    test_suite(
         name = name,
         tests = [
-            ":interleaving_cc_link_order_test",
+            _interleaving_cc_link_order_test,
         ],
     )
