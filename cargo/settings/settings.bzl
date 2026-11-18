@@ -49,7 +49,8 @@ def use_cc_toolchain():
 
     When enabled (the default), each `cargo_build_script` action gets the
     resolved `cc_toolchain`'s `all_files` added to its inputs and picks up the
-    `CC`, `CXX`, `AR`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, and `INCLUDE`
+    `CC`, `CXX`, `AR`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, `INCLUDE`, and, for
+    Apple targets, `*_DEPLOYMENT_TARGET` (e.g. `MACOSX_DEPLOYMENT_TARGET`)
     environment variables derived from that toolchain. This matches Cargo's
     behavior and is required for build scripts that shell out to a C/C++
     compiler (e.g. those using `cc-rs` or `cmake-rs`).

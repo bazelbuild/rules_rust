@@ -1,5 +1,6 @@
 load(
     "cc_args_and_env_test.bzl",
+    "apple_deployment_target_test",
     "bindir_absolute_test",
     "bindir_malformed_missing_value_test",
     "bindir_relative_test",
@@ -94,3 +95,5 @@ direct_libs_absolute_test(name = "direct_libs_absolute_test")
 direct_libs_as_flag_operand_test(name = "direct_libs_as_flag_operand_test")
 
 forwarded_header_paths_test(name = "forwarded_header_paths_test")
+
+apple_deployment_target_test(name = "apple_deployment_target_test")
