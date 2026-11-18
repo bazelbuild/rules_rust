@@ -253,6 +253,21 @@ def _cc_args_and_env_analysis_test_impl(ctx):
         "set up by most Bazel C/C++ toolchains is extremely error-prone.",
     )
 
+    for env_var, expected_value in ctx.attr.expected_env.items():
+        asserts.equals(
+            env,
+            expected_value,
+            cargo_action.env.get(env_var),
+            "error: expected env '{}' to be '{}'".format(env_var, expected_value),
+        )
+
+    for env_var in ctx.attr.unexpected_env:
+        asserts.false(
+            env,
+            env_var in cargo_action.env,
+            "error: expected env '{}' to be unset".format(env_var),
+        )
+
     if ctx.attr.expected_include:
         actual_include = cargo_action.env.get("INCLUDE")
         asserts.equals(
@@ -264,14 +279,32 @@ def _cc_args_and_env_analysis_test_impl(ctx):
 
     return analysistest.end(env)
 
+_CC_ARGS_AND_ENV_ANALYSIS_TEST_ATTRS = {
+    "expected_cflags": attr.string_list(default = ["-Wall"]),
+    "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
+    "expected_env": attr.string_dict(),
+    "expected_include": attr.string(default = ""),
+    "legacy_cc_toolchain": attr.bool(default = False),
+    "unexpected_env": attr.string_list(),
+}
+
 cc_args_and_env_analysis_test = analysistest.make(
     impl = _cc_args_and_env_analysis_test_impl,
     doc = """An analysistest to examine the custom cargo flags of an cargo_build_script target.""",
-    attrs = {
-        "expected_cflags": attr.string_list(default = ["-Wall"]),
-        "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
-        "expected_include": attr.string(default = ""),
-        "legacy_cc_toolchain": attr.bool(default = False),
+    attrs = _CC_ARGS_AND_ENV_ANALYSIS_TEST_ATTRS,
+)
+
+# `--action_env` deployment target the analysistest below injects.
+_ACTION_ENV_DEPLOYMENT_TARGET = "15.0"
+
+cc_args_and_env_with_action_env_analysis_test = analysistest.make(
+    impl = _cc_args_and_env_analysis_test_impl,
+    doc = """Like cc_args_and_env_analysis_test, with `MACOSX_DEPLOYMENT_TARGET` set through `--action_env`.""",
+    attrs = _CC_ARGS_AND_ENV_ANALYSIS_TEST_ATTRS,
+    config_settings = {
+        "//command_line_option:action_env": [
+            "MACOSX_DEPLOYMENT_TARGET=" + _ACTION_ENV_DEPLOYMENT_TARGET,
+        ],
     },
 )
 
@@ -282,7 +315,9 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
         extra_include_paths = "",
-        legacy_cc_toolchain = False):
+        legacy_cc_toolchain = False,
+        build_script_env = {},
+        use_default_shell_env = None):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
     This is achieved by creating a cascade of targets:
@@ -299,6 +334,8 @@ def cargo_build_script_with_extra_cc_compile_flags(
       extra_include_paths: INCLUDE environment variable value for the cc_toolchain.
       legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
         cc toolchain.
+      build_script_env: Forwarded to the cargo_build_script.
+      use_default_shell_env: Forwarded to the cargo_build_script.
     """
 
     test_cc_config(
@@ -330,6 +367,8 @@ def cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script_impl" % name,
         edition = "2018",
         srcs = ["build.rs"],
+        build_script_env = build_script_env,
+        use_default_shell_env = use_default_shell_env,
         tags = ["manual", "nobuild"],
     )
     with_extra_toolchains(
@@ -794,3 +833,48 @@ def forwarded_header_paths_test(name):
                     target_under_test = case + "/cargo_build_script",
                     expected_cflags = [forwarding, category, forwarding, expected, "-DKEEP=1"],
                 )
+
+_APPLE_DEPLOYMENT_TARGET_VARS = [
+    "IPHONEOS_DEPLOYMENT_TARGET",
+    "MACOSX_DEPLOYMENT_TARGET",
+    "TVOS_DEPLOYMENT_TARGET",
+    "WATCHOS_DEPLOYMENT_TARGET",
+    "XROS_DEPLOYMENT_TARGET",
+]
+
+def apple_deployment_target_test(name):
+    """Tests that the Apple deployment target in the cc args is exported for cc-rs.
+
+    Args:
+        name: Prefix for the generated analysis tests.
+    """
+    macos_target = ["-target", "arm64-apple-macosx26.0"]
+    for suffix, flags, expected_env, unexpected_env, analysis_test, script_attrs in [
+        ("macos_target", macos_target, {"MACOSX_DEPLOYMENT_TARGET": "26.0"}, [], cc_args_and_env_analysis_test, {}),
+        ("ios_version_min", ["-mios-version-min=17.0"], {"IPHONEOS_DEPLOYMENT_TARGET": "17.0"}, [], cc_args_and_env_analysis_test, {}),
+        # The version in the `-target` triple wins over `-m<os>-version-min=`,
+        # whichever comes first.
+        ("target_after_version_min", ["-mmacosx-version-min=13.0"] + macos_target, {"MACOSX_DEPLOYMENT_TARGET": "26.0"}, [], cc_args_and_env_analysis_test, {}),
+        ("target_before_version_min", macos_target + ["-mmacosx-version-min=13.0"], {"MACOSX_DEPLOYMENT_TARGET": "26.0"}, [], cc_args_and_env_analysis_test, {}),
+        ("non_apple_target", ["-target", "x86_64-unknown-linux-gnu"], {}, _APPLE_DEPLOYMENT_TARGET_VARS, cc_args_and_env_analysis_test, {}),
+        # A deployment target from `--action_env` is not overridden.
+        ("action_env_wins", macos_target, {"MACOSX_DEPLOYMENT_TARGET": _ACTION_ENV_DEPLOYMENT_TARGET}, [], cc_args_and_env_with_action_env_analysis_test, {}),
+        # Without the default shell env, `--action_env` never reaches the build
+        # script, so the derived deployment target is still needed.
+        ("action_env_without_default_shell_env", macos_target, {"MACOSX_DEPLOYMENT_TARGET": "26.0"}, [], cc_args_and_env_with_action_env_analysis_test, {"use_default_shell_env": False}),
+        # `build_script_env` overrides the derived deployment target.
+        ("build_script_env_wins", macos_target, {"MACOSX_DEPLOYMENT_TARGET": "14.0"}, [], cc_args_and_env_analysis_test, {"build_script_env": {"MACOSX_DEPLOYMENT_TARGET": "14.0"}}),
+    ]:
+        case = "%s_%s" % (name, suffix)
+        cargo_build_script_with_extra_cc_compile_flags(
+            name = case + "/cargo_build_script",
+            extra_cc_compile_flags = flags,
+            **script_attrs
+        )
+        analysis_test(
+            name = case,
+            target_under_test = case + "/cargo_build_script",
+            expected_cflags = flags,
+            expected_env = expected_env,
+            unexpected_env = unexpected_env,
+        )

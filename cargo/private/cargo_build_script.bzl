@@ -13,6 +13,7 @@ load("//rust:rust_common.bzl", "BuildInfo", "DepInfo")
 # buildifier: disable=bzl-visibility
 load(
     "//rust/private:rustc.bzl",
+    "apple_deployment_target_env",
     "get_compilation_mode_opts",
     "get_linker_and_args",
 )
@@ -559,11 +560,19 @@ def _cargo_build_script_impl(ctx):
         if not env["AR"]:
             env["AR"] = cc_toolchain.ar_executable
 
-        # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
-        # to determine the deployment target when building for apple platforms (`macosx-version-min`
-        # for example, itself derived from the `macos_minimum_os` Bazel argument).
+        # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source.
         env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
         env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+
+        # cc-rs reads the Apple deployment target from `MACOSX_DEPLOYMENT_TARGET`
+        # and its per-OS siblings, not from `CFLAGS`, so mirror the one the
+        # cc_toolchain encodes in its compile args. A value from `--action_env`
+        # is kept; the toolchain's `env` and `build_script_env` are applied below
+        # and override this one. An inherited `--action_env=VAR` is overridden.
+        for key, value in apple_deployment_target_env(cc_c_args).items():
+            if not (use_default_shell_env and key in ctx.configuration.default_shell_env):
+                env[key] = value
+
         # It may be tempting to forward ARFLAGS, but cc-rs is opinionated enough
         # that doing so is more likely to hurt than help. If you need to change
         # ARFLAGS, make changes to cc-rs.

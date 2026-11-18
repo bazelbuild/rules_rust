@@ -534,7 +534,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
-# The environment variables rustc reads the Apple deployment target from,
+# The environment variables rustc and cc-rs read the Apple deployment target from,
 # keyed by the OS names clang accepts in a `-target` triple and in
 # `-m<os>-version-min=`.
 _APPLE_DEPLOYMENT_TARGET_ENV = {
@@ -555,31 +555,34 @@ def _split_os_version(os_version):
             return os_version[:i], os_version[i:]
     return os_version, ""
 
-def apple_deployment_target_env(link_args):
-    """Derives the Apple deployment target variable rustc expects from linker arguments.
+def apple_deployment_target_env(args):
+    """Derives the Apple deployment target variable from clang arguments.
 
     An Apple cc_toolchain tells clang its deployment target through the
     `-target` triple (e.g. `arm64-apple-macosx26.0`) or `-m<os>-version-min=`.
-    rustc does not read the link args it forwards: it takes the deployment
+    Neither rustc nor cc-rs reads those arguments: both take the deployment
     target from `MACOSX_DEPLOYMENT_TARGET` and its per-OS siblings and, when
-    those are unset, from its own default, which it passes to the linker as
-    `-m<os>-version-min=`. clang then warns about the conflicting options on
-    every link (bazelbuild/rules_rust#4149).
+    those are unset, from their own default. rustc passes its default to the
+    linker as `-m<os>-version-min=`, so clang warns about the conflicting
+    options on every link (bazelbuild/rules_rust#4149); cc-rs adds its
+    own deployment target to the C compiler command line, where it can
+    disagree with the one in the toolchain's `CFLAGS`.
 
-    As in clang, a version carried by the last `-target` triple wins over
-    `-m<os>-version-min=`.
+    The arguments may be the linker arguments forwarded to rustc or the C
+    compile arguments handed to a cargo build script. As in clang, a version
+    carried by the last `-target` triple wins over `-m<os>-version-min=`.
 
     Args:
-        link_args (list): The linker arguments forwarded to rustc.
+        args (list): The linker or C compile arguments of the cc_toolchain.
 
     Returns:
-        dict: The deployment target variable to set for rustc, if any.
+        dict: The deployment target variable to set, if any.
     """
     triple = None
     version_min = None
-    for i, arg in enumerate(link_args):
-        if arg == "-target" and i + 1 < len(link_args):
-            triple = link_args[i + 1]
+    for i, arg in enumerate(args):
+        if arg == "-target" and i + 1 < len(args):
+            triple = args[i + 1]
         elif arg.startswith("--target="):
             triple = arg[len("--target="):]
         elif arg.startswith("-m") and "-version-min=" in arg:
