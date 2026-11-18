@@ -1,0 +1,26 @@
+module(
+    name = "cu_test_non_root_module_labels",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# A non-root module whose `crate.annotation`s point at targets in its own repo
+# (`override_target_lib = "//:foo"`). Its lockfile was pinned while it was the
+# root module, so it records those labels as `@@//:foo`.
+bazel_dep(name = "cu_test_override_target", version = "0.0.0")
+local_path_override(
+    module_name = "cu_test_override_target",
+    path = "../override_target",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

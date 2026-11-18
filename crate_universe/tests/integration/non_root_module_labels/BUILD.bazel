@@ -1,0 +1,15 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+# `override_targets_example` depends on `@override_target//foo`, which is
+# overridden to `//:foo` of `cu_test_override_target`. This only builds if that
+# label resolves to the non-root module's repo rather than to this one.
+build_test(
+    name = "override_target_build_test",
+    targets = ["@cu_test_override_target//:override_targets_example"],
+)
+
+# The `proc-macro` and `custom-build` overrides of `override_target` are covered
+# by also running `bazel test @cu_test_override_target//:all
+# @cu_test_override_target//overrides:all` from this module (see
+# `.bazelci/presubmit.yml`). `//...` would also walk the `bazel-*` symlinks of
+# `override_target` once it has been built as the root module.
