@@ -704,6 +704,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Uses `override_target` as a non-root module and runs its tests from there.
+    post_shell_commands:
+      - cd ../non_root_module_labels && bazel test //... @cu_test_override_target//:all @cu_test_override_target//overrides:all
   cu_integ_override_target_macos:
     name: Crate Universe - override_target
     platform: macos_arm64
@@ -712,6 +715,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Uses `override_target` as a non-root module and runs its tests from there.
+    post_shell_commands:
+      - cd ../non_root_module_labels && bazel test //... @cu_test_override_target//:all @cu_test_override_target//overrides:all
 
   # --- remove_internal_deps ---
   cu_integ_remove_internal_deps_ubuntu2204:

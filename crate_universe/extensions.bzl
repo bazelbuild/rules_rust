@@ -530,6 +530,28 @@ def _collect_splicing_config(module, repository):
 
     return config
 
+def _own_repo_labels(text, repo_name):
+    """Points the `@@//` labels in generated `text` at the canonical repo `repo_name`.
+
+    A lockfile pinned while its module was the root module records that
+    module's own labels (e.g. `override_target_lib = "//:foo"`) as `@@//...`.
+    The lockfile digest treats `@@<repo>//` and `@@//` alike so the lockfile
+    stays valid when the module is used as a non-root dependency, but those
+    labels then have to name the module's repo rather than the root module's.
+
+    Args:
+        text (str): Generated text: lockfile JSON or rendered BUILD/bzl files.
+        repo_name (str): The canonical name of the module's repo, `""` for the root module.
+
+    Returns:
+        str: `text` with `@@//` replaced by `@@<repo_name>//`.
+    """
+    if not repo_name:
+        return text
+
+    # buildifier: disable=canonical-repository
+    return text.replace("@@//", "@@{}//".format(repo_name))
+
 def _generate_hub_and_spokes(
         *,
         module_ctx,
@@ -624,7 +646,11 @@ def _generate_hub_and_spokes(
                   "must ship a `lockfile = ...` because repinning is not " +
                   "supported across module boundaries.").format(cfg.name))
         repin = False
+
+        # The lockfile lives in the module's own repo, so its label names that repo.
+        own_repo_name = cfg.lockfile.repo_name
     else:
+        own_repo_name = ""
         repin = not lockfile or determine_repin(
             repository_ctx = module_ctx,
             repository_name = cfg.name,
@@ -710,10 +736,10 @@ def _generate_hub_and_spokes(
 
     crates_dir = tag_path.get_child(cfg.name)
     hub_contents = {
-        "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
-        "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
-        "crates.bzl": module_ctx.read(crates_dir.get_child("crates.bzl")),
-        "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
+        "BUILD.bazel": _own_repo_labels(module_ctx.read(crates_dir.get_child("BUILD.bazel")), own_repo_name),
+        "alias_rules.bzl": _own_repo_labels(module_ctx.read(crates_dir.get_child("alias_rules.bzl")), own_repo_name),
+        "crates.bzl": _own_repo_labels(module_ctx.read(crates_dir.get_child("crates.bzl")), own_repo_name),
+        "defs.bzl": _own_repo_labels(module_ctx.read(crates_dir.get_child("defs.bzl")), own_repo_name),
     }
 
     # Per-alias subpackages always render so users can consume
@@ -721,8 +747,9 @@ def _generate_hub_and_spokes(
     # renderer writes a sidecar list of subpackage names we slurp here.
     hub_packages = json.decode(module_ctx.read(hub_packages_output_file))
     for hub_package in hub_packages:
-        hub_contents["{}/BUILD.bazel".format(hub_package)] = module_ctx.read(
-            crates_dir.get_child(hub_package).get_child("BUILD.bazel"),
+        hub_contents["{}/BUILD.bazel".format(hub_package)] = _own_repo_labels(
+            module_ctx.read(crates_dir.get_child(hub_package).get_child("BUILD.bazel")),
+            own_repo_name,
         )
 
     crates_vendor_remote_repository(
@@ -730,7 +757,7 @@ def _generate_hub_and_spokes(
         contents = hub_contents,
     )
 
-    contents = json.decode(module_ctx.read(lockfile))
+    contents = json.decode(_own_repo_labels(module_ctx.read(lockfile), own_repo_name))
 
     for crate in contents["crates"].values():
         repo = crate["repository"]
@@ -748,7 +775,10 @@ def _generate_hub_and_spokes(
 
         if "Http" in repo:
             # Replicates functionality in repo_http.j2.
-            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
+            build_file_content = _own_repo_labels(
+                module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version))),
+                own_repo_name,
+            )
             repo = repo["Http"]
             http_archive(
                 name = crate_repo_name,
@@ -764,7 +794,10 @@ def _generate_hub_and_spokes(
             )
         elif "Git" in repo:
             # Replicates functionality in repo_git.j2
-            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
+            build_file_content = _own_repo_labels(
+                module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version))),
+                own_repo_name,
+            )
             repo = repo["Git"]
             kwargs = {}
             for k, v in repo["commitish"].items():
