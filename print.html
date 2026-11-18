@@ -353,6 +353,9 @@ Hello world
 <p>On Windows, a PDB file containing debugging information is available under
 the key <code>pdb_file</code> in <code>OutputGroupInfo</code>. Similarly on macOS, a dSYM folder
 is available under the key <code>dsym_folder</code> in <code>OutputGroupInfo</code>.</p>
+<p>Implicit <code>%{name}.stripped</code> and <code>%{name}.dwp</code> outputs and the
+<code>DebugPackageInfo</code> provider are also declared, and require a configured C++
+toolchain (<code>@rules_cc//cc:toolchain_type</code>).</p>
 <p><strong>ATTRIBUTES</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="rust_binary-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
