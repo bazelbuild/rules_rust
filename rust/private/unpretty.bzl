@@ -221,7 +221,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
             env = env,
             arguments = args.all,
             mnemonic = mnemonic,
-            progress_message = "{} %{{label}}".format(mnemonic),
+            progress_message = "Running Rust unpretty ({}) for %{{label}} ({})".format(mode, mnemonic),
             toolchain = "@rules_rust//rust:toolchain_type",
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )

@@ -2017,11 +2017,6 @@ def rustc_compile_action(
     # this is the final list of env vars
     env.update(env_from_args)
 
-    if hasattr(attr, "version") and attr.version != "0.0.0":
-        formatted_version = " v{}".format(attr.version)
-    else:
-        formatted_version = ""
-
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
     interface_library = None
@@ -2056,22 +2051,6 @@ def rustc_compile_action(
     if use_split_debuginfo:
         action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
-    if toolchain._experimental_simple_progress_messages:
-        rustc_progress_message = "Rustc %{label}"
-        metadata_progress_message = "RustcMetadata %{label}"
-        bootstrap_progress_message = "Rustc %{label}"
-    else:
-        progress_message_details = "{} {}{} ({} file{})".format(
-            crate_info.type,
-            ctx.label.name,
-            formatted_version,
-            len(srcs),
-            "" if len(srcs) == 1 else "s",
-        )
-        rustc_progress_message = "Compiling Rust " + progress_message_details
-        metadata_progress_message = "Compiling Rust metadata " + progress_message_details
-        bootstrap_progress_message = "Compiling Rust (without process_wrapper) " + progress_message_details
-
     if ctx.executable._process_wrapper:
         # Run as normal
         ctx.actions.run(
@@ -2081,7 +2060,7 @@ def rustc_compile_action(
             env = env,
             arguments = args.all,
             mnemonic = "Rustc",
-            progress_message = rustc_progress_message,
+            progress_message = "Compiling Rust {} %{{label}} (Rustc)".format(crate_info.type),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
@@ -2094,7 +2073,7 @@ def rustc_compile_action(
                 env = env,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
-                progress_message = metadata_progress_message,
+                progress_message = "Compiling Rust metadata {} %{{label}} (RustcMetadata)".format(crate_info.type),
                 toolchain = "@rules_rust//rust:toolchain_type",
                 execution_requirements = {"supports-path-mapping": ""} if args_metadata.supports_path_mapping else None,
             )
@@ -2109,7 +2088,7 @@ def rustc_compile_action(
             env = env,
             arguments = [args.rustc_path, args.rustc_flags],
             mnemonic = "Rustc",
-            progress_message = bootstrap_progress_message,
+            progress_message = "Compiling Rust (without process_wrapper) {} %{{label}} (Rustc)".format(crate_info.type),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,

@@ -458,7 +458,7 @@ def _rust_bindgen_impl(ctx):
         ),
         outputs = [output] + ([c_output] if wrap_static_fns else []),
         mnemonic = "RustBindgen",
-        progress_message = "Generating bindings for {}..".format(header.path),
+        progress_message = "Generating bindings for %{label} (RustBindgen)",
         env = env,
         arguments = [args],
         tools = tools,

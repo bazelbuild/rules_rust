@@ -4,8 +4,6 @@ Rule used to retrieve the lints specified in the [lints section] of a `Cargo.tom
 [lints section](https://doc.rust-lang.org/cargo/reference/manifest.html#the-lints-section)
 """
 
-load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-
 # buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "LintsInfo")
 
@@ -37,7 +35,7 @@ def _extract_cargo_lints(ctx):
         inputs = inputs,
         arguments = [args],
         mnemonic = "CargoLints",
-        progress_message = "CargoLints %{label}" if ctx.attr._experimental_simple_progress_messages[BuildSettingInfo].value else "Reading Cargo metadata to get Lints for {}".format(ctx.attr.name),
+        progress_message = "Extracting Cargo lints for %{label} (CargoLints)",
     )
 
     return [
@@ -69,10 +67,6 @@ extract_cargo_lints = rule(
             executable = True,
             default = Label("//cargo/private/cargo_toml_info:cargo_toml_info"),
             cfg = "exec",
-        ),
-        "_experimental_simple_progress_messages": attr.label(
-            default = Label("//rust/settings:experimental_simple_progress_messages"),
-            providers = [BuildSettingInfo],
         ),
     },
 )
