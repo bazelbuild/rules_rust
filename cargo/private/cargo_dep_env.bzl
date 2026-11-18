@@ -14,6 +14,7 @@ def _cargo_dep_env_impl(ctx):
     )
     ctx.actions.run(
         mnemonic = "CargoDepEnv",
+        progress_message = "Creating Cargo dep env for %{label} (CargoDepEnv)",
         outputs = [empty_dir],
         executable = "true",
     )

@@ -41,7 +41,7 @@ def _create_proto_lang_toolchain(ctx, prost_toolchain):
         provided_proto_sources = depset(),
         proto_compiler = ctx.attr._prost_process_wrapper[DefaultInfo].files_to_run,
         protoc_opts = prost_toolchain.protoc_opts,
-        progress_message = "ProstGenProto %{label}",
+        progress_message = "Generating Prost Rust proto for %{label} (ProstGenProto)",
         mnemonic = "ProstGenProto",
     )
 

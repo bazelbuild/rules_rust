@@ -284,7 +284,7 @@ def rust_clippy_action(
         tools = [clippy_toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
-        progress_message = "Clippy %{label}",
+        progress_message = "Running Clippy on %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
         execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
     )
