@@ -1,4 +1,7 @@
 load(":debug_info_analysis_test.bzl", "debug_info_analysis_test_suite")
+load(":dwo_files_test.bzl", "dwo_files_test_suite")
 
 ############################ UNIT TESTS #############################
 debug_info_analysis_test_suite(name = "debug_info_analysis_test_suite")
+
+dwo_files_test_suite(name = "dwo_files_test_suite")

@@ -58,6 +58,7 @@ def _mdbook_impl(ctx):
 
     ctx.actions.run(
         mnemonic = "MdBookBuild",
+        progress_message = "Building mdBook %{label} (MdBookBuild)",
         executable = ctx.executable._process_wrapper,
         tools = depset(ctx.files.plugins, transitive = [toolchain.all_files]),
         outputs = [output],

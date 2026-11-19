@@ -38,14 +38,12 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
                         supported_types,
                     ))
 
-            progress_message_label = target.label
             input_file = crate_info.output
         else:
             wasm_files = wasm_file[0][DefaultInfo].files.to_list()
             if len(wasm_files) != 1:
                 fail("Unexpected number of wasm files: {}".format(wasm_files))
 
-            progress_message_label = wasm_files[0].path
             input_file = wasm_files[0]
     else:
         fail("wasm_file is expected to be a transitioned label attr on `{}`. Got `{}`".format(
@@ -92,7 +90,7 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
         inputs = [input_file],
         outputs = outputs,
         mnemonic = "RustWasmBindgen",
-        progress_message = "Generating WebAssembly bindings for {}".format(progress_message_label),
+        progress_message = "Generating WebAssembly bindings for %{label} (RustWasmBindgen)",
         arguments = [args],
         toolchain = str(Label("//:toolchain_type")),
     )

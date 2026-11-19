@@ -35,7 +35,7 @@ def _extract_cargo_lints(ctx):
         inputs = inputs,
         arguments = [args],
         mnemonic = "CargoLints",
-        progress_message = "Reading Cargo metadata to get Lints for {}".format(ctx.attr.name),
+        progress_message = "Extracting Cargo lints for %{label} (CargoLints)",
     )
 
     return [

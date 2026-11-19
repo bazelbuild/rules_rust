@@ -87,7 +87,7 @@ def _perform_check(edition, srcs, ctx):
         tools = [rustfmt_toolchain.all_files],
         arguments = [args],
         mnemonic = "Rustfmt",
-        progress_message = "Rustfmt %{label}",
+        progress_message = "Checking Rustfmt for %{label}",
         toolchain = Label("//rust/rustfmt:toolchain_type"),
     )
 

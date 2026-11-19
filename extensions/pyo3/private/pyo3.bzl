@@ -142,6 +142,7 @@ def _py_pyo3_library_impl(ctx):
         args.add(stub, format = "--output=%s")
         ctx.actions.run(
             mnemonic = "PyO3StubGen",
+            progress_message = "Generating PyO3 stubs for %{label} (PyO3StubGen)",
             outputs = [stub],
             inputs = [ext],
             executable = ctx.executable.stubgen,
