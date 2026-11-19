@@ -1,0 +1,4 @@
+load(":toolchain_file_test.bzl", "toolchain_file_test_suite")
+
+############################ UNIT TESTS #############################
+toolchain_file_test_suite(name = "toolchain_file_test_suite")

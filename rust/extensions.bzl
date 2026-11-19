@@ -18,6 +18,7 @@ load(
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
     "select_rust_version",
 )
+load("//rust/private:toolchain_file.bzl", "TOOLCHAIN_CHANNEL_FACTS_KEY", "toolchain_file_settings")
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -59,12 +60,20 @@ def _channel_manifest_facts(module_ctx):
         return None
     return dict(module_ctx.facts.get(CHANNEL_MANIFEST_FACTS_KEY, {}))
 
-def _extension_metadata(module_ctx, facts):
+def _channel_facts(module_ctx):
+    """The `channels` facts recorded by a previous evaluation, or `None` without facts support."""
+    if not bazel_features.external_deps.has_facts:
+        return None
+    return dict(module_ctx.facts.get(TOOLCHAIN_CHANNEL_FACTS_KEY, {}))
+
+def _extension_metadata(module_ctx, facts, channels = None):
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
         metadata_kwargs["reproducible"] = True
     if facts != None:
         metadata_kwargs["facts"] = {CHANNEL_MANIFEST_FACTS_KEY: facts}
+        if channels:
+            metadata_kwargs["facts"][TOOLCHAIN_CHANNEL_FACTS_KEY] = channels
     return module_ctx.extension_metadata(**metadata_kwargs)
 
 def _rust_impl(module_ctx):
@@ -76,6 +85,11 @@ def _rust_impl(module_ctx):
     # Hashes of archives outside `known_shas.bzl`, read back from the lockfile
     # and extended as versions and platforms are requested.
     facts = _channel_manifest_facts(module_ctx)
+
+    # Releases resolved for the channels of toolchain files (`stable`,
+    # `1.99`), read back from the lockfile so the first resolution sticks.
+    channel_facts = _channel_facts(module_ctx)
+    channels = {} if channel_facts != None else None
 
     toolchain_triples = dict(DEFAULT_TOOLCHAIN_TRIPLES)
 
@@ -151,7 +165,25 @@ def _rust_impl(module_ctx):
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
         if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
             fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
-        if len(toolchain.versions) == 0:
+
+        versions = toolchain.versions
+        extra_target_triples = toolchain.extra_target_triples
+        manifests = {}
+        if toolchain.file:
+            settings = toolchain_file_settings(
+                module_ctx,
+                toolchain.file,
+                versions = versions,
+                extra_target_triples = extra_target_triples,
+                urls = toolchain.urls,
+                facts = channel_facts,
+                channels = channels,
+            )
+            versions = settings.versions
+            extra_target_triples = settings.extra_target_triples
+            manifests = settings.manifests
+
+        if len(versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
             # so that the `register_toolchains()` in MODULES.bazel is still
@@ -166,20 +198,21 @@ def _rust_impl(module_ctx):
             # platforms of the Rust, rustfmt and Cargo toolchains and the
             # extra targets, at every version involved.
             exec_triples = {triple: True for triple in list(toolchain_triples.keys()) + list(DEFAULT_TOOLCHAIN_TRIPLES.keys()) + list(toolchain.rustfmt_toolchain_triples.keys())}.keys()
-            all_triples = {triple: True for triple in list(exec_triples) + list(toolchain.extra_target_triples)}.keys()
+            all_triples = {triple: True for triple in list(exec_triples) + list(extra_target_triples)}.keys()
             sha256s = resolve_sha256s(
                 module_ctx,
                 requests = [
                     sha256_request(version = version, targets = all_triples)
-                    for version in toolchain.versions
+                    for version in versions
                 ] + [
                     sha256_request(version = toolchain.rustfmt_version, targets = exec_triples),
-                    sha256_request(version = toolchain.rust_analyzer_version or select_rust_version(toolchain.versions), targets = exec_triples),
+                    sha256_request(version = toolchain.rust_analyzer_version or select_rust_version(versions), targets = exec_triples),
                     sha256_request(version = rust_common.default_version, targets = exec_triples),
                 ],
                 urls = toolchain.urls,
                 sha256s = toolchain.sha256s,
                 facts = facts,
+                manifests = manifests,
             )
 
             rust_register_toolchains(
@@ -194,11 +227,11 @@ def _rust_impl(module_ctx):
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = sha256s,
-                extra_target_triples = toolchain.extra_target_triples,
+                extra_target_triples = extra_target_triples,
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
-                versions = toolchain.versions,
+                versions = versions,
                 compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -206,7 +239,7 @@ def _rust_impl(module_ctx):
                 target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
             )
-    return _extension_metadata(module_ctx, facts)
+    return _extension_metadata(module_ctx, facts, channels)
 
 _COMMON_TAG_DEFAULTS = {
     "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
@@ -334,6 +367,18 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "extra_target_triples": attr.string_list(
             doc = "Additional Rust target triples to fetch and register toolchains for.",
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        "file": attr.label(
+            doc = (
+                "A rustup toolchain file (`rust-toolchain.toml` or the legacy `rust-toolchain`) to take the " +
+                "toolchain from. Its `channel` stands in for the version of the same channel in `versions` " +
+                "and its `targets` are added to `extra_target_triples`; `components` and `profile` are ignored, " +
+                "the rules fetching what they need (`rustc-dev` and `llvm-tools` through `dev_components`). " +
+                "Channels naming no exact release (`stable`, `beta`, " +
+                "`nightly`, `1.65`) are resolved from their channel manifest once and the release found is " +
+                "recorded as a `channels` fact in `MODULE.bazel.lock`; remove that entry to move to the " +
+                "current release of the channel."
+            ),
         ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
