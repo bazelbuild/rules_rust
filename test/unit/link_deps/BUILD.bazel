@@ -19,7 +19,7 @@ rust_library(
 
 link_deps_test(
     name = "link_deps_success_test",
-    target_under_test = ":main_lib",
+    target = ":main_lib",
 )
 
 # Test 2: Build test linking a C library via link_deps

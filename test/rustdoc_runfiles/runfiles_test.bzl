@@ -1,7 +1,8 @@
 """Compiled doctests need runtime dependencies, not their compilation tools."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_testing//lib:analysis_test.bzl", "analysis_test")
+load("@rules_testing//lib:truth.bzl", "matching")
 
 def _without_runfiles_impl(ctx):
     return [ctx.attr.dep[CcInfo]]
@@ -12,31 +13,42 @@ without_runfiles = rule(
     attrs = {"dep": attr.label(providers = [CcInfo])},
 )
 
-def _compiled_runfiles_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
+def _compiled_runfiles_test_impl(env, target):
     action = [action for action in target.actions if action.mnemonic == "RustdocTestCompile"][0]
     inputs = action.inputs.to_list()
     runfiles = target[DefaultInfo].default_runfiles.files.to_list()
     paths = [file.short_path for file in runfiles]
 
-    for name in ["crate.txt", "transitive.txt", "extra.txt", "compile.txt"]:
-        asserts.true(env, "test/rustdoc_runfiles/" + name in paths, "Missing runfile: " + name)
+    env.expect.that_collection(paths).contains_at_least([
+        "test/rustdoc_runfiles/crate.txt",
+        "test/rustdoc_runfiles/transitive.txt",
+        "test/rustdoc_runfiles/extra.txt",
+        "test/rustdoc_runfiles/compile.txt",
+    ])
 
     compilers = [file for file in inputs if file.basename in ["rustc", "rustdoc", "rustc.exe", "rustdoc.exe"]]
-    asserts.true(env, bool(compilers), "Compilation must retain its compiler inputs")
+    env.expect.that_int(len(compilers)).is_greater_than(0)
     for file in compilers:
-        asserts.false(env, file in runfiles, "Compiler should not be a test input: " + file.path)
-    for file in runfiles:
-        asserts.false(env, "/rust_toolchain/" in file.path, "Compiler SDK should not be a test input: " + file.path)
+        env.expect.that_collection(runfiles).not_contains(file)
+
+    runfile_paths = [file.path for file in runfiles]
+    env.expect.that_collection(runfile_paths).not_contains_predicate(
+        matching.contains("/rust_toolchain/"),
+    )
 
     libraries = [file for file in inputs if "native_shared" in file.basename and file.extension in ["so", "dylib", "dll"]]
-    asserts.true(env, bool(libraries), "Fixture must link a shared native library")
-    for file in libraries:
-        asserts.true(env, file in runfiles, "Missing shared library: " + file.path)
+    env.expect.that_int(len(libraries)).is_greater_than(0)
+    env.expect.that_collection(runfiles).contains_at_least(libraries)
 
-    return analysistest.end(env)
+def compiled_runfiles_test(name, target):
+    """Analysis test macro for compiled rustdoc test runfiles.
 
-compiled_runfiles_test = analysistest.make(
-    _compiled_runfiles_test_impl,
-)
+    Args:
+        name: Name of the test target.
+        target: Target under test.
+    """
+    analysis_test(
+        name = name,
+        target = target,
+        impl = _compiled_runfiles_test_impl,
+    )
