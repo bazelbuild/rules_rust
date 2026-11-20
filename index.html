@@ -183,6 +183,15 @@ rust.toolchain(
 <pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
 </code></pre>
 <p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
+<h3 id="using-a-rust-toolchaintoml"><a class="header" href="#using-a-rust-toolchaintoml">Using a <code>rust-toolchain.toml</code></a></h3>
+<p>A project which already pins its toolchain for rustup with a <a href="https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file">toolchain file</a> can hand that file to the extension instead of repeating the version:</p>
+<pre><code class="language-python">rust.toolchain(
+    edition = "2024",
+    file = "//:rust-toolchain.toml",
+)
+</code></pre>
+<p>The file's <code>channel</code> stands in for the version of the same channel in <code>versions</code> (so the default <code>nightly</code> stays registered beside a pinned stable) and its <code>targets</code> are added to <code>extra_target_triples</code>. <code>components</code> and <code>profile</code> are ignored: they tell rustup what to install, while the rules fetch what they need as they need it. <code>rustc-dev</code> and <code>llvm-tools</code> are the exception and keep their own switch, <code>dev_components</code>. That is everything the file can say: optimisation levels and rustc flags are Cargo configuration, not rustup's, and keep their own attributes. The legacy one-line <code>rust-toolchain</code> file is accepted too.</p>
+<p>A channel naming no exact release (<code>stable</code>, <code>beta</code>, <code>nightly</code> or <code>1.85</code>) is resolved the way rustup resolves it, from the channel manifest, and the release found is recorded as a <code>channels</code> fact in <code>MODULE.bazel.lock</code> so later evaluations reuse it. Removing that entry from the lockfile moves to the current release of the channel, as <code>rustup update</code> would.</p>
 <h2 id="supported-bazel-versions"><a class="header" href="#supported-bazel-versions">Supported bazel versions</a></h2>
 <p>The oldest version of Bazel the <code>main</code> branch is tested against is <code>7.4.1</code>. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.</p>
 <p>We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.</p>
