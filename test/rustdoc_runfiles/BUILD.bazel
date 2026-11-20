@@ -25,11 +25,7 @@ rust_doc_test(
 
 compiled_runfiles_test(
     name = "compiled_runfiles_test",
-    target_compatible_with = NOT_WINDOWS + select({
-        ":compiled_doctests": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-    target_under_test = ":runtime_data_test",
+    target = ":runtime_data_test",
 )
 
 rust_library(
