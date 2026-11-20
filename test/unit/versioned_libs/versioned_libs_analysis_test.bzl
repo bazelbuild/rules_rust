@@ -28,18 +28,24 @@ def _prefix_version_test_impl(ctx):
 
     return analysistest.end(env)
 
-def _suffix_version_test_impl(ctx):
+def _elf_library_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    argv = tut.actions[0].argv
+    action = tut.actions[0]
+    libraries = [file for file in action.inputs.to_list() if file.basename == ctx.attr.library_basename]
 
-    asserts.true(env, _is_in_argv(argv))
+    asserts.equals(env, 1, len(libraries))
+    for library in libraries:
+        asserts.true(env, "-Clink-arg=-l:" + library.basename in action.argv)
 
     return analysistest.end(env)
 
 no_version_test = analysistest.make(_no_version_test_impl)
 prefix_version_test = analysistest.make(_prefix_version_test_impl)
-suffix_version_test = analysistest.make(_suffix_version_test_impl)
+elf_library_test = analysistest.make(
+    _elf_library_test_impl,
+    attrs = {"library_basename": attr.string(mandatory = True)},
+)
 
 def _test_linux():
     rust_shared_library(
@@ -58,8 +64,9 @@ def _test_linux():
         srcs = ["b.c"],
         linkshared = True,
     )
-    no_version_test(
+    elf_library_test(
         name = "linux_no_version_test",
+        library_basename = "libsterling.so",
         target_under_test = ":linux_no_version",
         target_compatible_with = ["@platforms//os:linux"],
     )
@@ -68,7 +75,7 @@ def _test_linux():
         name = "linux_suffix_version",
         srcs = ["a.rs"],
         edition = "2018",
-        deps = [":import_libcheryl.so.3.8", ":import_libcheryl.so"],
+        deps = [":import_libcheryl.so.3.8"],
         target_compatible_with = ["@platforms//os:linux"],
     )
     cc_import(
@@ -80,17 +87,9 @@ def _test_linux():
         srcs = ["b.c"],
         linkshared = True,
     )
-    cc_import(
-        name = "import_libcheryl.so",
-        shared_library = "libcheryl.so",
-    )
-    copy_file(
-        name = "copy_unversioned",
-        src = ":libcheryl.so.3.8",
-        out = "libcheryl.so",
-    )
-    suffix_version_test(
+    elf_library_test(
         name = "linux_suffix_version_test",
+        library_basename = "libcheryl.so.3.8",
         target_under_test = ":linux_suffix_version",
         target_compatible_with = ["@platforms//os:linux"],
     )
