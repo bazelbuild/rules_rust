@@ -18,29 +18,69 @@ fi
 workspace_name="${phys_pwd##*/}"
 exec_root="${output_base}/execroot/${workspace_name}"
 
-for arg in "$@"; do
-    case "$arg" in
+# Replace the placeholders in $1 and store the result in `expanded`.
+expand_placeholders() {
+    expanded=$1
+    case "$expanded" in
         *'${pwd}'*)
-            prefix="${arg%%\$\{pwd\}*}"
-            suffix="${arg#*\$\{pwd\}}"
-            arg="${prefix}${phys_pwd}${suffix}"
+            prefix="${expanded%%\$\{pwd\}*}"
+            suffix="${expanded#*\$\{pwd\}}"
+            expanded="${prefix}${phys_pwd}${suffix}"
             ;;
     esac
-    case "$arg" in
+    case "$expanded" in
         *'${output_base}'*)
-            prefix="${arg%%\$\{output_base\}*}"
-            suffix="${arg#*\$\{output_base\}}"
-            arg="${prefix}${output_base}${suffix}"
+            prefix="${expanded%%\$\{output_base\}*}"
+            suffix="${expanded#*\$\{output_base\}}"
+            expanded="${prefix}${output_base}${suffix}"
             ;;
     esac
-    case "$arg" in
+    case "$expanded" in
         *'${exec_root}'*)
-            prefix="${arg%%\$\{exec_root\}*}"
-            suffix="${arg#*\$\{exec_root\}}"
-            arg="${prefix}${exec_root}${suffix}"
+            prefix="${expanded%%\$\{exec_root\}*}"
+            suffix="${expanded#*\$\{exec_root\}}"
+            expanded="${prefix}${exec_root}${suffix}"
             ;;
     esac
-    set -- "$@" "$arg"
+}
+
+# Print the names of all exported variables.
+#
+# The real process wrapper also replaces placeholders in environment
+# variables. This script needs to do the same. Only shell builtins are used
+# because actions can run with an empty PATH.
+#
+# A value that spans several lines can produce extra names. This is fine
+# because a variable is only changed if its value has a placeholder.
+exported_names() {
+    export -p | while IFS= read -r line; do
+        case "$line" in
+            "declare -x "*) line="${line#declare -x }" ;;
+            "export "*) line="${line#export }" ;;
+            *) continue ;;
+        esac
+        name="${line%%=*}"
+        case "$name" in
+            "" | [!A-Za-z_]* | *[!A-Za-z0-9_]*) continue ;;
+        esac
+        printf '%s\n' "$name"
+    done
+}
+
+env_names=$(exported_names)
+for name in $env_names; do
+    eval "value=\${$name-}"
+    case "$value" in
+        *'${pwd}'* | *'${output_base}'* | *'${exec_root}'*)
+            expand_placeholders "$value"
+            export "$name=$expanded"
+            ;;
+    esac
+done
+
+for arg in "$@"; do
+    expand_placeholders "$arg"
+    set -- "$@" "$expanded"
     shift
 done
 
