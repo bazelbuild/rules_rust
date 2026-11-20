@@ -34,11 +34,13 @@ filegroup(
 alias(
     name = "git2-0.14.4",
     actual = "@complex_sys__git2-0.14.4//:git2",
+    deprecation = "root aliases are deprecated, use `@complex_sys//git2-0.14.4` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "git2",
     actual = "@complex_sys__git2-0.14.4//:git2",
+    deprecation = "root aliases are deprecated, use `@complex_sys//git2` instead.",
     tags = ["manual"],
 )

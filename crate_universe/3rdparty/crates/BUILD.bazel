@@ -34,383 +34,447 @@ filegroup(
 alias(
     name = "anyhow-1.0.98",
     actual = "@cui__anyhow-1.0.98//:anyhow",
+    deprecation = "root aliases are deprecated, use `@cui//anyhow-1.0.98` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "anyhow",
     actual = "@cui__anyhow-1.0.98//:anyhow",
+    deprecation = "root aliases are deprecated, use `@cui//anyhow` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "camino-1.2.6",
     actual = "@cui__camino-1.2.6//:camino",
+    deprecation = "root aliases are deprecated, use `@cui//camino-1.2.6` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "camino",
     actual = "@cui__camino-1.2.6//:camino",
+    deprecation = "root aliases are deprecated, use `@cui//camino` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-lock-11.1.0",
     actual = "@cui__cargo-lock-11.1.0//:cargo_lock",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-lock-11.1.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-lock",
     actual = "@cui__cargo-lock-11.1.0//:cargo_lock",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-lock` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-platform-0.3.3",
     actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-platform-0.3.3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-platform",
     actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-platform` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_metadata-0.23.1",
     actual = "@cui__cargo_metadata-0.23.1//:cargo_metadata",
+    deprecation = "root aliases are deprecated, use `@cui//cargo_metadata-0.23.1` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_metadata",
     actual = "@cui__cargo_metadata-0.23.1//:cargo_metadata",
+    deprecation = "root aliases are deprecated, use `@cui//cargo_metadata` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml-0.22.3",
     actual = "@cui__cargo_toml-0.22.3//:cargo_toml",
+    deprecation = "root aliases are deprecated, use `@cui//cargo_toml-0.22.3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml",
     actual = "@cui__cargo_toml-0.22.3//:cargo_toml",
+    deprecation = "root aliases are deprecated, use `@cui//cargo_toml` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cfg-expr-0.18.0",
     actual = "@cui__cfg-expr-0.18.0//:cfg_expr",
+    deprecation = "root aliases are deprecated, use `@cui//cfg-expr-0.18.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "cfg-expr",
     actual = "@cui__cfg-expr-0.18.0//:cfg_expr",
+    deprecation = "root aliases are deprecated, use `@cui//cfg-expr` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap-4.5.37",
     actual = "@cui__clap-4.5.37//:clap",
+    deprecation = "root aliases are deprecated, use `@cui//clap-4.5.37` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
     actual = "@cui__clap-4.5.37//:clap",
+    deprecation = "root aliases are deprecated, use `@cui//clap` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index-3.7.0",
     actual = "@cui__crates-index-3.7.0//:crates_index",
+    deprecation = "root aliases are deprecated, use `@cui//crates-index-3.7.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index",
     actual = "@cui__crates-index-3.7.0//:crates_index",
+    deprecation = "root aliases are deprecated, use `@cui//crates-index` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "glob-0.3.2",
     actual = "@cui__glob-0.3.2//:glob",
+    deprecation = "root aliases are deprecated, use `@cui//glob-0.3.2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "glob",
     actual = "@cui__glob-0.3.2//:glob",
+    deprecation = "root aliases are deprecated, use `@cui//glob` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "hex-0.4.3",
     actual = "@cui__hex-0.4.3//:hex",
+    deprecation = "root aliases are deprecated, use `@cui//hex-0.4.3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "hex",
     actual = "@cui__hex-0.4.3//:hex",
+    deprecation = "root aliases are deprecated, use `@cui//hex` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "indoc-2.0.6",
     actual = "@cui__indoc-2.0.6//:indoc",
+    deprecation = "root aliases are deprecated, use `@cui//indoc-2.0.6` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "indoc",
     actual = "@cui__indoc-2.0.6//:indoc",
+    deprecation = "root aliases are deprecated, use `@cui//indoc` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "itertools-0.14.0",
     actual = "@cui__itertools-0.14.0//:itertools",
+    deprecation = "root aliases are deprecated, use `@cui//itertools-0.14.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "itertools",
     actual = "@cui__itertools-0.14.0//:itertools",
+    deprecation = "root aliases are deprecated, use `@cui//itertools` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "maplit-1.0.2",
     actual = "@cui__maplit-1.0.2//:maplit",
+    deprecation = "root aliases are deprecated, use `@cui//maplit-1.0.2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "maplit",
     actual = "@cui__maplit-1.0.2//:maplit",
+    deprecation = "root aliases are deprecated, use `@cui//maplit` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "normpath-1.3.0",
     actual = "@cui__normpath-1.3.0//:normpath",
+    deprecation = "root aliases are deprecated, use `@cui//normpath-1.3.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "normpath",
     actual = "@cui__normpath-1.3.0//:normpath",
+    deprecation = "root aliases are deprecated, use `@cui//normpath` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "once_cell-1.21.3",
     actual = "@cui__once_cell-1.21.3//:once_cell",
+    deprecation = "root aliases are deprecated, use `@cui//once_cell-1.21.3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "once_cell",
     actual = "@cui__once_cell-1.21.3//:once_cell",
+    deprecation = "root aliases are deprecated, use `@cui//once_cell` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pathdiff-0.2.3",
     actual = "@cui__pathdiff-0.2.3//:pathdiff",
+    deprecation = "root aliases are deprecated, use `@cui//pathdiff-0.2.3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pathdiff",
     actual = "@cui__pathdiff-0.2.3//:pathdiff",
+    deprecation = "root aliases are deprecated, use `@cui//pathdiff` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "regex-1.11.1",
     actual = "@cui__regex-1.11.1//:regex",
+    deprecation = "root aliases are deprecated, use `@cui//regex-1.11.1` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "regex",
     actual = "@cui__regex-1.11.1//:regex",
+    deprecation = "root aliases are deprecated, use `@cui//regex` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "semver-1.0.26",
     actual = "@cui__semver-1.0.26//:semver",
+    deprecation = "root aliases are deprecated, use `@cui//semver-1.0.26` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "semver",
     actual = "@cui__semver-1.0.26//:semver",
+    deprecation = "root aliases are deprecated, use `@cui//semver` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde-1.0.229",
     actual = "@cui__serde-1.0.229//:serde",
+    deprecation = "root aliases are deprecated, use `@cui//serde-1.0.229` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
     actual = "@cui__serde-1.0.229//:serde",
+    deprecation = "root aliases are deprecated, use `@cui//serde` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json-1.0.154",
     actual = "@cui__serde_json-1.0.154//:serde_json",
+    deprecation = "root aliases are deprecated, use `@cui//serde_json-1.0.154` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
     actual = "@cui__serde_json-1.0.154//:serde_json",
+    deprecation = "root aliases are deprecated, use `@cui//serde_json` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_starlark-0.1.17",
     actual = "@cui__serde_starlark-0.1.17//:serde_starlark",
+    deprecation = "root aliases are deprecated, use `@cui//serde_starlark-0.1.17` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_starlark",
     actual = "@cui__serde_starlark-0.1.17//:serde_starlark",
+    deprecation = "root aliases are deprecated, use `@cui//serde_starlark` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "sha2-0.10.8",
     actual = "@cui__sha2-0.10.8//:sha2",
+    deprecation = "root aliases are deprecated, use `@cui//sha2-0.10.8` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "sha2",
     actual = "@cui__sha2-0.10.8//:sha2",
+    deprecation = "root aliases are deprecated, use `@cui//sha2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "spdx-0.10.8",
     actual = "@cui__spdx-0.10.8//:spdx",
+    deprecation = "root aliases are deprecated, use `@cui//spdx-0.10.8` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "spdx",
     actual = "@cui__spdx-0.10.8//:spdx",
+    deprecation = "root aliases are deprecated, use `@cui//spdx` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile-3.19.1",
     actual = "@cui__tempfile-3.19.1//:tempfile",
+    deprecation = "root aliases are deprecated, use `@cui//tempfile-3.19.1` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile",
     actual = "@cui__tempfile-3.19.1//:tempfile",
+    deprecation = "root aliases are deprecated, use `@cui//tempfile` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tera-1.20.0",
     actual = "@cui__tera-1.20.0//:tera",
+    deprecation = "root aliases are deprecated, use `@cui//tera-1.20.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tera",
     actual = "@cui__tera-1.20.0//:tera",
+    deprecation = "root aliases are deprecated, use `@cui//tera` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "textwrap-0.16.2",
     actual = "@cui__textwrap-0.16.2//:textwrap",
+    deprecation = "root aliases are deprecated, use `@cui//textwrap-0.16.2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "textwrap",
     actual = "@cui__textwrap-0.16.2//:textwrap",
+    deprecation = "root aliases are deprecated, use `@cui//textwrap` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "toml-0.9.5",
     actual = "@cui__toml-0.9.5//:toml",
+    deprecation = "root aliases are deprecated, use `@cui//toml-0.9.5` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "toml",
     actual = "@cui__toml-0.9.5//:toml",
+    deprecation = "root aliases are deprecated, use `@cui//toml` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-0.1.41",
     actual = "@cui__tracing-0.1.41//:tracing",
+    deprecation = "root aliases are deprecated, use `@cui//tracing-0.1.41` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing",
     actual = "@cui__tracing-0.1.41//:tracing",
+    deprecation = "root aliases are deprecated, use `@cui//tracing` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-subscriber-0.3.19",
     actual = "@cui__tracing-subscriber-0.3.19//:tracing_subscriber",
+    deprecation = "root aliases are deprecated, use `@cui//tracing-subscriber-0.3.19` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-subscriber",
     actual = "@cui__tracing-subscriber-0.3.19//:tracing_subscriber",
+    deprecation = "root aliases are deprecated, use `@cui//tracing-subscriber` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "url-2.5.4",
     actual = "@cui__url-2.5.4//:url",
+    deprecation = "root aliases are deprecated, use `@cui//url-2.5.4` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "url",
     actual = "@cui__url-2.5.4//:url",
+    deprecation = "root aliases are deprecated, use `@cui//url` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "walkdir-2.5.0",
     actual = "@cui__walkdir-2.5.0//:walkdir",
+    deprecation = "root aliases are deprecated, use `@cui//walkdir-2.5.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "walkdir",
     actual = "@cui__walkdir-2.5.0//:walkdir",
+    deprecation = "root aliases are deprecated, use `@cui//walkdir` instead.",
     tags = ["manual"],
 )

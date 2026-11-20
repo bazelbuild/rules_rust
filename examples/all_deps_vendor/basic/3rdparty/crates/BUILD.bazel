@@ -32,7 +32,15 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "bzip2-0.3.3",
+    actual = "@basic__bzip2-0.3.3//:bzip2",
+    deprecation = "root aliases are deprecated, use `@basic//bzip2-0.3.3` instead.",
+    tags = ["manual"],
+)
+
+alias(
     name = "bzip2",
     actual = "@basic__bzip2-0.3.3//:bzip2",
+    deprecation = "root aliases are deprecated, use `@basic//bzip2` instead.",
     tags = ["manual"],
 )
