@@ -50,6 +50,21 @@ build --@rules_rust//rust/toolchain/channel=nightly
 
 Failure to do so will result in rules attempting to match a `stable` toolchain when one was not registered, thus raising an error.
 
+### Using a `rust-toolchain.toml`
+
+A project which already pins its toolchain for rustup with a [toolchain file](https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file) can hand that file to the extension instead of repeating the version:
+
+```python
+rust.toolchain(
+    edition = "2024",
+    file = "//:rust-toolchain.toml",
+)
+```
+
+The file's `channel` stands in for the version of the same channel in `versions` (so the default `nightly` stays registered beside a pinned stable) and its `targets` are added to `extra_target_triples`. `components` and `profile` are ignored: they tell rustup what to install, while the rules fetch what they need as they need it. `rustc-dev` and `llvm-tools` are the exception and keep their own switch, `dev_components`. That is everything the file can say: optimisation levels and rustc flags are Cargo configuration, not rustup's, and keep their own attributes. The legacy one-line `rust-toolchain` file is accepted too.
+
+A channel naming no exact release (`stable`, `beta`, `nightly` or `1.85`) is resolved the way rustup resolves it, from the channel manifest, and the release found is recorded as a `channels` fact in `MODULE.bazel.lock` so later evaluations reuse it. Removing that entry from the lockfile moves to the current release of the channel, as `rustup update` would.
+
 ## Supported bazel versions
 
 The oldest version of Bazel the `main` branch is tested against is `7.4.1`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.

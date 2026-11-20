@@ -88,6 +88,8 @@ def parse_manifest(content, targets, iso_date, ext):
     file name, prefixed with the iso date for nightly and beta releases. Taking
     the name from the manifest's own `url` fields means renamed packages
     (`clippy-preview` is published as `clippy-...`) need no special casing.
+    The manifest is TOML read line by line, Starlark having no TOML parser
+    (one is proposed in https://github.com/bazelbuild/bazel/pull/27659).
 
     Args:
         content (str): The manifest.
@@ -137,7 +139,7 @@ def sha256_request(*, version, targets):
     """
     return struct(version = version, targets = list(targets))
 
-def resolve_sha256s(module_ctx, *, requests, urls, sha256s, facts):
+def resolve_sha256s(module_ctx, *, requests, urls, sha256s, facts, manifests = {}):
     """Collect the sha256s the repositories for `requests` will download.
 
     Args:
@@ -151,6 +153,8 @@ def resolve_sha256s(module_ctx, *, requests, urls, sha256s, facts):
             `module_ctx.facts` by the caller and updated in place with anything
             learned here. Pass `None` on Bazel versions without facts, in which
             case nothing is downloaded.
+        manifests (dict[str, str]): Channel manifests already downloaded, by
+            the version as written in `versions`; read instead of downloaded.
 
     Returns:
         dict[str, str]: `sha256s` extended with the hashes found.
@@ -181,14 +185,17 @@ def resolve_sha256s(module_ctx, *, requests, urls, sha256s, facts):
             if target not in recorded_targets and not _builtin_covers(version, iso_date, target, ext)
         ]
         if missing:
-            output = "channel_manifests/{}.toml".format(version_key.replace("/", "-"))
-            download = module_ctx.download(
-                url = manifest_urls(urls, version, iso_date),
-                output = output,
-                allow_fail = True,
-            )
-            if download.success:
-                content = module_ctx.read(output)
+            content = manifests.get(version_key)
+            if content == None:
+                output = "channel_manifests/{}.toml".format(version_key.replace("/", "-"))
+                download = module_ctx.download(
+                    url = manifest_urls(urls, version, iso_date),
+                    output = output,
+                    allow_fail = True,
+                )
+                if download.success:
+                    content = module_ctx.read(output)
+            if content != None:
                 recorded_sha256s.update(parse_manifest(content, missing, iso_date, ext))
                 recorded_targets.update({target: True for target in missing})
             else:

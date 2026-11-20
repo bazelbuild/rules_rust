@@ -1,0 +1,4 @@
+# Read by rustup and, through `rust.toolchain(file = ...)` in `MODULE.bazel`,
+# by `rules_rust`, so both agree on the compiler.
+[toolchain]
+channel = "1.99.1"
