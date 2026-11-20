@@ -6,6 +6,7 @@ load("//cargo:defs.bzl", "cargo_bootstrap_repository")
 load("//cargo/3rdparty/crates:crates.bzl", _cargo_crate_repositories = "crate_repositories")
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
+load("//crate_universe/private:bootstrap_utils.bzl", "cargo_bazel_bootstrap_cache_repository")
 load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
@@ -49,8 +50,14 @@ def _internal_non_reproducible_deps_impl(module_ctx):
     direct_deps = []
 
     maybe(
+        cargo_bazel_bootstrap_cache_repository,
+        name = "cargo_bazel_bootstrap_cache",
+    )
+
+    maybe(
         cargo_bootstrap_repository,
         name = "cargo_bazel_bootstrap",
+        cache = "@cargo_bazel_bootstrap_cache//:BUILD.bazel",
         srcs = CARGO_BAZEL_SRCS,
         binary = "cargo-bazel",
         cargo_lockfile = "@rules_rust//crate_universe:Cargo.lock",

@@ -50,6 +50,13 @@ def get_generator(repository_ctx, host_triple):
     if not use_environ and repository_ctx.attr.generator:
         generator = repository_ctx.path(Label(repository_ctx.attr.generator))
 
+        # A bootstrapped generator carries the executable's extension on
+        # Windows; a label naming it without one still finds it.
+        if not generator.exists and "win" in repository_ctx.os.name:
+            with_extension = generator.dirname.get_child(generator.basename + ".exe")
+            if with_extension.exists:
+                generator = with_extension
+
         # Resolve a few levels of symlinks to ensure we're accessing the direct binary
         for _ in range(1, 100):
             real_generator = generator.realpath
