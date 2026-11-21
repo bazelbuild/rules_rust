@@ -2,7 +2,7 @@
 mod tests {
     use serde::Deserialize;
     use std::env;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[derive(Deserialize)]
     struct Project {
@@ -13,6 +13,12 @@ mod tests {
     struct Crate {
         display_name: String,
         root_module: String,
+        build: Option<Build>,
+    }
+
+    #[derive(Deserialize)]
+    struct Build {
+        build_file: String,
     }
 
     #[test]
@@ -30,6 +36,13 @@ mod tests {
             .find(|c| &c.display_name == "greeter_cdylib")
             .unwrap();
         assert!(cdylib.root_module.ends_with("/shared_lib.rs"));
+        assert_eq!(
+            Path::new(&cdylib.build.as_ref().unwrap().build_file),
+            Path::new(&cdylib.root_module)
+                .parent()
+                .unwrap()
+                .join("BUILD.bazel"),
+        );
 
         let staticlib = project
             .crates
