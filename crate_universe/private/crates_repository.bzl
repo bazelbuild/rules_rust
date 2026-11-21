@@ -34,6 +34,7 @@ SUPPORTED_PLATFORM_TRIPLES = [
     "x86_64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
     "x86_64-unknown-nixos-gnu",
+    "s390x-unknown-linux-gnu",
 ]
 
 def _crates_repository_impl(repository_ctx):
