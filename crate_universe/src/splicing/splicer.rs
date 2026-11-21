@@ -5,8 +5,8 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{bail, Context, Result};
-use camino::{Utf8Path, Utf8PathBuf};
-use cargo_toml::Manifest;
+use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
+use cargo_toml::{Dependency, DepsSet, Manifest};
 use tracing::debug;
 
 use crate::config::CrateId;
@@ -168,6 +168,12 @@ impl<'a> SplicerKind<'a> {
         // Optionally install the cargo config after contents have been symlinked
         Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
 
+        // Relative path dependencies that escape the manifest directory (`../foo`)
+        // would resolve against the temporary splicing directory instead; anchor
+        // them to the original manifest directory.
+        absolutize_escaping_path_deps(&mut manifest, manifest_dir, Utf8Path::new(""));
+        absolutize_escaping_member_path_deps(&manifest, manifest_dir, workspace_dir)?;
+
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
             Self::inject_direct_packages(
@@ -219,6 +225,12 @@ impl<'a> SplicerKind<'a> {
             manifest.workspace =
                 default_cargo_workspace_manifest(&splicing_manifest.resolver_version).workspace
         }
+
+        // Relative path dependencies that escape the manifest directory (`../foo`)
+        // would resolve against the temporary splicing directory instead; anchor
+        // them to the original manifest directory.
+        absolutize_escaping_path_deps(&mut manifest, manifest_dir, Utf8Path::new(""));
+        absolutize_escaping_member_path_deps(&manifest, manifest_dir, workspace_dir)?;
 
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
@@ -301,10 +313,7 @@ impl<'a> SplicerKind<'a> {
         // a Cargo config file is omitted
         let dot_cargo_dir = workspace_dir.join(".cargo");
         if dot_cargo_dir.exists() {
-            let is_symlink = dot_cargo_dir
-                .symlink_metadata()
-                .map(|m| m.file_type().is_symlink())
-                .unwrap_or(false);
+            let is_symlink = dot_cargo_dir.is_symlink();
             if is_symlink {
                 let real_path = dot_cargo_dir.canonicalize()?;
                 remove_symlink(&dot_cargo_dir).with_context(|| {
@@ -677,6 +686,189 @@ fn bazel_ignored_entries(source: &Path) -> Vec<String> {
     }
 
     entries
+}
+
+/// Rewrites relative `path` dependencies of `manifest` that point outside the
+/// workspace root into absolute paths.
+///
+/// `manifest_dir` is the workspace root and `member_dir` is where `manifest`
+/// lives relative to it, empty for the root manifest itself. Only paths that
+/// leave the workspace root are rewritten: a member depending on a sibling
+/// member via `../other` keeps its relative path.
+///
+/// Splicing relocates the root manifest into a temporary workspace whose top-level
+/// entries are symlinks back into `manifest_dir`, so relative paths that stay inside
+/// the workspace keep resolving. Paths that escape it would resolve relative
+/// to the temporary directory and fail with "failed to read `<tmp>/../sibling/Cargo.toml`".
+/// Paths inside the workspace are left untouched so that the package ids `cargo metadata`
+/// reports for them (which include the splicing directory) keep matching what the rest of
+/// the generator expects.
+///
+/// Returns whether any dependency was rewritten.
+pub(crate) fn absolutize_escaping_path_deps(
+    manifest: &mut Manifest,
+    manifest_dir: &Utf8Path,
+    member_dir: &Utf8Path,
+) -> bool {
+    /// Whether a relative path lexically leaves the workspace root when
+    /// resolved from a directory `depth` components below it.
+    fn escapes(path: &str, mut depth: usize) -> bool {
+        let path = Utf8Path::new(path);
+        if path.is_absolute() {
+            return false;
+        }
+        for component in path.components() {
+            match component {
+                Utf8Component::CurDir => {}
+                Utf8Component::Normal(_) => depth += 1,
+                Utf8Component::ParentDir => {
+                    if depth == 0 {
+                        return true;
+                    }
+                    depth -= 1;
+                }
+                // Prefix / RootDir: an absolute path in disguise.
+                _ => return false,
+            }
+        }
+        false
+    }
+
+    fn fix_deps(deps: &mut DepsSet, base_dir: &Utf8Path, depth: usize) -> bool {
+        let mut changed = false;
+        for dep in deps.values_mut() {
+            if let Dependency::Detailed(detail) = dep {
+                if let Some(path) = detail.path.as_deref().filter(|path| escapes(path, depth)) {
+                    detail.path = Some(base_dir.join(path).to_string());
+                    changed = true;
+                }
+            }
+        }
+        changed
+    }
+
+    let depth = member_dir
+        .components()
+        .filter(|component| matches!(component, Utf8Component::Normal(_)))
+        .count();
+    let base_dir = manifest_dir.join(member_dir);
+
+    let mut changed = false;
+    changed |= fix_deps(&mut manifest.dependencies, &base_dir, depth);
+    changed |= fix_deps(&mut manifest.dev_dependencies, &base_dir, depth);
+    changed |= fix_deps(&mut manifest.build_dependencies, &base_dir, depth);
+    for target in manifest.target.values_mut() {
+        changed |= fix_deps(&mut target.dependencies, &base_dir, depth);
+        changed |= fix_deps(&mut target.dev_dependencies, &base_dir, depth);
+        changed |= fix_deps(&mut target.build_dependencies, &base_dir, depth);
+    }
+    if let Some(workspace) = manifest.workspace.as_mut() {
+        changed |= fix_deps(&mut workspace.dependencies, &base_dir, depth);
+    }
+    for patches in manifest.patch.values_mut() {
+        changed |= fix_deps(patches, &base_dir, depth);
+    }
+    changed
+}
+
+/// Applies [`absolutize_escaping_path_deps`] to the workspace members of
+/// `root_manifest`.
+///
+/// Members are reached through the symlinks [`symlink_roots`] created, so their
+/// manifests are the originals and any `../` path dependency in them resolves
+/// against the temporary directory too. For each member that needs rewriting,
+/// the symlinked ancestors under `workspace_dir` are replaced by real
+/// directories (whose other entries are symlinked back to the source tree) and
+/// a rewritten copy of the member manifest is written in place of the symlink.
+/// The source tree is never modified.
+fn absolutize_escaping_member_path_deps(
+    root_manifest: &Manifest,
+    manifest_dir: &Utf8Path,
+    workspace_dir: &Utf8Path,
+) -> Result<()> {
+    let Some(workspace) = root_manifest.workspace.as_ref() else {
+        return Ok(());
+    };
+    for member_pattern in &workspace.members {
+        let pattern = format!(
+            "{}/{}",
+            glob::Pattern::escape(manifest_dir.as_str()),
+            member_pattern
+        );
+        let paths = glob::glob(&pattern)
+            .with_context(|| format!("Invalid workspace member pattern `{member_pattern}`"))?;
+        for member_dir in paths {
+            let member_dir = Utf8PathBuf::from_path_buf(member_dir?)
+                .map_err(|path| anyhow::anyhow!("Workspace member path is not UTF-8: {path:?}"))?;
+            let member_manifest_path = member_dir.join("Cargo.toml");
+            if !member_manifest_path.is_file() {
+                continue;
+            }
+            // Members outside the workspace root are not part of the symlinked
+            // tree, so cargo already resolves their paths against the originals.
+            let Ok(member_rel_dir) = member_dir.strip_prefix(manifest_dir) else {
+                continue;
+            };
+            let mut member_manifest = read_manifest(&member_manifest_path)?;
+            if !absolutize_escaping_path_deps(&mut member_manifest, manifest_dir, member_rel_dir) {
+                continue;
+            }
+            debug!(
+                "Rewriting escaping path dependencies of workspace member {}",
+                member_rel_dir
+            );
+            let dest_dir = materialize_dir(manifest_dir, workspace_dir, member_rel_dir)?;
+            let dest_manifest_path = dest_dir.join("Cargo.toml");
+            if dest_manifest_path.symlink_metadata().is_ok() {
+                remove_symlink(dest_manifest_path.as_std_path())?;
+            }
+            write_manifest(dest_manifest_path.as_std_path(), &member_manifest)?;
+        }
+    }
+    Ok(())
+}
+
+/// Ensures `dest_root/rel` is a chain of real directories rather than (or
+/// beneath) a symlink into `source_root`, so that a file below it can be
+/// replaced without touching the source tree. Every symlink on the way is
+/// swapped for a directory whose entries link back to the corresponding
+/// source directory. Returns `dest_root/rel`.
+fn materialize_dir(
+    source_root: &Utf8Path,
+    dest_root: &Utf8Path,
+    rel: &Utf8Path,
+) -> Result<Utf8PathBuf> {
+    let mut source = source_root.to_path_buf();
+    let mut dest = dest_root.to_path_buf();
+    for component in rel.components() {
+        let Utf8Component::Normal(name) = component else {
+            bail!("Unexpected path component `{component}` in workspace member path `{rel}`");
+        };
+        source.push(name);
+        dest.push(name);
+        let is_symlink = dest.is_symlink();
+        if is_symlink {
+            remove_symlink(dest.as_std_path())?;
+            fs::create_dir(&dest)?;
+            for entry in source.read_dir_utf8()? {
+                let entry = entry?;
+                symlink(
+                    entry.path().as_std_path(),
+                    dest.join(entry.file_name()).as_std_path(),
+                )
+                .with_context(|| {
+                    format!(
+                        "Failed to create symlink: {} -> {}",
+                        entry.path(),
+                        dest.join(entry.file_name())
+                    )
+                })?;
+            }
+        } else if !dest.is_dir() {
+            fs::create_dir_all(&dest)?;
+        }
+    }
+    Ok(dest)
 }
 
 /// Symlinks the root contents of a source directory into a destination directory
@@ -1058,6 +1250,204 @@ mod test {
                 },
             }
         }
+    }
+
+    #[test]
+    fn absolutize_escaping_path_deps_rewrites_only_escaping_paths() {
+        let manifest_dir = Utf8Path::new("/ws/root");
+        let mut manifest: cargo_toml::Manifest = toml::from_str(
+            r#"
+            [package]
+            name = "root"
+            version = "0.1.0"
+
+            [workspace]
+            members = ["crates/*"]
+
+            [workspace.dependencies]
+            sibling = { path = "../sibling/crates/sibling" }
+            escaping_via_child = { path = "crates/../../sibling" }
+
+            [dependencies]
+            local = { path = "crates/local" }
+            explicit_local = { path = "./crates/local" }
+            sibling.workspace = true
+            registry = "1.0"
+            absolute = { path = "/abs/path" }
+
+            [dev-dependencies]
+            dev_sibling = { path = "../dev_sibling" }
+
+            [target.'cfg(unix)'.dependencies]
+            unix_sibling = { path = "../unix_sibling" }
+
+            [patch.crates-io]
+            patched = { path = "../patched" }
+            patched_local = { path = "third_party/patched" }
+            "#,
+        )
+        .unwrap();
+
+        absolutize_escaping_path_deps(&mut manifest, manifest_dir, Utf8Path::new(""));
+
+        let path_of = |deps: &cargo_toml::DepsSet, name: &str| -> Option<String> {
+            match &deps[name] {
+                cargo_toml::Dependency::Detailed(detail) => detail.path.clone(),
+                cargo_toml::Dependency::Simple(_) | cargo_toml::Dependency::Inherited(_) => None,
+            }
+        };
+
+        let workspace_deps = &manifest.workspace.as_ref().unwrap().dependencies;
+        assert_eq!(
+            path_of(workspace_deps, "sibling").as_deref(),
+            Some("/ws/root/../sibling/crates/sibling")
+        );
+        assert_eq!(
+            path_of(workspace_deps, "escaping_via_child").as_deref(),
+            Some("/ws/root/crates/../../sibling")
+        );
+
+        assert_eq!(
+            path_of(&manifest.dependencies, "local").as_deref(),
+            Some("crates/local")
+        );
+        assert_eq!(
+            path_of(&manifest.dependencies, "explicit_local").as_deref(),
+            Some("./crates/local")
+        );
+        assert_eq!(path_of(&manifest.dependencies, "sibling"), None);
+        assert_eq!(path_of(&manifest.dependencies, "registry"), None);
+        assert_eq!(
+            path_of(&manifest.dependencies, "absolute").as_deref(),
+            Some("/abs/path")
+        );
+
+        assert_eq!(
+            path_of(&manifest.dev_dependencies, "dev_sibling").as_deref(),
+            Some("/ws/root/../dev_sibling")
+        );
+        assert_eq!(
+            path_of(&manifest.target["cfg(unix)"].dependencies, "unix_sibling").as_deref(),
+            Some("/ws/root/../unix_sibling")
+        );
+
+        let patches = &manifest.patch["crates-io"];
+        assert_eq!(
+            path_of(patches, "patched").as_deref(),
+            Some("/ws/root/../patched")
+        );
+        assert_eq!(
+            path_of(patches, "patched_local").as_deref(),
+            Some("third_party/patched")
+        );
+    }
+
+    /// A workspace at `<tmp>/ws` whose member `crates/member` depends on the
+    /// sibling package `<tmp>/sibling` (outside the workspace) and on the member
+    /// `crates/other` (inside it).
+    fn mock_splicing_manifest_with_escaping_member_dep() -> (SplicingManifest, tempfile::TempDir) {
+        let mut splicing_manifest = SplicingManifest::default();
+        let cache_dir = tempfile::tempdir().unwrap();
+        let root = cache_dir.as_ref();
+
+        mock_cargo_toml(root.join("sibling").join("Cargo.toml"), "sibling");
+
+        let ws = root.join("ws");
+        mock_cargo_toml(ws.join("crates").join("other").join("Cargo.toml"), "other");
+        mock_cargo_toml_with_dependencies(
+            ws.join("crates").join("member").join("Cargo.toml"),
+            "member",
+            &[
+                r#"sibling = { path = "../../../sibling" }"#,
+                r#"other = { path = "../other" }"#,
+            ],
+        );
+        for pkg in ["sibling", "ws/crates/other", "ws/crates/member"] {
+            File::create(root.join(pkg).join("lib.rs")).unwrap();
+        }
+
+        let manifest: cargo_toml::Manifest = toml::toml! {
+            [workspace]
+            members = ["crates/*"]
+            resolver = "2"
+        }
+        .try_into()
+        .unwrap();
+        let manifest_path = Utf8PathBuf::try_from(ws.join("Cargo.toml")).unwrap();
+        fs::write(&manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        File::create(ws.join("WORKSPACE.bazel")).unwrap();
+        splicing_manifest
+            .manifests
+            .insert(manifest_path, Label::from_str("//:Cargo.toml").unwrap());
+
+        (splicing_manifest, cache_dir)
+    }
+
+    #[test]
+    fn splice_workspace_with_escaping_member_path_dep() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_escaping_member_dep();
+
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
+                .unwrap()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
+                .unwrap();
+
+        // The member with the escaping dependency got a rewritten copy of its
+        // manifest, reached through real directories; everything else is still
+        // a symlink into the source tree.
+        let crates_dir = workspace_root.as_ref().join("crates");
+        assert!(!crates_dir.is_symlink());
+        let member_manifest = crates_dir.join("member").join("Cargo.toml");
+        assert!(!member_manifest.is_symlink());
+        assert!(crates_dir.join("other").is_symlink());
+        assert!(crates_dir.join("member").join("lib.rs").is_symlink());
+
+        let rewritten = read_manifest(Utf8Path::from_path(&member_manifest).unwrap()).unwrap();
+        let path_of = |name: &str| match &rewritten.dependencies[name] {
+            cargo_toml::Dependency::Detailed(detail) => detail.path.clone().unwrap(),
+            _ => panic!("expected a detailed dependency"),
+        };
+        assert_eq!(
+            path_of("sibling"),
+            format!(
+                "{}/ws/crates/member/../../../sibling",
+                cache_dir.path().display()
+            )
+        );
+        assert_eq!(path_of("other"), "../other");
+
+        // The source tree was not modified.
+        let source_manifest = cache_dir
+            .path()
+            .join("ws")
+            .join("crates")
+            .join("member")
+            .join("Cargo.toml");
+        assert!(fs::read_to_string(source_manifest)
+            .unwrap()
+            .contains(r#"path = "../../../sibling""#));
+
+        // Cargo resolves the sibling from its real location and keeps the
+        // members inside the spliced workspace.
+        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let sibling = metadata
+            .packages
+            .iter()
+            .find(|pkg| pkg.name.as_str() == "sibling")
+            .expect("sibling package resolved");
+        assert_eq!(
+            sibling.manifest_path,
+            cache_dir.path().join("sibling").join("Cargo.toml")
+        );
+        assert_sort_eq!(
+            metadata.workspace_members,
+            vec![
+                new_package_id("crates/member", workspace_root.as_ref(), false, &cargo()),
+                new_package_id("crates/other", workspace_root.as_ref(), false, &cargo()),
+            ]
+        );
     }
 
     #[test]
