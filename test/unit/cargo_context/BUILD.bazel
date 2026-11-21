@@ -1,0 +1,43 @@
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load("//test/unit/cc_toolchain_runtime_lib:cc_toolchain_runtime_lib_test.bzl", "test_cc_config")
+load(":context_test.bzl", "cargo_context_tests")
+
+cargo_context_tests(name = "cargo_context_tests")
+
+platform(
+    name = "linux",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+# Analysis-only Linux C++ toolchain: the probe exposes no compiler outputs.
+filegroup(name = "empty")
+
+test_cc_config(name = "cc_config")
+
+cc_toolchain(
+    name = "cc_impl",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    dynamic_runtime_lib = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    static_runtime_lib = ":empty",
+    strip_files = ":empty",
+    tags = ["manual"],
+    toolchain_config = ":cc_config",
+    toolchain_identifier = "cargo-context-analysis",
+)
+
+toolchain(
+    name = "linux_cc",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":cc_impl",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
