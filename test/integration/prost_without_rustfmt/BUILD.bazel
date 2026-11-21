@@ -1,0 +1,20 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
+
+proto_library(
+    name = "greeting_proto",
+    srcs = ["greeting.proto"],
+)
+
+rust_prost_library(
+    name = "greeting_rs_proto",
+    proto = ":greeting_proto",
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["greeting_test.rs"],
+    edition = "2021",
+    deps = [":greeting_rs_proto"],
+)
