@@ -8,6 +8,9 @@ load(
     "direct_libs_absolute_test",
     "direct_libs_as_flag_operand_test",
     "direct_libs_relative_test",
+    "file_prefix_map_disabled_test",
+    "file_prefix_map_msvc_test",
+    "file_prefix_map_test",
     "forwarded_header_paths_test",
     "fsanitize_ignorelist_absolute_test",
     "fsanitize_ignorelist_relative_test",
@@ -94,3 +97,9 @@ direct_libs_absolute_test(name = "direct_libs_absolute_test")
 direct_libs_as_flag_operand_test(name = "direct_libs_as_flag_operand_test")
 
 forwarded_header_paths_test(name = "forwarded_header_paths_test")
+
+file_prefix_map_test(name = "file_prefix_map_test")
+
+file_prefix_map_msvc_test(name = "file_prefix_map_msvc_test")
+
+file_prefix_map_disabled_test(name = "file_prefix_map_disabled_test")

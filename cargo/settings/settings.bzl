@@ -43,6 +43,24 @@ def use_default_shell_env():
         build_setting_default = True,
     )
 
+def build_script_cc_file_prefix_map():
+    """A flag which controls whether `cargo_build_script` remaps the exec root out of C and C++ \
+    that build scripts compile.
+
+    When enabled (the default), `-ffile-prefix-map=${pwd}=.` is appended to the `CFLAGS` and
+    `CXXFLAGS` given to build scripts, except for MSVC-style drivers (`msvc-cl`, `clang-cl`).
+    This keeps exec root paths out of debug info and `__FILE__` in objects written to `OUT_DIR`,
+    the same way `--remap-path-prefix` does for rustc.
+
+    `-ffile-prefix-map` needs GCC 8+ or Clang 10+. Disable this flag for toolchains with older
+    compilers. On older GCC you can still get reproducible debug info by adding
+    `-fdebug-prefix-map=${pwd}=.` to `CFLAGS` through `build_script_env`.
+    """
+    bool_flag(
+        name = "build_script_cc_file_prefix_map",
+        build_setting_default = True,
+    )
+
 def use_cc_toolchain():
     """A flag which controls the global default of whether `cargo_build_script` \
     targets should pull in the resolved `cc_toolchain`.
