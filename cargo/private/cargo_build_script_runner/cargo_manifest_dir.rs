@@ -400,31 +400,8 @@ impl RunfilesMaker {
                 })?;
             }
 
-            if !self
-                .filename_suffixes_to_retain
-                .iter()
-                .any(|suffix| dest.ends_with(suffix))
-            {
-                let mut dir = abs_dest.parent().map(Path::to_path_buf);
-                while let Some(parent) = dir {
-                    if parent == self.output_dir {
-                        break;
-                    }
-                    if is_dir_empty(&parent).map_err(|e| {
-                        format!("Failed to determine if directory was empty with: {:?}", e)
-                    })? {
-                        std::fs::remove_dir(&parent).map_err(|e| {
-                            format!(
-                                "Failed to delete directory {} with {:?}",
-                                parent.display(),
-                                e
-                            )
-                        })?;
-                        dir = parent.parent().map(Path::to_path_buf);
-                    } else {
-                        break;
-                    }
-                }
+            if !self.is_retained(dest) {
+                self.remove_empty_parent_dirs(&abs_dest)?;
                 continue;
             }
 
@@ -445,7 +422,8 @@ impl RunfilesMaker {
     ///
     /// The Windows implementation assumes symlinks are not supported and real files will
     /// have been copied into the runfiles directory by [`Self::create_runfiles_dir`], so
-    /// retained entries need no further work — only the non-retained entries are deleted.
+    /// retained entries need no further work — only the non-retained entries (and any
+    /// directories they leave empty) are deleted.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
         let mut processed: HashSet<String> = HashSet::new();
 
@@ -454,11 +432,7 @@ impl RunfilesMaker {
                 continue;
             }
 
-            if !self
-                .filename_suffixes_to_retain
-                .iter()
-                .any(|suffix| dest.ends_with(suffix))
-            {
+            if self.is_retained(dest) {
                 continue;
             }
 
@@ -467,6 +441,40 @@ impl RunfilesMaker {
                 std::fs::remove_file(&abs_dest).map_err(|e| {
                     format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
                 })?;
+            }
+            self.remove_empty_parent_dirs(&abs_dest)?;
+        }
+        Ok(())
+    }
+
+    /// Whether `dest` matches one of the user-defined suffixes to keep after draining.
+    fn is_retained(&self, dest: &str) -> bool {
+        self.filename_suffixes_to_retain
+            .iter()
+            .any(|suffix| dest.ends_with(suffix))
+    }
+
+    /// Remove the now-empty parent directories of a deleted runfiles entry, stopping at
+    /// `output_dir` or at the first directory that still has contents.
+    fn remove_empty_parent_dirs(&self, abs_dest: &Path) -> Result<(), String> {
+        let mut dir = abs_dest.parent().map(Path::to_path_buf);
+        while let Some(parent) = dir {
+            if parent == self.output_dir {
+                break;
+            }
+            if is_dir_empty(&parent)
+                .map_err(|e| format!("Failed to determine if directory was empty with: {:?}", e))?
+            {
+                std::fs::remove_dir(&parent).map_err(|e| {
+                    format!(
+                        "Failed to delete directory {} with {:?}",
+                        parent.display(),
+                        e
+                    )
+                })?;
+                dir = parent.parent().map(Path::to_path_buf);
+            } else {
+                break;
             }
         }
         Ok(())
@@ -627,5 +635,39 @@ mod tests {
         assert!(file_path.is_symlink());
         let contents = fs::read_to_string(file_path).unwrap();
         assert_eq!(contents, "inside world");
+    }
+
+    /// On the Windows copy path (no symlink support), `create_runfiles_dir` copies every
+    /// runfile into the tree, so draining must delete the entries that do not match a
+    /// retained suffix and keep the ones that do.
+    #[test]
+    fn drain_runfiles_dir_windows_keeps_retained_files() {
+        let test_tmp = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        let output_dir = test_tmp.join("drain_windows");
+        fs::create_dir_all(output_dir.join("lib")).unwrap();
+        fs::create_dir_all(output_dir.join("src")).unwrap();
+        fs::write(output_dir.join("lib").join("native.lib"), "lib").unwrap();
+        fs::write(output_dir.join("src").join("build.rs"), "fn main() {}").unwrap();
+
+        let maker = RunfilesMaker {
+            output_dir: output_dir.clone(),
+            filename_suffixes_to_retain: BTreeSet::from([".lib".to_owned(), ".so".to_owned()]),
+            runfiles: BTreeMap::from([
+                (
+                    PathBuf::from("external/lib/native.lib"),
+                    "lib/native.lib".to_owned(),
+                ),
+                (
+                    PathBuf::from("external/src/build.rs"),
+                    "src/build.rs".to_owned(),
+                ),
+            ]),
+        };
+
+        maker.drain_runfiles_dir_windows().unwrap();
+
+        assert!(output_dir.join("lib").join("native.lib").is_file());
+        assert!(!output_dir.join("src").join("build.rs").exists());
+        assert!(!output_dir.join("src").exists());
     }
 }
