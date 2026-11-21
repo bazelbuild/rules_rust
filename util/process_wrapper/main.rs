@@ -58,7 +58,7 @@ fn status_code(status: ExitStatus, was_killed: bool) -> i32 {
 struct ProcessWrapperError(String);
 
 impl fmt::Display for ProcessWrapperError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "process wrapper error: {}", self.0)
     }
 }

@@ -213,7 +213,7 @@ struct LabelVisitor;
 impl Visitor<'_> for LabelVisitor {
     type Value = Label;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("Expected string value of `{name} {version}`.")
     }
 

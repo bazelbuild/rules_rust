@@ -77,7 +77,7 @@ impl<'de> Deserialize<'de> for Glob {
 impl<'de> Visitor<'de> for GlobVisitor {
     type Value = Glob;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("glob")
     }
 
