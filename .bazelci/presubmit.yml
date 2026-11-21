@@ -410,6 +410,9 @@ tasks:
     platform: ubuntu2204
     run_targets:
       - "//test/rustfmt:rustfmt_failure_tester"
+    # Runs the `rustfmt_shared_compiler` fixture too; BazelCI caps the number of tasks.
+    post_shell_commands:
+      - cd test/integration/rustfmt_shared_compiler && bazel test //...
   ide_integration_tests_linux:
     name: IDE VSCode Tests
     platform: ubuntu2204
