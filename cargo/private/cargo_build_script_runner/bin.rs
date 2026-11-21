@@ -88,6 +88,7 @@ fn run_buildrs() -> Result<(), String> {
         stderr_path,
         rundir,
         input_dep_env_paths,
+        dep_out_dirs,
         cargo_manifest_maker,
     } = Args::parse();
 
@@ -217,8 +218,13 @@ fn run_buildrs() -> Result<(), String> {
 
     write(
         &env_file,
-        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy(), &out_dir)
-            .as_bytes(),
+        BuildScriptOutput::outputs_to_env(
+            &buildrs_outputs,
+            &exec_root.to_string_lossy(),
+            &out_dir,
+            &dep_out_dirs,
+        )
+        .as_bytes(),
     )
     .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", env_file, e));
     write(
@@ -251,6 +257,7 @@ fn run_buildrs() -> Result<(), String> {
         &buildrs_outputs,
         &exec_root.to_string_lossy(),
         &out_dir,
+        &dep_out_dirs,
     );
 
     write(&compile_flags_file, compile_flags.as_bytes())
@@ -440,6 +447,10 @@ struct Args {
     stderr_path: Option<String>,
     rundir: String,
     input_dep_env_paths: Vec<String>,
+    /// `OUT_DIR`s of dependency build scripts, relative to the exec root.
+    /// Paths into them are tokenized in this script's outputs, see
+    /// `BuildScriptOutput::redact_paths`.
+    dep_out_dirs: Vec<String>,
     cargo_manifest_maker: RunfilesMaker,
 }
 
@@ -468,6 +479,7 @@ impl Args {
         let mut stderr_path = None;
         let mut rundir: Result<String, String> = Err("Argument `rundir` not provided".to_owned());
         let mut input_dep_env_paths = Vec::new();
+        let mut dep_out_dirs = Vec::new();
         let mut cargo_manifest_maker: Result<RunfilesMaker, String> =
             Err("Argument `cargo_manifest_args` not provided".to_owned());
 
@@ -500,6 +512,8 @@ impl Args {
                 rundir = Ok(arg.split_off("--rundir=".len()))
             } else if arg.starts_with("--input_dep_env_path=") {
                 input_dep_env_paths.push(arg.split_off("--input_dep_env_path=".len()));
+            } else if arg.starts_with("--dep_out_dir=") {
+                dep_out_dirs.push(arg.split_off("--dep_out_dir=".len()));
             } else if arg.starts_with("--cargo_manifest_args=") {
                 cargo_manifest_maker = Ok(RunfilesMaker::from_param_file(
                     &arg.split_off("--cargo_manifest_args=".len()),
@@ -522,6 +536,7 @@ impl Args {
             stderr_path,
             rundir: rundir.unwrap(),
             input_dep_env_paths,
+            dep_out_dirs,
             cargo_manifest_maker: cargo_manifest_maker.unwrap(),
         }
     }

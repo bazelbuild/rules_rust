@@ -666,16 +666,24 @@ def _cargo_build_script_impl(ctx):
     build_script_inputs.extend(ctx.files.build_script_env_files)
     args.add_all(ctx.files.build_script_env_files, format_each = "--input_dep_env_path=%s")
 
+    # `OUT_DIR`s of dependency build scripts. Their paths reach this script
+    # through `DEP_*` variables and may be forwarded into its own outputs, so
+    # the runner is told about each one to tokenize such paths (see
+    # `redact_paths` in `cargo_build_script_runner`).
+    dep_out_dirs = {}
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
             dep_env_file = dep[rust_common.dep_info].dep_env
             args.add(dep_env_file, format = "--input_dep_env_path=%s")
             build_script_inputs.append(dep_env_file)
             for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+                dep_out_dirs[dep_build_info.out_dir] = None
 
     for dep_build_info in ctx.attr.script[DepInfo].transitive_build_infos.to_list():
-        build_script_inputs.append(dep_build_info.out_dir)
+        dep_out_dirs[dep_build_info.out_dir] = None
+
+    build_script_inputs.extend(dep_out_dirs.keys())
+    args.add_all(dep_out_dirs.keys(), format_each = "--dep_out_dir=%s", expand_directories = False)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
