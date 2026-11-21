@@ -9,8 +9,9 @@ To verify the processed cargo cc_args, we use cc_args_and_env_analysis_test().
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES", "ACTION_NAME_GROUPS")
-load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "env_entry", "env_set", "feature", "flag_group", "flag_set", "tool", "tool_path")
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "env_entry", "env_set", "feature", "feature_set", "flag_group", "flag_set", "tool", "tool_path")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
 load("//cargo:defs.bzl", "cargo_build_script")
@@ -85,6 +86,38 @@ def _test_cc_config_impl(ctx):
                     ]),
                 ),
             ],
+        ),
+        # Mirrors the coverage features of real toolchains (e.g. apple_support).
+        # Bazel requests these under `--collect_code_coverage`; the build
+        # script must never pick up their flags.
+        feature(
+            name = "coverage",
+            flag_sets = [
+                flag_set(
+                    actions = ACTION_NAME_GROUPS.all_cc_compile_actions + ACTION_NAME_GROUPS.all_cc_link_actions,
+                    flag_groups = [flag_group(flags = ["--coverage"])],
+                ),
+            ],
+        ),
+        feature(
+            name = "gcc_coverage_map_format",
+            flag_sets = [
+                flag_set(
+                    actions = ACTION_NAME_GROUPS.all_cc_compile_actions,
+                    flag_groups = [flag_group(flags = ["-fprofile-arcs", "-ftest-coverage"])],
+                ),
+            ],
+            requires = [feature_set(features = ["coverage"])],
+        ),
+        feature(
+            name = "llvm_coverage_map_format",
+            flag_sets = [
+                flag_set(
+                    actions = ACTION_NAME_GROUPS.all_cc_compile_actions + ACTION_NAME_GROUPS.all_cc_link_actions,
+                    flag_groups = [flag_group(flags = ["-fprofile-instr-generate", "-fcoverage-mapping"])],
+                ),
+            ],
+            requires = [feature_set(features = ["coverage"])],
         ),
     ]
 
@@ -174,12 +207,18 @@ test_cc_config = rule(
 )
 
 def _with_extra_toolchains_transition_impl(_settings, attr):
-    return {"//command_line_option:extra_toolchains": attr.extra_toolchains}
+    return {
+        "//command_line_option:collect_code_coverage": attr.collect_code_coverage,
+        "//command_line_option:extra_toolchains": attr.extra_toolchains,
+    }
 
 with_extra_toolchains_transition = transition(
     implementation = _with_extra_toolchains_transition_impl,
     inputs = [],
-    outputs = ["//command_line_option:extra_toolchains"],
+    outputs = [
+        "//command_line_option:collect_code_coverage",
+        "//command_line_option:extra_toolchains",
+    ],
 )
 
 DepActionsInfo = provider(
@@ -195,6 +234,7 @@ def _with_extra_toolchains_impl(ctx):
 with_extra_toolchains = rule(
     implementation = _with_extra_toolchains_impl,
     attrs = {
+        "collect_code_coverage": attr.bool(default = False),
         "extra_toolchains": attr.string_list(),
         "target": attr.label(cfg = with_extra_toolchains_transition),
     },
@@ -243,6 +283,15 @@ def _cc_args_and_env_analysis_test_impl(ctx):
                 "error: expected '{}' to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
             )
 
+    for env_var in ["CFLAGS", "CXXFLAGS", "LDFLAGS"]:
+        actual_flags = cargo_action.env[env_var].split(" ")
+        for flag in ctx.attr.unexpected_flags:
+            asserts.false(
+                env,
+                flag in actual_flags,
+                "error: expected '{}' not to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
+            )
+
     arflags = cargo_action.env["ARFLAGS"]
     asserts.equals(
         env,
@@ -272,6 +321,7 @@ cc_args_and_env_analysis_test = analysistest.make(
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
         "expected_include": attr.string(default = ""),
         "legacy_cc_toolchain": attr.bool(default = False),
+        "unexpected_flags": attr.string_list(),
     },
 )
 
@@ -282,7 +332,8 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
         extra_include_paths = "",
-        legacy_cc_toolchain = False):
+        legacy_cc_toolchain = False,
+        collect_code_coverage = False):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
     This is achieved by creating a cascade of targets:
@@ -299,6 +350,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
       extra_include_paths: INCLUDE environment variable value for the cc_toolchain.
       legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
         cc toolchain.
+      collect_code_coverage: Analyzes the target with `--collect_code_coverage`.
     """
 
     test_cc_config(
@@ -334,6 +386,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
     )
     with_extra_toolchains(
         name = name,
+        collect_code_coverage = collect_code_coverage,
         extra_toolchains = ["//%s:%s/test_cc_toolchain" % (native.package_name(), name)],
         target = "%s/cargo_build_script_impl" % name,
         tags = ["manual"],
@@ -607,6 +660,103 @@ def legacy_cc_toolchain_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         legacy_cc_toolchain = True,
+    )
+
+def _cc_compile_flags_probe_impl(ctx):
+    cc_toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.c_compile,
+        variables = cc_common.create_compile_variables(
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+        ),
+    )
+    out = ctx.actions.declare_file(ctx.label.name + ".flags")
+    ctx.actions.write(out, "\n".join(flags))
+    return [DefaultInfo(files = depset([out]))]
+
+# Writes the C compile flags of a plain feature configuration (no features
+# excluded) for the current cc toolchain. Used as a control for
+# coverage_features_disabled_test.
+_cc_compile_flags_probe = rule(
+    implementation = _cc_compile_flags_probe_impl,
+    fragments = ["cpp"],
+    toolchains = use_cc_toolchain(),
+)
+
+def _cc_compile_flags_probe_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    flags = tut[DepActionsInfo].actions[0].content.split("\n")
+    for flag in ctx.attr.expected_flags:
+        asserts.true(
+            env,
+            flag in flags,
+            "error: expected '{}' in the control C compile flags: '{}'".format(flag, flags),
+        )
+    return analysistest.end(env)
+
+_cc_compile_flags_probe_test = analysistest.make(
+    impl = _cc_compile_flags_probe_test_impl,
+    attrs = {
+        "expected_flags": attr.string_list(),
+    },
+)
+
+def coverage_features_disabled_test(name):
+    """Regression test: build scripts are not configured with cc coverage features.
+
+    Whenever coverage is enabled, Bazel requests the `coverage` feature (and a
+    coverage map format). Their flags, and variables such as `gcov_gcno_file`,
+    only make sense for instrumented cc compiles, so they must not leak into the
+    build script's CFLAGS/CXXFLAGS/LDFLAGS.
+
+    `<name>_control` checks that, in the same configuration and with the same
+    cc toolchain, a feature configuration that doesn't exclude anything does get
+    the coverage flags, so `<name>` can't pass just because coverage was never
+    requested.
+
+    Args:
+        name: The name of the analysis test.
+    """
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        collect_code_coverage = True,
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        unexpected_flags = [
+            "--coverage",
+            "-fprofile-arcs",
+            "-ftest-coverage",
+            "-fprofile-instr-generate",
+            "-fcoverage-mapping",
+        ],
+    )
+
+    _cc_compile_flags_probe(
+        name = "%s/control_probe" % name,
+        tags = ["manual"],
+    )
+    with_extra_toolchains(
+        name = "%s/control" % name,
+        collect_code_coverage = True,
+        extra_toolchains = ["//%s:%s/cargo_build_script/test_cc_toolchain" % (native.package_name(), name)],
+        target = "%s/control_probe" % name,
+        tags = ["manual"],
+    )
+    _cc_compile_flags_probe_test(
+        name = "%s_control" % name,
+        target_under_test = "%s/control" % name,
+        expected_flags = ["-Wall", "--coverage"],
     )
 
 def libpath_relative_test(name):
