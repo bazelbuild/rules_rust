@@ -530,6 +530,41 @@ def _collect_splicing_config(module, repository):
 
     return config
 
+def _strip_canonical_repo(label):
+    """`@@repo+//pkg:file` -> `//pkg:file`; mirrors `normalize_labels_for_digest`."""
+    if label.startswith("@@"):
+        idx = label.find("//")
+        if idx >= 0:
+            return label[idx:]
+    return label
+
+def _fresh_patch_index(annotations):
+    """Maps (crate, repo-stripped patch label) to the label resolved in the current context.
+
+    Labels stored in `cargo-bazel-lock.json` are canonical strings from whichever module was
+    root when the lockfile was pinned (e.g. `@@//...`), and the digest ignores the repository
+    part, so a lockfile pinned in one context is reused verbatim in another and `@@//` then
+    points at the wrong main repository. The annotation tags are resolved against the module
+    that declared them, so prefer those.
+    """
+    index = {}
+    for crate, encoded_annotations in annotations.items():
+        for encoded in encoded_annotations:
+            _version, data = json.decode(encoded)
+            for patch in data.get("patches") or []:
+                key = crate + "|" + _strip_canonical_repo(patch)
+                if key not in index:
+                    index[key] = patch
+    return index
+
+def _resolve_patches(index, crate, patches):
+    if not patches:
+        return patches
+    return [
+        index.get(crate + "|" + _strip_canonical_repo(patch), patch)
+        for patch in patches
+    ]
+
 def _generate_hub_and_spokes(
         *,
         module_ctx,
@@ -731,6 +766,7 @@ def _generate_hub_and_spokes(
     )
 
     contents = json.decode(module_ctx.read(lockfile))
+    fresh_patches = _fresh_patch_index(annotations)
 
     for crate in contents["crates"].values():
         repo = crate["repository"]
@@ -754,7 +790,7 @@ def _generate_hub_and_spokes(
                 name = crate_repo_name,
                 patch_args = repo.get("patch_args", None),
                 patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
+                patches = _resolve_patches(fresh_patches, name, repo.get("patches", None)),
                 remote_patch_strip = 1,
                 sha256 = repo.get("sha256", None),
                 type = "tar.gz",
@@ -777,7 +813,7 @@ def _generate_hub_and_spokes(
                 init_submodules = True,
                 patch_args = repo.get("patch_args", None),
                 patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
+                patches = _resolve_patches(fresh_patches, name, repo.get("patches", None)),
                 shallow_since = repo.get("shallow_since", None),
                 remote = repo["remote"],
                 build_file_content = build_file_content,
