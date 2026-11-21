@@ -215,6 +215,10 @@ def _rust_impl(module_ctx):
                 manifests = manifests,
             )
 
+            # The tag's `strip_level` is keyed by compilation mode, but
+            # `rust_register_toolchains` takes one keyed by target triple.
+            strip_level = {triple: toolchain.strip_level for triple in all_triples} if toolchain.strip_level else None
+
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
@@ -229,7 +233,7 @@ def _rust_impl(module_ctx):
                 sha256s = sha256s,
                 extra_target_triples = extra_target_triples,
                 opt_level = toolchain.opt_level if toolchain.opt_level else None,
-                strip_level = toolchain.strip_level if toolchain.strip_level else None,
+                strip_level = strip_level,
                 urls = toolchain.urls,
                 versions = versions,
                 compact_windows_names = True,

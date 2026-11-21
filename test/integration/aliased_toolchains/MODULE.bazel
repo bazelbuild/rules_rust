@@ -6,6 +6,8 @@ local_path_override(
     path = "../../..",
 )
 
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     aliases = {
@@ -14,6 +16,13 @@ rust.toolchain(
     },
     edition = "2021",
     rustfmt_version = "nightly/2024-10-17",
+    # Differs from the `rust_toolchain` default only for `fastbuild`, so
+    # `strip_level_test.bzl` can tell whether the tag reached the toolchain.
+    strip_level = {
+        "dbg": "none",
+        "fastbuild": "debuginfo",
+        "opt": "debuginfo",
+    },
 )
 
 # Ensure the repos can be used directly and via the hub.

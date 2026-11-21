@@ -878,6 +878,8 @@ tasks:
     build_targets:
       - "@rust_toolchains//:all"
       - "//..."
+    test_targets:
+      - "//..."
   ios_examples:
     name: iOS Examples
     platform: macos_arm64
