@@ -13,48 +13,32 @@ load(
     "assert_argv_contains_prefix_not",
 )
 
-def _pdb_file_test_impl(ctx, expect_pdb_file):
+def _pdb_file_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
     files = target[DefaultInfo].files.to_list()
-
-    if not expect_pdb_file:
-        asserts.equals(env, len(files), 0)
-        return analysistest.end(env)
 
     asserts.equals(env, len(files), 1)
     file = files[0]
     asserts.equals(env, file.extension, "pdb")
     return analysistest.end(env)
 
-def _pdb_file_for_dbg_test_impl(ctx):
-    """Test for dbg compilation mode."""
-    return _pdb_file_test_impl(ctx, True)
-
 pdb_file_dbg_test = analysistest.make(
-    _pdb_file_for_dbg_test_impl,
+    _pdb_file_test_impl,
     config_settings = {
         "//command_line_option:compilation_mode": "dbg",
     },
 )
 
-def _pdb_file_for_fastbuild_test_impl(ctx):
-    """Test for fastbuild compilation mode."""
-    return _pdb_file_test_impl(ctx, True)
-
 pdb_file_fastbuild_test = analysistest.make(
-    _pdb_file_for_fastbuild_test_impl,
+    _pdb_file_test_impl,
     config_settings = {
         "//command_line_option:compilation_mode": "fastbuild",
     },
 )
 
-def _pdb_file_for_opt_test_impl(ctx):
-    """Test for opt compilation mode."""
-    return _pdb_file_test_impl(ctx, False)
-
 pdb_file_opt_test = analysistest.make(
-    _pdb_file_for_opt_test_impl,
+    _pdb_file_test_impl,
     config_settings = {
         "//command_line_option:compilation_mode": "opt",
     },
