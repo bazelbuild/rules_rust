@@ -13,6 +13,7 @@ load(
     "default_allocator_library",
     "error_format",
     "experimental_compile_rustdoc_tests",
+    "experimental_emit_junit_xml",
     "experimental_link_std_dylib",
     "experimental_use_allocator_libraries_with_mangled_symbols",
     "experimental_use_cc_common_link",
@@ -85,6 +86,8 @@ error_format()
 clippy_error_format()
 
 experimental_compile_rustdoc_tests()
+
+experimental_emit_junit_xml()
 
 experimental_link_std_dylib()
 
