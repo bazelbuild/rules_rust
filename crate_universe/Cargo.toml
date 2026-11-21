@@ -68,10 +68,10 @@ rustflags=["-Ctarget-feature=+crt-static"]
 [dependencies]
 anyhow = "1.0.98"
 camino = "1.1.9"
-cargo_metadata = "0.19.2"
+cargo_metadata = "0.23.1"
 cargo_toml = "0.22.3"
 cargo-lock = "11.1.0"
-cargo-platform = "0.1.9"
+cargo-platform = "0.3.3"
 cfg-expr = "0.18.0"
 clap = { version = "4.5.37", features = ["derive", "env"] }
 crates-index = { version = "3.7.0", default-features = false, features = [

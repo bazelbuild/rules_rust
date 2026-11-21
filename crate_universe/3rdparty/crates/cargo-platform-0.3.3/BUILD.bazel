@@ -9,7 +9,7 @@
 package(default_visibility = ["//visibility:public"])
 
 alias(
-    name = "cargo-platform-0.1.9",
-    actual = "@cui__cargo-platform-0.1.9//:cargo_platform",
+    name = "cargo-platform-0.3.3",
+    actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
     tags = ["manual"],
 )

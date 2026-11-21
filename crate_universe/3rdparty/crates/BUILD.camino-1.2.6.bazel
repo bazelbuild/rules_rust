@@ -21,7 +21,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "serde_json",
+    name = "camino",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -39,9 +39,7 @@ rust_library(
         ],
     ),
     crate_features = [
-        "default",
-        "std",
-        "unbounded_depth",
+        "serde1",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -53,7 +51,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=serde_json",
+        "crate-name=camino",
         "manual",
         "noclippy",
         "norustfmt",
@@ -116,13 +114,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.0.140",
+    version = "1.2.6",
     deps = [
         ":build_script_build",
-        "@cui__itoa-1.0.8//:itoa",
-        "@cui__memchr-2.6.4//:memchr",
-        "@cui__ryu-1.0.14//:ryu",
-        "@cui__serde-1.0.229//:serde",
+        "@cui__serde_core-1.0.229//:serde_core",
     ],
 )
 
@@ -149,9 +144,7 @@ cargo_build_script(
         ],
     ),
     crate_features = [
-        "default",
-        "std",
-        "unbounded_depth",
+        "serde1",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -169,7 +162,7 @@ cargo_build_script(
     ),
     edition = "2021",
     emit_warnings = False,
-    pkg_name = "serde_json",
+    pkg_name = "camino",
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -178,12 +171,12 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=serde_json",
+        "crate-name=camino",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.140",
+    version = "1.2.6",
     visibility = ["//visibility:private"],
 )
 
