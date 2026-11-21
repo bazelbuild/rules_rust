@@ -79,8 +79,8 @@ def new_cargo_bazel_fn(
     Args:
         repository_ctx (repository_ctx): The repository rule or module extension's context.
         cargo_bazel_path (path): Path The path to a `cargo-bazel` binary
-        cargo_path (path): Path to a Cargo binary.
-        rustc_path (path): Path to a rustc binary.
+        cargo_path (path): Path to a Cargo binary, or `None` when no command needs one.
+        rustc_path (path): Path to a rustc binary, or `None` when no command needs one.
         isolated (bool): Enable isolation upon request.
         quiet (bool): Whether or not to print output from the executable.
     Returns:
@@ -91,20 +91,15 @@ def new_cargo_bazel_fn(
     # start of a module extension, thus triggering any restarts as early as
     # possible (since module_ctx.path triggers restarts).
     def _execute(args, env = {}, allow_fail = False):
+        tool_args = []
+        tool_env = {}
+        if cargo_path:
+            tool_args = ["--cargo", cargo_path, "--rustc", rustc_path]
+            tool_env = {"CARGO": str(cargo_path), "RUSTC": str(rustc_path)}
         return execute(
             repository_ctx,
-            args = [
-                cargo_bazel_path,
-            ] + args + [
-                "--cargo",
-                cargo_path,
-                "--rustc",
-                rustc_path,
-            ],
-            env = {
-                "CARGO": str(cargo_path),
-                "RUSTC": str(rustc_path),
-            } | cargo_environ(repository_ctx, isolated = isolated) | env,
+            args = [cargo_bazel_path] + args + tool_args,
+            env = tool_env | cargo_environ(repository_ctx, isolated = isolated) | env,
             allow_fail = allow_fail,
             quiet = quiet,
         )

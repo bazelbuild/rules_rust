@@ -1158,7 +1158,13 @@ def _crate_impl(module_ctx):
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
                     module_ctx.watch(m)
-            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
+
+            # A non-root module's hub renders straight from its lockfile (see
+            # `_generate_hub_and_spokes`), which runs neither cargo nor rustc, so
+            # fetching the host tools for it would only cost time and disk.
+            cargo_path, rustc_path = None, None
+            if mod.is_root:
+                cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
                 cargo_bazel_path = generator,

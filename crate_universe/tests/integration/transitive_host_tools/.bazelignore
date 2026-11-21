@@ -1,0 +1,2 @@
+# `dep` is a separate module, used through `local_path_override`.
+dep
