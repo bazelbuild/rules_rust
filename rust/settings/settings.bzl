@@ -233,6 +233,29 @@ def experimental_use_allocator_libraries_with_mangled_symbols(
         },
     )
 
+# buildifier: disable=unnamed-macro
+def coverage_collector():
+    """A flag that selects the program that collects a `rust_test`'s coverage under `bazel coverage`.
+
+    The default, `@rules_rust//rust/coverage:collect_rust_coverage`, exports the test's LLVM \
+    profiles as LCOV with `llvm-cov`. The flag must name an executable target, which is built for \
+    the execution platform.
+
+    rules_rust sets the test's `CC_CODE_COVERAGE_SCRIPT` to the collector and \
+    `GENERATE_LLVM_LCOV=1`, so Bazel's \
+    [`collect_coverage.sh`](https://github.com/bazelbuild/bazel/blob/master/tools/test/collect_coverage.sh) \
+    runs it after the test passes; that script describes the collector's environment and where it \
+    writes its LCOV. rules_rust also sets `RUST_LLVM_COV` and `RUST_LLVM_PROFDATA` to the \
+    toolchain's tools. Their paths are relative to the execution root with \
+    `experimental_use_coverage_metadata_files` (the default) and to `RUNFILES_DIR` otherwise. The \
+    collector's runfiles are staged with the test: as coverage metadata files at their execution \
+    paths in the first case, and as test runfiles otherwise.
+    """
+    native.label_flag(
+        name = "coverage_collector",
+        build_setting_default = Label("//rust/coverage:collect_rust_coverage"),
+    )
+
 def experimental_use_coverage_metadata_files():
     """A flag to have coverage tooling added as `coverage_common.instrumented_files_info.metadata_files` instead of \
     reporting tools like `llvm-cov` and `llvm-profdata` as runfiles to each test.
