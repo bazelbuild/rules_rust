@@ -100,6 +100,12 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
+def _pwd_tool(path):
+    """Makes an execroot-relative tool path absolute at run time; the runner expands ${pwd}."""
+    if _should_prefix_pwd(path):
+        return "${pwd}/" + path
+    return path
+
 # These get replaced with the non-hermetic values magically, and result in
 # absolute paths, so they shouldn't have PWD prefixed.
 # https://github.com/bazelbuild/apple_support/blob/20913e2a9ad4a00a1849a464b856d04b5cd3bdcb/lib/apple_support.bzl#L174-L198
@@ -568,6 +574,38 @@ def _cargo_build_script_impl(ctx):
         # that doing so is more likely to hurt than help. If you need to change
         # ARFLAGS, make changes to cc-rs.
 
+        # cc-rs reads HOST_* for code built for the host and TARGET_* for the
+        # target. Without them it falls back to an ambient `cc` when the exec
+        # and target platforms differ.
+        exec_cc_toolchain = ctx.attr._exec_cc_toolchain[cc_common.CcToolchainInfo]
+        exec_feature_configuration = cc_common.configure_features(
+            ctx = ctx,
+            cc_toolchain = exec_cc_toolchain,
+            requested_features = ctx.features,
+            unsupported_features = ctx.disabled_features,
+        )
+        toolchain_tools.append(exec_cc_toolchain.all_files)
+        exec_tools = {
+            "AR": cc_common.get_tool_for_action(
+                feature_configuration = exec_feature_configuration,
+                action_name = ACTION_NAMES.cpp_link_static_library,
+            ) or exec_cc_toolchain.ar_executable,
+            "CC": cc_common.get_tool_for_action(
+                feature_configuration = exec_feature_configuration,
+                action_name = ACTION_NAMES.c_compile,
+            ),
+            "CXX": cc_common.get_tool_for_action(
+                feature_configuration = exec_feature_configuration,
+                action_name = ACTION_NAMES.cpp_compile,
+            ),
+        }
+        for name, tool in exec_tools.items():
+            if tool and "libtool" not in tool:
+                env["HOST_" + name] = _pwd_tool(tool)
+        for name in ["CC", "CXX", "AR"]:
+            if env.get(name) and "libtool" not in env[name]:
+                env["TARGET_" + name] = _pwd_tool(env[name])
+
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
     env["CARGO_ENCODED_RUSTFLAGS"] = "\\x1f".join([
@@ -901,6 +939,10 @@ cargo_build_script = rule(
         ),
         "_emit_build_script_warnings": attr.label(
             default = Label("//cargo/settings:emit_build_script_warnings"),
+        ),
+        "_exec_cc_toolchain": attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
+            cfg = "exec",
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),

@@ -8,6 +8,7 @@ load(
     "direct_libs_absolute_test",
     "direct_libs_as_flag_operand_test",
     "direct_libs_relative_test",
+    "drive_letter_tools_test",
     "forwarded_header_paths_test",
     "fsanitize_ignorelist_absolute_test",
     "fsanitize_ignorelist_relative_test",
@@ -68,6 +69,8 @@ fsanitize_ignorelist_relative_test(name = "fsanitize_ignorelist_relative_test")
 imacros_absolute_test(name = "imacros_absolute_test")
 
 imacros_relative_test(name = "imacros_relative_test")
+
+drive_letter_tools_test(name = "drive_letter_tools_test")
 
 legacy_cc_toolchain_test(name = "legacy_cc_toolchain_test")
 
