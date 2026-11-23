@@ -213,7 +213,10 @@ def rustdoc_compile_action(
         attr = ctx.attr,
         file = ctx.file,
         toolchain = rust_toolchain,
-        tool_path = rustdoc_toolchain.rustdoc.short_path if is_test else rustdoc_toolchain.rustdoc.path,
+        # Legacy doctests run rustdoc from runfiles, so the launcher needs the
+        # short path. Build actions take the `File` so path mapping can rewrite it.
+        tool_file = None if is_test else rustdoc_toolchain.rustdoc,
+        tool_path = rustdoc_toolchain.rustdoc.short_path if is_test else None,
         sysroot_anchor = rustdoc_toolchain.sysroot_anchor,
         tool_flags = rustdoc_toolchain.extra_rustdoc_flags,
         cc_toolchain = cc_toolchain,

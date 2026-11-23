@@ -164,6 +164,21 @@ fn expand_params_file(mut options: Options) -> Options {
     options
 }
 
+/// Remove every generated root from a value.
+///
+/// Arguments and environment values are computed for the execroot, but the
+/// test runner executes from runfiles where generated files sit next to
+/// source files. This applies to environment values as well: `rustc_env`
+/// entries expanded with `$(execpath ...)` point at generated files through
+/// `${pwd}/bazel-out/...`, which only resolves once the root is removed.
+fn strip(value: &str, strip_substrings: &[String]) -> String {
+    strip_substrings
+        .iter()
+        .fold(value.to_owned(), |value, substring| {
+            value.replace(substring, "")
+        })
+}
+
 /// Write a unix compatible test runner
 fn write_test_runner_unix(
     path: &Path,
@@ -189,20 +204,15 @@ fn write_test_runner_unix(
         "exec env - \\".to_owned(),
     ];
 
-    content.extend(env.iter().map(|(key, val)| format!("{key}='{val}' \\")));
+    content.extend(
+        env.iter()
+            .map(|(key, val)| format!("{key}='{}' \\", strip(val, strip_substrings))),
+    );
     content.push("\"${test_environment[@]}\" \\".to_owned());
 
     let argv_str = argv
         .iter()
-        // Remove any substrings found in the argument
-        .map(|arg| {
-            let mut stripped_arg = arg.to_owned();
-            strip_substrings
-                .iter()
-                .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
-            stripped_arg
-        })
-        .map(|arg| format!("'{arg}'"))
+        .map(|arg| format!("'{}'", strip(arg, strip_substrings)))
         .collect::<Vec<String>>()
         .join(" ");
 
@@ -224,21 +234,13 @@ fn write_test_runner_windows(
 
     let env_str = env
         .iter()
-        .map(|(key, val)| format!("$env:{key}='{val}'"))
+        .map(|(key, val)| format!("$env:{key}='{}'", strip(val, strip_substrings)))
         .collect::<Vec<String>>()
         .join(" ; ");
 
     let argv_str = argv
         .iter()
-        // Remove any substrings found in the argument
-        .map(|arg| {
-            let mut stripped_arg = arg.to_owned();
-            strip_substrings
-                .iter()
-                .for_each(|substring| stripped_arg = stripped_arg.replace(substring, ""));
-            stripped_arg
-        })
-        .map(|arg| format!("'{arg}'"))
+        .map(|arg| format!("'{}'", strip(arg, strip_substrings)))
         .collect::<Vec<String>>()
         .join(" ");
 
@@ -387,6 +389,44 @@ mod tests {
         assert_eq!(values.get("TEMP"), Some(&"invocation tmp"));
         assert_eq!(values.get("ACTION_ONLY"), Some(&"action"));
         assert!(!values.contains_key("UNRELATED"));
+    }
+
+    #[test]
+    fn runners_strip_generated_roots_from_environment_values() {
+        let dir = TestDir::new("strip_env");
+        let action_env = BTreeMap::from([(
+            "GENERATED_INPUT".to_owned(),
+            "${pwd}/bazel-out/k8-fastbuild/bin/pkg/input.txt".to_owned(),
+        )]);
+        let strip_substrings = vec!["bazel-out/k8-fastbuild/bin/".to_owned()];
+
+        let unix = dir.path().join("test.sh");
+        write_test_runner_unix(
+            &unix,
+            &action_env,
+            &["rustdoc".to_owned()],
+            &strip_substrings,
+        );
+        let content = fs::read_to_string(&unix).unwrap();
+        assert!(
+            content.contains("GENERATED_INPUT='${pwd}/pkg/input.txt' \\"),
+            "{}",
+            content
+        );
+
+        let windows = dir.path().join("test.bat");
+        write_test_runner_windows(
+            &windows,
+            &action_env,
+            &["rustdoc".to_owned()],
+            &strip_substrings,
+        );
+        let content = fs::read_to_string(&windows).unwrap();
+        assert!(
+            content.contains("$env:GENERATED_INPUT='${pwd}/pkg/input.txt'"),
+            "{}",
+            content
+        );
     }
 
     #[test]

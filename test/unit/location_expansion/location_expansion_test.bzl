@@ -1,9 +1,9 @@
 """Unittest to verify location expansion in rustc flags"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains", "assert_env_value")
 
 def _find_action(tut, mnemonic):
@@ -66,6 +66,26 @@ def _location_expansion_build_script_env_test(ctx):
 
 location_expansion_build_script_env_test = analysistest.make(_location_expansion_build_script_env_test)
 
+def _location_expansion_doc_test_env_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    # `rust_doc_test` has no `rustc_env` of its own; the expanded value
+    # arrives through `CrateInfo` as a literal output path, which is why
+    # the rustdoc actions must not advertise `supports-path-mapping`. That
+    # is not visible at analysis time, so the build-time guard is the doc
+    # test itself: `mylibrary_env` reads the env path with `include_bytes!`,
+    # which fails under `--experimental_output_paths=strip` if an action
+    # were mapped. Both the legacy writer and the compiled actions carry it.
+    actions = [action for action in tut.actions if action.mnemonic.startswith("Rustdoc")]
+    asserts.true(env, len(actions) > 0, "Expected rustdoc actions, got {}".format([a.mnemonic for a in tut.actions]))
+    expected = "${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/flag_execpaths.data"
+    for action in actions:
+        assert_env_value(env, action, "MY_DATA", expected)
+    return analysistest.end(env)
+
+location_expansion_doc_test_env_test = analysistest.make(_location_expansion_doc_test_env_test)
+
 def _location_expansion_test():
     for suffix in ("execpath", "execpaths", "location", "locations"):
         write_file(
@@ -126,6 +146,16 @@ def _location_expansion_test():
         ],
     )
 
+    rust_doc_test(
+        name = "mylibrary_env_doc_test",
+        crate = ":mylibrary_env",
+        # Legacy doctests require directory runfiles on Windows (#1156).
+        target_compatible_with = select({
+            "@platforms//os:windows": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        }),
+    )
+
     cargo_build_script(
         name = "mybuildscript",
         srcs = ["build_script.rs"],
@@ -151,6 +181,11 @@ def _location_expansion_test():
         target_under_test = ":mybuildscript",
     )
 
+    location_expansion_doc_test_env_test(
+        name = "location_expansion_doc_test_env_test",
+        target_under_test = ":mylibrary_env_doc_test",
+    )
+
 def location_expansion_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -165,5 +200,6 @@ def location_expansion_test_suite(name):
             ":location_expansion_rustc_flags_test",
             ":location_expansion_rustc_env_test",
             ":location_expansion_build_script_env_test",
+            ":location_expansion_doc_test_env_test",
         ],
     )

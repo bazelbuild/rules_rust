@@ -1,0 +1,21 @@
+load("//rust:defs.bzl", "rust_doc_test", "rust_library")
+
+# Edition 2024 merges doctests by default. The legacy launcher runs the merged
+# bundle; the compiled runner must disable merging so `--no-run` is honored
+# and every doctest is still reported.
+rust_doc_test(
+    name = "edition_2024_doc_test",
+    crate = ":lib",
+    # Legacy doctests require directory runfiles on Windows (#1156).
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    crate_name = "doctest_edition_2024",
+    edition = "2024",
+)

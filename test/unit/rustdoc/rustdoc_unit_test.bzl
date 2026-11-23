@@ -167,13 +167,15 @@ def _rustdoc_with_json_error_format_test_impl(ctx):
 def _rustdoc_test_uses_cc_library_native_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    action = tut.actions[0]
+    actions = [action for action in tut.actions if action.mnemonic in ["RustdocTestWriter", "RustdocTestCompile"]]
 
-    asserts.true(
+    asserts.equals(
         env,
-        action.mnemonic in ["RustdocTestWriter", "RustdocTestCompile"],
-        "Expected RustdocTestWriter or RustdocTestCompile, got {}".format(action.mnemonic),
+        1,
+        len(actions),
+        "Expected one RustdocTestWriter or RustdocTestCompile action, got {}".format([action.mnemonic for action in tut.actions]),
     )
+    action = actions[0]
     asserts.true(
         env,
         "-Clink-arg=-lrustdoc_cc_library" in action.argv or "-Clink-arg=-lrustdoc_cc_library.pic" in action.argv,
@@ -209,8 +211,22 @@ def _compiled_runner_test_impl(ctx):
     runner = _compiled_runner_file(target)
     executable = target[DefaultInfo].files_to_run.executable
 
-    asserts.true(env, any([action.mnemonic == "RustdocTestCompile" for action in target.actions]))
+    compile_actions = [action for action in target.actions if action.mnemonic == "RustdocTestCompile"]
+    asserts.equals(env, 1, len(compile_actions))
     asserts.equals(env, runner.extension, executable.extension)
+
+    # Merged doctests would run during compilation (rust-lang/rust#143858).
+    argv = compile_actions[0].argv
+    asserts.true(env, "--merge-doctests=no" in argv, "Expected --merge-doctests=no in {}".format(argv))
+
+    # Doctest attributes reach the runner through the extracted doctests.
+    asserts.true(env, "--doctests" in argv, "Expected --doctests in {}".format(argv))
+    extract_actions = [action for action in target.actions if action.mnemonic == "RustdocTestExtract"]
+    asserts.equals(env, 1, len(extract_actions))
+    asserts.true(env, "--output-format=doctest" in extract_actions[0].argv)
+    asserts.true(env, "--stdout-file" in extract_actions[0].argv)
+    extract_outputs = extract_actions[0].outputs.to_list()
+    asserts.true(env, extract_outputs[0] in compile_actions[0].inputs.to_list())
     return analysistest.end(env)
 
 compiled_runner_test = analysistest.make(
