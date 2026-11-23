@@ -626,7 +626,7 @@ impl CrateId {
 impl From<&Package> for CrateId {
     fn from(package: &Package) -> Self {
         Self {
-            name: package.name.clone(),
+            name: package.name.to_string(),
             version: package.version.clone(),
         }
     }
@@ -983,7 +983,7 @@ impl CrateNameAndVersionReq {
     pub fn matches(&self, package: &Package) -> bool {
         // If the package name does not match, it's obviously
         // not the right package
-        if self.name != "*" && self.name != package.name {
+        if self.name != "*" && package.name != self.name {
             return false;
         }
 

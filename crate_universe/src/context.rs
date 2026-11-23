@@ -215,7 +215,7 @@ impl Context {
             .expect("Every workspace member's manifest is a child of the workspace root");
 
         // Ensure the package paths are adjusted in the macros according to the splicing results
-        let package_path = match package_prefixes.get(&package.name) {
+        let package_path = match package_prefixes.get(package.name.as_str()) {
             // Any package prefix should be absolute and therefore always applied
             Some(prefix) => PathBuf::from(prefix).join(package_path_diff),
             // If no package prefix is present, attempt to apply the workspace prefix

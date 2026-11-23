@@ -131,7 +131,7 @@ rust_library(
         "@cui__parking_lot-0.12.1//:parking_lot",
         "@cui__prodash-29.0.0//:prodash",
         "@cui__sha1_smol-1.0.0//:sha1_smol",
-        "@cui__thiserror-2.0.4//:thiserror",
+        "@cui__thiserror-2.0.21//:thiserror",
         "@cui__walkdir-2.5.0//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

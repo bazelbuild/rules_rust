@@ -198,7 +198,7 @@ impl LockfileAnnotation {
                 let pkg = &metadata[id];
                 !workspace_metadata
                     .sources
-                    .contains_key(&CrateId::new(pkg.name.clone(), pkg.version.clone()))
+                    .contains_key(&CrateId::new(pkg.name.to_string(), pkg.version.clone()))
             } else {
                 false
             }
@@ -509,7 +509,7 @@ impl Annotations {
                     None
                 } else {
                     Some((
-                        CrateId::new(pkg.name.clone(), pkg.version.clone()),
+                        CrateId::new(pkg.name.to_string(), pkg.version.clone()),
                         PairedExtras {
                             package_id: pkg_id.clone(),
                             crate_extra,
@@ -548,7 +548,7 @@ fn cargo_meta_pkg_to_locked_pkg<'a>(
 ) -> Option<&'a cargo_lock::Package> {
     lock_packages
         .iter()
-        .find(|lock_pkg| lock_pkg.name.as_str() == pkg.name && lock_pkg.version == pkg.version)
+        .find(|lock_pkg| pkg.name == lock_pkg.name.as_str() && lock_pkg.version == pkg.version)
 }
 
 #[cfg(test)]
