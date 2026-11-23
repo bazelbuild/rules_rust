@@ -329,11 +329,11 @@ _NORMAL_DEV_ALIASES = {% set deps_type = "normal-dev" %}{% include "partials/mod
 
 _PROC_MACRO_DEPENDENCIES = {% set deps_type = "proc-macro" %}{% include "partials/module/deps_map.j2" %}
 
-_PROC_MACRO_ALIASES = {% set deps_type = "proc-macro-dev" %}{% include "partials/module/aliases_map.j2" %}
+_PROC_MACRO_ALIASES = {% set deps_type = "proc-macro" %}{% include "partials/module/aliases_map.j2" %}
 
 _PROC_MACRO_DEV_DEPENDENCIES = {% set deps_type = "proc-macro-dev" %}{% include "partials/module/deps_map.j2" %}
 
-_PROC_MACRO_DEV_ALIASES = {% set deps_type = "normal-dev" %}{% include "partials/module/aliases_map.j2" %}
+_PROC_MACRO_DEV_ALIASES = {% set deps_type = "proc-macro-dev" %}{% include "partials/module/aliases_map.j2" %}
 
 _BUILD_DEPENDENCIES = {% set deps_type = "build" %}{% include "partials/module/deps_map.j2" %}
 
