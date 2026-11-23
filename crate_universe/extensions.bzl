@@ -793,7 +793,7 @@ def _generate_hub_and_spokes(
             }
             kwargs = {}
             if len(CARGO_BAZEL_URLS) == 0:
-                kwargs["generator"] = "@cargo_bazel_bootstrap//:cargo-bazel"
+                kwargs["generator"] = "@cargo_bazel_bootstrap//:" + _bootstrap_binary(module_ctx)
             local_crate_mirror(
                 name = crate_repo_name,
                 options_json = json.encode(options),
@@ -824,6 +824,17 @@ def _get_auth(module_ctx, urls):
         netrc = read_user_netrc(module_ctx)
     return use_netrc(netrc, urls, {})
 
+def _bootstrap_binary(module_ctx):
+    """The file name of the generator `@cargo_bazel_bootstrap` builds, `cargo-bazel.exe` on Windows.
+
+    Args:
+        module_ctx (module_ctx): The module extension's context.
+
+    Returns:
+        str: The file name.
+    """
+    return "cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel"
+
 def _get_generator(module_ctx, host_triple):
     """Query Network Resources to local a `cargo-bazel` binary.
 
@@ -849,7 +860,7 @@ def _get_generator(module_ctx, host_triple):
         # For Bazel 7 and below, `module_ctx.path` will also watch files so to avoid
         # volatility in lock files caused by referencing host specific files, direct
         # references are avoided.
-        return module_ctx.path(Label("@cargo_bazel_bootstrap//:BUILD.bazel")).dirname.get_child("cargo-bazel")
+        return module_ctx.path(Label("@cargo_bazel_bootstrap//:BUILD.bazel")).dirname.get_child(_bootstrap_binary(module_ctx))
 
     else:
         generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple.str)

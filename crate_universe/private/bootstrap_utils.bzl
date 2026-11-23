@@ -112,3 +112,18 @@ def srcs_module(name, dest, **kwargs):
         dest = dest,
         tags = tags,
     )
+
+def _cargo_bazel_bootstrap_cache_repository_impl(repository_ctx):
+    repository_ctx.file("BUILD.bazel", "")
+    if hasattr(repository_ctx, "repo_metadata"):
+        return repository_ctx.repo_metadata(reproducible = True)
+    return None
+
+cargo_bazel_bootstrap_cache_repository = repository_rule(
+    doc = (
+        "The build cache of `@cargo_bazel_bootstrap`. The repository has no inputs, so Bazel never " +
+        "refetches it; the bootstrap keeps Cargo's target directory here and a rebuild after a source " +
+        "change only recompiles what changed."
+    ),
+    implementation = _cargo_bazel_bootstrap_cache_repository_impl,
+)
