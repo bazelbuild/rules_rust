@@ -34,35 +34,41 @@ filegroup(
 alias(
     name = "pyo3-0.29.0",
     actual = "@rpyo3c__pyo3-0.29.0//:pyo3",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3-0.29.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3",
     actual = "@rpyo3c__pyo3-0.29.0//:pyo3",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-ffi-0.29.0",
     actual = "@rpyo3c__pyo3-ffi-0.29.0//:pyo3_ffi",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3-ffi-0.29.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-ffi",
     actual = "@rpyo3c__pyo3-ffi-0.29.0//:pyo3_ffi",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3-ffi` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-introspection-0.29.0",
     actual = "@rpyo3c__pyo3-introspection-0.29.0//:pyo3_introspection",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3-introspection-0.29.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-introspection",
     actual = "@rpyo3c__pyo3-introspection-0.29.0//:pyo3_introspection",
+    deprecation = "root aliases are deprecated, use `@rpyo3c//pyo3-introspection` instead.",
     tags = ["manual"],
 )

@@ -87,6 +87,7 @@ pub(crate) struct Alias {
     pub(crate) rule: String,
     pub(crate) name: String,
     pub(crate) actual: Label,
+    pub(crate) deprecation: Option<String>,
     pub(crate) tags: Set<String>,
 }
 
@@ -266,6 +267,8 @@ impl Serialize for Alias {
         struct AliasInner<'a> {
             pub(crate) name: &'a String,
             pub(crate) actual: &'a Label,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pub(crate) deprecation: &'a Option<String>,
             pub(crate) tags: &'a Set<String>,
         }
 
@@ -274,6 +277,7 @@ impl Serialize for Alias {
             AliasInner {
                 name: &self.name,
                 actual: &self.actual,
+                deprecation: &self.deprecation,
                 tags: &self.tags,
             },
         )

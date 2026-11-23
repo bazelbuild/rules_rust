@@ -34,11 +34,13 @@ filegroup(
 alias(
     name = "anyhow-1.0.77",
     actual = "@vendor__anyhow-1.0.77//:anyhow",
+    deprecation = "root aliases are deprecated, use `@vendor//anyhow-1.0.77` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "anyhow",
     actual = "@vendor__anyhow-1.0.77//:anyhow",
+    deprecation = "root aliases are deprecated, use `@vendor//anyhow` instead.",
     tags = ["manual"],
 )

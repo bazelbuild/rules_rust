@@ -300,27 +300,39 @@ impl Renderer {
             if !aliases.workspace_member.is_empty() {
                 let comment = "# Workspace Member Dependencies".to_owned();
                 starlark.push(Starlark::Verbatim(comment));
-                starlark.extend(
-                    aliases
-                        .workspace_member
-                        .iter()
-                        .map(|entry| Starlark::Alias(entry.alias.clone())),
-                );
+                starlark.extend(self.root_alias_targets(&aliases.workspace_member));
             }
             if !aliases.binaries.is_empty() {
                 let comment = "# Binaries".to_owned();
                 starlark.push(Starlark::Verbatim(comment));
-                starlark.extend(
-                    aliases
-                        .binaries
-                        .iter()
-                        .map(|entry| Starlark::Alias(entry.alias.clone())),
-                );
+                starlark.extend(self.root_alias_targets(&aliases.binaries));
             }
         }
 
         let starlark = starlark::serialize(&starlark)?;
         Ok(starlark)
+    }
+
+    /// The root-level `alias()` targets, each deprecated in favor of its
+    /// subpackage. Local vendoring has no subpackages, so no deprecation.
+    /// Neither has a custom `alias_rule`, which need not accept the attribute.
+    fn root_alias_targets<'a>(
+        &'a self,
+        entries: &'a [HubAlias],
+    ) -> impl Iterator<Item = Starlark> + 'a {
+        entries.iter().map(move |entry| {
+            let mut alias = entry.alias.clone();
+            // A custom `alias_rule` need not accept `deprecation`.
+            if self.config.vendor_mode != Some(VendorMode::Local)
+                && alias.rule == AliasRule::default().rule()
+            {
+                alias.deprecation = Some(format!(
+                    "root aliases are deprecated, use `@{}//{}` instead.",
+                    self.config.repository_name, entry.alias.name
+                ));
+            }
+            Starlark::Alias(alias)
+        })
     }
 
     /// Collect every alias the hub repository would emit (workspace member
@@ -362,6 +374,7 @@ impl Renderer {
                                 &krate.version.to_string(),
                                 library_target_name,
                             ),
+                            deprecation: None,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -380,6 +393,7 @@ impl Renderer {
                                     &krate.version.to_string(),
                                     library_target_name,
                                 ),
+                                deprecation: None,
                                 tags: BTreeSet::from(["manual".to_owned()]),
                             },
                         });
@@ -403,6 +417,7 @@ impl Renderer {
                                 &krate.version.to_string(),
                                 library_target_name,
                             ),
+                            deprecation: None,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -416,6 +431,7 @@ impl Renderer {
                         rule: alias_rule.rule(),
                         name: alias.clone(),
                         actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
+                        deprecation: None,
                         tags: BTreeSet::from(["manual".to_owned()]),
                     },
                 });
@@ -442,6 +458,7 @@ impl Renderer {
                                 &krate.version.to_string(),
                                 &format!("{}__bin", bin.crate_name),
                             ),
+                            deprecation: None,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         },
                     });
@@ -613,6 +630,7 @@ impl Renderer {
                     rule: AliasRule::default().rule(),
                     name: rule.crate_name().to_owned(),
                     actual: override_target.clone(),
+                    deprecation: None,
                     tags: BTreeSet::from(["manual".to_owned()]),
                 }));
             } else {
@@ -626,6 +644,7 @@ impl Renderer {
                             rule: AliasRule::default().rule(),
                             name: target.crate_name.clone(),
                             actual: Label::from_str("_bs").unwrap(),
+                            deprecation: None,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         }));
                     }
@@ -2418,12 +2437,14 @@ mod test {
             alias(
                 name = "mock_crate-0.1.0",
                 actual = "@test_rendering__mock_crate-0.1.0//:library_name",
+                deprecation = "root aliases are deprecated, use `@test_rendering//mock_crate-0.1.0` instead.",
                 tags = ["manual"],
             )
 
             alias(
                 name = "mock_crate",
                 actual = "@test_rendering__mock_crate-0.1.0//:library_name",
+                deprecation = "root aliases are deprecated, use `@test_rendering//mock_crate` instead.",
                 tags = ["manual"],
             )
         "#};
@@ -2552,24 +2573,28 @@ mod test {
             alias(
                 name = "my_dependency-0.1.0",
                 actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                deprecation = "root aliases are deprecated, use `@test_rendering//my_dependency-0.1.0` instead.",
                 tags = ["manual"],
             )
 
             alias(
                 name = "my_dependency",
                 actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                deprecation = "root aliases are deprecated, use `@test_rendering//my_dependency` instead.",
                 tags = ["manual"],
             )
 
             alias(
                 name = "my_dependency_other-0.1.0",
                 actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                deprecation = "root aliases are deprecated, use `@test_rendering//my_dependency_other-0.1.0` instead.",
                 tags = ["manual"],
             )
 
             alias(
                 name = "my_dependency_other",
                 actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                deprecation = "root aliases are deprecated, use `@test_rendering//my_dependency_other` instead.",
                 tags = ["manual"],
             )
         "#};

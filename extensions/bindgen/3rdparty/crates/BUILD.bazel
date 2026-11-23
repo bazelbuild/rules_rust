@@ -34,59 +34,69 @@ filegroup(
 alias(
     name = "bindgen-0.71.1",
     actual = "@rules_rust_bindgen_deps__bindgen-0.71.1//:bindgen",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//bindgen-0.71.1` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "bindgen",
     actual = "@rules_rust_bindgen_deps__bindgen-0.71.1//:bindgen",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//bindgen` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clang-sys-1.8.1",
     actual = "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clang-sys-1.8.1` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clang-sys",
     actual = "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clang-sys` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap-4.5.32",
     actual = "@rules_rust_bindgen_deps__clap-4.5.32//:clap",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clap-4.5.32` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
     actual = "@rules_rust_bindgen_deps__clap-4.5.32//:clap",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clap` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap_complete-4.5.46",
     actual = "@rules_rust_bindgen_deps__clap_complete-4.5.46//:clap_complete",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clap_complete-4.5.46` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap_complete",
     actual = "@rules_rust_bindgen_deps__clap_complete-4.5.46//:clap_complete",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//clap_complete` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "env_logger-0.10.2",
     actual = "@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//env_logger-0.10.2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "env_logger",
     actual = "@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger",
+    deprecation = "root aliases are deprecated, use `@rules_rust_bindgen_deps//env_logger` instead.",
     tags = ["manual"],
 )

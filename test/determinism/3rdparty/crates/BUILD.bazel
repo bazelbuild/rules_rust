@@ -34,119 +34,139 @@ filegroup(
 alias(
     name = "anyhow-1.0.100",
     actual = "@rrtd__anyhow-1.0.100//:anyhow",
+    deprecation = "root aliases are deprecated, use `@rrtd//anyhow-1.0.100` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "anyhow",
     actual = "@rrtd__anyhow-1.0.100//:anyhow",
+    deprecation = "root aliases are deprecated, use `@rrtd//anyhow` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "blake3-1.8.2",
     actual = "@rrtd__blake3-1.8.2//:blake3",
+    deprecation = "root aliases are deprecated, use `@rrtd//blake3-1.8.2` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "blake3",
     actual = "@rrtd__blake3-1.8.2//:blake3",
+    deprecation = "root aliases are deprecated, use `@rrtd//blake3` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap-4.5.50",
     actual = "@rrtd__clap-4.5.50//:clap",
+    deprecation = "root aliases are deprecated, use `@rrtd//clap-4.5.50` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
     actual = "@rrtd__clap-4.5.50//:clap",
+    deprecation = "root aliases are deprecated, use `@rrtd//clap` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde-1.0.228",
     actual = "@rrtd__serde-1.0.228//:serde",
+    deprecation = "root aliases are deprecated, use `@rrtd//serde-1.0.228` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
     actual = "@rrtd__serde-1.0.228//:serde",
+    deprecation = "root aliases are deprecated, use `@rrtd//serde` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json-1.0.145",
     actual = "@rrtd__serde_json-1.0.145//:serde_json",
+    deprecation = "root aliases are deprecated, use `@rrtd//serde_json-1.0.145` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
     actual = "@rrtd__serde_json-1.0.145//:serde_json",
+    deprecation = "root aliases are deprecated, use `@rrtd//serde_json` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile-3.23.0",
     actual = "@rrtd__tempfile-3.23.0//:tempfile",
+    deprecation = "root aliases are deprecated, use `@rrtd//tempfile-3.23.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile",
     actual = "@rrtd__tempfile-3.23.0//:tempfile",
+    deprecation = "root aliases are deprecated, use `@rrtd//tempfile` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio-1.48.0",
     actual = "@rrtd__tokio-1.48.0//:tokio",
+    deprecation = "root aliases are deprecated, use `@rrtd//tokio-1.48.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
     actual = "@rrtd__tokio-1.48.0//:tokio",
+    deprecation = "root aliases are deprecated, use `@rrtd//tokio` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-0.1.41",
     actual = "@rrtd__tracing-0.1.41//:tracing",
+    deprecation = "root aliases are deprecated, use `@rrtd//tracing-0.1.41` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing",
     actual = "@rrtd__tracing-0.1.41//:tracing",
+    deprecation = "root aliases are deprecated, use `@rrtd//tracing` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-subscriber-0.3.20",
     actual = "@rrtd__tracing-subscriber-0.3.20//:tracing_subscriber",
+    deprecation = "root aliases are deprecated, use `@rrtd//tracing-subscriber-0.3.20` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-subscriber",
     actual = "@rrtd__tracing-subscriber-0.3.20//:tracing_subscriber",
+    deprecation = "root aliases are deprecated, use `@rrtd//tracing-subscriber` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "walkdir-2.5.0",
     actual = "@rrtd__walkdir-2.5.0//:walkdir",
+    deprecation = "root aliases are deprecated, use `@rrtd//walkdir-2.5.0` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "walkdir",
     actual = "@rrtd__walkdir-2.5.0//:walkdir",
+    deprecation = "root aliases are deprecated, use `@rrtd//walkdir` instead.",
     tags = ["manual"],
 )

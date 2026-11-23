@@ -32,7 +32,15 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "zstd-0.13.2",
+    actual = "@ios_build__zstd-0.13.2//:zstd",
+    deprecation = "root aliases are deprecated, use `@ios_build//zstd-0.13.2` instead.",
+    tags = ["manual"],
+)
+
+alias(
     name = "zstd",
     actual = "@ios_build__zstd-0.13.2//:zstd",
+    deprecation = "root aliases are deprecated, use `@ios_build//zstd` instead.",
     tags = ["manual"],
 )

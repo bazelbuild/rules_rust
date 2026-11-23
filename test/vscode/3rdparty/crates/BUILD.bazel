@@ -34,23 +34,27 @@ filegroup(
 alias(
     name = "serde-1.0.229",
     actual = "@rtvsc__serde-1.0.229//:serde",
+    deprecation = "root aliases are deprecated, use `@rtvsc//serde-1.0.229` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde",
     actual = "@rtvsc__serde-1.0.229//:serde",
+    deprecation = "root aliases are deprecated, use `@rtvsc//serde` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json-1.0.154",
     actual = "@rtvsc__serde_json-1.0.154//:serde_json",
+    deprecation = "root aliases are deprecated, use `@rtvsc//serde_json-1.0.154` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
     actual = "@rtvsc__serde_json-1.0.154//:serde_json",
+    deprecation = "root aliases are deprecated, use `@rtvsc//serde_json` instead.",
     tags = ["manual"],
 )
