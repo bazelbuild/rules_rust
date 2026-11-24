@@ -44,7 +44,10 @@ filegroup(
         "src/**/*.j2",
         "src/**/*.sh",
         "src/**/*.bat",
-    ]),
+    ]) + [
+        # The SPDX license kinds `cargo-bazel` may name, see `src/rendering.rs`.
+        "//crate_universe/private/spdx:kinds.bzl",
+    ],
 )
 
 filegroup(

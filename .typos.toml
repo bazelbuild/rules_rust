@@ -2,3 +2,7 @@
 nto = "nto"  # For toolchains
 flate = "flate"  # https://crates.io/crates/flate2
 ba = "ba"  # Used in protoc_wrapper.rs with "baR"
+
+[files]
+# SPDX license identifiers recorded from the `package_metadata` module, not prose.
+extend-exclude = ["crate_universe/private/spdx/kinds.bzl"]

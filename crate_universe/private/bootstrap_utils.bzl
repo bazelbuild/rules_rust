@@ -90,6 +90,22 @@ _srcs_installer = rule(
     executable = True,
 )
 
+def source_installer(name, input, dest, **kwargs):
+    """A runnable target which copies a generated file back into the repository.
+
+    Args:
+        name (str): The name of the target.
+        input (Label): The generated file.
+        dest (Label): The file in the current package to overwrite.
+        **kwargs (dict): Additional keyword arguments.
+    """
+    _srcs_installer(
+        name = name,
+        input = input,
+        dest = dest,
+        **kwargs
+    )
+
 def srcs_module(name, dest, **kwargs):
     """A helper rule to ensure the bootstrapping functionality of `cargo-bazel` is always up to date
 

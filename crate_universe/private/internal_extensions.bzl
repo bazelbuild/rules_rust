@@ -7,6 +7,7 @@ load("//cargo/3rdparty/crates:crates.bzl", _cargo_crate_repositories = "crate_re
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
 load("//crate_universe/private:bootstrap_utils.bzl", "cargo_bazel_bootstrap_cache_repository")
+load("//crate_universe/private:spdx_license_kinds.bzl", "spdx_license_kinds_repository")
 load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
@@ -100,12 +101,15 @@ def _internal_dev_deps_impl(module_ctx):
         compressed_windows_toolchain_names = False,
     ))
 
+    # The SPDX license kinds `cargo-bazel` renders are recorded from this.
+    spdx_license_kinds_repository(name = "spdx_license_kinds")
+
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
     # by other MODULES.
     return module_ctx.extension_metadata(
         root_module_direct_deps = [],
-        root_module_direct_dev_deps = [repo.repo for repo in direct_deps],
+        root_module_direct_dev_deps = [repo.repo for repo in direct_deps] + ["spdx_license_kinds"],
     )
 
 # This is named a single character to reduce the size of path names when running build scripts, to reduce the chance

@@ -1,0 +1,34 @@
+"""Generated crate BUILD files name license kinds through these aliases, so a
+module holding such files needs no dependency on `package_metadata` itself."""
+
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("//crate_universe/private:bootstrap_utils.bzl", "source_installer")
+load(":kinds.bzl", "SPDX_LICENSE_KINDS")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["kinds.bzl"])
+
+[
+    alias(
+        name = kind,
+        actual = "@package_metadata//licenses/spdx:" + kind,
+    )
+    for kind in SPDX_LICENSE_KINDS
+]
+
+# `kinds.bzl` records the `license_kind`s the `package_metadata` module
+# declares. The diff test fails when a `package_metadata` update changes the
+# set; run the installer to update.
+diff_test(
+    name = "kinds_diff_test",
+    failure_message = "The recorded SPDX license kinds are out of date. Run `bazel run //crate_universe/private/spdx:kinds.install`.",
+    file1 = "kinds.bzl",
+    file2 = "@spdx_license_kinds//:kinds.bzl",
+)
+
+source_installer(
+    name = "kinds.install",
+    dest = "kinds.bzl",
+    input = "@spdx_license_kinds//:kinds.bzl",
+)

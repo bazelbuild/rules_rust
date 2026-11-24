@@ -3,7 +3,8 @@ use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE, ONELINE};
 
 use super::{
-    Data, ExportsFiles, License, Load, Package, PackageInfo, RustBinary, RustLibrary, RustProcMacro,
+    Data, ExportsFiles, License, Load, Package, PackageMetadata, RustBinary, RustLibrary,
+    RustProcMacro,
 };
 
 // For structs that contain #[serde(flatten)], a quirk of how Serde processes
@@ -88,16 +89,17 @@ impl Serialize for Package {
     }
 }
 
-impl Serialize for PackageInfo {
+impl Serialize for PackageMetadata {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let mut call = serializer.serialize_struct("package_info", MULTILINE)?;
+        let mut call = serializer.serialize_struct("package_metadata", MULTILINE)?;
         call.serialize_field("name", &self.name)?;
-        call.serialize_field("package_name", &self.package_name)?;
-        call.serialize_field("package_version", &self.package_version)?;
-        call.serialize_field("package_url", &self.package_url)?;
+        call.serialize_field("purl", &self.purl)?;
+        if !self.attributes.is_empty() {
+            call.serialize_field("attributes", &self.attributes)?;
+        }
         call.end()
     }
 }
@@ -109,9 +111,9 @@ impl Serialize for License {
     {
         let mut call = serializer.serialize_struct("license", MULTILINE)?;
         call.serialize_field("name", &self.name)?;
-        call.serialize_field("license_kinds", &self.license_kinds)?;
-        if !self.license_text.is_empty() {
-            call.serialize_field("license_text", &self.license_text)?;
+        call.serialize_field("kind", &self.kind)?;
+        if !self.text.is_empty() {
+            call.serialize_field("text", &self.text)?;
         }
         call.end()
     }

@@ -155,7 +155,11 @@ def render_config(
             keys are [`{triple}`].
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
-        generate_rules_license_metadata (bool, optional): Whether to generate rules license metadata
+        generate_rules_license_metadata (bool, optional): Whether every crate's BUILD file declares its
+            identity and license through the `package_metadata` module (a `package_metadata` target with
+            the crate's `purl` and a `license` attribute). The rules load and the license kinds
+            resolve through `@rules_rust`, so a module holding generated BUILD files needs no
+            dependency of its own.
         incompatible_no_root_alias_targets (bool, optional): Incompatibility flag. Suppresses the top-level
             `alias()` rules in the hub repository's root `BUILD.bazel` (e.g. `@crate_index//:clap`). Per-alias
             subpackages (e.g. `@crate_index//clap`) are always emitted, so flipping this flag on lets users
