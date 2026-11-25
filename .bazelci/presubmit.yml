@@ -893,26 +893,6 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  example_all_crate_deps:
-    name: Cargo dependencies
-    platform: ubuntu2204
-    working_directory: examples/all_crate_deps
-    build_targets:
-      - "//..."
-  example_all_deps_vendor:
-    name: Vendored dependencies
-    platform: ubuntu2204
-    working_directory: examples/all_deps_vendor
-    run_targets:
-      - "//basic/3rdparty:crates_vendor"
-    build_targets:
-      - "//..."
-  example_compile_opt:
-    name: Compiler optimization
-    platform: ubuntu2204
-    working_directory: examples/compile_opt
-    build_targets:
-      - "//..."
   # TODO: This test requires musl or for rustc to provide necessary gnu libraries for
   # linking gnu libraries.
   # https://github.com/bazelbuild/rules_rust/issues/390
@@ -989,13 +969,6 @@ tasks:
       - "//:all"
     test_targets:
       - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
-  # cross_compile_zig:
-  #   name: Cross compile example with Zig
-  #   platform: ubuntu2204
-  #   working_directory: examples/cross_compile_zig
-  #   build_targets:
-  #     - "//..."
   example_ffi_linux:
     platform: ubuntu2204
     working_directory: examples/ffi
@@ -1122,20 +1095,6 @@ tasks:
     name: Cargo-less example
     platform: ubuntu2204
     working_directory: examples/hello_world_no_cargo
-    build_targets:
-      - "//..."
-  example_override_targets:
-    name: Override Targets
-    platform: ubuntu2204
-    working_directory: examples/override_target
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  example_proto:
-    name: Proto and Prost
-    platform: ubuntu2204
-    working_directory: examples/proto
     build_targets:
       - "//..."
   compile_one_dependency:
