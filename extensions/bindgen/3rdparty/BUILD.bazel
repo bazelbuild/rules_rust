@@ -31,14 +31,18 @@ crates_vendor(
     generate_build_scripts = False,
     mode = "remote",
     packages = dict({
+        # `bindgen-cli` is a binary-only package, which `cargo metadata` drops
+        # entirely, so it cannot be listed here. It is built by hand from
+        # `//3rdparty:BUILD.bindgen-cli.bazel` instead, and the features it
+        # requires of `bindgen` are declared here directly.
         "bindgen": crate.spec(
             default_features = False,
-            features = ["runtime"],
-            version = BINDGEN_VERSION,
-        ),
-        "bindgen-cli": crate.spec(
-            default_features = False,
-            features = ["runtime"],
+            features = [
+                "__cli",
+                "experimental",
+                "prettyplease",
+                "runtime",
+            ],
             version = BINDGEN_VERSION,
         ),
         "clang-sys": crate.spec(

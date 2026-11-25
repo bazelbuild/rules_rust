@@ -10,6 +10,6 @@ package(default_visibility = ["//visibility:public"])
 
 alias(
     name = "url",
-    actual = "@cui__url-2.5.4//:url",
+    actual = "@cui__url-2.5.8//:url",
     tags = ["manual"],
 )

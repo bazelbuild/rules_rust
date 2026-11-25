@@ -113,8 +113,8 @@ rust_library(
     }),
     version = "0.2.0",
     deps = [
-        "@cui__log-0.4.19//:log",
+        "@cui__log-0.4.35//:log",
         "@cui__once_cell-1.21.3//:once_cell",
-        "@cui__tracing-core-0.1.33//:tracing_core",
+        "@cui__tracing-core-0.1.36//:tracing_core",
     ],
 )

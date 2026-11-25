@@ -259,6 +259,7 @@ def _write_config_file(ctx):
             mode = ctx.attr.mode,
             annotations = ctx.attr.annotations,
             generate_binaries = ctx.attr.generate_binaries,
+            resolver = ctx.attr.resolver,
             generate_build_scripts = ctx.attr.generate_build_scripts,
             generate_target_compatible_with = ctx.attr.generate_target_compatible_with,
             supported_platform_triples = ctx.attr.supported_platform_triples,
@@ -287,7 +288,8 @@ def generate_config_file(
         output_pkg,
         workspace_name,
         render_config,
-        repository_ctx = None):
+        repository_ctx = None,
+        resolver = "cargo"):
     """Writes the rendering config to cargo-bazel-config.json.
 
     Args:
@@ -295,6 +297,7 @@ def generate_config_file(
         mode (str): The vendoring mode.
         annotations: Any annotations provided.
         generate_binaries (bool): Whether to generate binaries for the crates.
+        resolver (str): The resolver computing features and dependencies, `cargo` or `cargo_tree`.
         generate_build_scripts (bool): Whether to generate `cargo_build_script` targets for crates that have build scripts.
         generate_target_compatible_with (bool): DEPRECATED: Moved to `render_config`.
         supported_platform_triples (str): The platform triples to support in
@@ -376,6 +379,7 @@ def generate_config_file(
         generate_binaries = generate_binaries,
         generate_build_scripts = generate_build_scripts,
         generate_target_compatible_with = generate_target_compatible_with,
+        resolver = resolver,
         cargo_config = None,
         render_config = render_config,
         supported_platform_triples = supported_platform_triples,
@@ -580,6 +584,16 @@ CRATES_VENDOR_ATTRS = {
     ),
     "repository_name": attr.string(
         doc = "The name of the repository to generate for `remote` vendor modes. If unset, the label name will be used",
+    ),
+    "resolver": attr.string(
+        doc = (
+            "The resolver computing each crate's features and dependencies per platform. " +
+            "`cargo` runs Cargo's own feature resolver in-process. `cargo_tree` parses `cargo tree` " +
+            "output through a rustc wrapper, as releases before the in-process resolver did; it is " +
+            "an opt-out kept for one release in case the new resolver has a defect, and changing it repins."
+        ),
+        default = "cargo",
+        values = ["cargo", "cargo_tree"],
     ),
     "splicing_config": attr.string(
         doc = (

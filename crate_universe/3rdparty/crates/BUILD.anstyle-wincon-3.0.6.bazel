@@ -109,7 +109,7 @@ rust_library(
     }),
     version = "3.0.6",
     deps = [
-        "@cui__anstyle-1.0.10//:anstyle",
+        "@cui__anstyle-1.0.14//:anstyle",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)

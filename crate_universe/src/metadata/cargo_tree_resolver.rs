@@ -1,4 +1,5 @@
-//! Tools for producing Crate metadata using `cargo tree`.
+//! The `cargo tree` resolver, kept as the `cargo_tree` opt-out of
+//! [crate::metadata::CargoResolver] for a release while the latter proves itself.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::BufRead;
@@ -9,85 +10,17 @@ use std::thread;
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
 use semver::Version;
-use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use url::Url;
 
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
-use crate::select::{Select, SelectableScalar};
+use crate::metadata::tree_resolver_metadata::{
+    CargoTreeEntry, TreeResolverMetadata, RUSTC_TRIPLES_WITH_HOST_TOOLS,
+};
+use crate::select::Select;
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
-
-/// A list platform triples that support host tools
-///
-/// [Tier 1](https://doc.rust-lang.org/nightly/rustc/platform-support.html#tier-1-with-host-tools)
-/// [Tier 2](https://doc.rust-lang.org/nightly/rustc/platform-support.html#tier-2-with-host-tools)
-const RUSTC_TRIPLES_WITH_HOST_TOOLS: [&str; 26] = [
-    // Tier 1
-    "aarch64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "i686-pc-windows-gnu",
-    "i686-pc-windows-msvc",
-    "i686-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-gnu",
-    "x86_64-pc-windows-msvc",
-    "x86_64-unknown-linux-gnu",
-    // Tier 2
-    "aarch64-pc-windows-msvc",
-    "aarch64-unknown-linux-musl",
-    "arm-unknown-linux-gnueabi",
-    "arm-unknown-linux-gnueabihf",
-    "armv7-unknown-linux-gnueabihf",
-    "loongarch64-unknown-linux-gnu",
-    "loongarch64-unknown-linux-musl",
-    "powerpc-unknown-linux-gnu",
-    "powerpc64-unknown-linux-gnu",
-    "powerpc64le-unknown-linux-gnu",
-    "riscv64gc-unknown-linux-gnu",
-    "riscv64gc-unknown-linux-musl",
-    "s390x-unknown-linux-gnu",
-    "x86_64-unknown-freebsd",
-    "x86_64-unknown-illumo",
-    "x86_64-unknown-linux-musl",
-    "x86_64-unknown-netbsd",
-];
-
-/// Feature resolver info about a given crate.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub(crate) struct CargoTreeEntry {
-    /// The set of features active on a given crate.
-    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub features: BTreeSet<String>,
-
-    /// The dependencies of a given crate based on feature resolution.
-    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub deps: BTreeSet<CrateId>,
-}
-
-impl CargoTreeEntry {
-    pub fn new() -> Self {
-        Self {
-            features: BTreeSet::new(),
-            deps: BTreeSet::new(),
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.features.is_empty() && self.deps.is_empty()
-    }
-
-    pub fn consume(&mut self, other: Self) {
-        self.features.extend(other.features);
-        self.deps.extend(other.deps);
-    }
-}
-
-impl SelectableScalar for CargoTreeEntry {}
-
-/// Feature and dependency metadata generated from [TreeResolver].
-pub(crate) type TreeResolverMetadata = BTreeMap<CrateId, Select<CargoTreeEntry>>;
 
 /// Generates metadata about a Cargo workspace tree which supplements the inaccuracies in
 /// standard [Cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html)
@@ -1006,6 +939,21 @@ mod test {
         (wrapper, rustc_wrapper)
     }
 
+    /// Runs a mock command, retrying while the mock's script is held open by a
+    /// child another test forked before it exec'd, which fails the exec with
+    /// `ETXTBSY`.
+    fn run_mock_rustc(command: &mut process::Command) -> process::Output {
+        for _ in 0..50 {
+            match command.output() {
+                Err(err) if err.kind() == std::io::ErrorKind::ExecutableFileBusy => {
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                result => return result.unwrap(),
+            }
+        }
+        panic!("the mock rustc stayed busy");
+    }
+
     fn new_mock_rustc_command(
         rustc_wrapper: &Path,
         rustc: &Path,
@@ -1060,10 +1008,8 @@ mod test {
 
         let (rustc, rustc_wrapper) = create_mock_rustc(&tempdir, &script_text);
 
-        let output = new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir)
-            .arg("-vV")
-            .output()
-            .unwrap();
+        let output =
+            run_mock_rustc(new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir).arg("-vV"));
 
         assert_eq!(
             output.status.code().unwrap(),
@@ -1106,14 +1052,14 @@ mod test {
 
         let (rustc, rustc_wrapper) = create_mock_rustc(&tempdir, &script_text);
 
-        let output = new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir)
-            .arg("-")
-            .arg("--crate-name")
-            .arg("___")
-            .arg("--print=file-names")
-            .arg("--print=cfg")
-            .output()
-            .unwrap();
+        let output = run_mock_rustc(
+            new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir)
+                .arg("-")
+                .arg("--crate-name")
+                .arg("___")
+                .arg("--print=file-names")
+                .arg("--print=cfg"),
+        );
 
         assert_eq!(
             output.status.code().unwrap(),
@@ -1167,10 +1113,9 @@ mod test {
                 "wasm64-unknown-unknown",
             ],
         ] {
-            let output = new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir)
-                .args(args.clone())
-                .output()
-                .unwrap();
+            let output = run_mock_rustc(
+                new_mock_rustc_command(&rustc_wrapper, &rustc, &tempdir).args(args.clone()),
+            );
 
             assert_eq!(
                 output.status.code().unwrap(),

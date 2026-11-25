@@ -32,15 +32,15 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "anyhow-1.0.98",
-    actual = "@cui__anyhow-1.0.98//:anyhow",
-    deprecation = "root aliases are deprecated, use `@cui//anyhow-1.0.98` instead.",
+    name = "anyhow-1.0.104",
+    actual = "@cui__anyhow-1.0.104//:anyhow",
+    deprecation = "root aliases are deprecated, use `@cui//anyhow-1.0.104` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "anyhow",
-    actual = "@cui__anyhow-1.0.98//:anyhow",
+    actual = "@cui__anyhow-1.0.104//:anyhow",
     deprecation = "root aliases are deprecated, use `@cui//anyhow` instead.",
     tags = ["manual"],
 )
@@ -56,6 +56,20 @@ alias(
     name = "camino",
     actual = "@cui__camino-1.2.6//:camino",
     deprecation = "root aliases are deprecated, use `@cui//camino` instead.",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cargo-ext-resolver-0.101.0",
+    actual = "@cui__cargo-ext-resolver-0.101.0//:cargo_resolver",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-ext-resolver-0.101.0` instead.",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cargo-ext-resolver",
+    actual = "@cui__cargo-ext-resolver-0.101.0//:cargo_resolver",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-ext-resolver` instead.",
     tags = ["manual"],
 )
 
@@ -84,6 +98,20 @@ alias(
     name = "cargo-platform",
     actual = "@cui__cargo-platform-0.3.3//:cargo_platform",
     deprecation = "root aliases are deprecated, use `@cui//cargo-platform` instead.",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cargo-util-schemas-0.15.0",
+    actual = "@cui__cargo-util-schemas-0.15.0//:cargo_util_schemas",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-util-schemas-0.15.0` instead.",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cargo-util-schemas",
+    actual = "@cui__cargo-util-schemas-0.15.0//:cargo_util_schemas",
+    deprecation = "root aliases are deprecated, use `@cui//cargo-util-schemas` instead.",
     tags = ["manual"],
 )
 
@@ -284,15 +312,15 @@ alias(
 )
 
 alias(
-    name = "semver-1.0.26",
-    actual = "@cui__semver-1.0.26//:semver",
-    deprecation = "root aliases are deprecated, use `@cui//semver-1.0.26` instead.",
+    name = "semver-1.0.28",
+    actual = "@cui__semver-1.0.28//:semver",
+    deprecation = "root aliases are deprecated, use `@cui//semver-1.0.28` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "semver",
-    actual = "@cui__semver-1.0.26//:semver",
+    actual = "@cui__semver-1.0.28//:semver",
     deprecation = "root aliases are deprecated, use `@cui//semver` instead.",
     tags = ["manual"],
 )
@@ -424,15 +452,15 @@ alias(
 )
 
 alias(
-    name = "tracing-0.1.41",
-    actual = "@cui__tracing-0.1.41//:tracing",
-    deprecation = "root aliases are deprecated, use `@cui//tracing-0.1.41` instead.",
+    name = "tracing-0.1.44",
+    actual = "@cui__tracing-0.1.44//:tracing",
+    deprecation = "root aliases are deprecated, use `@cui//tracing-0.1.44` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing",
-    actual = "@cui__tracing-0.1.41//:tracing",
+    actual = "@cui__tracing-0.1.44//:tracing",
     deprecation = "root aliases are deprecated, use `@cui//tracing` instead.",
     tags = ["manual"],
 )
@@ -452,15 +480,15 @@ alias(
 )
 
 alias(
-    name = "url-2.5.4",
-    actual = "@cui__url-2.5.4//:url",
-    deprecation = "root aliases are deprecated, use `@cui//url-2.5.4` instead.",
+    name = "url-2.5.8",
+    actual = "@cui__url-2.5.8//:url",
+    deprecation = "root aliases are deprecated, use `@cui//url-2.5.8` instead.",
     tags = ["manual"],
 )
 
 alias(
     name = "url",
-    actual = "@cui__url-2.5.4//:url",
+    actual = "@cui__url-2.5.8//:url",
     deprecation = "root aliases are deprecated, use `@cui//url` instead.",
     tags = ["manual"],
 )

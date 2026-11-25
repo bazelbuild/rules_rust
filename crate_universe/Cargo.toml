@@ -3,6 +3,7 @@ members = ["tools/cross_installer", "tools/urls_generator"]
 exclude = [
     "test_data/metadata/abspath",
     "test_data/metadata/aliases",
+    "test_data/metadata/bin_only_dep",
     "test_data/metadata/build_scripts",
     "test_data/metadata/build_scripts_deps",
     "test_data/metadata/common",
@@ -17,6 +18,7 @@ exclude = [
     "test_data/metadata/git_repos",
     "test_data/metadata/has_package_metadata",
     "test_data/metadata/host_specific_build_deps",
+    "test_data/metadata/host_target_feature_split",
     "test_data/metadata/multi_cfg_dep",
     "test_data/metadata/multi_kind_proc_macro_dep",
     "test_data/metadata/nested_build_dependencies",
@@ -72,6 +74,10 @@ cargo_metadata = "0.23.1"
 cargo_toml = "0.22.3"
 cargo-lock = "11.1.0"
 cargo-platform = "0.3.3"
+# Cargo's dependency and feature resolver, extracted from Cargo. The library is
+# `cargo_resolver`, so code reads as it does upstream.
+cargo-resolver = { package = "cargo-ext-resolver", version = "0.101.0" }
+cargo-util-schemas = "0.15.0"
 cfg-expr = "0.18.0"
 clap = { version = "4.5.37", features = ["derive", "env"] }
 crates-index = { version = "3.7.0", default-features = false, features = [

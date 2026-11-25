@@ -270,7 +270,8 @@ def compile_config(
         render_config,
         supported_platform_triples,
         repository_name,
-        repository_ctx = None):
+        repository_ctx = None,
+        resolver = "cargo"):
     """Create a config file for generating crate targets
 
     [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
@@ -279,6 +280,7 @@ def compile_config(
         crate_annotations (dict): Extra settings to apply to crates. See
             `crates_repository.annotations` or `crates_vendor.annotations`.
         generate_binaries (bool): Whether to generate `rust_binary` targets for all bins.
+        resolver (str): The resolver computing features and dependencies, `cargo` or `cargo_tree`.
         generate_build_scripts (bool): Whether or not to globally disable build scripts.
         generate_target_compatible_with (bool): DEPRECATED: Moved to `render_config`.
         cargo_config (str): The optional contents of a [Cargo config][cargo_config].
@@ -319,6 +321,7 @@ def compile_config(
     config = struct(
         generate_binaries = generate_binaries,
         generate_build_scripts = generate_build_scripts,
+        resolver = resolver,
         annotations = annotations,
         cargo_config = cargo_config,
         rendering = _update_render_config(
@@ -345,6 +348,7 @@ def generate_config(repository_ctx):
         generate_binaries = repository_ctx.attr.generate_binaries,
         generate_build_scripts = repository_ctx.attr.generate_build_scripts,
         generate_target_compatible_with = repository_ctx.attr.generate_target_compatible_with,
+        resolver = repository_ctx.attr.resolver,
         cargo_config = _read_cargo_config(repository_ctx),
         render_config = _get_render_config(repository_ctx),
         supported_platform_triples = repository_ctx.attr.supported_platform_triples,

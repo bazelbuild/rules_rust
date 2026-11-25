@@ -63,9 +63,9 @@ rust_library(
             "extra-traits",  # arm-unknown-linux-gnueabi
             "visit-mut",  # arm-unknown-linux-gnueabi
         ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "extra-traits",  # i686-pc-windows-msvc
-            "visit-mut",  # i686-pc-windows-msvc
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "extra-traits",  # i686-apple-darwin
+            "visit-mut",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "extra-traits",  # i686-unknown-linux-gnu
@@ -74,6 +74,10 @@ rust_library(
         "@rules_rust//rust/platform:loongarch64-unknown-linux-gnu": [
             "extra-traits",  # loongarch64-unknown-linux-gnu
             "visit-mut",  # loongarch64-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:mips-unknown-linux-gnu": [
+            "extra-traits",  # mips-unknown-linux-gnu
+            "visit-mut",  # mips-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "extra-traits",  # powerpc-unknown-linux-gnu
@@ -86,6 +90,14 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "extra-traits",  # s390x-unknown-linux-gnu
             "visit-mut",  # s390x-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:sparc64-unknown-netbsd": [
+            "extra-traits",  # sparc64-unknown-netbsd
+            "visit-mut",  # sparc64-unknown-netbsd
+        ],
+        "@rules_rust//rust/platform:sparc64-unknown-openbsd": [
+            "extra-traits",  # sparc64-unknown-openbsd
+            "visit-mut",  # sparc64-unknown-openbsd
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "extra-traits",  # x86_64-apple-darwin

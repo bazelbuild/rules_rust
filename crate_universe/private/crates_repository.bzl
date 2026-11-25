@@ -352,6 +352,16 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "repin_instructions": attr.string(
             doc = "Instructions to re-pin the repository if required. Many people have wrapper scripts for keeping dependencies up to date, and would like to point users to that instead of the default.",
         ),
+        "resolver": attr.string(
+            doc = (
+                "The resolver computing each crate's features and dependencies per platform. " +
+                "`cargo` runs Cargo's own feature resolver in-process. `cargo_tree` parses `cargo tree` " +
+                "output through a rustc wrapper, as releases before the in-process resolver did; it is " +
+                "an opt-out kept for one release in case the new resolver has a defect, and changing it repins."
+            ),
+            default = "cargo",
+            values = ["cargo", "cargo_tree"],
+        ),
         "rust_toolchain_cargo_template": attr.string(
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +

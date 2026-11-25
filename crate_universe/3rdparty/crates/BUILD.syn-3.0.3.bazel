@@ -38,6 +38,7 @@ rust_library(
         "clone-impls",
         "default",
         "derive",
+        "full",
         "parsing",
         "printing",
         "proc-macro",
@@ -117,8 +118,8 @@ rust_library(
     }),
     version = "3.0.3",
     deps = [
-        "@cui__proc-macro2-1.0.92//:proc_macro2",
-        "@cui__quote-1.0.37//:quote",
-        "@cui__unicode-ident-1.0.10//:unicode_ident",
+        "@cui__proc-macro2-1.0.107//:proc_macro2",
+        "@cui__quote-1.0.47//:quote",
+        "@cui__unicode-ident-1.0.27//:unicode_ident",
     ],
 )

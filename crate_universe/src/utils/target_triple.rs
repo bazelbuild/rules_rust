@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct TargetTriple(String);
 
 impl TargetTriple {
-    #[cfg(test)]
     pub(crate) fn from_bazel(bazel: String) -> Self {
         Self(bazel)
     }

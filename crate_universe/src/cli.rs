@@ -3,6 +3,7 @@
 mod generate;
 mod query;
 mod render;
+mod rustc_cfgs;
 mod splice;
 mod vendor;
 
@@ -26,6 +27,7 @@ pub use self::vendor::VendorOptions;
 pub use generate::generate;
 pub use query::query;
 pub use render::render;
+pub use rustc_cfgs::{rustc_cfgs, RustcCfgsOptions};
 pub use splice::splice;
 pub use vendor::vendor;
 
@@ -50,6 +52,10 @@ pub enum Options {
 
     /// Render a BUILD file for a single crate.
     Render(RenderOptions),
+
+    /// Record `rustc --print=cfg` for the supported platforms (maintenance of `rules_rust` itself).
+    #[clap(hide = true)]
+    RustcCfgs(RustcCfgsOptions),
 }
 
 // Convenience wrappers to avoid dependencies in the binary
@@ -59,7 +65,14 @@ pub fn parse_args() -> Options {
     Options::parse()
 }
 
-const EXPECTED_LOGGER_NAMES: [&str; 5] = ["Generate", "Splice", "Query", "Vendor", "Render"];
+const EXPECTED_LOGGER_NAMES: [&str; 6] = [
+    "Generate",
+    "Splice",
+    "Query",
+    "Vendor",
+    "Render",
+    "RustcCfgs",
+];
 
 /// A wrapper for the tracing-subscriber default [FormatEvent]
 /// that prepends the name of the active CLI option.

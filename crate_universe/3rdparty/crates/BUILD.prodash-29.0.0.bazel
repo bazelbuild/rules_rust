@@ -116,7 +116,7 @@ rust_library(
     }),
     version = "29.0.0",
     deps = [
-        "@cui__log-0.4.19//:log",
+        "@cui__log-0.4.35//:log",
         "@cui__parking_lot-0.12.1//:parking_lot",
     ],
 )

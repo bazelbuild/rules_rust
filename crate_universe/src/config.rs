@@ -743,12 +743,36 @@ impl<'de> Visitor<'de> for GenBinariesVisitor {
     }
 }
 
+/// The resolver computing each crate's features and dependencies per platform.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum Resolver {
+    /// Cargo's own feature resolver, run in-process.
+    #[default]
+    Cargo,
+
+    /// `cargo tree` output parsed through a rustc wrapper, as before the
+    /// in-process resolver. An opt-out for one release in case of a defect.
+    CargoTree,
+}
+
+impl Resolver {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 /// Workspace specific settings to control how targets are generated
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Config {
     /// Whether to generate `rust_binary` targets for all bins by default
     pub(crate) generate_binaries: bool,
+
+    /// The resolver computing features and dependencies. The default is left
+    /// out of the serialized form so it does not enter the lockfile digest.
+    #[serde(default, skip_serializing_if = "Resolver::is_default")]
+    pub(crate) resolver: Resolver,
 
     /// Whether or not to generate Cargo build scripts by default
     pub(crate) generate_build_scripts: bool,
