@@ -2059,8 +2059,9 @@ def rustc_compile_action(
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
-        # rustc ignores `-Cstrip` on MSVC targets and always writes the PDB.
-        if toolchain.target_abi == "msvc":
+        # rustc ignores `-Cstrip` on MSVC targets and always writes the PDB, unless the link turns it off.
+        pdb_off = [f for f in getattr(ctx.attr, "rustc_flags", []) if f.lower().endswith("link-arg=/debug:none")]
+        if toolchain.target_abi == "msvc" and not pdb_off:
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
         elif toolchain.target_os.startswith(("mac", "darwin", "ios")):

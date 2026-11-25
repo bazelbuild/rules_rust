@@ -90,18 +90,26 @@ def _pdb_test_impl(env, target):
     env.expect.that_int(len(rustc)).equals(1)
     env.expect.that_collection(rustc[0].outputs.to_list()).contains_at_least(pdb_files)
 
-def _pdb_test(name, compilation_mode, rule = rust_binary, src = "main.rs"):
+def _no_pdb_test_impl(env, target):
+    env.expect.that_collection(getattr(target[OutputGroupInfo], "pdb_file", depset()).to_list()).contains_exactly([])
+
+    rustc = [a for a in target.actions if a.mnemonic == "Rustc"]
+    env.expect.that_int(len(rustc)).equals(1)
+    env.expect.that_collection([f.extension for f in rustc[0].outputs.to_list()]).not_contains("pdb")
+
+def _pdb_test(name, compilation_mode, rule = rust_binary, src = "main.rs", rustc_flags = [], impl = _pdb_test_impl):
     util.helper_target(
         rule,
         name = name + "_target",
         srcs = [src],
         edition = "2021",
+        rustc_flags = rustc_flags,
     )
 
     analysis_test(
         name = name,
         target = ":" + name + "_target",
-        impl = _pdb_test_impl,
+        impl = impl,
         config_settings = {
             # The mock toolchain cannot execute, so coverage must not build the binary.
             "//command_line_option:collect_code_coverage": False,
@@ -126,6 +134,9 @@ def _pdb_opt_test(name):
 def _pdb_cdylib_opt_test(name):
     _pdb_test(name, "opt", rule = rust_shared_library, src = "lib.rs")
 
+def _pdb_debug_none_test(name):
+    _pdb_test(name, "fastbuild", rustc_flags = ["-Clink-arg=/DEBUG:NONE"], impl = _no_pdb_test_impl)
+
 def msvc_pdb_test_suite(name):
     """Entry-point macro for the MSVC PDB output tests.
 
@@ -141,5 +152,6 @@ def msvc_pdb_test_suite(name):
             _pdb_fastbuild_test,
             _pdb_opt_test,
             _pdb_cdylib_opt_test,
+            _pdb_debug_none_test,
         ],
     )
