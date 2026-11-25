@@ -1300,8 +1300,12 @@ def construct_arguments(
 
     # Rustc arguments
     rustc_flags = ctx.actions.args()
+
+    # Both process wrappers rewrite the param file with its placeholders
+    # replaced before rustc reads it: the Rust one in `options.rs`, the
+    # bootstrap scripts in `util/process_wrapper/private`.
     rustc_flags.set_param_file_format("multiline")
-    rustc_flags.use_param_file("@%s", use_always = bool(ctx.executable._process_wrapper))
+    rustc_flags.use_param_file("@%s", use_always = True)
     rustc_flags.add_all([(crate_info.root, crate_info.root_path)], map_each = _get_crate_root_path)
     rustc_flags.add(crate_info.name, format = "--crate-name=%s")
     rustc_flags.add(crate_info.type, format = "--crate-type=%s")

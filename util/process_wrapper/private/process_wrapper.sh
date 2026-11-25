@@ -78,8 +78,37 @@ for name in $env_names; do
     esac
 done
 
+# Rewrite the param file $1 as $1.expanded with the placeholders of every
+# line replaced, recursing into the files that `@` lines name. This is what
+# the real process wrapper does with its param files, and rustc then reads
+# the rewritten file itself: one argument per line, the format Bazel writes.
+# Only builtins again: `read`, `printf` and redirections. The state lives in
+# the positional parameters since the function recurses and the shell has
+# no local variables.
+expand_param_file() {
+    : > "$1.expanded"
+    while IFS= read -r line || [ -n "$line" ]; do
+        expand_placeholders "$line"
+        case "$expanded" in
+            @*)
+                set -- "$1" "${expanded#@}"
+                expand_param_file "$2"
+                expanded="@$2.expanded"
+                ;;
+        esac
+        printf '%s\n' "$expanded" >> "$1.expanded"
+    done < "$1"
+}
+
 for arg in "$@"; do
     expand_placeholders "$arg"
+    case "$expanded" in
+        @*)
+            expand_param_file "${expanded#@}"
+            expand_placeholders "$arg"
+            expanded="$expanded.expanded"
+            ;;
+    esac
     set -- "$@" "$expanded"
     shift
 done

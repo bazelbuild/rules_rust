@@ -33,6 +33,18 @@ SET command=!command:${exec_root}=%exec_root%!
 :: Strip out the leading `--` argument.
 SET command=!command:~3!
 
+:: Rewrite every `@file` argument as `@file.expanded`, with the placeholders
+:: of each line replaced, as the real process wrapper does with its param
+:: files. rustc then reads the rewritten file itself: one argument per line,
+:: the format Bazel writes.
+for %%A in (%*) do (
+    SET "arg=%%~A"
+    if "!arg:~0,1!"=="@" (
+        CALL :expand_param_file "!arg:~1!"
+        SET "command=!command:%%~A=%%~A.expanded!"
+    )
+)
+
 :: Find the rustc.exe argument and sanitize it's path
 for %%A in (%*) do (
     SET arg=%%~A
@@ -53,3 +65,30 @@ SET exit_code=!errorlevel!
 
 :: Exit with the same exit code
 EXIT /b %exit_code%
+
+:: Write %~1.expanded beside the param file %~1 with the placeholders of
+:: every line replaced, recursing into the files that `@` lines name.
+::
+:: Each line is read with delayed expansion off, so that `!` and `^` in it
+:: survive, and expanded with it on, so that `&`, `|` and `<>` in it are
+:: never interpreted. `FOR /F` skips empty lines, which a param file of
+:: rustc flags does not contain.
+:expand_param_file
+SETLOCAL DisableDelayedExpansion
+SET "param_file=%~1"
+TYPE NUL > "%param_file%.expanded"
+FOR /F "usebackq delims=" %%L IN ("%param_file%") DO (
+    SET "line=%%L"
+    SETLOCAL EnableDelayedExpansion
+    SET "line=!line:${pwd}=%CD%!"
+    SET "line=!line:${output_base}=%output_base%!"
+    SET "line=!line:${exec_root}=%exec_root%!"
+    IF "!line:~0,1!"=="@" (
+        CALL :expand_param_file "!line:~1!"
+        SET "line=!line!.expanded"
+    )
+    >> "%param_file%.expanded" ECHO(!line!
+    ENDLOCAL
+)
+ENDLOCAL
+EXIT /b 0
