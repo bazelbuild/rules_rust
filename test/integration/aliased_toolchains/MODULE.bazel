@@ -17,6 +17,6 @@ rust.toolchain(
 )
 
 # Ensure the repos can be used directly and via the hub.
-use_repo(rust, "rust_linux", "rust_toolchains", "rustfmt_win")
+use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:rust_linux", "@rust_toolchains//:rustfmt_win")

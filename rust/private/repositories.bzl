@@ -14,7 +14,6 @@ load(
     "BUILD_for_rust_toolchain",
     "BUILD_for_rustdoc_toolchain",
     "BUILD_for_rustfmt_toolchain",
-    "BUILD_for_toolchain",
     "DEFAULT_EXTRA_TARGET_TRIPLES",
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
@@ -53,8 +52,8 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
 _COMPACT_WINDOWS_NAMES = True
 
 # The toolchains declared next to every `rust_toolchain` in its tools
-# repository, keyed by the name of their target there and in the proxy
-# repository. They come from the same Rust release as `rustc` and must stay
+# repository, keyed by the name of their target there. They come from the
+# same Rust release as `rustc` and must stay
 # with it (`rustdoc` and `clippy-driver` are rustc drivers which must match
 # `rustc` exactly), so they are registered with the same constraints and
 # target settings as the `rust_toolchain` they accompany and resolve in
@@ -229,14 +228,6 @@ def rust_register_toolchains(
         urls = urls,
         sha256s = sha256s,
     )
-    toolchain_repository_proxy(
-        name = rust_analyzer_repo_name,
-        toolchain = "@{}//:rust_analyzer_toolchain".format(rust_analyzer_repo_name + "_tools"),
-        toolchain_type = "@rules_rust//rust/rust_analyzer:toolchain_type",
-        exec_compatible_with = [],
-        target_compatible_with = [],
-    )
-
     toolchain_names.append(rust_analyzer_repo_name)
     toolchain_labels[rust_analyzer_repo_name] = "@{}_tools//:rust_analyzer_toolchain".format(
         rust_analyzer_repo_name,
@@ -309,14 +300,6 @@ def rust_register_toolchains(
             sha256s = sha256s,
             exec_triple = exec_triple,
         )
-        toolchain_repository_proxy(
-            name = rustfmt_repo_name,
-            toolchain = "@{}//:rustfmt_toolchain".format(rustfmt_repo_name + "_tools"),
-            toolchain_type = "@rules_rust//rust/rustfmt:toolchain_type",
-            exec_compatible_with = triple_to_constraint_set(exec_triple),
-            target_compatible_with = [],
-        )
-
         toolchain_names.append(rustfmt_repo_name)
         toolchain_labels[rustfmt_repo_name] = "@{}_tools//:rustfmt_toolchain".format(rustfmt_repo_name)
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
@@ -794,78 +777,11 @@ rust_toolchain_tools_repository = repository_rule(
         "`rust_toolchain` and its companions, naming the others through `rustc_anchor`, " +
         "`std_anchor`, `cargo_anchor` and `clippy_anchor`.\n" +
         "\n" +
-        "A given instance of this rule should be accompanied by a toolchain_repository_proxy " +
-        "invocation to declare its toolchains to Bazel; the indirection allows separating toolchain " +
-        "selection from toolchain fetching."
+        "The toolchains are declared to Bazel by the `toolchain_repository_hub`, which only " +
+        "names this repository: it is fetched once toolchain resolution selects one of its toolchains."
     ),
     attrs = _RUST_TOOLCHAIN_REPOSITORY_ATTRS,
     implementation = _rust_toolchain_tools_repository_impl,
-)
-
-def _toolchain_repository_proxy_impl(repository_ctx):
-    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
-        repository_ctx.name,
-    ))
-
-    toolchains = {"toolchain": (repository_ctx.attr.toolchain, repository_ctx.attr.toolchain_type)}
-    for name, toolchain in repository_ctx.attr.extra_toolchains.items():
-        if name not in repository_ctx.attr.extra_toolchain_types:
-            fail("`extra_toolchain_types` is missing the toolchain type of `{}`. Please update {}".format(
-                name,
-                repository_ctx.name,
-            ))
-        toolchains[name] = (toolchain, repository_ctx.attr.extra_toolchain_types[name])
-
-    repository_ctx.file("BUILD.bazel", "\n".join([
-        BUILD_for_toolchain(
-            name = name,
-            toolchain = toolchain,
-            target_settings = repository_ctx.attr.target_settings,
-            toolchain_type = toolchain_type,
-            target_compatible_with = repository_ctx.attr.target_compatible_with,
-            exec_compatible_with = repository_ctx.attr.exec_compatible_with,
-        )
-        for name, (toolchain, toolchain_type) in toolchains.items()
-    ]))
-    if hasattr(repository_ctx, "repo_metadata"):
-        return repository_ctx.repo_metadata(reproducible = True)
-    return None
-
-toolchain_repository_proxy = repository_rule(
-    doc = (
-        "Generates a toolchain-bearing repository that declares the toolchains from some other " +
-        "rust_toolchain_repository."
-    ),
-    attrs = {
-        "exec_compatible_with": attr.string_list(
-            doc = "A list of constraints for the execution platform for this toolchain.",
-        ),
-        "extra_toolchain_types": attr.string_dict(
-            doc = "The toolchain types of `extra_toolchains`, keyed the same way.",
-        ),
-        "extra_toolchains": attr.string_dict(
-            doc = (
-                "Further toolchain implementation targets to declare with the same constraints and " +
-                "target settings as `toolchain`, keyed by the name of the `toolchain` target to declare. " +
-                "Used for the toolchains which accompany a `rust_toolchain` and must resolve with it."
-            ),
-        ),
-        "target_compatible_with": attr.string_list(
-            doc = "A list of constraints for the target platform for this toolchain.",
-        ),
-        "target_settings": attr.string_list(
-            doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
-        ),
-        "toolchain": attr.string(
-            doc = "The name of the toolchain implementation target, declared as `:toolchain`.",
-            mandatory = True,
-        ),
-        "toolchain_type": attr.string(
-            doc = "The toolchain type of the toolchain to declare",
-            mandatory = True,
-        ),
-    },
-    implementation = _toolchain_repository_proxy_impl,
 )
 
 def _shared_tool_repositories(
@@ -944,148 +860,6 @@ def _target_components(exec_triple, target_triple, shared):
     if target_triple == exec_triple:
         return {"components": [], "std_anchor": shared[COMPONENT.rustc]}
     return {"components": TARGET_COMPONENTS, "std_anchor": None}
-
-# N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)
-# without actually downloading the toolchain.
-def rust_toolchain_repository(
-        name,
-        version,
-        exec_triple,
-        target_triple,
-        exec_compatible_with = None,
-        target_compatible_with = None,
-        target_settings = [],
-        channel = None,
-        allocator_library = None,
-        global_allocator_library = None,
-        dlltool = None,
-        edition = None,
-        dev_components = False,
-        extra_rustc_flags = None,
-        extra_exec_rustc_flags = None,
-        opt_level = None,
-        strip_level = None,
-        sha256s = None,
-        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        auth = None,
-        netrc = None,
-        auth_patterns = None):
-    """Assembles a remote repository for the given toolchain params, produces a proxy repository \
-    to contain the toolchain declaration, and registers the toolchains.
-
-    The release is spread over `<name>__rustc` (the compiler, the tools beside it and the
-    standard library of the execution platform), `<name>__cargo`, `<name>__clippy` and
-    `<name>_tools` (the standard library of another target triple and the toolchain
-    declarations), so that Cargo and Clippy are only fetched by targets running them.
-
-    Args:
-        name (str): The name of the generated repository
-        version (str): The version of the tool among "nightly", "beta", or an exact version.
-        exec_triple (str): The Rust-style target that this compiler runs on.
-        target_triple (str): The Rust-style target to build for.
-        channel (str, optional): The channel of the Rust toolchain.
-        exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
-        target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
-        target_settings (list of labels as strings, optional): A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
-        allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
-        global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common.link.
-        dlltool (str, optional): Target that provides the `dlltool` binary used to generate import libraries. Defaults to the `dlltool.exe` shipped in `rust-mingw` when both the exec and target triples are `*-pc-windows-gnu`. See `rust_toolchain.dlltool`.
-        edition (str, optional): The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its `edition` attribute.
-        dev_components (bool, optional): Whether to download the rustc-dev components.
-            Requires version to be "nightly". Defaults to False.
-        extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
-            Subject to Make variable expansion with respect to RUST_SYSROOT,
-            RUST_SYSROOT_SHORT, RUSTC, etc.
-        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
-            Subject to Make variable expansion with respect to RUST_SYSROOT,
-            RUST_SYSROOT_SHORT, RUSTC, etc.
-        opt_level (dict, optional): Optimization level config for this toolchain.
-        strip_level (dict, optional): Strip level config for this toolchain.
-        sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
-            [rust_register_toolchains](#rust_register_toolchains) for more details.
-        urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.gz']
-        auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
-            See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
-        netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
-        auth_patterns (list, optional): A list of patterns to match against urls for which the auth object should be used.
-
-    Returns:
-        dict[str, str]: Information about the registerable toolchain created by this rule.
-    """
-    if exec_compatible_with == None:
-        exec_compatible_with = triple_to_constraint_set(exec_triple)
-
-    if target_compatible_with == None:
-        target_compatible_with = triple_to_constraint_set(target_triple)
-
-    tools_repo_name = "{}_tools".format(name)
-
-    shared = _shared_tool_repositories(
-        name = name,
-        exec_triple = exec_triple,
-        version = version,
-        dlltool = dlltool,
-        dev_components = dev_components,
-        aliases = {},
-        compact_windows_names = False,
-        sha256s = sha256s,
-        urls = urls,
-        auth = auth,
-        netrc = netrc,
-        auth_patterns = auth_patterns,
-    )
-
-    rust_toolchain_tools_repository(
-        name = tools_repo_name,
-        exec_triple = exec_triple,
-        allocator_library = allocator_library,
-        global_allocator_library = global_allocator_library,
-        dlltool = dlltool,
-        target_triple = target_triple,
-        version = version,
-        edition = edition,
-        dev_components = dev_components,
-        extra_rustc_flags = extra_rustc_flags,
-        extra_exec_rustc_flags = extra_exec_rustc_flags,
-        opt_level = opt_level,
-        strip_level = strip_level,
-        sha256s = sha256s,
-        urls = urls,
-        auth = auth,
-        netrc = netrc,
-        auth_patterns = auth_patterns,
-        rustc_anchor = shared[COMPONENT.rustc],
-        cargo_anchor = shared[COMPONENT.cargo],
-        clippy_anchor = shared[COMPONENT.clippy],
-        **_target_components(exec_triple, target_triple, shared)
-    )
-
-    channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
-
-    tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
-
-    toolchain_type = "@rules_rust//rust:toolchain"
-
-    toolchain_repository_proxy(
-        name = name,
-        toolchain = tools_toolchain_label,
-        target_settings = channel_target_settings + target_settings,
-        toolchain_type = toolchain_type,
-        exec_compatible_with = exec_compatible_with,
-        target_compatible_with = target_compatible_with,
-        extra_toolchains = _companion_toolchain_labels(tools_repo_name),
-        extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
-    )
-
-    return {
-        "exec_compatible_with": exec_compatible_with,
-        "name": name,
-        "target_compatible_with": target_compatible_with,
-        "target_settings": target_settings,
-        "toolchain_label": "@{name}//:toolchain".format(name = name),
-        "toolchain_type": toolchain_type,
-        "tools_toolchain_label": tools_toolchain_label,
-    }
 
 _RUST_ANALYZER_TOOLCHAIN_TOOLS_REPOSITORY_ATTRS = {
     "auth": attr.string_dict(
@@ -1398,8 +1172,8 @@ def rust_repository_set(
         default_target_compatible_with = None,
         aliases = {},
         compact_windows_names = _COMPACT_WINDOWS_NAMES):
-    """Assembles a remote repository for the given toolchain params, produces a proxy repository \
-    to contain the toolchain declaration.
+    """Assembles the repositories for the given toolchain params and returns the details \
+    the hub needs to declare their toolchains.
 
     Per channel in `versions`, the release is spread over `<name>__<channel>__rustc` (the compiler,
     the tools beside it and the standard library of the execution platform, shared by every target
@@ -1515,32 +1289,20 @@ def rust_repository_set(
             **_target_components(exec_triple, toolchain.target_triple, shared)
         )
 
-        channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
         tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
         toolchain_type = "@rules_rust//rust:toolchain"
-
         companion_labels = _companion_toolchain_labels(tools_repo_name)
-        toolchain_repository_proxy(
-            name = toolchain.name,
-            toolchain = tools_toolchain_label,
-            target_settings = channel_target_settings + target_settings,
-            toolchain_type = toolchain_type,
-            exec_compatible_with = tc_exec_compatible_with,
-            target_compatible_with = tc_target_compatible_with,
-            extra_toolchains = companion_labels,
-            extra_toolchain_types = COMPANION_TOOLCHAIN_TYPES,
-        )
 
-        # The hub registers repository sets without the channel setting their
-        # proxy repositories carry: a set which only provides, say, a nightly
-        # resolves without `--@rules_rust//rust/toolchain/channel=nightly`,
+        # A repository set registers exactly the toolchains it was given, with
+        # the constraints and settings it was given, and without the channel
+        # setting of the default toolchains: a set which only provides, say, a
+        # nightly resolves without `--@rules_rust//rust/toolchain/channel=nightly`,
         # and modules rely on that.
         all_toolchain_details[toolchain.name] = {
             "exec_compatible_with": tc_exec_compatible_with,
             "name": toolchain.name,
             "target_compatible_with": tc_target_compatible_with,
             "target_settings": target_settings,
-            "toolchain_label": "@{name}//:toolchain".format(name = toolchain.name),
             "toolchain_type": toolchain_type,
             "tools_toolchain_label": tools_toolchain_label,
         }
@@ -1552,7 +1314,6 @@ def rust_repository_set(
                 "name": companion_name,
                 "target_compatible_with": tc_target_compatible_with,
                 "target_settings": target_settings,
-                "toolchain_label": "@{name}//:{companion}".format(name = toolchain.name, companion = companion),
                 "toolchain_type": companion_type,
                 "tools_toolchain_label": companion_labels[companion],
             }

@@ -345,10 +345,10 @@ _RUST_TOOLCHAIN_TAG = tag_class(
     attrs = {
         "aliases": attr.string_dict(
             doc = (
-                "Map of full toolchain repository name to an alias. If any repository is created by this " +
-                "extension matches a key in this dictionary, the name of the created repository will be " +
-                "remapped to the value instead. This may be required to work around path length limits " +
-                "on Windows."
+                "Map of full toolchain name to an alias. If any toolchain created by this extension " +
+                "matches a key in this dictionary, its name (the `toolchain` target in the hub " +
+                "repository and the prefix of its `_tools` repository) is remapped to the value instead. " +
+                "This may be required to work around path length limits on Windows."
             ),
             default = {},
         ),
