@@ -40,6 +40,7 @@ load(
     "third_party_dir",
     "toolchain_generated_sysroot",
     "toolchain_linker_preference",
+    "toolchain_linker_wrapper",
     "unpretty",
     "zself_profile_events",
 )
@@ -137,6 +138,8 @@ third_party_dir()
 toolchain_generated_sysroot()
 
 toolchain_linker_preference()
+
+toolchain_linker_wrapper()
 
 unpretty()
 
