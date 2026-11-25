@@ -60,3 +60,23 @@ register_toolchains(
     "//tools/toolchains:pylint_toolchain",
     dev_dependency = True,
 )
+
+# The embedding fixture uses one version-specific PyO3 graph for both outputs.
+pyo3_embedding_crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate", dev_dependency = True)
+pyo3_embedding_crate.from_cargo(
+    name = "pyo3_embedding_crates",
+    cargo_lockfile = "//test/embedding:Cargo.lock",
+    manifests = ["//test/embedding:Cargo.toml"],
+)
+pyo3_embedding_crate.annotation(
+    build_script_env = {
+        "PYO3_BUILD_EXTENSION_MODULE": "1",
+        "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+        "PYO3_NO_PYTHON": "1",
+    },
+    build_script_toolchains = ["//:current_pyo3_toolchain"],
+    crate = "pyo3-ffi",
+    repositories = ["pyo3_embedding_crates"],
+    version = "0.29.3",
+)
+use_repo(pyo3_embedding_crate, "pyo3_embedding_crates")
