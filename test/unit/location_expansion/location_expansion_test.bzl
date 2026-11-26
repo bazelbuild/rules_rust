@@ -66,6 +66,26 @@ def _location_expansion_build_script_env_test(ctx):
 
 location_expansion_build_script_env_test = analysistest.make(_location_expansion_build_script_env_test)
 
+def _location_expansion_inherited_rustc_env_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = _find_action(tut, "Rustc")
+    if not action:
+        fail("No Rustc action found")
+
+    # A `rust_test` built from `crate = ":mylibrary_env"` inherits the
+    # crate's expanded `MY_DATA`, a configuration-specific path. Sanity-check
+    # that here; the build-time guard is the target itself, as for
+    # `mylibrary_env` and `mytest_env`: `include_bytes!(env!("MY_DATA"))`
+    # fails to build under `--experimental_output_paths=strip` if the action
+    # is mapped (its input staged under `bazel-out/cfg/` while the env still
+    # names `ctx.bin_dir`), which it was before this change.
+    expected = "${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/flag_execpaths.data"
+    assert_env_value(env, action, "MY_DATA", expected)
+    return analysistest.end(env)
+
+location_expansion_inherited_rustc_env_test = analysistest.make(_location_expansion_inherited_rustc_env_test)
+
 def _location_expansion_test():
     for suffix in ("execpath", "execpaths", "location", "locations"):
         write_file(
@@ -126,6 +146,15 @@ def _location_expansion_test():
         ],
     )
 
+    # A test built from `mylibrary_env` itself (`crate = ...`): it carries the
+    # crate's expanded `rustc_env` and none of its own, the shape whose
+    # path-mapping decision cannot see a location macro in `attr.rustc_env`.
+    rust_test(
+        name = "mylibrary_env_test",
+        crate = ":mylibrary_env",
+        edition = "2018",
+    )
+
     cargo_build_script(
         name = "mybuildscript",
         srcs = ["build_script.rs"],
@@ -151,6 +180,11 @@ def _location_expansion_test():
         target_under_test = ":mybuildscript",
     )
 
+    location_expansion_inherited_rustc_env_test(
+        name = "location_expansion_inherited_rustc_env_test",
+        target_under_test = ":mylibrary_env_test",
+    )
+
 def location_expansion_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -165,5 +199,6 @@ def location_expansion_test_suite(name):
             ":location_expansion_rustc_flags_test",
             ":location_expansion_rustc_env_test",
             ":location_expansion_build_script_env_test",
+            ":location_expansion_inherited_rustc_env_test",
         ],
     )
