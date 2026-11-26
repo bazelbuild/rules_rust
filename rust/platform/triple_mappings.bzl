@@ -166,7 +166,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "android": "android",
     "bitrig": None,
     "darwin": "osx",
-    "dragonfly": None,
+    "dragonfly": "dragonfly",
     "eabi": "none",
     "eabihf": "none",
     "emscripten": "emscripten",
@@ -193,6 +193,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
+    "dragonfly": "",
     "eabi": "",
     "eabihf": "",
     "emscripten": ".js",
@@ -205,6 +206,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "nixos": "",
     "none": "",
     "nto": "",
+    "openbsd": "",
     "threads": ".wasm",
     "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
@@ -220,6 +222,7 @@ _SYSTEM_TO_BINARY_EXT = {
 _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
+    "dragonfly": ".a",
     "eabi": ".a",
     "eabihf": ".a",
     "emscripten": ".js",
@@ -232,6 +235,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
+    "openbsd": ".a",
     "threads": ".a",
     "uefi": ".lib",
     "unknown": ".a",
@@ -244,6 +248,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
 _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
+    "dragonfly": ".so",
     "eabi": ".so",
     "eabihf": ".so",
     "emscripten": ".js",
@@ -256,6 +261,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
+    "openbsd": ".so",
     "threads": ".wasm",
     "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
