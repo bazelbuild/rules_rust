@@ -137,7 +137,7 @@ StdLibInfo = provider(
     fields = {
         "alloc_files": "List[File]: `.a` files related to the `alloc` module.",
         "between_alloc_and_core_files": "List[File]: `.a` files related to the `compiler_builtins` module.",
-        "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.",
+        "between_core_and_std_files": "List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, `memchr`, `std`, and test harness crates (`test`, `getopts`, `unicode_width`).",
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "has_profiler_builtins": "bool: Whether the sysroot contains the profiler_builtins rlib, required for -Cinstrument-coverage.",
@@ -148,7 +148,7 @@ StdLibInfo = provider(
         "std_dylib": "File: libstd.so file",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
-        "test_files": "Depset[File]: `.a` files associated with the `test` module.",
+        "test_files": "List[File]: `.a` files associated with the `test` harness and its exclusive transitive dependencies (`test`, `getopts`, `unicode_width`) in topological link order.",
     },
 )
 

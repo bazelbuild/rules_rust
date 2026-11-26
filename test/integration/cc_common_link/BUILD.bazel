@@ -28,6 +28,21 @@ rust_binary(
     ],
 )
 
+rust_binary(
+    name = "bin_with_test_flag",
+    srcs = ["test.rs"],
+    edition = "2021",
+    rustc_flags = ["--test"],
+    deps = [":rdep"],
+)
+
+rust_test(
+    name = "bin_with_test_flag_test",
+    srcs = ["bin_with_test_flag_test.rs"],
+    data = [":bin_with_test_flag"],
+    edition = "2021",
+)
+
 rust_test(
     name = "test",
     srcs = ["test.rs"],
