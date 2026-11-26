@@ -1,0 +1,3 @@
+load(":flags_file_out_dir_test.bzl", "flags_file_out_dir_test_suite")
+
+flags_file_out_dir_test_suite(name = "flags_file_out_dir_test_suite")
