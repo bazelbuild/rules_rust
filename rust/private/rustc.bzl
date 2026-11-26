@@ -2152,7 +2152,17 @@ def rustc_compile_action(
     linking_outputs = None
     dep_cc_infos = None
     if experimental_use_cc_common_link:
-        dep_cc_infos = _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib)
+        include_libtest = (
+            (crate_info.is_test or _has_test_flag(ctx, attr, toolchain, crate_info, rust_flags)) and
+            not is_no_std(ctx, toolchain, crate_info.is_test)
+        )
+        dep_cc_infos = _collect_dep_cc_infos(
+            ctx,
+            toolchain,
+            crate_info,
+            link_std_dylib,
+            include_libtest = include_libtest,
+        )
         linking_contexts = [cc_info.linking_context for cc_info in dep_cc_infos]
 
         # In the cc_common.link action we need to pass the name of the final
@@ -2394,7 +2404,15 @@ def _should_use_rustc_allocator_libraries(toolchain):
         return toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting
     return bool(use_or_default)
 
-def _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib):
+def _has_test_flag(ctx, attr, toolchain, crate_info, rust_flags):
+    """Returns True if `--test` is passed to rustc via attributes, extra flags, or caller flags."""
+    return (
+        "--test" in getattr(attr, "rustc_flags", []) or
+        "--test" in rust_flags or
+        "--test" in collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type)
+    )
+
+def _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib, include_libtest = False):
     """Collects CcInfo providers for the standard library, allocator, and dependencies.
 
     Args:
@@ -2402,24 +2420,26 @@ def _collect_dep_cc_infos(ctx, toolchain, crate_info, link_std_dylib):
         toolchain (rust_toolchain): The current target's `rust_toolchain`.
         crate_info (CrateInfo): The `CrateInfo` provider of the target crate.
         link_std_dylib (bool): Whether the standard library is dynamically linked.
+        include_libtest (bool, optional): Whether to include `toolchain.libtest_ccinfo`. Defaults to `False`.
 
     Returns:
-        list[CcInfo]: `CcInfo` providers for malloc, std/alloc, stdlib linkflags, and crate dependencies.
+        list[CcInfo]: `CcInfo` providers for malloc, crate dependencies, test harness (if applicable), std/alloc, and stdlib linkflags.
     """
     malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
-    cc_infos = [
+    libtest_ccinfo = getattr(toolchain, "libtest_ccinfo", None) if include_libtest else None
+    return [
         cc_info
-        for cc_info in [
-            malloc_library[CcInfo],
-            _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib),
-            toolchain.stdlib_linkflags,
-        ]
+        for cc_info in (
+            [malloc_library[CcInfo]] +
+            [dep.cc_info for dep in crate_info.deps.to_list()] +
+            [
+                libtest_ccinfo,
+                _get_std_and_alloc_info(ctx, toolchain, crate_info, link_std_dylib),
+                toolchain.stdlib_linkflags,
+            ]
+        )
         if cc_info
     ]
-    for dep in crate_info.deps.to_list():
-        if dep.cc_info:
-            cc_infos.append(dep.cc_info)
-    return cc_infos
 
 def _establish_debug_package_info(
         ctx,

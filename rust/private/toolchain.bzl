@@ -13,6 +13,7 @@ load("//rust/private:lto.bzl", "RustLtoInfo")
 load(
     "//rust/private:rust_allocator_libraries.bzl",
     "make_libstd_and_allocator_ccinfo",
+    "make_libtest_ccinfo",
 )
 load("//rust/private:semver.bzl", "semver")
 load("//rust/private:sysroot.bzl", "symlink_sysroot_bin", "symlink_sysroot_tree")
@@ -25,6 +26,18 @@ load(
     "make_static_lib_symlink",
 )
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
+
+# Sysroot crates only needed when compiling/linking with the `test` harness
+# (`test -> getopts -> unicode_width`), in topological link order.
+_TEST_CRATE_NAMES = (
+    "test",
+    "getopts",
+    "unicode_width",
+)
+
+def _is_stdlib_crate(basename, crate_name):
+    """Returns True if `basename` is the `.a` symlink for stdlib crate `crate_name`."""
+    return basename.startswith(("lib" + crate_name + "-", "lib" + crate_name + "."))
 
 def _rust_stdlib_filegroup_impl(ctx):
     rust_std = ctx.files.srcs
@@ -46,8 +59,8 @@ def _rust_stdlib_filegroup_impl(ctx):
     std_rlibs = [f for f in rust_std if f.basename.endswith(".rlib")]
     has_profiler_builtins = any(["profiler_builtins" in f.basename for f in std_rlibs])
     if std_rlibs:
-        # test depends on std
-        # std depends on everything except test
+        # test -> getopts -> unicode_width -> std
+        # std depends on everything except test, getopts, and unicode_width
         #
         # core only depends on alloc, but we poke adler in there
         # because that needs to be before miniz_oxide
@@ -63,14 +76,19 @@ def _rust_stdlib_filegroup_impl(ctx):
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
         core_files = [f for f in dot_a_files if ("core" in f.basename or "adler" in f.basename) and "std" not in f.basename]
         panic_files = [f for f in dot_a_files if any([c in f.basename for c in ["cfg_if", "libc", "panic_abort", "panic_unwind", "unwind"]])]
+        test_files = [
+            f
+            for name in _TEST_CRATE_NAMES
+            for f in dot_a_files
+            if _is_stdlib_crate(f.basename, name)
+        ]
         between_core_and_std_files = [
             f
             for f in dot_a_files
-            if "alloc" not in f.basename and "compiler_builtins" not in f.basename and "core" not in f.basename and "adler" not in f.basename and "std" not in f.basename and "memchr" not in f.basename and "test" not in f.basename
+            if "alloc" not in f.basename and "compiler_builtins" not in f.basename and "core" not in f.basename and "adler" not in f.basename and "std" not in f.basename and "memchr" not in f.basename and f not in test_files
         ]
         memchr_files = [f for f in dot_a_files if "memchr" in f.basename]
         std_files = [f for f in dot_a_files if "std" in f.basename]
-        test_files = [f for f in dot_a_files if "test" in f.basename]
 
         partitioned_files_len = len(alloc_files) + len(between_alloc_and_core_files) + len(core_files) + len(between_core_and_std_files) + len(memchr_files) + len(std_files) + len(test_files)
         if partitioned_files_len != len(dot_a_files):
@@ -580,6 +598,12 @@ def _rust_toolchain_impl(ctx):
         nostd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "no_std_with_alloc", False),
         libstd_dylib_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std", True),
         libstd_dylib_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std", True),
+        libtest_ccinfo = make_libtest_ccinfo(
+            cc_toolchain = cc_toolchain,
+            feature_configuration = feature_configuration,
+            actions = ctx.actions,
+            rust_std = rust_std,
+        ),
         make_libstd_and_allocator_ccinfo = make_ccinfo,
         linker = sysroot.linker,
         linker_preference = linker_preference,

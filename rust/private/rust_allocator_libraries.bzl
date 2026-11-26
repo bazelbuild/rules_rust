@@ -207,19 +207,10 @@ def make_libstd_and_allocator_ccinfo(
                 order = "topological",
             )
 
-        test_inputs = depset(
-            [
-                _ltl(f, actions, cc_toolchain, feature_configuration)
-                for f in rust_stdlib_info.test_files
-            ],
-            transitive = [std_inputs],
-            order = "topological",
-        )
-
         if std == "std":
             link_inputs = cc_common.create_linker_input(
                 owner = rust_std.label,
-                libraries = test_inputs,
+                libraries = std_inputs,
             )
         elif std == "no_std_with_alloc":
             link_inputs = cc_common.create_linker_input(
@@ -248,6 +239,47 @@ def make_libstd_and_allocator_ccinfo(
             direct_cc_infos = cc_infos,
         )
     return None
+
+def make_libtest_ccinfo(
+        *,
+        cc_toolchain,
+        feature_configuration,
+        actions,
+        rust_std):
+    """Make the CcInfo (if possible) for the Rust test harness libraries.
+
+    Args:
+        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used (can be None).
+        feature_configuration (feature_configuration): feature_configuration to be queried (can be None).
+        actions: The rule's ctx.actions object.
+        rust_std (Target): The Rust standard library target.
+
+    Returns:
+        Optional[CcInfo]: A CcInfo object for the test harness libraries, or None if unavailable.
+    """
+    if not cc_toolchain or not rust_std or rust_common.stdlib_info not in rust_std:
+        return None
+
+    rust_stdlib_info = rust_std[rust_common.stdlib_info]
+    if not rust_stdlib_info.test_files:
+        return None
+
+    test_inputs = depset(
+        [
+            _ltl(f, actions, cc_toolchain, feature_configuration)
+            for f in rust_stdlib_info.test_files
+        ],
+        order = "topological",
+    )
+    link_input = cc_common.create_linker_input(
+        owner = rust_std.label,
+        libraries = test_inputs,
+    )
+    return CcInfo(
+        linking_context = cc_common.create_linking_context(
+            linker_inputs = depset([link_input], order = "topological"),
+        ),
+    )
 
 # Attributes for rust-based allocator library support.
 # Can't add it directly to RUSTC_ATTRS above, as those are used as
