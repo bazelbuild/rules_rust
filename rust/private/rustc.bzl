@@ -1700,6 +1700,20 @@ def construct_arguments(
         if rustc_env_attr:
             target_has_location_expansion = has_location_expansion(rustc_env_attr.values())
 
+    # A `rust_test` with `crate` inherits that crate's `rustc_env`, already
+    # expanded in the crate's own rule, so no marker is left in this
+    # target's `attr.rustc_env` to find. An env value is never path-mapped,
+    # so one that names this configuration's output directory is as
+    # configuration-specific as an unexpanded macro: path mapping would stage
+    # the file it names under `bazel-out/cfg/` while the value still points
+    # at `ctx.bin_dir`.
+    if not target_has_location_expansion:
+        bin_dir = ctx.bin_dir.path + "/"
+        target_has_location_expansion = any([
+            bin_dir in value
+            for value in crate_info.rustc_env.values()
+        ])
+
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,
