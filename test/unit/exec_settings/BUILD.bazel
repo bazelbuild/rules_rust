@@ -1,0 +1,3 @@
+load(":exec_settings_test.bzl", "exec_settings_test_suite")
+
+exec_settings_test_suite(name = "exec_settings_test_suite")
