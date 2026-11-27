@@ -1,6 +1,18 @@
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load(":strip_level_test.bzl", "strip_level_test_suite")
 
 rust_library(
     name = "hello",
     srcs = ["hello.rs"],
+)
+
+rust_binary(
+    name = "bin",
+    srcs = ["main.rs"],
+    edition = "2021",
+)
+
+strip_level_test_suite(
+    name = "strip_level_test_suite",
+    target_under_test = ":bin",
 )
