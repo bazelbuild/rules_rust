@@ -21,6 +21,7 @@ impl Default for UserConfig {
             // 713-crate workspace; per-package keeps it cargo-scoped.
             per_package_workspaces: true,
             output_base: None,
+            root_target_query: None,
         }
     }
 }
@@ -42,6 +43,11 @@ pub struct UserConfig {
     /// flag wins for one-off overrides.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_base: Option<Utf8PathBuf>,
+
+    /// `bazel query` expression that selects the targets for
+    /// whole-workspace discovery. `None` queries `//...`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root_target_query: Option<String>,
 }
 
 /// Read `<launcher_dir>/user_config.json`. Missing or malformed →
@@ -114,6 +120,7 @@ mod tests {
             clippy: true,
             per_package_workspaces: true,
             output_base: Some(Utf8PathBuf::from("/tmp/custom_flycheck_base")),
+            root_target_query: Some(r#"kind("rust_.* rule", //...)"#.to_owned()),
         };
         save(&dir, &original).unwrap();
         let loaded = load(&dir);
@@ -129,6 +136,11 @@ mod tests {
         let text = fs::read_to_string(dir.join(USER_CONFIG_FILENAME)).unwrap();
         assert!(
             !text.contains("output_base"),
+            "unset field should be omitted, got:\n{}",
+            text,
+        );
+        assert!(
+            !text.contains("root_target_query"),
             "unset field should be omitted, got:\n{}",
             text,
         );

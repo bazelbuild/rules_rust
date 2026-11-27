@@ -5,6 +5,7 @@
 use std::{
     env,
     io::{self, Write},
+    process,
 };
 
 use anyhow::Context;
@@ -12,8 +13,9 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{fmt::Formatter, Target, WriteStyle};
 use gen_rust_project_lib::{
-    bazel_info, generate_rust_project, install_dir, user_config, DiscoverProject, RustAnalyzerArg,
-    BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
+    bazel_info, discovery_query, generate_rust_project, install_dir, query_targets, user_config,
+    write_target_pattern_file, DiscoverProject, RemoveOnDrop, RustAnalyzerArg, BUILD_FILE_NAMES,
+    WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::{LevelFilter, Record};
 
@@ -47,8 +49,9 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
     // developer.
     let user = user_config::load(&install_dir()?);
     log::info!(
-        "user config: per_package_workspaces={}",
-        user.per_package_workspaces
+        "user config: per_package_workspaces={} root_target_query={:?}",
+        user.per_package_workspaces,
+        user.root_target_query
     );
 
     log::info!("got rust-analyzer argument: {rust_analyzer_argument:?}");
@@ -91,6 +94,20 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
          (per-call resolved to {per_call_buildfile}, targets {targets})"
     );
 
+    // Query instead of building the pattern so `manual` targets are kept.
+    let query = discovery_query(&targets, user.root_target_query.as_deref());
+    let labels = query_targets(
+        &bazel,
+        &workspace,
+        &output_base,
+        &bazel_startup_options,
+        &query,
+    )?;
+    let target_file = output_base.join(format!("rules_rust_ra_targets_{}.txt", process::id()));
+    let _target_file_cleanup = RemoveOnDrop(target_file.clone());
+    let mut build_args = bazel_args;
+    build_args.extend(write_target_pattern_file(&target_file, &labels)?);
+
     // Use the generated files to print the rust-project.json.
     let project = generate_rust_project(
         &bazel,
@@ -98,9 +115,9 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &workspace,
         &execution_root,
         &bazel_startup_options,
-        &bazel_args,
+        &build_args,
         rules_rust_name,
-        &[targets],
+        &[],
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })

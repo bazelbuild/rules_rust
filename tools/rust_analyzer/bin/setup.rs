@@ -148,6 +148,12 @@ struct Cli {
     #[arg(long, global = true, value_name = "PATH")]
     output_base: Option<Utf8PathBuf>,
 
+    /// Persist a `bazel query` expression that selects the targets for
+    /// whole-workspace discovery (default `//...`), into
+    /// `<launcher_dir>/user_config.json`. Pass an empty string to clear it.
+    #[arg(long, global = true, value_name = "QUERY")]
+    root_target_query: Option<String>,
+
     #[command(subcommand)]
     ide: IdeCmd,
 }
@@ -238,8 +244,13 @@ fn apply_user_config_edits(
     clippy: Option<bool>,
     per_package_workspaces: Option<bool>,
     output_base: Option<Utf8PathBuf>,
+    root_target_query: Option<String>,
 ) -> Result<()> {
-    if clippy.is_none() && per_package_workspaces.is_none() && output_base.is_none() {
+    if clippy.is_none()
+        && per_package_workspaces.is_none()
+        && output_base.is_none()
+        && root_target_query.is_none()
+    {
         return Ok(());
     }
     let mut config = user_config::load(launcher_dir);
@@ -252,10 +263,13 @@ fn apply_user_config_edits(
     if let Some(v) = output_base {
         config.output_base = Some(v);
     }
+    if let Some(v) = root_target_query {
+        config.root_target_query = Some(v).filter(|q| !q.trim().is_empty());
+    }
     user_config::save(launcher_dir, &config)?;
     info!(
-        "user_config: clippy={} per_package_workspaces={} output_base={:?}",
-        config.clippy, config.per_package_workspaces, config.output_base
+        "user_config: clippy={} per_package_workspaces={} output_base={:?} root_target_query={:?}",
+        config.clippy, config.per_package_workspaces, config.output_base, config.root_target_query
     );
     Ok(())
 }
@@ -271,6 +285,7 @@ fn main() -> Result<()> {
         no_clippy,
         clean,
         output_base,
+        root_target_query,
         ide,
     } = Cli::parse();
 
@@ -319,7 +334,13 @@ fn main() -> Result<()> {
 
     // Apply user_config edits before per-IDE dispatch so the runners
     // and any --dry-run flow see the same on-disk state.
-    apply_user_config_edits(&launcher_dir, pending_clippy, pending_ppw, output_base)?;
+    apply_user_config_edits(
+        &launcher_dir,
+        pending_clippy,
+        pending_ppw,
+        output_base,
+        root_target_query,
+    )?;
 
     // Pre-populate the flycheck server's bazel-info cache so the
     // steady-state clippy path never invokes `bazel info` on save.
@@ -1473,11 +1494,12 @@ mod tests {
                 clippy: false,
                 per_package_workspaces: true,
                 output_base: Some(Utf8PathBuf::from("/existing/base")),
+                root_target_query: Some("//rust/...".to_owned()),
             },
         )
         .unwrap();
 
-        apply_user_config_edits(&launcher_dir, Some(true), None, None).unwrap();
+        apply_user_config_edits(&launcher_dir, Some(true), None, None, None).unwrap();
 
         let loaded = user_config::load(&launcher_dir);
         assert!(loaded.clippy, "--clippy must land in the file");
@@ -1488,6 +1510,11 @@ mod tests {
         assert_eq!(
             loaded.output_base,
             Some(Utf8PathBuf::from("/existing/base")),
+            "unnamed fields must be preserved: got {loaded:?}",
+        );
+        assert_eq!(
+            loaded.root_target_query.as_deref(),
+            Some("//rust/..."),
             "unnamed fields must be preserved: got {loaded:?}",
         );
         let _ = std::fs::remove_dir_all(&dir);
@@ -1501,11 +1528,30 @@ mod tests {
         let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
         let path = Utf8PathBuf::from("/custom/flycheck/base");
 
-        apply_user_config_edits(&launcher_dir, None, None, Some(path.clone())).unwrap();
+        apply_user_config_edits(&launcher_dir, None, None, Some(path.clone()), None).unwrap();
 
         let loaded = user_config::load(&launcher_dir);
         assert_eq!(loaded.output_base, Some(path));
         assert!(!loaded.clippy, "unrelated fields must stay default");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn apply_user_config_edits_sets_and_clears_root_target_query() {
+        let dir = std::env::temp_dir().join(format!("setup_uc_rtq_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
+        let query = r#"kind("rust_.* rule", //...)"#.to_owned();
+
+        apply_user_config_edits(&launcher_dir, None, None, None, Some(query.clone())).unwrap();
+        assert_eq!(
+            user_config::load(&launcher_dir).root_target_query,
+            Some(query)
+        );
+
+        apply_user_config_edits(&launcher_dir, None, None, None, Some(String::new())).unwrap();
+        assert_eq!(user_config::load(&launcher_dir).root_target_query, None);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1519,7 +1565,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let launcher_dir = Utf8PathBuf::try_from(dir.clone()).unwrap();
 
-        apply_user_config_edits(&launcher_dir, None, None, None).unwrap();
+        apply_user_config_edits(&launcher_dir, None, None, None, None).unwrap();
 
         assert!(!launcher_dir
             .join(user_config::USER_CONFIG_FILENAME)

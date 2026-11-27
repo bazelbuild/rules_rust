@@ -76,9 +76,10 @@ Re-runnable at any time. Global flags work on any subcommand.
 | `--skip-rustfmt` | Don't manage the formatter key (use host rustfmt). |
 | `--per-package-workspaces` / `--no-per-package-workspaces` | Opt this developer in/out of per-package workspace splitting (see below). |
 | `--clippy` / `--no-clippy` | Opt this developer in/out of running clippy on save and streaming its diagnostics alongside rustc's. |
+| `--root-target-query <query>` | Set the `bazel query` expression whole-workspace discovery uses instead of `//...` (see below). Pass `''` to clear it. |
 | `--clean` | Delete `<launcher-dir>/cache/` before running the rest of setup. See Troubleshooting. |
 
-The `--clippy` and `--per-package-workspaces` toggles are **per-user**: they mutate `<launcher-dir>/user_config.json` (gitignored) instead of the shared committed settings file. Two developers on the same workspace can hold different preferences without touching the checked-in configuration. Editing `user_config.json` by hand works too.
+The `--clippy`, `--per-package-workspaces` and `--root-target-query` settings are **per-user**: they mutate `<launcher-dir>/user_config.json` (gitignored) instead of the shared committed settings file. Two developers on the same workspace can hold different preferences without touching the checked-in configuration. Editing `user_config.json` by hand works too.
 
 The `vscode` subcommand adds:
 
@@ -151,6 +152,22 @@ package. Caveat: _dependents_ of the package you're working on aren't
 indexed, so "find usages" can miss callers in other packages.
 
 Switch any time by re-running `setup` with or without the flag.
+
+## Discovered targets
+
+Discover runs `bazel query` on the package's targets (`//pkg:all`), or
+on `//...` for the whole workspace, and builds the result. Targets
+tagged `manual` are included. Incompatible targets are skipped.
+
+In a large or mixed-language workspace, limit whole-workspace discovery
+to the targets you edit:
+
+```
+bazel run @rules_rust//tools/rust_analyzer:setup -- --root-target-query='kind("rust_.* rule", //...)' vscode
+```
+
+The query only replaces `//...`. Per-package discovery still uses the
+saved file's package.
 
 ## Debugging
 
