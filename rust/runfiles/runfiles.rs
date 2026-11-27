@@ -86,7 +86,7 @@ pub enum RunfilesError {
 }
 
 impl std::fmt::Display for RunfilesError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RunfilesError::RunfilesDirNotFound => write!(f, "RunfilesDirNotFound"),
             RunfilesError::RunfilesDirIoError(err) => write!(f, "RunfilesDirIoError: {:?}", err),
