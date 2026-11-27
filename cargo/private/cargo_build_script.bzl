@@ -502,7 +502,20 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     if use_cc_toolchain:
-        cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+        # Bazel requests the cc coverage features whenever coverage is enabled
+        # (`coverage_enabled`/`coverage_instrumented` with newer rules_cc). Their
+        # flags (and variables such as `gcov_gcno_file`) only apply to
+        # instrumented cc_* compiles, so keep them out of the build script env.
+        cc_toolchain, feature_configuration = find_cc_toolchain(
+            ctx,
+            extra_unsupported_features = [
+                "coverage",
+                "coverage_enabled",
+                "coverage_instrumented",
+                "gcc_coverage_map_format",
+                "llvm_coverage_map_format",
+            ],
+        )
     else:
         cc_toolchain, feature_configuration = None, None
     linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)

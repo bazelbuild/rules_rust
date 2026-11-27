@@ -5,6 +5,7 @@ load(
     "bindir_relative_test",
     "clang_cl_paths_absolute_test",
     "clang_cl_paths_relative_test",
+    "coverage_features_disabled_test",
     "direct_libs_absolute_test",
     "direct_libs_as_flag_operand_test",
     "direct_libs_relative_test",
@@ -70,6 +71,8 @@ imacros_absolute_test(name = "imacros_absolute_test")
 imacros_relative_test(name = "imacros_relative_test")
 
 legacy_cc_toolchain_test(name = "legacy_cc_toolchain_test")
+
+coverage_features_disabled_test(name = "coverage_features_disabled_test")
 
 libpath_absolute_test(name = "libpath_absolute_test")
 
