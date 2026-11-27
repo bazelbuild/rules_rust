@@ -1033,6 +1033,14 @@ _RUST_TEST_ATTRS = {
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
+_RUST_LINK_EXEC_GROUPS = {
+    "rust_link": exec_group(
+        toolchains = [
+            str(Label("//rust:toolchain_type")),
+        ] + use_cc_toolchain(mandatory = False),
+    ),
+}
+
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
@@ -1047,6 +1055,7 @@ rust_library = rule(
         ),
     },
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1140,6 +1149,7 @@ rust_dylib_library = rule(
         ),
     },
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1202,6 +1212,7 @@ rust_static_library = rule(
     attrs = _COMMON_ATTRS | _PLATFORM_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_static_library_transition,
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1242,6 +1253,7 @@ rust_cdylib_library = rule(
     attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1267,6 +1279,7 @@ rust_proc_macro = rule(
     provides = COMMON_PROVIDERS,
     attrs = {name: value for name, value in _COMMON_ATTRS.items() if name != "link_deps"},
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1346,6 +1359,7 @@ rust_binary = rule(
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1496,6 +1510,7 @@ rust_binary_without_process_wrapper = rule(
     attrs = _common_attrs_for_binary_without_process_wrapper(_COMMON_ATTRS | _RUST_BINARY_ATTRS),
     executable = True,
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1511,6 +1526,7 @@ rust_library_without_process_wrapper = rule(
     provides = COMMON_PROVIDERS + [_RustBuiltWithoutProcessWrapperInfo],
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_COMMON_ATTRS).items()),
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1525,6 +1541,7 @@ rust_static_library_without_process_wrapper = rule(
     doc = "A variant of `rust_static_library` that uses a minimal process wrapper for `Rustc` actions.",
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_COMMON_ATTRS).items()),
     fragments = ["cpp"],
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1569,6 +1586,7 @@ rust_test_without_process_wrapper_test = rule(
     executable = True,
     fragments = ["cpp"],
     test = True,
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
@@ -1597,6 +1615,7 @@ rust_test = rule(
     fragments = ["cpp"],
     cfg = _rust_test_transition,
     test = True,
+    exec_groups = _RUST_LINK_EXEC_GROUPS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
     ] + use_cc_toolchain(mandatory = False),
