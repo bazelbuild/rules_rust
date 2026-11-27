@@ -446,6 +446,12 @@ rust_prost_library = rule(
     ],
 )
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _rust_prost_toolchain_impl(ctx):
     tonic_attrs = [ctx.attr.tonic_plugin_flag, ctx.attr.tonic_plugin, ctx.attr.tonic_runtime]
     if any(tonic_attrs) and not all(tonic_attrs):
@@ -464,7 +470,18 @@ def _rust_prost_toolchain_impl(ctx):
     else:
         proto_compiler = proto_toolchain.proto_compiler
 
-    return [platform_common.ToolchainInfo(
+    make_variables = {
+        "PROST_PLUGIN": ctx.executable.prost_plugin.path,
+        "PROST_PLUGIN_RLOCATIONPATH": _rlocationpath(ctx.executable.prost_plugin, ctx.workspace_name),
+    }
+    if ctx.executable.tonic_plugin:
+        make_variables.update({
+            "TONIC_PLUGIN": ctx.executable.tonic_plugin.path,
+            "TONIC_PLUGIN_RLOCATIONPATH": _rlocationpath(ctx.executable.tonic_plugin, ctx.workspace_name),
+        })
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
+    toolchain = platform_common.ToolchainInfo(
         prost_opts = ctx.attr.prost_opts,
         prost_plugin = ctx.attr.prost_plugin,
         prost_plugin_flag = ctx.attr.prost_plugin_flag,
@@ -478,11 +495,24 @@ def _rust_prost_toolchain_impl(ctx):
         tonic_runtime = ctx.attr.tonic_runtime,
         include_transitive_deps = ctx.attr.include_transitive_deps,
         compile_well_known_types = ctx.attr.compile_well_known_types,
-    )]
+        make_variables = make_variable_info,
+    )
+
+    return [
+        toolchain,
+        make_variable_info,
+    ]
 
 rust_prost_toolchain = rule(
     implementation = _rust_prost_toolchain_impl,
-    doc = "Rust Prost toolchain rule.",
+    doc = """\
+Rust Prost toolchain rule.
+
+`$(PROST_PLUGIN)` and `$(PROST_PLUGIN_RLOCATIONPATH)` and, when `tonic_plugin`
+is set, `$(TONIC_PLUGIN)` and `$(TONIC_PLUGIN_RLOCATIONPATH)` are available as
+Make variables to targets which list `@rules_rust_prost//:toolchain_type` in
+`toolchains`.
+""",
     fragments = ["proto"],
     attrs = dict({
         "compile_well_known_types": attr.bool(

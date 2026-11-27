@@ -1,5 +1,38 @@
+load("//rust:defs.bzl", "rust_test")
 load(":toolchain_make_variables_test.bzl", "toolchain_make_variable_test_suite")
 
 toolchain_make_variable_test_suite(
     name = "toolchain_make_variable_test_suite",
+)
+
+# The `*_RLOCATIONPATH` variables name the same binaries as their `*` pair,
+# but by runfiles path. The files of each `current_*_toolchain` alias are in
+# the runfiles of a target which lists it in `data`, so the test runs each
+# binary from there.
+rust_test(
+    name = "rlocationpath_test",
+    srcs = ["rlocationpath_test.rs"],
+    data = [
+        "//cargo:current_cargo_toolchain",
+        "//rust/toolchain:current_clippy_toolchain",
+        "//rust/toolchain:current_rust_toolchain",
+        "//rust/toolchain:current_rustdoc_toolchain",
+        "//rust/toolchain:current_rustfmt_toolchain",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "CARGO_RLOCATIONPATH": "$(CARGO_RLOCATIONPATH)",
+        "CLIPPY_DRIVER_RLOCATIONPATH": "$(CLIPPY_DRIVER_RLOCATIONPATH)",
+        "RUSTC_RLOCATIONPATH": "$(RUSTC_RLOCATIONPATH)",
+        "RUSTDOC_RLOCATIONPATH": "$(RUSTDOC_RLOCATIONPATH)",
+        "RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
+    },
+    toolchains = [
+        "//cargo:current_cargo_toolchain",
+        "//rust/toolchain:current_clippy_toolchain",
+        "//rust/toolchain:current_rust_toolchain",
+        "//rust/toolchain:current_rustdoc_toolchain",
+        "//rust/toolchain:current_rustfmt_toolchain",
+    ],
+    deps = ["//rust/runfiles"],
 )

@@ -1,0 +1,20 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+# A `toolchain_type` in `toolchains` resolves to the registered
+# `rust_wasm_bindgen_toolchain`, whose Make variables expand here.
+genrule(
+    name = "make_variables",
+    outs = ["make_variables.txt"],
+    cmd = """\
+echo 'WASM_BINDGEN_CLI=$(WASM_BINDGEN_CLI)' >> $@
+echo 'WASM_BINDGEN_CLI_RLOCATIONPATH=$(WASM_BINDGEN_CLI_RLOCATIONPATH)' >> $@
+echo 'WASM_BINDGEN_TEST_RUNNER=$(WASM_BINDGEN_TEST_RUNNER)' >> $@
+echo 'WASM_BINDGEN_TEST_RUNNER_RLOCATIONPATH=$(WASM_BINDGEN_TEST_RUNNER_RLOCATIONPATH)' >> $@
+""",
+    toolchains = ["//:toolchain_type"],
+)
+
+build_test(
+    name = "make_variables_test",
+    targets = [":make_variables"],
+)

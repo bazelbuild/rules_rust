@@ -287,6 +287,7 @@ def _rustfmt_toolchain_impl(ctx):
     if ctx.attr.rustc:
         make_variables.update({
             "RUSTC": ctx.file.rustc.path,
+            "RUSTC_RLOCATIONPATH": rlocationpath(ctx.file.rustc, ctx.workspace_name),
         })
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)

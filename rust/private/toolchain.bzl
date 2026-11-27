@@ -9,6 +9,7 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:lint_test.bzl", "rlocationpath")
 load("//rust/private:lto.bzl", "RustLtoInfo")
 load(
     "//rust/private:rust_allocator_libraries.bzl",
@@ -407,6 +408,7 @@ def _rust_toolchain_impl(ctx):
     # Variables for make variable expansion
     make_variables = {
         "RUSTC": sysroot.rustc.path,
+        "RUSTC_RLOCATIONPATH": rlocationpath(sysroot.rustc, ctx.workspace_name),
         "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
         "RUST_SYSROOT": sysroot_path,
         "RUST_SYSROOT_SHORT": sysroot_short_path,
@@ -417,16 +419,19 @@ def _rust_toolchain_impl(ctx):
     if sysroot.cargo:
         make_variables.update({
             "CARGO": sysroot.cargo.path,
+            "CARGO_RLOCATIONPATH": rlocationpath(sysroot.cargo, ctx.workspace_name),
         })
 
     if sysroot.rustdoc:
         make_variables.update({
             "RUSTDOC": sysroot.rustdoc.path,
+            "RUSTDOC_RLOCATIONPATH": rlocationpath(sysroot.rustdoc, ctx.workspace_name),
         })
 
     if sysroot.rustfmt:
         make_variables.update({
             "RUSTFMT": sysroot.rustfmt.path,
+            "RUSTFMT_RLOCATIONPATH": rlocationpath(sysroot.rustfmt, ctx.workspace_name),
         })
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
