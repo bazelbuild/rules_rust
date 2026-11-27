@@ -1,0 +1,25 @@
+module(
+    name = "cu_test_non_root_no_root_build",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# A non-root module that uses `crate.from_cargo`. This module has no root
+# `BUILD.bazel` and does not call `crate` itself.
+bazel_dep(name = "cu_test_cargo_aliases", version = "0.0.0")
+local_path_override(
+    module_name = "cu_test_cargo_aliases",
+    path = "../cargo_aliases",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

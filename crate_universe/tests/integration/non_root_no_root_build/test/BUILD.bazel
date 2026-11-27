@@ -1,0 +1,6 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+build_test(
+    name = "aliases_build_test",
+    targets = ["@cu_test_cargo_aliases//:aliases"],
+)
