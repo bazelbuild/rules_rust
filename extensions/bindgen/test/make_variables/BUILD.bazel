@@ -1,0 +1,20 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+# A `toolchain_type` in `toolchains` resolves to the registered
+# `rust_bindgen_toolchain`, whose Make variables expand here.
+genrule(
+    name = "make_variables",
+    outs = ["make_variables.txt"],
+    cmd = """\
+echo 'BINDGEN=$(BINDGEN)' >> $@
+echo 'BINDGEN_RLOCATIONPATH=$(BINDGEN_RLOCATIONPATH)' >> $@
+echo 'CLANG=$(CLANG)' >> $@
+echo 'CLANG_RLOCATIONPATH=$(CLANG_RLOCATIONPATH)' >> $@
+""",
+    toolchains = ["//:toolchain_type"],
+)
+
+build_test(
+    name = "make_variables_test",
+    targets = [":make_variables"],
+)

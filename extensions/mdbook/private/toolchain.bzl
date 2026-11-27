@@ -1,8 +1,15 @@
 """MDBook toolchain implementations"""
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _mdbook_toolchain_impl(ctx):
     make_variable_info = platform_common.TemplateVariableInfo({
         "MDBOOK": ctx.file.mdbook.path,
+        "MDBOOK_RLOCATIONPATH": _rlocationpath(ctx.file.mdbook, ctx.workspace_name),
     })
 
     all_files = [
@@ -28,7 +35,13 @@ def _mdbook_toolchain_impl(ctx):
 
 mdbook_toolchain = rule(
     implementation = _mdbook_toolchain_impl,
-    doc = "A [mdBook](https://rust-lang.github.io/mdBook/) toolchain.",
+    doc = """\
+A [mdBook](https://rust-lang.github.io/mdBook/) toolchain.
+
+`$(MDBOOK)` and `$(MDBOOK_RLOCATIONPATH)` are available as Make variables to
+targets which list `@rules_rust_mdbook//:toolchain`, a `current_mdbook_toolchain`,
+in `toolchains`.
+""",
     attrs = {
         "mdbook": attr.label(
             doc = "A `mdBook` binary.",

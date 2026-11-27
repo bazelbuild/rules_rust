@@ -1,0 +1,16 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+# `//:toolchain` provides the `mdbook` binary as its files, so a target which
+# lists it in `data` can run `$(MDBOOK_RLOCATIONPATH)` from its runfiles.
+rust_test(
+    name = "make_variables_test",
+    srcs = ["make_variables_test.rs"],
+    data = ["//:toolchain"],
+    edition = "2021",
+    rustc_env = {
+        "MDBOOK": "$(MDBOOK)",
+        "MDBOOK_RLOCATIONPATH": "$(MDBOOK_RLOCATIONPATH)",
+    },
+    toolchains = ["//:toolchain"],
+    deps = ["@rules_rust//rust/runfiles"],
+)

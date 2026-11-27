@@ -2,29 +2,38 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:lint_test.bzl", "rlocationpath")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_env_value")
 
 _RUST_TOOLCHAIN_ENV = {
     "ENV_VAR_RUSTC": "$(RUSTC)",
+    "ENV_VAR_RUSTC_RLOCATIONPATH": "$(RUSTC_RLOCATIONPATH)",
     "ENV_VAR_RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     "ENV_VAR_RUST_SYSROOT": "$(RUST_SYSROOT)",
 }
 
 _RUSTFMT_TOOLCHAIN_ENV = {
     "ENV_VAR_RUSTFMT": "$(RUSTFMT)",
+    "ENV_VAR_RUSTFMT_RLOCATIONPATH": "$(RUSTFMT_RLOCATIONPATH)",
 }
 
 _RUSTDOC_TOOLCHAIN_ENV = {
     "ENV_VAR_RUSTDOC": "$(RUSTDOC)",
+    "ENV_VAR_RUSTDOC_RLOCATIONPATH": "$(RUSTDOC_RLOCATIONPATH)",
 }
 
 _CLIPPY_TOOLCHAIN_ENV = {
     "ENV_VAR_CARGO_CLIPPY": "$(CARGO_CLIPPY)",
+    "ENV_VAR_CARGO_CLIPPY_RLOCATIONPATH": "$(CARGO_CLIPPY_RLOCATIONPATH)",
     "ENV_VAR_CLIPPY_DRIVER": "$(CLIPPY_DRIVER)",
+    "ENV_VAR_CLIPPY_DRIVER_RLOCATIONPATH": "$(CLIPPY_DRIVER_RLOCATIONPATH)",
 }
 
 _CARGO_TOOLCHAIN_ENV = {
     "ENV_VAR_CARGO": "$(CARGO)",
+    "ENV_VAR_CARGO_RLOCATIONPATH": "$(CARGO_RLOCATIONPATH)",
 }
 
 def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
@@ -43,31 +52,37 @@ def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
         env_vars = _RUSTFMT_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_RUSTFMT": toolchain.rustfmt.path,
+            "ENV_VAR_RUSTFMT_RLOCATIONPATH": rlocationpath(toolchain.rustfmt, ctx.workspace_name),
         }
     elif mnemonic in ["RustdocToolchainConsumer", "CurrentRustdocToolchainConsumer"]:
         toolchain = ctx.attr._current_rustdoc_toolchain[platform_common.ToolchainInfo]
         env_vars = _RUSTDOC_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_RUSTDOC": toolchain.rustdoc.path,
+            "ENV_VAR_RUSTDOC_RLOCATIONPATH": rlocationpath(toolchain.rustdoc, ctx.workspace_name),
         }
     elif mnemonic in ["ClippyToolchainConsumer", "CurrentClippyToolchainConsumer"]:
         toolchain = ctx.attr._current_clippy_toolchain[platform_common.ToolchainInfo]
         env_vars = _CLIPPY_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_CARGO_CLIPPY": toolchain.cargo_clippy.path,
+            "ENV_VAR_CARGO_CLIPPY_RLOCATIONPATH": rlocationpath(toolchain.cargo_clippy, ctx.workspace_name),
             "ENV_VAR_CLIPPY_DRIVER": toolchain.clippy_driver.path,
+            "ENV_VAR_CLIPPY_DRIVER_RLOCATIONPATH": rlocationpath(toolchain.clippy_driver, ctx.workspace_name),
         }
     elif mnemonic in ["CargoToolchainConsumer", "CurrentCargoToolchainConsumer"]:
         toolchain = ctx.attr._current_cargo_toolchain[platform_common.ToolchainInfo]
         env_vars = _CARGO_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_CARGO": toolchain.cargo.path,
+            "ENV_VAR_CARGO_RLOCATIONPATH": rlocationpath(toolchain.cargo, ctx.workspace_name),
         }
     else:
         toolchain = ctx.attr._current_rust_toolchain[platform_common.ToolchainInfo]
         env_vars = _RUST_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_RUSTC": toolchain.rustc.path,
+            "ENV_VAR_RUSTC_RLOCATIONPATH": rlocationpath(toolchain.rustc, ctx.workspace_name),
             "ENV_VAR_RUST_DEFAULT_EDITION": toolchain.default_edition or "",
             "ENV_VAR_RUST_SYSROOT": toolchain.sysroot,
         }

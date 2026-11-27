@@ -538,14 +538,39 @@ rust_bindgen = rule(
     ] + use_cc_toolchain(),
 )
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _rust_bindgen_toolchain_impl(ctx):
-    return platform_common.ToolchainInfo(
+    make_variables = {}
+    if ctx.executable.bindgen:
+        make_variables.update({
+            "BINDGEN": ctx.executable.bindgen.path,
+            "BINDGEN_RLOCATIONPATH": _rlocationpath(ctx.executable.bindgen, ctx.workspace_name),
+        })
+    if ctx.executable.clang:
+        make_variables.update({
+            "CLANG": ctx.executable.clang.path,
+            "CLANG_RLOCATIONPATH": _rlocationpath(ctx.executable.clang, ctx.workspace_name),
+        })
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
+    toolchain = platform_common.ToolchainInfo(
         bindgen = ctx.executable.bindgen,
         clang = ctx.executable.clang,
         libclang = ctx.attr.libclang,
         libstdcxx = ctx.attr.libstdcxx,
         default_rustfmt = ctx.attr.default_rustfmt,
+        make_variables = make_variable_info,
     )
+
+    return [
+        toolchain,
+        make_variable_info,
+    ]
 
 rust_bindgen_toolchain = rule(
     _rust_bindgen_toolchain_impl,
@@ -576,6 +601,10 @@ toolchain(
 
 This toolchain will then need to be registered in the current `WORKSPACE`.
 For additional information, see the [Bazel toolchains documentation](https://docs.bazel.build/versions/master/toolchains.html).
+
+`$(BINDGEN)` and `$(BINDGEN_RLOCATIONPATH)` and, when `clang` is set, `$(CLANG)`
+and `$(CLANG_RLOCATIONPATH)` are available as Make variables to targets which
+list `@rules_rust_bindgen//:toolchain_type` in `toolchains`.
 """,
     attrs = {
         "bindgen": attr.label(

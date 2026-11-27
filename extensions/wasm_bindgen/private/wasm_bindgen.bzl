@@ -206,6 +206,12 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
     ],
 )
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _rust_wasm_bindgen_toolchain_impl(ctx):
     all_test_files = depset()
     if ctx.attr.wasm_bindgen_test or ctx.attr.webdriver or ctx.attr.browser_type:
@@ -233,7 +239,20 @@ def _rust_wasm_bindgen_toolchain_impl(ctx):
 
         all_test_files = depset(transitive = all_depsets)
 
-    return platform_common.ToolchainInfo(
+    make_variables = {}
+    if ctx.executable.wasm_bindgen_cli:
+        make_variables.update({
+            "WASM_BINDGEN_CLI": ctx.executable.wasm_bindgen_cli.path,
+            "WASM_BINDGEN_CLI_RLOCATIONPATH": _rlocationpath(ctx.executable.wasm_bindgen_cli, ctx.workspace_name),
+        })
+    if ctx.executable.wasm_bindgen_test_runner:
+        make_variables.update({
+            "WASM_BINDGEN_TEST_RUNNER": ctx.executable.wasm_bindgen_test_runner.path,
+            "WASM_BINDGEN_TEST_RUNNER_RLOCATIONPATH": _rlocationpath(ctx.executable.wasm_bindgen_test_runner, ctx.workspace_name),
+        })
+    make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
+    toolchain = platform_common.ToolchainInfo(
         wasm_bindgen_cli = ctx.executable.wasm_bindgen_cli,
         wasm_bindgen_test = ctx.attr.wasm_bindgen_test,
         wasm_bindgen_test_runner = ctx.executable.wasm_bindgen_test_runner,
@@ -243,10 +262,16 @@ def _rust_wasm_bindgen_toolchain_impl(ctx):
         browser_type = ctx.attr.browser_type,
         browser = ctx.executable.browser,
         all_test_files = all_test_files,
+        make_variables = make_variable_info,
 
         # Deprecated
         bindgen = ctx.executable.wasm_bindgen_cli,
     )
+
+    return [
+        toolchain,
+        make_variable_info,
+    ]
 
 rust_wasm_bindgen_toolchain = rule(
     implementation = _rust_wasm_bindgen_toolchain_impl,
@@ -278,6 +303,11 @@ register_toolchains("//my/toolchains:wasm_bindgen_toolchain")
 ```
 
 For additional information, see the [Bazel toolchains documentation][toolchains].
+
+`$(WASM_BINDGEN_CLI)` and `$(WASM_BINDGEN_CLI_RLOCATIONPATH)` and, when
+`wasm_bindgen_test_runner` is set, `$(WASM_BINDGEN_TEST_RUNNER)` and
+`$(WASM_BINDGEN_TEST_RUNNER_RLOCATIONPATH)` are available as Make variables to
+targets which list `@rules_rust_wasm_bindgen//:toolchain_type` in `toolchains`.
 
 [toolchains]: https://docs.bazel.build/versions/master/toolchains.html
 """,
