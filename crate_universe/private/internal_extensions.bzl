@@ -7,6 +7,7 @@ load("//cargo/3rdparty/crates:crates.bzl", _cargo_crate_repositories = "crate_re
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
 load("//crate_universe/private:bootstrap_utils.bzl", "cargo_bazel_bootstrap_cache_repository")
+load("//crate_universe/private:generator.bzl", "cargo_bazel_binaries")
 load("//crate_universe/private:spdx_license_kinds.bzl", "spdx_license_kinds_repository")
 load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
 load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
@@ -21,6 +22,7 @@ def _internal_deps_impl(module_ctx):
     third_party_deps()
     direct_deps.extend(_vendor_crate_repositories())
     direct_deps.extend(crates_vendor_deps())
+    direct_deps.extend(cargo_bazel_binaries())
 
     # We call this, so that crate_universe users get the deps, but we _don't_ add them to direct_deps.
     # For bzlmod these deps were already added as rules_rust internal deps, and if we add them here we get warnings about duplicates.

@@ -241,6 +241,15 @@ bazel run @bindeps//:cargo-machete__cargo-machete
 Notice, direct dependencies do not need repining.
 Only a cargo workspace needs updating whenever the underlying Cargo.toml file changed.
 
+### Offline builds
+
+A release publishes a `cargo-bazel` binary per platform, and the `crate`
+extension runs the host's when it evaluates. Each is a repository, so
+`bazel fetch --all` collects every platform's binary along with the crate
+sources and toolchains a module needs. A repository cache or vendor
+directory filled that way serves a machine of any supported platform
+without network access, and without anything specific to rules_rust.
+
 ### Vendored Dependencies
 
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
@@ -419,13 +428,14 @@ load(
     "execute_generator",
     generate_render_config = "render_config",
 )
+load("//crate_universe/private:generator.bzl", "cargo_bazel_binary_name", "cargo_bazel_repository_name")
 load("//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
 load(
     "//crate_universe/private:splicing_utils.bzl",
     "splice_workspace_manifest",
     generate_splicing_config = "splicing_config",
 )
-load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
+load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
@@ -893,15 +903,19 @@ def _get_generator(module_ctx, host_triple):
         # volatility in lock files caused by referencing host specific files, direct
         # references are avoided.
         return module_ctx.path(Label("@cargo_bazel_bootstrap//:BUILD.bazel")).dirname.get_child(_bootstrap_binary(module_ctx))
-
+    elif host_triple.str in CARGO_BAZEL_URLS:
+        # A release's binary is a repository, so `bazel fetch --all` collects
+        # every platform's and an offline machine finds its own. Resolving
+        # through the BUILD file keeps the binary out of what is watched, as
+        # above: the file is the same on every host, the binary is not.
+        repository = cargo_bazel_repository_name(host_triple.str)
+        build_file = module_ctx.path(Label("@{}//file:BUILD.bazel".format(repository)))
+        return build_file.dirname.get_child(cargo_bazel_binary_name(host_triple.str))
     else:
-        generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple.str)
-        generator_url = CARGO_BAZEL_URLS.get(host_triple.str)
-
-    if not generator_url:
         fail((
-            "No generator URL was found either in the `CARGO_BAZEL_GENERATOR_URL` " +
-            "environment variable or for the `{}` triple in the `generator_urls` attribute"
+            "This release of rules_rust publishes no `cargo-bazel` for `{}`. Build one and " +
+            "name it in the `CARGO_BAZEL_GENERATOR_URL` environment variable, with its " +
+            "sha256 in `CARGO_BAZEL_GENERATOR_SHA256`."
         ).format(host_triple.str))
 
     output = module_ctx.path("cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel")
