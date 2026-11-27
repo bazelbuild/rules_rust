@@ -435,6 +435,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
             "`clippy-driver`, which loads them relative to its own location."
         ),
     ),
+    "rustc_flags": attr.string_list(
+        doc = "`rustc_flags` targets. For more details see the documentation for `rust_toolchain.rustc_flags`.",
+    ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
     ),
@@ -724,6 +727,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
             include_objcopy = include_objcopy,
             extra_rustc_flags = ctx.attr.extra_rustc_flags,
             extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
+            rustc_flags = ctx.attr.rustc_flags,
             opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
             strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
             version = toolchain_version,
@@ -1387,6 +1391,7 @@ def rust_repository_set(
         dev_components = False,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        rustc_flags = None,
         opt_level = None,
         strip_level = None,
         sha256s = None,
@@ -1425,6 +1430,7 @@ def rust_repository_set(
             Requires version to be "nightly".
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
+        rustc_flags (list, optional): List of `rustc_flags` targets providing flags to pass to rustc.
         opt_level (dict, dict, optional): Dictionary of target triples to optimization config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
@@ -1502,6 +1508,7 @@ def rust_repository_set(
             dev_components = dev_components,
             extra_rustc_flags = toolchain_extra_rustc_flags,
             extra_exec_rustc_flags = toolchain_extra_exec_rustc_flags,
+            rustc_flags = rustc_flags,
             opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
             strip_level = strip_level.get(toolchain.target_triple) if strip_level != None else None,
             sha256s = sha256s,

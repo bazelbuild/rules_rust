@@ -14,6 +14,7 @@ load(
     "//rust/private:rust_allocator_libraries.bzl",
     "make_libstd_and_allocator_ccinfo",
 )
+load("//rust/private:rustc_flags.bzl", "RustcFlagsInfo")
 load("//rust/private:semver.bzl", "semver")
 load("//rust/private:sysroot.bzl", "symlink_sysroot_bin", "symlink_sysroot_tree")
 load(
@@ -432,8 +433,9 @@ def _rust_toolchain_impl(ctx):
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
     expanded_stdlib_linkflags = _expand_flags(ctx, "stdlib_linkflags", rust_std[rust_common.stdlib_info].srcs, make_variables)
-    expanded_extra_rustc_flags = _expand_flags(ctx, "extra_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
-    expanded_extra_exec_rustc_flags = _expand_flags(ctx, "extra_exec_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
+    configured_rustc_flags = [flag for target in ctx.attr.rustc_flags for flag in target[RustcFlagsInfo].flags]
+    expanded_extra_rustc_flags = configured_rustc_flags + _expand_flags(ctx, "extra_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
+    expanded_extra_exec_rustc_flags = configured_rustc_flags + _expand_flags(ctx, "extra_exec_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
 
     linking_context = cc_common.create_linking_context(
         linker_inputs = depset([
@@ -851,6 +853,10 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
             mandatory = True,
+        ),
+        "rustc_flags": attr.label_list(
+            doc = "`rustc_flags` targets providing flags to pass to rustc in both exec and non-exec configuration. `extra_rustc_flags` and `extra_exec_rustc_flags` are appended after these flags.",
+            providers = [RustcFlagsInfo],
         ),
         "rustc_lib": attr.label(
             doc = "The libraries used by rustc during compilation.",

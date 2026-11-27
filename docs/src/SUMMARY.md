@@ -46,6 +46,7 @@
     - [cargo_toolchain](./cargo_toolchain.md)
     - [rust_analyzer_toolchain](./rust_analyzer_toolchain.md)
     - [rust_stdlib_filegroup](./rust_stdlib_filegroup.md)
+    - [rustc_flags](./rustc_flags.md)
 - [Bzlmod](./rust_bzlmod.md)
 - [External Crates](./external_crates.md)
     - [crate_universe](crate_universe_bzlmod.md)
