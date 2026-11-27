@@ -88,6 +88,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "aarch64-unknown-nto-qnx710_iosock": _support(std = True, host_tools = False),
+    "aarch64-unknown-nto-qnx800": _support(std = True, host_tools = False),
     "avr-none": _support(std = False, host_tools = False),
     "bpfeb-unknown-none": _support(std = False, host_tools = False),
     "bpfel-unknown-none": _support(std = False, host_tools = False),
@@ -96,6 +98,9 @@ _T3_PLATFORM_TRIPLES = {
     "sparc64-unknown-openbsd": _support(std = True, host_tools = True),
     "thumbv6-none-eabi": _support(std = False, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
+    "x86_64-pc-nto-qnx710": _support(std = True, host_tools = False),
+    "x86_64-pc-nto-qnx710_iosock": _support(std = True, host_tools = False),
+    "x86_64-pc-nto-qnx800": _support(std = True, host_tools = False),
 }
 
 # The only T3 triples that are supported are ones with at least a stdlib
@@ -422,6 +427,12 @@ def system_to_constraints(system):
 
     return ["@platforms//os:{}".format(sys_suffix)]
 
+_NTO_ABI_TO_CONSTRAINT = {
+    "qnx710": "@rules_rust//rust/platform:qnx7",
+    "qnx710_iosock": "@rules_rust//rust/platform:qnx7_iosock",
+    "qnx800": "@rules_rust//rust/platform:qnx8",
+}
+
 def abi_to_constraints(abi, *, arch = None, system = None):
     """Return a list of constraint values which represents a triple's ABI.
 
@@ -437,6 +448,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     """
 
     all_abi_constraints = []
+
+    if system == "nto":
+        all_abi_constraints.append(_NTO_ABI_TO_CONSTRAINT[abi])
 
     # add constraints for MUSL static compilation and linking
     # to separate the MUSL from the non-MUSL toolchain on x86_64
