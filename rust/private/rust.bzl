@@ -267,7 +267,7 @@ def _rust_library_common(ctx, crate_type):
         output_hash = determine_output_hash(crate_root, ctx.label)
 
     rust_lib_name = determine_lib_name(
-        crate_name,
+        getattr(ctx.attr, "lib_name", "") or crate_name,
         crate_type,
         toolchain,
         output_hash,
@@ -1237,9 +1237,21 @@ _rust_shared_library_transition = transition(
     ],
 )
 
+_LIB_NAME_ATTRS = {
+    "lib_name": attr.string(
+        doc = dedent("""\
+            Override the resulting library file name. By default, the library file will be named using the crate name,
+            however sometimes that is not desirable, for example when the name must contain characters that are not
+            valid in a crate name such as `-`. The platform specific prefix and extension are still added, so
+            `lib_name = "foo-bar"` produces `libfoo-bar.so` on Linux, `libfoo-bar.dylib` on macOS and `foo-bar.dll`
+            on Windows.
+        """),
+    ),
+}
+
 rust_cdylib_library = rule(
     implementation = _rust_cdylib_library_impl,
-    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
+    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS | _LIB_NAME_ATTRS,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
