@@ -21,7 +21,17 @@ _EXPECTED_CC_TOOLCHAIN_TOOLS = {
     "CXX": "/usr/fake/g++",
 }
 
+_WINDOWS_CC_TOOLCHAIN_TOOLS = {
+    "AR": "C:/fake/bin/lib.exe",
+    "CC": "C:/fake/bin/cl.exe",
+    "CXX": "C:/fake/bin/cl.exe",
+}
+
+def _cc_toolchain_tools(drive_letter_tools):
+    return _WINDOWS_CC_TOOLCHAIN_TOOLS if drive_letter_tools else _EXPECTED_CC_TOOLCHAIN_TOOLS
+
 def _test_cc_config_impl(ctx):
+    tools = _cc_toolchain_tools(ctx.attr.drive_letter_tools)
     features = [
         feature(
             name = "default_compiler_flags",
@@ -94,15 +104,15 @@ def _test_cc_config_impl(ctx):
         tool_paths = [
             tool_path(
                 name = "gcc",
-                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"],
+                path = tools["CC"],
             ),
             tool_path(
                 name = "cpp",
-                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CXX"],
+                path = tools["CXX"],
             ),
             tool_path(
                 name = "ar",
-                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"],
+                path = tools["AR"],
             ),
             # These need to be set to something to create a toolchain, but
             # is not tested here.
@@ -128,19 +138,19 @@ def _test_cc_config_impl(ctx):
             action_config(
                 action_name = ACTION_NAMES.c_compile,
                 tools = [
-                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"]),
+                    tool(path = tools["CC"]),
                 ],
             ),
             action_config(
                 action_name = ACTION_NAMES.cpp_compile,
                 tools = [
-                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CXX"]),
+                    tool(path = tools["CXX"]),
                 ],
             ),
             action_config(
                 action_name = ACTION_NAMES.cpp_link_static_library,
                 tools = [
-                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"]),
+                    tool(path = tools["AR"]),
                 ],
             ),
         )
@@ -164,6 +174,7 @@ def _test_cc_config_impl(ctx):
 test_cc_config = rule(
     implementation = _test_cc_config_impl,
     attrs = {
+        "drive_letter_tools": attr.bool(default = False),
         "extra_ar_flags": attr.string_list(),
         "extra_cc_compile_flags": attr.string_list(),
         "extra_cxx_compile_flags": attr.string_list(),
@@ -205,29 +216,30 @@ def _cc_args_and_env_analysis_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     cargo_action = tut[DepActionsInfo].actions[0]
 
-    for env_var, expected_path in _EXPECTED_CC_TOOLCHAIN_TOOLS.items():
+    for env_var, expected_path in _cc_toolchain_tools(ctx.attr.drive_letter_tools).items():
         if ctx.attr.legacy_cc_toolchain and env_var == "CXX":
             # When using the legacy tool_path toolchain configuration approach,
             # the CXX tool is forced to be the same as the the CC tool.
             # See: https://github.com/bazelbuild/bazel/blob/14840856986f21b54330e352b83d687825648889/src/main/starlark/builtins_bzl/common/cc/toolchain_config/legacy_features.bzl#L1296-L1304
             expected_path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"]
 
-        actual_path = cargo_action.env.get(env_var)
-        asserts.false(
-            env,
-            actual_path == None,
-            "error: '{}' tool unset".format(env_var),
-        )
-        asserts.equals(
-            env,
-            expected_path,
-            actual_path,
-            "error: '{}' tool path '{}' does not match expected '{}'".format(
-                env_var,
-                actual_path,
+        for name in (env_var, "HOST_" + env_var, "TARGET_" + env_var):
+            actual_path = cargo_action.env.get(name)
+            asserts.false(
+                env,
+                actual_path == None,
+                "error: '{}' tool unset".format(name),
+            )
+            asserts.equals(
+                env,
                 expected_path,
-            ),
-        )
+                actual_path,
+                "error: '{}' tool path '{}' does not match expected '{}'".format(
+                    name,
+                    actual_path,
+                    expected_path,
+                ),
+            )
 
     _ENV_VAR_TO_EXPECTED_ARGS = {
         "CFLAGS": ctx.attr.expected_cflags,
@@ -268,6 +280,7 @@ cc_args_and_env_analysis_test = analysistest.make(
     impl = _cc_args_and_env_analysis_test_impl,
     doc = """An analysistest to examine the custom cargo flags of an cargo_build_script target.""",
     attrs = {
+        "drive_letter_tools": attr.bool(default = False),
         "expected_cflags": attr.string_list(default = ["-Wall"]),
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
         "expected_include": attr.string(default = ""),
@@ -282,7 +295,8 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
         extra_include_paths = "",
-        legacy_cc_toolchain = False):
+        legacy_cc_toolchain = False,
+        drive_letter_tools = False):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
     This is achieved by creating a cascade of targets:
@@ -299,6 +313,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
       extra_include_paths: INCLUDE environment variable value for the cc_toolchain.
       legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
         cc toolchain.
+      drive_letter_tools: Uses `C:/...` tool paths in the cc toolchain.
     """
 
     test_cc_config(
@@ -308,6 +323,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_ar_flags = extra_ar_flags,
         extra_include_paths = extra_include_paths,
         legacy_cc_toolchain = legacy_cc_toolchain,
+        drive_letter_tools = drive_letter_tools,
     )
     cc_toolchain(
         name = "%s/test_cc_toolchain_impl" % name,
@@ -607,6 +623,19 @@ def legacy_cc_toolchain_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         legacy_cc_toolchain = True,
+    )
+
+def drive_letter_tools_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        drive_letter_tools = True,
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        drive_letter_tools = True,
+        # Elsewhere Bazel resolves `C:/...` as a package-relative path.
+        target_compatible_with = ["@platforms//os:windows"],
     )
 
 def libpath_relative_test(name):
