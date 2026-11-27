@@ -1700,6 +1700,14 @@ def construct_arguments(
         if rustc_env_attr:
             target_has_location_expansion = has_location_expansion(rustc_env_attr.values())
 
+    # A crate compiled through another rule (`rust_test(crate = ...)`,
+    # `rust_doc_test`) carries an already expanded `crate_info.rustc_env`:
+    # the markers are gone but the expansion left a literal output root
+    # behind. Path mapping never rewrites environment values, so such an
+    # action cannot be mapped either.
+    if not target_has_location_expansion:
+        target_has_location_expansion = any(["bazel-out/" in value for value in env.values()])
+
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,

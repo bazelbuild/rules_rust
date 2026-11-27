@@ -40,34 +40,55 @@ fn collect_rust_out(dir: &Path, bins: &mut Vec<PathBuf>) {
     }
 }
 
-fn load_test_name_map(r: &Runfiles) -> HashMap<String, String> {
+/// What `rustdoc_compile_wrapper` recorded about a persisted doctest.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct TestInfo {
+    name: String,
+    /// The doctest is expected to exit unsuccessfully.
+    should_panic: bool,
+    /// The doctest was only compiled and must not be executed.
+    no_run: bool,
+}
+
+/// Parses one metadata line: `<mangled>=<human name>[\t<attribute>...]`.
+fn parse_metadata_line(line: &str) -> Option<(String, TestInfo)> {
+    let (mangled, rest) = line.split_once('=')?;
+    let mut fields = rest.split('\t');
+    let name = fields.next()?.to_string();
+    let mut info = TestInfo {
+        name,
+        ..TestInfo::default()
+    };
+    for attribute in fields {
+        match attribute {
+            "should_panic" => info.should_panic = true,
+            "no_run" => info.no_run = true,
+            _ => {}
+        }
+    }
+    Some((mangled.to_string(), info))
+}
+
+fn load_test_info_map(r: &Runfiles) -> HashMap<String, TestInfo> {
     env::var(METADATA_ENV_VAR)
         .ok()
         .and_then(|rloc| rlocation!(r, &rloc))
         .and_then(|path| fs::read_to_string(path).ok())
-        .map(|content| {
-            content
-                .lines()
-                .filter_map(|line| {
-                    let (mangled, human) = line.split_once('=')?;
-                    Some((mangled.to_string(), human.to_string()))
-                })
-                .collect()
-        })
+        .map(|content| content.lines().filter_map(parse_metadata_line).collect())
         .unwrap_or_default()
 }
 
-fn test_name_for_bin(bin: &Path, name_map: &HashMap<String, String>) -> String {
+fn test_info_for_bin(bin: &Path, info_map: &HashMap<String, TestInfo>) -> TestInfo {
     let dir_name = bin
         .parent()
         .and_then(|p| p.file_name())
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
-    name_map
-        .get(dir_name)
-        .cloned()
-        .unwrap_or_else(|| dir_name.to_string())
+    info_map.get(dir_name).cloned().unwrap_or_else(|| TestInfo {
+        name: dir_name.to_string(),
+        ..TestInfo::default()
+    })
 }
 
 struct TestResult {
@@ -78,17 +99,45 @@ struct TestResult {
     stderr: String,
 }
 
-fn run_test_binary(bin: &Path, extra_args: &[String], name: String) -> TestResult {
+/// Runs one persisted doctest the way rustdoc would.
+///
+/// `no_run` doctests are reported as compiled without being executed and
+/// `should_panic` doctests pass only when the executable fails, mirroring
+/// rustdoc's own handling of those attributes.
+fn run_test_binary(bin: &Path, extra_args: &[String], info: TestInfo) -> TestResult {
+    if info.no_run {
+        return TestResult {
+            name: format!("{} - compile", info.name),
+            passed: true,
+            exit_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+    }
+
     let output = Command::new(bin)
         .args(extra_args)
         .output()
         .unwrap_or_else(|e| panic!("Failed to execute {}: {}", bin.display(), e));
 
+    let mut stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    let (name, passed) = if info.should_panic {
+        if output.status.success() {
+            stdout.push_str("Test executable succeeded, but it's marked `should_panic`.\n");
+        }
+        (
+            format!("{} - should panic", info.name),
+            !output.status.success(),
+        )
+    } else {
+        (info.name, output.status.success())
+    };
+
     TestResult {
         name,
-        passed: output.status.success(),
+        passed,
         exit_code: output.status.code().unwrap_or(1),
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stdout,
         stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
     }
 }
@@ -102,7 +151,7 @@ fn main() {
     let doctest_dir = rlocation!(r, &doctest_dir_rlocation)
         .unwrap_or_else(|| panic!("Failed to locate doctests dir: {}", doctest_dir_rlocation));
 
-    let name_map = load_test_name_map(&r);
+    let info_map = load_test_info_map(&r);
 
     let extra_args: Vec<String> = env::args().skip(1).collect();
     let bins = find_test_binaries(&doctest_dir);
@@ -111,8 +160,8 @@ fn main() {
     let mut results: Vec<TestResult> = Vec::new();
 
     for bin in &bins {
-        let name = test_name_for_bin(bin, &name_map);
-        results.push(run_test_binary(bin, &extra_args, name));
+        let info = test_info_for_bin(bin, &info_map);
+        results.push(run_test_binary(bin, &extra_args, info));
     }
 
     let elapsed = start.elapsed();
@@ -193,5 +242,37 @@ fn main() {
             "test result: ok. {} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in {:.2}s",
             passed, elapsed.as_secs_f64()
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_lines_carry_name_and_attributes() {
+        assert_eq!(
+            parse_metadata_line("src_lib_rs_3_0=src/lib.rs - (line 3)"),
+            Some((
+                "src_lib_rs_3_0".to_string(),
+                TestInfo {
+                    name: "src/lib.rs - (line 3)".to_string(),
+                    should_panic: false,
+                    no_run: false,
+                }
+            ))
+        );
+        assert_eq!(
+            parse_metadata_line("src_lib_rs_9_0=src/lib.rs - f (line 9)\tshould_panic\tno_run"),
+            Some((
+                "src_lib_rs_9_0".to_string(),
+                TestInfo {
+                    name: "src/lib.rs - f (line 9)".to_string(),
+                    should_panic: true,
+                    no_run: true,
+                }
+            ))
+        );
+        assert_eq!(parse_metadata_line("no separator"), None);
     }
 }

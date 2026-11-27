@@ -127,6 +127,45 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
     """
     doctest_dir = ctx.actions.declare_directory(ctx.label.name + ".doctests")
     test_metadata = ctx.actions.declare_file(ctx.label.name + ".doctest_metadata")
+    doctests_json = ctx.actions.declare_file(ctx.label.name + ".doctests.json")
+
+    # Persisted doctest binaries carry none of their attributes. Extract the
+    # crate's doctests as JSON so the compile wrapper can record `should_panic`
+    # and `no_run` for the runner, which otherwise has to treat every binary as
+    # a plain test. rustdoc prints the JSON on stdout.
+    extract_flags = ctx.actions.args()
+    extract_flags.add_all(
+        [crate_info.output],
+        format_each = "--extern={}=%s".format(crate_info.name),
+    )
+    extract_flags.add("-Zunstable-options")
+    extract_flags.add("--output-format=doctest")
+
+    extract = rustdoc_compile_action(
+        ctx = ctx,
+        rust_toolchain = toolchain,
+        rustdoc_toolchain = rustdoc_toolchain,
+        crate_info = crate_info,
+        rustdoc_flags = extract_flags,
+        is_test = False,
+        force_depend_on_objects = True,
+    )
+
+    extract_stdout = ctx.actions.args()
+    extract_stdout.add("--stdout-file", doctests_json)
+
+    ctx.actions.run(
+        mnemonic = "RustdocTestExtract",
+        progress_message = "Extracting Rustdoc tests for %{label} (RustdocTestExtract)",
+        outputs = [doctests_json],
+        executable = extract.executable,
+        inputs = extract.inputs,
+        env = extract.env,
+        arguments = [extract_stdout] + extract.arguments,
+        tools = extract.tools,
+        toolchain = Label("//rust:toolchain_type"),
+        execution_requirements = {"supports-path-mapping": ""} if extract.supports_path_mapping else None,
+    )
 
     rustdoc_flags = ctx.actions.args()
     rustdoc_flags.add_all(
@@ -138,6 +177,13 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
     rustdoc_flags.add("-Zunstable-options")
     rustdoc_flags.add("--persist-doctests")
     rustdoc_flags.add_all([doctest_dir], expand_directories = False)
+
+    # Edition 2024 merges doctests into one bundle, and rustdoc ignores
+    # `--no-run` for that bundle and executes it inside this action
+    # (rust-lang/rust#143858). Standalone doctests honor `--no-run`, persist
+    # one binary per test and keep the per-test names the runner reports, so
+    # disable merging (rust-lang/rust#149565) for every edition.
+    rustdoc_flags.add("--merge-doctests=no")
     rustdoc_flags.add_all(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
@@ -152,6 +198,7 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
 
     wrapper_args = ctx.actions.args()
     wrapper_args.add("--test-metadata", test_metadata)
+    wrapper_args.add("--doctests", doctests_json)
     wrapper_args.add("--")
     wrapper_args.add(action.executable)
 
@@ -160,7 +207,7 @@ def _compiled_rust_doc_test_impl(ctx, toolchain, rustdoc_toolchain, crate_info):
         progress_message = "Compiling Rustdoc tests for %{label} (RustdocTestCompile)",
         outputs = [doctest_dir, test_metadata],
         executable = ctx.executable._rustdoc_compile_wrapper,
-        inputs = action.inputs,
+        inputs = depset([doctests_json], transitive = [action.inputs]),
         env = action.env,
         arguments = [wrapper_args] + action.arguments,
         tools = action.tools + [action.executable],

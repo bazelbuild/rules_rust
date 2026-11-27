@@ -12,6 +12,16 @@ rust_doc_test(
     }),
 )
 
+rust_doc_test(
+    name = "generated_compile_data_test",
+    crate = ":compile_data_lib",
+    # Legacy doctests require directory runfiles on Windows (#1156).
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 rust_library(
     name = "lib",
     srcs = ["lib.rs"],
@@ -28,4 +38,21 @@ write_file(
     name = "environment",
     out = "environment.txt",
     content = ["GENERATED_VALUE=from the execution configuration"],
+)
+
+rust_library(
+    name = "compile_data_lib",
+    srcs = ["compile_data_lib.rs"],
+    compile_data = [":generated_input"],
+    crate_name = "rustdoc_generated_compile_data",
+    edition = "2021",
+    rustc_env = {
+        "GENERATED_INPUT_PATH": "$(execpath :generated_input)",
+    },
+)
+
+write_file(
+    name = "generated_input",
+    out = "generated_input.txt",
+    content = ["from a generated compile_data file"],
 )

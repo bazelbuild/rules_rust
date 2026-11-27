@@ -11,6 +11,11 @@ rust_binary(
     ],
 )
 
+rust_test(
+    name = "rustdoc_test_runner_test",
+    crate = ":rustdoc_test_runner",
+)
+
 rust_binary(
     name = "rustdoc_test_writer",
     srcs = ["rustdoc_test_writer.rs"],
@@ -29,4 +34,9 @@ rust_binary(
     name = "rustdoc_compile_wrapper",
     srcs = ["rustdoc_compile_wrapper.rs"],
     edition = "2018",
+)
+
+rust_test(
+    name = "rustdoc_compile_wrapper_test",
+    crate = ":rustdoc_compile_wrapper",
 )
