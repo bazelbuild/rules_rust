@@ -1,0 +1,25 @@
+# Required on windows
+common --enable_platform_specific_config
+startup --windows_enable_symlinks
+build:windows --enable_runfiles
+
+build --experimental_enable_bzlmod
+
+# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
+build --incompatible_disallow_empty_glob
+
+# Required for cargo_build_script support before Bazel 7
+build --incompatible_merge_fixed_and_default_shell_env
+
+# Use a static value for `PATH` and does not inherit `LD_LIBRARY_PATH`. Doesn't let environment
+# variables like `PATH` sneak into the build, which can cause massive cache misses when they change.
+# Use `--action_env=ENV_VARIABLE` if you want to inherit specific environment variables from the
+# client, but note that doing so can prevent cross-user caching if a shared cache is used.
+# Docs: https://bazel.build/reference/command-line-reference#flag--incompatible_strict_action_env
+build --incompatible_strict_action_env
+
+# Speed up all builds by not checking if external repository files have been modified.
+# Docs: https://github.com/bazelbuild/bazel/blob/1af61b21df99edc2fc66939cdf14449c2661f873/src/main/java/com/google/devtools/build/lib/bazel/repository/RepositoryOptions.java#L244
+build --noexperimental_check_external_repository_files
+fetch --noexperimental_check_external_repository_files
+query --noexperimental_check_external_repository_files
