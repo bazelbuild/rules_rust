@@ -1,8 +1,10 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
+load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
 load(
     "//test/unit:common.bzl",
     "assert_argv_contains",
@@ -429,6 +431,91 @@ cdylib_has_native_dep_and_alwayslink_cc_linker_test = analysistest.make(
     },
 )
 
+def _tvos_native_link_flags_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"]
+    asserts.equals(env, 1, len(actions))
+    action = actions[0]
+    assert_argv_contains(env, action, "--target=aarch64-apple-tvos")
+    prefix = "" if ctx.attr.direct else "-Wl,"
+    alwayslink_files = [f for f in action.inputs.to_list() if f.basename.startswith(("libalwayslink.", "alwayslink."))]
+    asserts.equals(env, 1, len(alwayslink_files))
+    if alwayslink_files:
+        assert_list_contains_adjacent_elements(env, action.argv, [
+            "-Clink-arg=" + prefix + "-force_load",
+            "-Clink-arg=" + prefix + alwayslink_files[0].path,
+        ])
+    assert_argv_contains_not(env, action, "-Clink-arg=" + prefix + "--whole-archive")
+
+    if ctx.attr.direct:
+        assert_list_contains_adjacent_elements(env, action.argv, [
+            "--codegen=link-arg=-oso_prefix",
+            "--codegen=link-arg=${pwd}/",
+        ])
+    else:
+        assert_argv_contains(env, action, "--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
+    return analysistest.end(env)
+
+tvos_native_link_flags_direct_test = analysistest.make(
+    _tvos_native_link_flags_test_impl,
+    attrs = {"direct": attr.bool(default = True)},
+    config_settings = {
+        "//command_line_option:collect_code_coverage": False,
+        "//command_line_option:extra_toolchains": [str(Label(":tvos_direct_toolchain"))],
+    },
+)
+
+tvos_native_link_flags_indirect_test = analysistest.make(
+    _tvos_native_link_flags_test_impl,
+    attrs = {"direct": attr.bool(default = False)},
+    config_settings = {
+        "//command_line_option:collect_code_coverage": False,
+        "//command_line_option:extra_toolchains": [str(Label(":tvos_indirect_toolchain"))],
+    },
+)
+
+def _tvos_native_dep_test():
+    # Override only Rust target metadata to inspect linker arguments with the
+    # existing native dependency fixture and host C++ toolchain, without a tvOS SDK.
+    rust_stdlib_filegroup(name = "tvos_std_libs", srcs = [])
+    for tool in ["rustc", "rustdoc", "linker"]:
+        write_file(
+            name = "tvos_mock_" + tool,
+            out = "tvos_mock_" + tool + ".exe",
+            content = [],
+            is_executable = True,
+        )
+    for driver in ["direct", "indirect"]:
+        rust_toolchain(
+            name = "tvos_" + driver + "_rust_toolchain",
+            binary_ext = "",
+            dylib_ext = ".dylib",
+            exec_triple = "x86_64-unknown-linux-gnu",
+            linker = ":tvos_mock_linker",
+            linker_preference = "rust",
+            linker_type = driver,
+            rust_doc = ":tvos_mock_rustdoc",
+            rust_std = ":tvos_std_libs",
+            rustc = ":tvos_mock_rustc",
+            staticlib_ext = ".a",
+            stdlib_linkflags = [],
+            target_triple = "aarch64-apple-tvos",
+        )
+        native.toolchain(
+            name = "tvos_" + driver + "_toolchain",
+            toolchain = ":tvos_" + driver + "_rust_toolchain",
+            toolchain_type = "//rust:toolchain",
+        )
+
+    tvos_native_link_flags_direct_test(
+        name = "tvos_native_link_flags_direct_test",
+        target_under_test = ":cdylib_has_native_dep_and_alwayslink",
+    )
+    tvos_native_link_flags_indirect_test(
+        name = "tvos_native_link_flags_indirect_test",
+        target_under_test = ":cdylib_has_native_dep_and_alwayslink",
+    )
+
 def _native_dep_test():
     rust_library(
         name = "rlib_has_no_native_dep",
@@ -661,6 +748,7 @@ def native_deps_test_suite(name):
         name: Name of the macro.
     """
     _native_dep_test()
+    _tvos_native_dep_test()
     _linkopts_test()
     _additional_deps_test()
 
@@ -680,5 +768,7 @@ def native_deps_test_suite(name):
             ":proc_macro_has_native_libs_test",
             ":rlib_has_no_native_libs_test",
             ":staticlib_has_native_libs_test",
+            ":tvos_native_link_flags_direct_test",
+            ":tvos_native_link_flags_indirect_test",
         ],
     )

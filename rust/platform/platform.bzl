@@ -27,6 +27,7 @@ _SUPPORTED_SYSTEMS = [
     "macos",
     "freebsd",
     "ios",
+    "tvos",
     "linux",
     "windows",
     "nto",
