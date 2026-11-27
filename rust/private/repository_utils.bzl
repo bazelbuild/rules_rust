@@ -394,6 +394,7 @@ rust_toolchain(
     visibility = ["//visibility:public"],
     extra_rustc_flags = {extra_rustc_flags},
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
+    rustc_flags = {rustc_flags},
     opt_level = {opt_level},
     strip_level = {strip_level},
     version = "{version}",
@@ -420,6 +421,7 @@ def BUILD_for_rust_toolchain(
         stdlib_linkflags = None,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        rustc_flags = None,
         opt_level = None,
         strip_level = None,
         tools_repository = None,
@@ -447,6 +449,7 @@ def BUILD_for_rust_toolchain(
                                            None.
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        rustc_flags (list, optional): `rustc_flags` targets providing flags to pass to rustc.
         opt_level (dict, optional): Optimization level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
         tools_repository (str, optional): The canonical name of the repository holding the compiler, its
@@ -518,6 +521,7 @@ def BUILD_for_rust_toolchain(
         rust_objcopy_label = repr(rust_objcopy_label),
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
+        rustc_flags = repr(rustc_flags or []),
         opt_level = opt_level,
         strip_level = strip_level,
         version = version,

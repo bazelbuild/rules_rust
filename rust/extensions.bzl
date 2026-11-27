@@ -112,6 +112,7 @@ def _rust_impl(module_ctx):
                 "name": repository_set.name,
                 "netrc": repository_set.netrc if repository_set.netrc else None,
                 "opt_level": {repository_set.target_triple: repository_set.opt_level} if repository_set.opt_level else None,
+                "rustc_flags": [str(label) for label in repository_set.rustc_flags],
                 "sha256s": repository_set.sha256s,
                 "strip_level": {repository_set.target_triple: repository_set.strip_level} if repository_set.strip_level else None,
                 "target_settings": [str(v) for v in repository_set.target_settings],
@@ -313,6 +314,9 @@ _RUST_REPOSITORY_SET_TAG_ATTRS = {
     ),
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
+    ),
+    "rustc_flags": attr.label_list(
+        doc = "`rustc_flags` targets. For more details see the documentation for `rust_toolchain.rustc_flags`.",
     ),
     "strip_level": attr.string_dict(
         doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",

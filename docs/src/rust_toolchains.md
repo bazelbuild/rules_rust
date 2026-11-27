@@ -71,3 +71,10 @@ toolchain and fall back to those attributes.
 - [rust_stdlib_filegroup](./rust_stdlib_filegroup.md) — Group the files of a Rust
   standard library archive into a target that can be attached to a
   `rust_toolchain` via the `rust_std` attribute.
+
+## Configuration rules
+
+- [rustc_flags](./rustc_flags.md) — Group `rustc` flags into a target that can be
+  attached to a `rust_toolchain` via the `rustc_flags` attribute. Unlike
+  `extra_rustc_flags`, the flags may `select()` on the platform the toolchain
+  builds for.
