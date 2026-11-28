@@ -543,7 +543,8 @@ def _fresh_patch_index(annotations):
 
     Labels stored in `cargo-bazel-lock.json` are canonical strings from whichever module was
     root when the lockfile was pinned, and the digest ignores the repository
-    part, so a lockfile pinned in one context is reused verbatim in another and `@@//` then
+    part, so a lockfile pinned in one context is reused verbatim in another and a label of the
+    main repository then points at the wrong one. The annotation tags are resolved against the module
     points at the wrong main repository. The annotation tags are resolved against the module
     that declared them, so prefer those.
     """
