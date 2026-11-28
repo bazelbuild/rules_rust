@@ -59,6 +59,7 @@ bzl_library(
     visibility = ["//rust:__pkg__"],
     deps = [
         "//rust/private:bzl_lib",
+        "@bazel_features//:features",
         "@bazel_skylib//rules:common_settings",
     ],
 )
