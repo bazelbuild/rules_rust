@@ -401,7 +401,7 @@ impl LaunchConfigGenerator {
                             // Check if this is a valid Bazel label that we're generating
                             if label::analyze(label).is_ok() {
                                 // If it's in our list of targets to generate, remove it
-                                return !generated_targets.contains(&label.to_string());
+                                return !generated_targets.iter().any(|t| t == label);
                             }
                         }
                     }
@@ -423,7 +423,7 @@ impl LaunchConfigGenerator {
                             // Check if this is a valid Bazel label that we're generating
                             if label::analyze(target_label).is_ok() {
                                 // If it's in our list of targets to generate, remove it
-                                return !generated_targets.contains(&target_label.to_string());
+                                return !generated_targets.iter().any(|t| t == target_label);
                             }
                         }
                     }

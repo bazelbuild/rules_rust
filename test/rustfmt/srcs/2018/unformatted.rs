@@ -5,7 +5,7 @@ impl Wake for ThreadWaker {fn wake(self: Arc<Self>) {self.0.unpark();}}
 /// Run a future to completion on the current thread.
 fn block_on<T>(fut: impl Future<Output = T>) -> T {
 // Pin the future so it can be polled.
-let mut fut = Box::pin(fut);
+let mut fut = std::pin::pin!(fut);
 // Create a new context to be passed to the future.
 let t = thread::current();let waker = Arc::new(ThreadWaker(t)).into();
 let mut cx = Context::from_waker(&waker);

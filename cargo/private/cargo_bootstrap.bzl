@@ -232,10 +232,13 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         cargo_config = repository_ctx.path(repository_ctx.attr.cargo_config)
 
     # Build in the cache repository when one is given, so a rebuild after a
-    # source change recompiles what changed instead of every dependency.
+    # source change recompiles what changed instead of every dependency. The
+    # repository itself is the target directory: on Windows every directory
+    # on the way to an rlib counts against the 260 character limit of
+    # `link.exe`.
     target_dir = None
     if repository_ctx.attr.cache:
-        target_dir = repository_ctx.path(repository_ctx.attr.cache).dirname.get_child(repository_ctx.name)
+        target_dir = repository_ctx.path(repository_ctx.attr.cache).dirname
 
     # buildifier: disable=print
     print(_BOOTSTRAP_NOTICE.format(name = repository_ctx.name, binary = binary_name))

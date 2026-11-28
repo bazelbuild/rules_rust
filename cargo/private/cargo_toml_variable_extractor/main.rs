@@ -34,10 +34,9 @@ fn main() {
                 }),
         ),
         other => {
-            let argv0 = other.first().map_or_else(
-                || Cow::Borrowed("cargo-toml-parser"),
-                |v| v.to_string_lossy(),
-            );
+            let argv0 = other
+                .first()
+                .map_or(Cow::Borrowed("cargo-toml-parser"), |v| v.to_string_lossy());
             panic!(
                 "Usage: {} path/to/Cargo.toml [path/to/workspace/Cargo.toml]",
                 argv0
