@@ -1,0 +1,1 @@
+workspace(name = "rustfmt_shared_compiler")

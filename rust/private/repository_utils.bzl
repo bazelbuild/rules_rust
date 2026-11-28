@@ -830,6 +830,37 @@ def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, version, rust
         version = version,
     )
 
+_build_file_for_linked_compiler_libraries_template = """\
+filegroup(
+    name = "rustc_lib",
+    srcs = glob(
+        [
+            "bin/*{dylib_ext}",
+            "lib/*{dylib_ext}*",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_linked_compiler_libraries(exec_triple):
+    """Emits a `rustc_lib` target for the compiler libraries linked into a repository from another.
+
+    A rustc driver loads `librustc_driver` from beside its own real path, so
+    actions running it take these links as inputs rather than the files of the
+    compiler repository: a remote executor only has the inputs.
+
+    Args:
+        exec_triple (struct): The triple of the execution platform.
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    return _build_file_for_linked_compiler_libraries_template.format(
+        dylib_ext = system_to_dylib_ext(exec_triple.system),
+    )
+
 _build_file_for_rustfmt_toolchain_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rustfmt_toolchain")
 

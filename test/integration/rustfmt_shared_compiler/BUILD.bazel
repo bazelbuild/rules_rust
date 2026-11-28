@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rustfmt_test")
+load(":rustfmt_toolchain_test.bzl", "rustfmt_shares_compiler_test")
+
+rust_library(
+    name = "hello",
+    srcs = ["hello.rs"],
+)
+
+# Runs rustfmt, which only starts if it finds the compiler libraries.
+rustfmt_test(
+    name = "hello_rustfmt_test",
+    targets = [":hello"],
+)
+
+rustfmt_shares_compiler_test(
+    name = "rustfmt_shares_compiler_test",
+    target_under_test = "@rules_rust//rust/toolchain:current_rustfmt_toolchain",
+)

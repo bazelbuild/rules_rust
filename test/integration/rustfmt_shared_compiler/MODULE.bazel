@@ -1,0 +1,23 @@
+module(name = "rustfmt_shared_compiler")
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+RUST_VERSION = "1.99.1"
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    # rustfmt from the release the toolchains compile with takes the compiler
+    # libraries from their compiler repository.
+    rustfmt_version = RUST_VERSION,
+    versions = [RUST_VERSION],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
