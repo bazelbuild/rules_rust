@@ -1,0 +1,27 @@
+module(
+    name = "cu_test_transitive_host_tools",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# `cu_test_transitive_host_tools_dep` renders its crates from a lockfile and
+# points `host_tools` at a repository that fails when fetched. This root module
+# has no `crate` hubs of its own, so building `:build_test` only works if the
+# `crate` extension leaves a non-root module's host tools alone.
+bazel_dep(name = "cu_test_transitive_host_tools_dep", version = "0.0.0")
+local_path_override(
+    module_name = "cu_test_transitive_host_tools_dep",
+    path = "dep",
+)
