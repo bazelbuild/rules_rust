@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_test")
+
+rust_shared_library(
+    name = "embedding_probe",
+    srcs = ["embedding_probe.rs"],
+    edition = "2021",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = ["@pyo3_embedding_crates//pyo3"],
+)
+
+rust_test(
+    name = "embedding_test",
+    size = "small",
+    srcs = ["embedding_test.rs"],
+    data = [
+        ":embedding_probe",
+        "@rules_python//python:current_py_toolchain",
+    ],
+    edition = "2021",
+    link_deps = ["@rules_python//python/cc:current_py_cc_libs"],
+    rustc_env = {
+        "EXTENSION_RUNFILE": "$(rlocationpath :embedding_probe)",
+        "PYTHON_RUNFILE": "$(PYTHON3_ROOTPATH)",
+        "PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+    toolchains = [
+        "//:current_pyo3_toolchain",
+        "@rules_python//python:current_py_toolchain",
+    ],
+    deps = [
+        "@pyo3_embedding_crates//goblin",
+        "@pyo3_embedding_crates//pyo3",
+        "@rules_rust//rust/runfiles",
+    ],
+)

@@ -1,0 +1,14 @@
+[package]
+name = "pyo3-embedding-test"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "embedding_test.rs"
+
+[dependencies]
+pyo3 = "=0.29.3"
+
+[dev-dependencies]
+goblin = { version = "0.10.1", default-features = false, features = ["elf32", "elf64", "endian_fd", "std"] }
