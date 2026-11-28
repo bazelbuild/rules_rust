@@ -531,8 +531,8 @@ def _collect_splicing_config(module, repository):
     return config
 
 def _strip_canonical_repo(label):
-    """`@@repo+//pkg:file` -> `//pkg:file`; mirrors `normalize_labels_for_digest`."""
-    if label.startswith("@@"):
+    """Strips a label's canonical repository, leaving `//pkg:file`; mirrors `normalize_labels_for_digest`."""
+    if label.startswith("@@"):  # buildifier: disable=canonical-repository
         idx = label.find("//")
         if idx >= 0:
             return label[idx:]
@@ -542,7 +542,7 @@ def _fresh_patch_index(annotations):
     """Maps (crate, repo-stripped patch label) to the label resolved in the current context.
 
     Labels stored in `cargo-bazel-lock.json` are canonical strings from whichever module was
-    root when the lockfile was pinned (e.g. `@@//...`), and the digest ignores the repository
+    root when the lockfile was pinned, and the digest ignores the repository
     part, so a lockfile pinned in one context is reused verbatim in another and `@@//` then
     points at the wrong main repository. The annotation tags are resolved against the module
     that declared them, so prefer those.
