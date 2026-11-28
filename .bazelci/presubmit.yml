@@ -1254,6 +1254,9 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # Runs the `prost_without_rustfmt` fixture too; BazelCI caps the number of tasks.
+    post_shell_commands:
+      - cd ../../test/integration/prost_without_rustfmt && bazel test //...
   extensions_prost_linux_rbe:
     platform: rbe_ubuntu2204
     name: Extensions Prost

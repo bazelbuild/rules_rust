@@ -390,7 +390,10 @@ rust_prost_aspect = aspect(
         TOOLCHAIN_TYPE,
     ] + use_cc_toolchain(mandatory = False) + [
         "@rules_rust//rust:toolchain_type",
-        "@rules_rust//rust/rustfmt:toolchain_type",
+        # Formatting the generated code is cosmetic: without a `rustfmt_toolchain`
+        # for the execution platform the code is left unformatted rather than
+        # failing toolchain resolution.
+        config_common.toolchain_type("@rules_rust//rust/rustfmt:toolchain_type", mandatory = False),
     ],
 )
 
