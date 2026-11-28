@@ -115,11 +115,11 @@ rust_library(
     }),
     version = "0.7.20",
     deps = [
-        "@rmdbi__bytes-1.12.1//:bytes",
+        "@rmdbi__bytes-1.12.2//:bytes",
         "@rmdbi__futures-core-0.3.34//:futures_core",
         "@rmdbi__futures-sink-0.3.34//:futures_sink",
-        "@rmdbi__pin-project-lite-0.2.17//:pin_project_lite",
-        "@rmdbi__tokio-1.54.0//:tokio",
+        "@rmdbi__pin-project-lite-0.2.18//:pin_project_lite",
+        "@rmdbi__tokio-1.54.1//:tokio",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@rmdbi__libc-0.2.191//:libc",  # aarch64-apple-darwin

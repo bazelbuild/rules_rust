@@ -112,6 +112,6 @@ rust_library(
     }),
     version = "0.1.6",
     deps = [
-        "@rmdbi__zerovec-0.11.8//:zerovec",
+        "@rmdbi__zerovec-0.11.9//:zerovec",
     ],
 )

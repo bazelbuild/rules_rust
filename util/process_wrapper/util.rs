@@ -58,8 +58,7 @@ fn read_to_array(reader: impl Read) -> Result<Vec<String>, String> {
             // we add a newline as we expect a line after this
             escaped_line.push('\n');
         } else {
-            ret.push(escaped_line);
-            escaped_line = String::new();
+            ret.push(std::mem::take(&mut escaped_line));
         }
     }
     Ok(ret)

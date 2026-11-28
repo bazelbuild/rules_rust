@@ -118,7 +118,7 @@ rust_library(
     version = "1.0.154",
     deps = [
         ":build_script_build",
-        "@rmdbi__itoa-1.0.18//:itoa",
+        "@rmdbi__itoa-1.0.19//:itoa",
         "@rmdbi__memchr-2.8.3//:memchr",
         "@rmdbi__serde_core-1.0.229//:serde_core",
         "@rmdbi__zmij-1.0.23//:zmij",

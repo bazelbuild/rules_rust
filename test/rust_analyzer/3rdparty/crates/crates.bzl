@@ -458,12 +458,12 @@ def crate_repositories():
     )
     maybe(
         http_archive,
-        name = "rtra__itoa-1.0.18",
-        sha256 = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
+        name = "rtra__itoa-1.0.19",
+        sha256 = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/itoa/1.0.18/download"],
-        strip_prefix = "itoa-1.0.18",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.itoa-1.0.18.bazel"),
+        urls = ["https://static.crates.io/crates/itoa/1.0.19/download"],
+        strip_prefix = "itoa-1.0.19",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.itoa-1.0.19.bazel"),
     )
 
     maybe(
@@ -538,12 +538,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__syn-3.0.9",
-        sha256 = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b",
+        name = "rtra__syn-3.0.10",
+        sha256 = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/3.0.9/download"],
-        strip_prefix = "syn-3.0.9",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-3.0.9.bazel"),
+        urls = ["https://static.crates.io/crates/syn/3.0.10/download"],
+        strip_prefix = "syn-3.0.10",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-3.0.10.bazel"),
     )
 
     maybe(

@@ -110,7 +110,7 @@ rust_library(
     version = "0.38.0",
     deps = [
         "@rmdbi__dtoa-short-0.3.5//:dtoa_short",
-        "@rmdbi__itoa-1.0.18//:itoa",
-        "@rmdbi__smallvec-1.16.3//:smallvec",
+        "@rmdbi__itoa-1.0.19//:itoa",
+        "@rmdbi__smallvec-1.16.6//:smallvec",
     ],
 )

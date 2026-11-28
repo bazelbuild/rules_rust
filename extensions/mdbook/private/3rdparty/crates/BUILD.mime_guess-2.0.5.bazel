@@ -118,7 +118,7 @@ rust_library(
     version = "2.0.5",
     deps = [
         ":build_script_build",
-        "@rmdbi__mime-0.3.17//:mime",
+        "@rmdbi__mime-0.3.18//:mime",
         "@rmdbi__unicase-2.10.0//:unicase",
     ],
 )
