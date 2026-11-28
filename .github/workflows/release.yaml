@@ -10,6 +10,8 @@ on:
       - version.bzl
       - .github/workflows/release.yaml
       - .github/workflows/release_prep.sh
+      - .github/workflows/release_archive.sh
+      - .github/workflows/release_archive_test.sh
   push:
     branches:
       - main
@@ -39,6 +41,8 @@ jobs:
           else
             echo "Tag '${version}' will be created"
           fi
+      - name: Test the release archive
+        run: .github/workflows/release_archive_test.sh
   builds:
     needs: validation
     runs-on: ${{ matrix.os }}

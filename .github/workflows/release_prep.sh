@@ -93,19 +93,7 @@ URL_PREFIX="https://github.com/${REPOSITORY_OWNER}/rules_rust/releases/download/
 # .bcr/source.template.json — the SLSA attestation subject must equal the
 # published asset name.
 ARCHIVE="rules_rust-${TAG}.tar.gz"
-# `examples/hello_world` is included for the BCR presubmit; it must appear
-# before --exclude="examples".
-tar -czf "${ARCHIVE}" \
-    -C "${WORKSPACE}" \
-    --exclude=".git" \
-    --exclude=".github" \
-    --exclude="crate_universe/target" \
-    --exclude="bazel-*" \
-    --exclude="rules_rust-*.tar.gz" \
-    --exclude="cargo-bazel-*" \
-    examples/hello_world \
-    --exclude="examples" \
-    .
+"${WORKSPACE}/.github/workflows/release_archive.sh" "${WORKSPACE}" "${ARCHIVE}" "${TRIPLES[@]}"
 
 # Rename cargo-bazel binaries to the release asset names expected by the
 # release_files glob in release.yaml.
