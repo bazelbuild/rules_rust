@@ -109,7 +109,7 @@ rust_library(
     }),
     version = "0.40.1",
     deps = [
-        "@rmdbi__log-0.4.34//:log",
+        "@rmdbi__log-0.4.35//:log",
         "@rmdbi__markup5ever-0.40.0//:markup5ever",
         "@rmdbi__memchr-2.8.3//:memchr",
     ],

@@ -115,7 +115,7 @@ rust_library(
     deps = [
         ":build_script_build",
         "@rmdbi__cfg-if-1.0.5//:cfg_if",
-        "@rmdbi__smallvec-1.16.3//:smallvec",
+        "@rmdbi__smallvec-1.16.6//:smallvec",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@rmdbi__libc-0.2.191//:libc",  # cfg(unix)

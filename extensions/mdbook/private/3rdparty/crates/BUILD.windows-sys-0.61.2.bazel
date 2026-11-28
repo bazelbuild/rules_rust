@@ -51,14 +51,21 @@ rust_library(
         "Win32_System",
         "Win32_System_Console",
         "Win32_System_IO",
-        "Win32_System_Memory",
         "Win32_System_Pipes",
         "Win32_System_SystemInformation",
         "Win32_System_SystemServices",
         "Win32_System_Threading",
         "Win32_System_WindowsProgramming",
         "default",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "Win32_System_Memory",  # aarch64-pc-windows-msvc
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "Win32_System_Memory",  # x86_64-pc-windows-msvc
+        ],
+        "//conditions:default": [],
+    }),
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [

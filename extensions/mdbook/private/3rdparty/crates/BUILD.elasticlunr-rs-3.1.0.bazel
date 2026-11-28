@@ -112,7 +112,7 @@ rust_library(
     }),
     version = "3.1.0",
     deps = [
-        "@rmdbi__regex-1.13.1//:regex",
+        "@rmdbi__regex-1.13.2//:regex",
         "@rmdbi__serde-1.0.229//:serde",
         "@rmdbi__serde_json-1.0.154//:serde_json",
     ],

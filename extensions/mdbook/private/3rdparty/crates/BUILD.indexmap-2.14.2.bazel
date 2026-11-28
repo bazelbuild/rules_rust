@@ -114,6 +114,6 @@ rust_library(
     version = "2.14.2",
     deps = [
         "@rmdbi__equivalent-1.0.3//:equivalent",
-        "@rmdbi__hashbrown-0.17.1//:hashbrown",
+        "@rmdbi__hashbrown-0.17.2//:hashbrown",
     ],
 )
