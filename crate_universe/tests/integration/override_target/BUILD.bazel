@@ -4,6 +4,7 @@ rust_library(
     name = "override_targets_example",
     srcs = glob(["src/*.rs"]),
     edition = "2018",
+    visibility = ["//visibility:public"],
     deps = [
         "@override_target//foo",
     ],
