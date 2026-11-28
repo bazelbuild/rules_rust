@@ -553,6 +553,13 @@ def _rust_toolchain_impl(ctx):
         support_files_depsets.append(cc_toolchain.all_files)
     if ctx.file.dlltool:
         support_files_depsets.append(depset([ctx.file.dlltool]))
+
+    # rustc runs the wrapper; `linker` stays in the sysroot, which rustc puts on its PATH.
+    linker = sysroot.linker
+    linker_wrapper = ctx.attr._linker_wrapper[DefaultInfo].files.to_list()
+    if linker_wrapper:
+        linker = linker_wrapper[0]
+        support_files_depsets.append(depset(linker_wrapper))
     support_files = depset(transitive = support_files_depsets)
 
     # Parse the version string once so downstream rules can branch on the
@@ -581,7 +588,7 @@ def _rust_toolchain_impl(ctx):
         libstd_dylib_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std", True),
         libstd_dylib_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std", True),
         make_libstd_and_allocator_ccinfo = make_ccinfo,
-        linker = sysroot.linker,
+        linker = linker,
         linker_preference = linker_preference,
         linker_type = ctx.attr.linker_type or None,
         coverage_supported = bool(ctx.file.llvm_cov) and ctx.attr.rust_std[rust_common.stdlib_info].has_profiler_builtins,
@@ -937,6 +944,10 @@ rust_toolchain = rule(
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),
+        ),
+        "_linker_wrapper": attr.label(
+            default = Label("//rust/settings:toolchain_linker_wrapper"),
+            doc = "Label to the flag naming the linker wrapper, analysed in this toolchain's configuration.",
         ),
         "_no_std": attr.label(
             default = Label("//rust/settings:no_std"),

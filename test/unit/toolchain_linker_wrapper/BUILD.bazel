@@ -1,0 +1,3 @@
+load(":toolchain_linker_wrapper_test.bzl", "toolchain_linker_wrapper_test_suite")
+
+toolchain_linker_wrapper_test_suite(name = "toolchain_linker_wrapper_test_suite")
