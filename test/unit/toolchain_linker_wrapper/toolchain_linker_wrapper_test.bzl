@@ -7,6 +7,8 @@ load("//rust:defs.bzl", "rust_binary")
 _TOOLCHAIN_TYPE = str(Label("//rust:toolchain_type"))
 
 _WRAPPER_SETTINGS = {
+    # The mock linker cannot execute, so coverage must not build :bin or its exec tools.
+    "//command_line_option:collect_code_coverage": False,
     str(Label("//rust/settings:toolchain_linker_preference")): "rust",
     str(Label("//rust/settings:toolchain_linker_wrapper")): str(Label(":mock_linker_file")),
 }
@@ -25,6 +27,23 @@ _toolchain_linker = rule(
     toolchains = [_TOOLCHAIN_TYPE],
 )
 
+def _exec_toolchain_linker_impl(ctx):
+    return [ctx.attr.toolchain_linker[_ToolchainLinkerInfo]]
+
+# `config_settings` only reach `target_under_test`, so the exec dependency has to hang off the
+# target under test rather than off the test rule itself.
+_exec_toolchain_linker = rule(
+    implementation = _exec_toolchain_linker_impl,
+    doc = "Forwards the `linker` of the Rust toolchain resolved in the exec configuration.",
+    attrs = {
+        "toolchain_linker": attr.label(
+            cfg = "exec",
+            mandatory = True,
+            providers = [_ToolchainLinkerInfo],
+        ),
+    },
+)
+
 def _is_mock_linker(file):
     return file != None and file.basename == "mock_linker"
 
@@ -40,12 +59,16 @@ def _wrapper_used_test_impl(ctx):
         linker_args = [arg for arg in action.argv if arg.startswith("--codegen=linker=")]
         asserts.equals(env, ["--codegen=linker=" + wrappers[0].path], linker_args)
 
+    return analysistest.end(env)
+
+def _wrapper_exec_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
     asserts.true(
         env,
-        _is_mock_linker(ctx.attr.linker_exec[_ToolchainLinkerInfo].linker),
+        _is_mock_linker(target[_ToolchainLinkerInfo].linker),
         "The linker wrapper must also apply to the exec configuration",
     )
-
     return analysistest.end(env)
 
 def _wrapper_unset_test_impl(ctx):
@@ -56,13 +79,11 @@ def _wrapper_unset_test_impl(ctx):
 
 wrapper_used_test = analysistest.make(
     _wrapper_used_test_impl,
-    attrs = {
-        "linker_exec": attr.label(
-            cfg = "exec",
-            mandatory = True,
-            providers = [_ToolchainLinkerInfo],
-        ),
-    },
+    config_settings = _WRAPPER_SETTINGS,
+)
+
+wrapper_exec_test = analysistest.make(
+    _wrapper_exec_test_impl,
     config_settings = _WRAPPER_SETTINGS,
 )
 
@@ -93,10 +114,20 @@ def toolchain_linker_wrapper_test_suite(name):
         tags = ["manual"],
     )
 
+    _exec_toolchain_linker(
+        name = "exec_toolchain_linker",
+        toolchain_linker = ":toolchain_linker",
+        tags = ["manual"],
+    )
+
     wrapper_used_test(
         name = "wrapper_used_test",
         target_under_test = ":bin",
-        linker_exec = ":toolchain_linker",
+    )
+
+    wrapper_exec_test(
+        name = "wrapper_exec_test",
+        target_under_test = ":exec_toolchain_linker",
     )
 
     wrapper_unset_test(
@@ -107,6 +138,7 @@ def toolchain_linker_wrapper_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
+            ":wrapper_exec_test",
             ":wrapper_unset_test",
             ":wrapper_used_test",
         ],

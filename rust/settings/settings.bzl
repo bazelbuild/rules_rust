@@ -302,11 +302,16 @@ def toolchain_linker_preference():
 def toolchain_linker_wrapper():
     """A flag naming an executable that rustc runs as its linker instead of `rust_toolchain.linker`.
 
-    The flag is read in the `rust_toolchain`'s configuration and has universal scope, so exec tools
-    such as build scripts, proc macros and the process wrapper link through it too. The wrapper's own
-    target must therefore set the flag back to `:no_toolchain_linker_wrapper`, for example with an
-    incoming transition, or it would depend on itself. rustc puts the sysroot's `bin` directory on
-    the linker's `PATH`, so the wrapper can find `rust-lld` there.
+    The flag is read in the `rust_toolchain`'s configuration and carries into the exec
+    configuration, so exec tools such as build scripts, proc macros and the process wrapper link
+    through it too. The wrapper's own target must therefore set the flag back to
+    `:no_toolchain_linker_wrapper`, for example with an incoming transition, or it would depend on
+    itself. rustc puts the sysroot's `bin` directory on the linker's `PATH`, so the wrapper can find
+    `rust-lld` there.
+
+    With `--incompatible_exclude_starlark_flags_from_exec_config` the flag does not reach the exec
+    configuration: `label_flag` only takes `scope = "universal"` from Bazel 9, and the minimum
+    supported Bazel version is older.
     """
     native.filegroup(
         name = "no_toolchain_linker_wrapper",
@@ -314,7 +319,6 @@ def toolchain_linker_wrapper():
     native.label_flag(
         name = "toolchain_linker_wrapper",
         build_setting_default = ":no_toolchain_linker_wrapper",
-        scope = "universal",
     )
 
 # buildifier: disable=unnamed-macro
